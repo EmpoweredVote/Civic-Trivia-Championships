@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import { router as authRouter } from './routes/auth.js';
 
 // Load environment variables
 dotenv.config();
@@ -22,6 +23,9 @@ app.use(express.json());
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
+
+// Auth routes
+app.use('/auth', authRouter);
 
 // Start server
 app.listen(PORT, () => {
