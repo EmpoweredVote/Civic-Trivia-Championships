@@ -35,11 +35,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   6. Frontend loads in under 1.5 seconds (FCP)
   7. App is interactive in under 3 seconds (TTI)
   8. App works on mobile and tablet screens
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 01-01: TBD during phase planning
-- [ ] 01-02: TBD during phase planning
+- [ ] 01-01-PLAN.md — Project foundation (Vite React + Express TypeScript setup)
+- [ ] 01-02-PLAN.md — Backend auth infrastructure (PostgreSQL, Redis, JWT endpoints)
+- [ ] 01-03-PLAN.md — Frontend auth (Zustand store, API service, Login/Signup pages)
+- [ ] 01-04-PLAN.md — Integration (Protected routes, session persistence, verification)
 
 ### Phase 2: Game Core
 **Goal**: Users can play a full 10-question trivia game with visual timer, answer selection, and explanations
@@ -153,7 +155,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 0/TBD | Not started | - |
+| 1. Foundation & Auth | 0/4 | Planned | - |
 | 2. Game Core | 0/TBD | Not started | - |
 | 3. Scoring System | 0/TBD | Not started | - |
 | 4. Learning & Content | 0/TBD | Not started | - |
