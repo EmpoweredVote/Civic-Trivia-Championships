@@ -49,7 +49,8 @@ export async function apiRequest<T>(
   const response = await fetch(API_URL + url, mergedOptions);
 
   // Handle 401 with automatic token refresh
-  if (response.status === 401 && !isRefreshing) {
+  // Skip for refresh endpoint itself to avoid infinite loop
+  if (response.status === 401 && !isRefreshing && !url.includes('/auth/refresh')) {
     isRefreshing = true;
 
     try {
@@ -74,9 +75,8 @@ export async function apiRequest<T>(
 
         return retryResponse.json();
       } else {
-        // Refresh failed - clear auth and redirect
+        // Refresh failed - clear auth, let React Router handle redirect
         useAuthStore.getState().clearAuth();
-        window.location.href = '/login';
         throw { error: 'Session expired' };
       }
     } finally {
