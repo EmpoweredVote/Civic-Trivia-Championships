@@ -1,4 +1,5 @@
-import jwt, { JwtPayload, TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
+import type { JwtPayload } from 'jsonwebtoken';
 import { redis } from '../config/redis.js';
 import {
   JWT_SECRET,
@@ -7,6 +8,9 @@ import {
   REFRESH_TOKEN_EXPIRY,
   REFRESH_TOKEN_EXPIRY_SECONDS
 } from '../config/jwt.js';
+
+// Access error classes from jwt object (CommonJS module)
+const { TokenExpiredError, JsonWebTokenError } = jwt;
 
 // Re-export error types for use in middleware
 export { TokenExpiredError, JsonWebTokenError };
