@@ -85,7 +85,13 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
-    const errorData = await response.json();
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch {
+      // Response wasn't JSON (server error, HTML page, etc.)
+      throw { error: `Server error: ${response.status} ${response.statusText}` };
+    }
     throw errorData;
   }
 

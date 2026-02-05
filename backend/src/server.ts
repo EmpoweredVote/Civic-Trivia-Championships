@@ -1,11 +1,11 @@
+import dotenv from 'dotenv';
+// Load environment variables FIRST, before any other imports
+dotenv.config();
+
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 import { router as authRouter } from './routes/auth.js';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
