@@ -9,11 +9,11 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign up with email and password
-- [ ] **AUTH-02**: User can log in with email and password
-- [ ] **AUTH-03**: User can log out from any screen
-- [ ] **AUTH-04**: User session persists across browser refresh
-- [ ] **AUTH-05**: User receives clear error messages for auth failures
+- [x] **AUTH-01**: User can sign up with email and password
+- [x] **AUTH-02**: User can log in with email and password
+- [x] **AUTH-03**: User can log out from any screen
+- [x] **AUTH-04**: User session persists across browser refresh
+- [x] **AUTH-05**: User receives clear error messages for auth failures
 
 ### Game Flow
 
@@ -83,11 +83,11 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 
 ### Performance
 
-- [ ] **PERF-01**: First Contentful Paint under 1.5 seconds
-- [ ] **PERF-02**: Time to Interactive under 3 seconds
-- [ ] **PERF-03**: Bundle size under 300KB gzipped
+- [x] **PERF-01**: First Contentful Paint under 1.5 seconds
+- [x] **PERF-02**: Time to Interactive under 3 seconds
+- [x] **PERF-03**: Bundle size under 300KB gzipped
 - [ ] **PERF-04**: Animations run at 60fps
-- [ ] **PERF-05**: Mobile responsive design works on phones and tablets
+- [x] **PERF-05**: Mobile responsive design works on phones and tablets
 
 ## v2 Requirements
 
@@ -137,11 +137,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
-| AUTH-05 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
+| AUTH-05 | Phase 1 | Complete |
 | GAME-01 | Phase 2 | Pending |
 | GAME-02 | Phase 2 | Pending |
 | GAME-03 | Phase 2 | Pending |
@@ -187,11 +187,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | A11Y-04 | Phase 7 | Pending |
 | A11Y-05 | Phase 7 | Pending |
 | A11Y-06 | Phase 7 | Pending |
-| PERF-01 | Phase 1 | Pending |
-| PERF-02 | Phase 1 | Pending |
-| PERF-03 | Phase 1 | Pending |
+| PERF-01 | Phase 1 | Complete |
+| PERF-02 | Phase 1 | Complete |
+| PERF-03 | Phase 1 | Complete |
 | PERF-04 | Phase 7 | Pending |
-| PERF-05 | Phase 1 | Pending |
+| PERF-05 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 50 total

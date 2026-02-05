@@ -12,7 +12,7 @@ This roadmap delivers a polished, educational trivia game in 7 phases. We build 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Auth** - Project setup and authentication system
+- [x] **Phase 1: Foundation & Auth** - Project setup and authentication system
 - [ ] **Phase 2: Game Core** - Basic game flow with questions, timer, and answer reveal
 - [ ] **Phase 3: Scoring System** - Server-side score calculation and validation
 - [ ] **Phase 4: Learning & Content** - Educational explanations, modals, and content management
@@ -155,7 +155,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 0/4 | Planned | - |
+| 1. Foundation & Auth | 4/4 | Complete | 2026-02-04 |
 | 2. Game Core | 0/TBD | Not started | - |
 | 3. Scoring System | 0/TBD | Not started | - |
 | 4. Learning & Content | 0/TBD | Not started | - |
