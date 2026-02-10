@@ -1,12 +1,21 @@
 import type { GameState, Question, GameAnswer } from '../../types/game';
 
+// Score data from server response
+export type ScoreData = {
+  basePoints: number;
+  speedBonus: number;
+  totalPoints: number;
+  correct: boolean;
+  correctAnswer: number;
+};
+
 // Action types for the game state machine
 export type GameAction =
-  | { type: 'START_GAME'; questions: Question[] }
+  | { type: 'SESSION_CREATED'; sessionId: string; questions: Question[] }
   | { type: 'SELECT_ANSWER'; optionIndex: number }
   | { type: 'LOCK_ANSWER' }
-  | { type: 'REVEAL_ANSWER'; timeRemaining: number }
-  | { type: 'TIMEOUT'; timeRemaining: number }
+  | { type: 'REVEAL_ANSWER'; timeRemaining: number; scoreData: ScoreData }
+  | { type: 'TIMEOUT'; timeRemaining: number; scoreData: ScoreData }
   | { type: 'NEXT_QUESTION' }
   | { type: 'QUIT_GAME' };
 
@@ -18,19 +27,23 @@ export const initialGameState: GameState = {
   selectedOption: null,
   answers: [],
   isTimerPaused: false,
+  sessionId: null,
+  totalScore: 0,
 };
 
 // Pure reducer function for game state transitions
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'START_GAME':
+    case 'SESSION_CREATED':
       return {
         ...state,
         phase: 'answering',
         questions: action.questions,
+        sessionId: action.sessionId,
         currentQuestionIndex: 0,
         selectedOption: null,
         answers: [],
+        totalScore: 0,
         isTimerPaused: false,
       };
 
@@ -72,14 +85,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const answer: GameAnswer = {
         questionId: currentQuestion.id,
         selectedOption: state.selectedOption,
-        correct: state.selectedOption === currentQuestion.correctAnswer,
+        correct: action.scoreData.correct,
+        correctAnswer: action.scoreData.correctAnswer,
         timeRemaining: action.timeRemaining,
+        basePoints: action.scoreData.basePoints,
+        speedBonus: action.scoreData.speedBonus,
+        totalPoints: action.scoreData.totalPoints,
+        responseTime: 25 - action.timeRemaining, // Calculate actual response time
       };
 
       return {
         ...state,
         phase: 'revealing',
         answers: [...state.answers, answer],
+        totalScore: state.totalScore + action.scoreData.totalPoints,
       };
     }
 
@@ -97,8 +116,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const answer: GameAnswer = {
         questionId: currentQuestion.id,
         selectedOption: null,
-        correct: false,
+        correct: action.scoreData.correct,
+        correctAnswer: action.scoreData.correctAnswer,
         timeRemaining: action.timeRemaining,
+        basePoints: action.scoreData.basePoints,
+        speedBonus: action.scoreData.speedBonus,
+        totalPoints: action.scoreData.totalPoints,
+        responseTime: 25 - action.timeRemaining,
       };
 
       return {
@@ -106,6 +130,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         phase: 'revealing',
         selectedOption: null,
         answers: [...state.answers, answer],
+        totalScore: state.totalScore + action.scoreData.totalPoints,
         isTimerPaused: true,
       };
     }

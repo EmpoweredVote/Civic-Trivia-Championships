@@ -25,13 +25,26 @@ export type GameAnswer = {
   questionId: string;
   selectedOption: number | null;
   correct: boolean;
+  correctAnswer: number; // The correct answer index (for UI highlight)
   timeRemaining: number;
+  basePoints: number;
+  speedBonus: number;
+  totalPoints: number;
+  responseTime: number;
 };
 
 export type GameResult = {
   answers: GameAnswer[];
   totalCorrect: number;
   totalQuestions: number;
+  totalScore: number;
+  totalBasePoints: number;
+  totalSpeedBonus: number;
+  fastestAnswer: {
+    questionIndex: number;
+    responseTime: number;
+    points: number;
+  } | null;
 };
 
 export type GameState = {
@@ -41,4 +54,6 @@ export type GameState = {
   selectedOption: number | null;
   answers: GameAnswer[];
   isTimerPaused: boolean;
+  sessionId: string | null;
+  totalScore: number;
 };
