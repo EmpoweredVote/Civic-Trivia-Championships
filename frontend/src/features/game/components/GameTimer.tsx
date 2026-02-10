@@ -4,6 +4,7 @@ interface GameTimerProps {
   duration: number;
   onTimeout: () => void;
   isPaused: boolean;
+  onTimeUpdate?: (remainingTime: number) => void;
   key?: string | number;
 }
 
@@ -11,6 +12,7 @@ export function GameTimer({
   duration,
   onTimeout,
   isPaused,
+  onTimeUpdate,
 }: GameTimerProps) {
   return (
     <div className="flex items-center justify-center">
@@ -26,11 +28,17 @@ export function GameTimer({
           return { shouldRepeat: false };
         }}
       >
-        {({ remainingTime }) => (
-          <div className="text-2xl font-bold text-white">
-            {remainingTime}
-          </div>
-        )}
+        {({ remainingTime }) => {
+          // Update parent with current remaining time
+          if (onTimeUpdate) {
+            onTimeUpdate(remainingTime);
+          }
+          return (
+            <div className="text-2xl font-bold text-white">
+              {remainingTime}
+            </div>
+          );
+        }}
       </CountdownCircleTimer>
     </div>
   );

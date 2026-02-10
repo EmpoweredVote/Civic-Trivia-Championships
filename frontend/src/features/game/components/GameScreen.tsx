@@ -35,6 +35,7 @@ export function GameScreen({
   const [showTimeoutFlash, setShowTimeoutFlash] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
+  const [currentTimeRemaining, setCurrentTimeRemaining] = useState(QUESTION_DURATION);
 
   // Question preview: show question text for 2s, then reveal options and start timer
   useEffect(() => {
@@ -70,12 +71,9 @@ export function GameScreen({
     }, 1000);
   };
 
-  // Handle lock in with time remaining calculation
+  // Handle lock in with actual time remaining
   const onLockIn = () => {
-    // In a real implementation, we'd get actual time remaining from the timer
-    // For now, we'll estimate based on the current state
-    const timeRemaining = 10; // Placeholder - would need timer ref to get actual value
-    lockAnswer(timeRemaining);
+    lockAnswer(currentTimeRemaining);
   };
 
   const handleQuitClick = () => {
@@ -160,6 +158,7 @@ export function GameScreen({
             key={timerKey}
             duration={QUESTION_DURATION}
             onTimeout={onTimeout}
+            onTimeUpdate={setCurrentTimeRemaining}
             isPaused={state.isTimerPaused || !showOptions}
           />
         </div>
