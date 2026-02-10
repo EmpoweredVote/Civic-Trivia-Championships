@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef } from 'react';
 import { gameReducer, initialGameState } from '../gameReducer';
-import { fetchQuestions } from '../../../services/gameService';
+import { createGameSession, submitAnswer } from '../../../services/gameService';
 import type { GameState, Question, GameResult } from '../../../types/game';
 
 // Timing constants
@@ -22,9 +22,10 @@ interface UseGameStateReturn {
 export function useGameState(): UseGameStateReturn {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
 
-  // Refs to track timeouts for cleanup
+  // Refs to track timeouts for cleanup and sessionId for server calls
   const suspenseTimeoutRef = useRef<number | null>(null);
   const autoAdvanceTimeoutRef = useRef<number | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
 
   // Derived values
   const currentQuestion = state.questions[state.currentQuestionIndex] || null;
@@ -35,16 +36,34 @@ export function useGameState(): UseGameStateReturn {
           answers: state.answers,
           totalCorrect: state.answers.filter((a) => a.correct).length,
           totalQuestions: state.questions.length,
+          totalScore: state.totalScore,
+          totalBasePoints: state.answers.reduce((sum, a) => sum + a.basePoints, 0),
+          totalSpeedBonus: state.answers.reduce((sum, a) => sum + a.speedBonus, 0),
+          fastestAnswer: (() => {
+            const correctAnswers = state.answers
+              .map((a, index) => ({ ...a, index }))
+              .filter((a) => a.correct);
+            if (correctAnswers.length === 0) return null;
+            const fastest = correctAnswers.reduce((min, a) =>
+              a.responseTime < min.responseTime ? a : min
+            );
+            return {
+              questionIndex: fastest.index,
+              responseTime: fastest.responseTime,
+              points: fastest.totalPoints,
+            };
+          })(),
         }
       : null;
 
-  // Start game by fetching questions
+  // Start game by creating a server session
   const startGame = async () => {
     try {
-      const questions = await fetchQuestions();
-      dispatch({ type: 'START_GAME', questions });
+      const { sessionId, questions } = await createGameSession();
+      sessionIdRef.current = sessionId;
+      dispatch({ type: 'SESSION_CREATED', sessionId, questions });
     } catch (error) {
-      console.error('Failed to fetch questions:', error);
+      console.error('Failed to create game session:', error);
       // Stay in idle phase on error
     }
   };
@@ -54,9 +73,9 @@ export function useGameState(): UseGameStateReturn {
     dispatch({ type: 'SELECT_ANSWER', optionIndex });
   };
 
-  // Lock in the selected answer with suspense pause
-  const lockAnswer = (timeRemaining: number) => {
-    if (state.phase !== 'selected') return;
+  // Lock in the selected answer with suspense pause and server submission
+  const lockAnswer = async (timeRemaining: number) => {
+    if (state.phase !== 'selected' || !sessionIdRef.current) return;
 
     dispatch({ type: 'LOCK_ANSWER' });
 
@@ -65,15 +84,90 @@ export function useGameState(): UseGameStateReturn {
       clearTimeout(suspenseTimeoutRef.current);
     }
 
-    // Start suspense pause before reveal
-    suspenseTimeoutRef.current = setTimeout(() => {
-      dispatch({ type: 'REVEAL_ANSWER', timeRemaining });
-    }, SUSPENSE_PAUSE_MS);
+    // Submit to server and wait for both suspense pause and server response
+    const currentQuestion = state.questions[state.currentQuestionIndex];
+    if (!currentQuestion) return;
+
+    try {
+      const [serverResponse] = await Promise.all([
+        submitAnswer(
+          sessionIdRef.current,
+          currentQuestion.id,
+          state.selectedOption,
+          timeRemaining
+        ),
+        new Promise((resolve) => setTimeout(resolve, SUSPENSE_PAUSE_MS)),
+      ]);
+
+      dispatch({
+        type: 'REVEAL_ANSWER',
+        timeRemaining,
+        scoreData: {
+          basePoints: serverResponse.basePoints,
+          speedBonus: serverResponse.speedBonus,
+          totalPoints: serverResponse.totalPoints,
+          correct: serverResponse.correct,
+          correctAnswer: serverResponse.correctAnswer,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to submit answer:', error);
+      // Fallback: reveal with zero score if server fails
+      dispatch({
+        type: 'REVEAL_ANSWER',
+        timeRemaining,
+        scoreData: {
+          basePoints: 0,
+          speedBonus: 0,
+          totalPoints: 0,
+          correct: false,
+          correctAnswer: currentQuestion.correctAnswer || 0,
+        },
+      });
+    }
   };
 
-  // Handle timer timeout
-  const handleTimeout = () => {
-    dispatch({ type: 'TIMEOUT', timeRemaining: 0 });
+  // Handle timer timeout - submit null answer to server
+  const handleTimeout = async () => {
+    if (!sessionIdRef.current) return;
+
+    const currentQuestion = state.questions[state.currentQuestionIndex];
+    if (!currentQuestion) return;
+
+    try {
+      const serverResponse = await submitAnswer(
+        sessionIdRef.current,
+        currentQuestion.id,
+        null,
+        0
+      );
+
+      dispatch({
+        type: 'TIMEOUT',
+        timeRemaining: 0,
+        scoreData: {
+          basePoints: serverResponse.basePoints,
+          speedBonus: serverResponse.speedBonus,
+          totalPoints: serverResponse.totalPoints,
+          correct: serverResponse.correct,
+          correctAnswer: serverResponse.correctAnswer,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to submit timeout answer:', error);
+      // Fallback: reveal with zero score if server fails
+      dispatch({
+        type: 'TIMEOUT',
+        timeRemaining: 0,
+        scoreData: {
+          basePoints: 0,
+          speedBonus: 0,
+          totalPoints: 0,
+          correct: false,
+          correctAnswer: currentQuestion.correctAnswer || 0,
+        },
+      });
+    }
   };
 
   // Move to next question
