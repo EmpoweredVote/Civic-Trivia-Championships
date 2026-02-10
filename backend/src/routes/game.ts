@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { sessionManager, Question } from '../services/sessionService.js';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ const __dirname = dirname(__filename);
 // Load questions from JSON file
 const questionsPath = join(__dirname, '../data/questions.json');
 const questionsData = readFileSync(questionsPath, 'utf-8');
-const allQuestions = JSON.parse(questionsData);
+const allQuestions: Question[] = JSON.parse(questionsData);
 
 // Fisher-Yates shuffle algorithm
 function shuffle<T>(array: T[]): T[] {
@@ -22,6 +23,11 @@ function shuffle<T>(array: T[]): T[] {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+// Helper to strip correctAnswer from questions (prevent client cheating)
+function stripAnswers(questions: Question[]): Omit<Question, 'correctAnswer'>[] {
+  return questions.map(({ correctAnswer, ...rest }) => rest);
 }
 
 // GET /questions - Returns 10 randomized questions
@@ -38,6 +44,125 @@ router.get('/questions', (_req: Request, res: Response) => {
     console.error('Error fetching questions:', error);
     res.status(500).json({
       error: 'Failed to fetch questions'
+    });
+  }
+});
+
+// POST /session - Create a new game session
+router.post('/session', (req: Request, res: Response) => {
+  try {
+    const { questionIds } = req.body;
+
+    let selectedQuestions: Question[];
+
+    if (questionIds && Array.isArray(questionIds)) {
+      // Validate that all question IDs exist
+      selectedQuestions = questionIds.map((id: string) => {
+        const question = allQuestions.find((q: Question) => q.id === id);
+        if (!question) {
+          throw new Error(`Question not found: ${id}`);
+        }
+        return question;
+      });
+    } else {
+      // No questionIds provided - pick 10 random questions
+      const shuffled = shuffle(allQuestions);
+      selectedQuestions = shuffled.slice(0, 10);
+    }
+
+    // Create session with userId (use "anonymous" for now - auth is optional per Phase 1)
+    const userId = 'anonymous'; // TODO: Get from auth middleware when auth is enforced
+    const sessionId = sessionManager.createSession(userId, selectedQuestions);
+
+    // Return session with questions stripped of correctAnswer
+    res.status(201).json({
+      sessionId,
+      questions: stripAnswers(selectedQuestions)
+    });
+  } catch (error) {
+    console.error('Error creating session:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create session';
+    res.status(400).json({
+      error: errorMessage
+    });
+  }
+});
+
+// POST /answer - Submit an answer for scoring
+router.post('/answer', (req: Request, res: Response) => {
+  try {
+    const { sessionId, questionId, selectedOption, timeRemaining } = req.body;
+
+    // Validate required fields
+    if (!sessionId || !questionId || timeRemaining === undefined) {
+      return res.status(400).json({
+        error: 'Missing required fields: sessionId, questionId, timeRemaining'
+      });
+    }
+
+    // Submit answer to session manager
+    const answer = sessionManager.submitAnswer(
+      sessionId,
+      questionId,
+      selectedOption ?? null,
+      timeRemaining
+    );
+
+    // Get the question to return the correct answer
+    const session = sessionManager.getSession(sessionId);
+    if (!session) {
+      return res.status(404).json({
+        error: 'Session not found'
+      });
+    }
+
+    const question = session.questions.find(q => q.id === questionId);
+    if (!question) {
+      return res.status(404).json({
+        error: 'Question not found'
+      });
+    }
+
+    // Return score with correct answer for client reveal
+    res.status(200).json({
+      basePoints: answer.basePoints,
+      speedBonus: answer.speedBonus,
+      totalPoints: answer.totalPoints,
+      correct: answer.basePoints > 0,
+      correctAnswer: question.correctAnswer,
+      flagged: answer.flagged
+    });
+  } catch (error) {
+    console.error('Error submitting answer:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to submit answer';
+    const statusCode = errorMessage.includes('Invalid or expired session') ? 404 : 400;
+    res.status(statusCode).json({
+      error: errorMessage
+    });
+  }
+});
+
+// GET /results/:sessionId - Get final game results
+router.get('/results/:sessionId', (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+
+    if (!sessionId) {
+      return res.status(400).json({
+        error: 'Session ID required'
+      });
+    }
+
+    // Get aggregated results
+    const results = sessionManager.getResults(sessionId);
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error('Error fetching results:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch results';
+    const statusCode = errorMessage.includes('Invalid or expired session') ? 404 : 500;
+    res.status(statusCode).json({
+      error: errorMessage
     });
   }
 });
