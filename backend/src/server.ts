@@ -5,6 +5,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { router as authRouter } from './routes/auth.js';
+import { router as gameRouter } from './routes/game.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,9 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // Auth routes
 app.use('/auth', authRouter);
+
+// Game routes
+app.use('/api/game', gameRouter);
 
 // Start server
 app.listen(PORT, () => {
