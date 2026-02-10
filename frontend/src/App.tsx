@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
+import { Game } from './pages/Game';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/play" element={<Game />} />
           </Route>
         </Routes>
       </AuthInitializer>
