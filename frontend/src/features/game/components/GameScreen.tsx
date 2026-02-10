@@ -8,7 +8,8 @@ import { AnswerGrid } from './AnswerGrid';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import type { GameState, Question } from '../../../types/game';
 
-const QUESTION_DURATION = 20; // seconds
+const QUESTION_DURATION = 25; // seconds
+const QUESTION_PREVIEW_MS = 2000; // show question before revealing options
 
 interface GameScreenProps {
   state: GameState;
@@ -33,20 +34,32 @@ export function GameScreen({
   const [showQuitDialog, setShowQuitDialog] = useState(false);
   const [showTimeoutFlash, setShowTimeoutFlash] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
+  const [showOptions, setShowOptions] = useState(false);
 
-  // Keyboard shortcuts for answer selection
-  const canUseKeyboard = state.phase === 'answering' || state.phase === 'selected';
+  // Question preview: show question text for 2s, then reveal options and start timer
+  useEffect(() => {
+    if (state.phase === 'answering' && !showOptions) {
+      const timer = setTimeout(() => {
+        setShowOptions(true);
+        setTimerKey((prev) => prev + 1);
+      }, QUESTION_PREVIEW_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [state.currentQuestionIndex, state.phase, showOptions]);
+
+  // Reset showOptions when moving to a new question
+  useEffect(() => {
+    if (state.phase === 'answering') {
+      setShowOptions(false);
+    }
+  }, [state.currentQuestionIndex]);
+
+  // Keyboard shortcuts for answer selection (only when options visible)
+  const canUseKeyboard = (state.phase === 'answering' || state.phase === 'selected') && showOptions;
   useKeyPress('a', () => selectAnswer(0), canUseKeyboard);
   useKeyPress('b', () => selectAnswer(1), canUseKeyboard);
   useKeyPress('c', () => selectAnswer(2), canUseKeyboard);
   useKeyPress('d', () => selectAnswer(3), canUseKeyboard);
-
-  // Reset timer when question changes
-  useEffect(() => {
-    if (state.phase === 'answering') {
-      setTimerKey((prev) => prev + 1);
-    }
-  }, [state.currentQuestionIndex, state.phase]);
 
   // Handle timeout with flash message
   const onTimeout = () => {
@@ -142,12 +155,12 @@ export function GameScreen({
             total={state.questions.length}
           />
 
-          {/* Timer */}
+          {/* Timer - paused during question preview */}
           <GameTimer
             key={timerKey}
             duration={QUESTION_DURATION}
             onTimeout={onTimeout}
-            isPaused={state.isTimerPaused}
+            isPaused={state.isTimerPaused || !showOptions}
           />
         </div>
 
@@ -183,16 +196,26 @@ export function GameScreen({
               questionNumber={state.currentQuestionIndex + 1}
             />
 
-            {/* Answer grid */}
-            <AnswerGrid
-              options={currentQuestion.options}
-              selectedOption={state.selectedOption}
-              correctAnswer={currentQuestion.correctAnswer}
-              phase={state.phase}
-              onSelect={selectAnswer}
-              onLockIn={onLockIn}
-              explanation={currentQuestion.explanation}
-            />
+            {/* Answer grid - revealed after question preview */}
+            <AnimatePresence>
+              {(showOptions || state.phase === 'selected' || state.phase === 'locked' || state.phase === 'revealing') && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <AnswerGrid
+                    options={currentQuestion.options}
+                    selectedOption={state.selectedOption}
+                    correctAnswer={currentQuestion.correctAnswer}
+                    phase={state.phase}
+                    onSelect={selectAnswer}
+                    onLockIn={onLockIn}
+                    explanation={currentQuestion.explanation}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </AnimatePresence>
       </div>

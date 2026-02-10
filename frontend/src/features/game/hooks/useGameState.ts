@@ -5,7 +5,7 @@ import type { GameState, Question, GameResult } from '../../../types/game';
 
 // Timing constants
 const SUSPENSE_PAUSE_MS = 1500; // Pause after lock-in before reveal
-const AUTO_ADVANCE_MS = 4000; // Auto-advance after reveal
+const AUTO_ADVANCE_MS = 6000; // Auto-advance after reveal
 
 interface UseGameStateReturn {
   state: GameState;
