@@ -1,0 +1,1082 @@
+[
+  {
+    "id": "q001",
+    "text": "How many amendments are in the Bill of Rights?",
+    "options": ["8", "10", "12", "15"],
+    "correctAnswer": 1,
+    "explanation": "The Bill of Rights consists of the first 10 amendments to the U.S. Constitution, ratified in 1791.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q002",
+    "text": "How many branches are there in the U.S. federal government?",
+    "options": ["2", "3", "4", "5"],
+    "correctAnswer": 1,
+    "explanation": "The U.S. federal government has three branches: Legislative (Congress), Executive (President), and Judicial (Supreme Court). This separation of powers prevents any one branch from becoming too powerful.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q003",
+    "text": "What is the minimum age requirement to become President of the United States?",
+    "options": ["30 years old", "35 years old", "40 years old", "45 years old"],
+    "correctAnswer": 1,
+    "explanation": "The Constitution requires that the President be at least 35 years old, a natural-born citizen, and have lived in the U.S. for at least 14 years.",
+    "difficulty": "easy",
+    "topic": "Elections"
+  },
+  {
+    "id": "q004",
+    "text": "How many senators does each state have in the U.S. Senate?",
+    "options": ["1", "2", "Depends on population", "4"],
+    "correctAnswer": 1,
+    "explanation": "Each state has exactly 2 senators, regardless of population size. This ensures equal representation for all states in the Senate.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q005",
+    "text": "Which amendment to the Constitution abolished slavery?",
+    "options": ["11th Amendment", "13th Amendment", "15th Amendment", "19th Amendment"],
+    "correctAnswer": 1,
+    "explanation": "The 13th Amendment, ratified in 1865 after the Civil War, abolished slavery and involuntary servitude except as punishment for a crime.",
+    "difficulty": "easy",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q006",
+    "text": "What does the First Amendment protect?",
+    "options": ["Right to bear arms", "Freedom of speech and religion", "Right to remain silent", "Right to vote"],
+    "correctAnswer": 1,
+    "explanation": "The First Amendment protects five fundamental freedoms: speech, religion, press, assembly, and petition. These are considered essential to democracy.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q007",
+    "text": "How many justices currently serve on the U.S. Supreme Court?",
+    "options": ["7", "9", "11", "12"],
+    "correctAnswer": 1,
+    "explanation": "There are 9 justices on the Supreme Court: 1 Chief Justice and 8 Associate Justices. This number was set by Congress in 1869.",
+    "difficulty": "easy",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q008",
+    "text": "What is the term length for a U.S. Representative?",
+    "options": ["2 years", "4 years", "6 years", "8 years"],
+    "correctAnswer": 0,
+    "explanation": "U.S. Representatives serve 2-year terms. This shorter term was designed to keep the House of Representatives closely connected to the will of the people.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q009",
+    "text": "Which branch of government has the power to declare war?",
+    "options": ["Executive", "Congress", "Supreme Court", "The Pentagon"],
+    "correctAnswer": 1,
+    "explanation": "Only Congress has the constitutional power to declare war. However, the President is Commander-in-Chief of the armed forces.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q010",
+    "text": "What is the minimum voting age in the United States?",
+    "options": ["16", "18", "21", "25"],
+    "correctAnswer": 1,
+    "explanation": "The 26th Amendment, ratified in 1971, lowered the voting age from 21 to 18. This was partly in response to the Vietnam War draft.",
+    "difficulty": "easy",
+    "topic": "Elections"
+  },
+  {
+    "id": "q011",
+    "text": "Which amendment gave women the right to vote?",
+    "options": ["15th Amendment", "17th Amendment", "19th Amendment", "21st Amendment"],
+    "correctAnswer": 2,
+    "explanation": "The 19th Amendment, ratified in 1920, prohibited denying the right to vote based on sex, effectively granting women's suffrage nationwide.",
+    "difficulty": "easy",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q012",
+    "text": "How many years is one term for a U.S. Senator?",
+    "options": ["2 years", "4 years", "6 years", "8 years"],
+    "correctAnswer": 2,
+    "explanation": "U.S. Senators serve 6-year terms. Senate terms are staggered so that approximately one-third of the Senate is up for election every two years.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q013",
+    "text": "What is the capital of the United States?",
+    "options": ["New York City", "Philadelphia", "Washington, D.C.", "Boston"],
+    "correctAnswer": 2,
+    "explanation": "Washington, D.C. has been the capital since 1800. It's a federal district, not part of any state, created specifically to serve as the nation's capital.",
+    "difficulty": "easy",
+    "topic": "U.S. History"
+  },
+  {
+    "id": "q014",
+    "text": "Who is third in line for presidential succession after the Vice President?",
+    "options": ["Secretary of State", "Speaker of the House", "Senate Majority Leader", "Attorney General"],
+    "correctAnswer": 1,
+    "explanation": "The Speaker of the House is third in line, followed by the President Pro Tempore of the Senate, then Cabinet members starting with the Secretary of State.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q015",
+    "text": "What document begins with 'We the People'?",
+    "options": ["Declaration of Independence", "Bill of Rights", "U.S. Constitution", "Federalist Papers"],
+    "correctAnswer": 2,
+    "explanation": "The U.S. Constitution's preamble begins with 'We the People,' emphasizing that the government's authority comes from the citizens.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q016",
+    "text": "How many total members are in the U.S. House of Representatives?",
+    "options": ["100", "435", "535", "538"],
+    "correctAnswer": 1,
+    "explanation": "There are 435 voting members in the House of Representatives. This number has been fixed since 1913, though seats are redistributed based on population after each census.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q017",
+    "text": "Which amendment protects against unreasonable searches and seizures?",
+    "options": ["2nd Amendment", "4th Amendment", "5th Amendment", "8th Amendment"],
+    "correctAnswer": 1,
+    "explanation": "The 4th Amendment protects against unreasonable searches and seizures and requires warrants to be based on probable cause.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q018",
+    "text": "What is the Electoral College?",
+    "options": ["A university in Washington D.C.", "The system for electing the President", "A group of Supreme Court clerks", "A congressional committee"],
+    "correctAnswer": 1,
+    "explanation": "The Electoral College is the system established by the Constitution for electing the President. Each state gets electors equal to its total congressional representation.",
+    "difficulty": "easy",
+    "topic": "Elections"
+  },
+  {
+    "id": "q019",
+    "text": "What is the maximum number of terms a President can serve?",
+    "options": ["1", "2", "3", "No limit"],
+    "correctAnswer": 1,
+    "explanation": "The 22nd Amendment, ratified in 1951, limits Presidents to two terms. This was enacted after Franklin D. Roosevelt won four terms.",
+    "difficulty": "easy",
+    "topic": "Elections"
+  },
+  {
+    "id": "q020",
+    "text": "Which amendment guarantees the right to a speedy and public trial?",
+    "options": ["5th Amendment", "6th Amendment", "7th Amendment", "8th Amendment"],
+    "correctAnswer": 1,
+    "explanation": "The 6th Amendment guarantees the right to a speedy and public trial, an impartial jury, to be informed of charges, and to have legal counsel.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q021",
+    "text": "Who presides over the U.S. Senate?",
+    "options": ["The President", "The Vice President", "The Senate Majority Leader", "The Chief Justice"],
+    "correctAnswer": 1,
+    "explanation": "The Vice President serves as President of the Senate but only votes to break ties. Day-to-day operations are usually run by the President Pro Tempore.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q022",
+    "text": "What is the supreme law of the land in the United States?",
+    "options": ["Acts of Congress", "Executive Orders", "The Constitution", "Supreme Court decisions"],
+    "correctAnswer": 2,
+    "explanation": "The Constitution is the supreme law of the land. All laws, executive actions, and judicial decisions must conform to the Constitution.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q023",
+    "text": "How many total Electoral College votes are there?",
+    "options": ["435", "535", "538", "550"],
+    "correctAnswer": 2,
+    "explanation": "There are 538 total electoral votes: 435 for House members, 100 for Senators, and 3 for Washington D.C. A candidate needs 270 to win.",
+    "difficulty": "easy",
+    "topic": "Elections"
+  },
+  {
+    "id": "q024",
+    "text": "Which amendment protects the right to bear arms?",
+    "options": ["1st Amendment", "2nd Amendment", "3rd Amendment", "4th Amendment"],
+    "correctAnswer": 1,
+    "explanation": "The 2nd Amendment protects the right to keep and bear arms. Its interpretation and scope continue to be debated in courts and legislatures.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q025",
+    "text": "What is the role of the judicial branch?",
+    "options": ["Make laws", "Enforce laws", "Interpret laws", "Repeal laws"],
+    "correctAnswer": 2,
+    "explanation": "The judicial branch interprets laws and determines if they are constitutional. This power of judicial review was established in Marbury v. Madison (1803).",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q026",
+    "text": "In which year was the U.S. Constitution ratified?",
+    "options": ["1776", "1783", "1788", "1791"],
+    "correctAnswer": 2,
+    "explanation": "The Constitution was ratified in 1788 when New Hampshire became the ninth state to approve it. It replaced the Articles of Confederation.",
+    "difficulty": "easy",
+    "topic": "U.S. History"
+  },
+  {
+    "id": "q027",
+    "text": "What is a filibuster?",
+    "options": ["A type of veto", "A prolonged speech to delay a vote", "A Supreme Court decision", "An executive order"],
+    "correctAnswer": 1,
+    "explanation": "A filibuster is a prolonged speech or debate in the Senate used to delay or prevent a vote on legislation. It can be ended with a 60-vote cloture.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q028",
+    "text": "Which amendment ended prohibition?",
+    "options": ["18th Amendment", "19th Amendment", "21st Amendment", "22nd Amendment"],
+    "correctAnswer": 2,
+    "explanation": "The 21st Amendment, ratified in 1933, repealed the 18th Amendment which had prohibited alcohol. It's the only amendment to repeal another.",
+    "difficulty": "easy",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q029",
+    "text": "What is the main job of Congress?",
+    "options": ["Enforce laws", "Make laws", "Interpret laws", "Veto laws"],
+    "correctAnswer": 1,
+    "explanation": "Congress, the legislative branch, is responsible for making federal laws. A bill must pass both the House and Senate and be signed by the President to become law.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q030",
+    "text": "How many amendments have been added to the Constitution?",
+    "options": ["10", "17", "27", "33"],
+    "correctAnswer": 2,
+    "explanation": "There have been 27 amendments to the Constitution. The most recent, the 27th Amendment about congressional pay, was ratified in 1992.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q031",
+    "text": "What does the 5th Amendment protect against?",
+    "options": ["Unreasonable search", "Self-incrimination", "Cruel punishment", "Excessive bail"],
+    "correctAnswer": 1,
+    "explanation": "The 5th Amendment protects against self-incrimination (the right to remain silent), double jeopardy, and guarantees due process and just compensation for property.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q032",
+    "text": "Who nominates federal judges?",
+    "options": ["The Senate", "The President", "The Supreme Court", "State governors"],
+    "correctAnswer": 1,
+    "explanation": "The President nominates federal judges, including Supreme Court justices, but the Senate must confirm them with a majority vote.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q033",
+    "text": "Which constitutional amendment established the income tax?",
+    "options": ["14th Amendment", "15th Amendment", "16th Amendment", "17th Amendment"],
+    "correctAnswer": 2,
+    "explanation": "The 16th Amendment, ratified in 1913, gave Congress the power to collect income taxes without apportioning them among the states.",
+    "difficulty": "easy",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q034",
+    "text": "What percentage of Congress is needed to override a presidential veto?",
+    "options": ["51%", "60%", "Two-thirds", "Three-fourths"],
+    "correctAnswer": 2,
+    "explanation": "A two-thirds vote in both the House and Senate is required to override a presidential veto. This is a significant hurdle designed to balance executive and legislative power.",
+    "difficulty": "easy",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q035",
+    "text": "What does the 10th Amendment reserve to the states?",
+    "options": ["Tax authority", "Military power", "Powers not delegated to federal government", "Education systems"],
+    "correctAnswer": 2,
+    "explanation": "The 10th Amendment states that powers not delegated to the federal government, nor prohibited to the states, are reserved to the states or the people.",
+    "difficulty": "easy",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q036",
+    "text": "What is impeachment?",
+    "options": ["Removing someone from office", "Charging an official with misconduct", "A criminal trial", "A resignation"],
+    "correctAnswer": 1,
+    "explanation": "Impeachment is the formal charging of a public official with misconduct. The House impeaches, and the Senate holds the trial. Conviction requires two-thirds of the Senate.",
+    "difficulty": "medium",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q037",
+    "text": "Which case established the principle of 'separate but equal'?",
+    "options": ["Brown v. Board of Education", "Plessy v. Ferguson", "Marbury v. Madison", "Roe v. Wade"],
+    "correctAnswer": 1,
+    "explanation": "Plessy v. Ferguson (1896) established 'separate but equal' doctrine, allowing racial segregation. This was overturned by Brown v. Board of Education in 1954.",
+    "difficulty": "medium",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q038",
+    "text": "How many states must ratify a constitutional amendment for it to become law?",
+    "options": ["Two-thirds", "Three-fourths", "All 50 states", "A simple majority"],
+    "correctAnswer": 1,
+    "explanation": "Three-fourths of states (currently 38 out of 50) must ratify an amendment for it to become part of the Constitution.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q039",
+    "text": "What is judicial review?",
+    "options": ["The President reviewing court decisions", "Congress evaluating judges", "Courts determining if laws are constitutional", "Appellate court review"],
+    "correctAnswer": 2,
+    "explanation": "Judicial review is the power of courts to determine whether laws and government actions are constitutional. This power was established in Marbury v. Madison (1803).",
+    "difficulty": "medium",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q040",
+    "text": "Which amendment gave Congress the power to levy an income tax?",
+    "options": ["14th Amendment", "15th Amendment", "16th Amendment", "17th Amendment"],
+    "correctAnswer": 2,
+    "explanation": "The 16th Amendment, ratified in 1913, explicitly gave Congress the power to tax income, overturning previous Supreme Court rulings that had limited this power.",
+    "difficulty": "medium",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q041",
+    "text": "What is the purpose of the Commerce Clause?",
+    "options": ["Regulate trade between states", "Control monetary policy", "Set tariffs", "Manage patents"],
+    "correctAnswer": 0,
+    "explanation": "The Commerce Clause gives Congress the power to regulate interstate commerce. It has been broadly interpreted and is the basis for much federal regulation.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q042",
+    "text": "Which amendment provided for direct election of U.S. Senators?",
+    "options": ["15th Amendment", "16th Amendment", "17th Amendment", "18th Amendment"],
+    "correctAnswer": 2,
+    "explanation": "The 17th Amendment, ratified in 1913, established direct election of senators by the people. Previously, state legislatures chose senators.",
+    "difficulty": "medium",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q043",
+    "text": "What is a pocket veto?",
+    "options": ["A veto that can be overridden", "When the President doesn't sign a bill before Congress adjourns", "A line-item veto", "A veto by the Senate"],
+    "correctAnswer": 1,
+    "explanation": "A pocket veto occurs when the President doesn't sign a bill and Congress adjourns within 10 days. The bill dies and cannot be overridden.",
+    "difficulty": "medium",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q044",
+    "text": "Which Supreme Court case established judicial review?",
+    "options": ["McCulloch v. Maryland", "Marbury v. Madison", "Gibbons v. Ogden", "Brown v. Board of Education"],
+    "correctAnswer": 1,
+    "explanation": "Marbury v. Madison (1803) established the principle of judicial review, giving courts the power to strike down laws that violate the Constitution.",
+    "difficulty": "medium",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q045",
+    "text": "What is the Necessary and Proper Clause?",
+    "options": ["Presidential emergency powers", "Congress's implied powers", "Judicial discretion", "State sovereignty"],
+    "correctAnswer": 1,
+    "explanation": "The Necessary and Proper Clause (Article I, Section 8) gives Congress implied powers to make laws needed to carry out its enumerated powers. Also called the Elastic Clause.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q046",
+    "text": "What is the purpose of the Establishment Clause?",
+    "options": ["Set up federal courts", "Prevent government establishment of religion", "Create the military", "Establish voting districts"],
+    "correctAnswer": 1,
+    "explanation": "The Establishment Clause in the First Amendment prohibits the government from establishing an official religion or favoring one religion over others.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q047",
+    "text": "How many senators are needed to invoke cloture and end a filibuster?",
+    "options": ["51", "55", "60", "67"],
+    "correctAnswer": 2,
+    "explanation": "Currently, 60 senators are needed to invoke cloture and end debate. This three-fifths threshold was set in 1975, down from the previous two-thirds requirement.",
+    "difficulty": "medium",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q048",
+    "text": "Which amendment abolished poll taxes in federal elections?",
+    "options": ["15th Amendment", "19th Amendment", "23rd Amendment", "24th Amendment"],
+    "correctAnswer": 3,
+    "explanation": "The 24th Amendment, ratified in 1964, prohibited poll taxes in federal elections. Poll taxes had been used to disenfranchise poor and minority voters.",
+    "difficulty": "medium",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q049",
+    "text": "What is the difference between original and appellate jurisdiction?",
+    "options": ["Criminal vs. civil", "Original hears first, appellate reviews", "State vs. federal", "Jury vs. bench trial"],
+    "correctAnswer": 1,
+    "explanation": "Original jurisdiction means a court can hear a case first. Appellate jurisdiction means a court reviews decisions from lower courts. The Supreme Court mainly has appellate jurisdiction.",
+    "difficulty": "medium",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q050",
+    "text": "What is a caucus in the context of elections?",
+    "options": ["A primary election", "A meeting to select candidates", "A campaign debate", "A fundraising event"],
+    "correctAnswer": 1,
+    "explanation": "A caucus is a meeting where party members gather to select candidates and discuss party business. Iowa's caucuses are the first in the presidential nomination process.",
+    "difficulty": "medium",
+    "topic": "Elections"
+  },
+  {
+    "id": "q051",
+    "text": "Which case ruled that separate educational facilities are inherently unequal?",
+    "options": ["Plessy v. Ferguson", "Brown v. Board of Education", "Miranda v. Arizona", "Gideon v. Wainwright"],
+    "correctAnswer": 1,
+    "explanation": "Brown v. Board of Education (1954) unanimously ruled that racial segregation in public schools violated the 14th Amendment's Equal Protection Clause.",
+    "difficulty": "medium",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q052",
+    "text": "What is gerrymandering?",
+    "options": ["Campaign finance violations", "Manipulating district boundaries for advantage", "Voter fraud", "Lobbying"],
+    "correctAnswer": 1,
+    "explanation": "Gerrymandering is drawing electoral district boundaries to favor one party or group. The term comes from Governor Elbridge Gerry and a salamander-shaped district.",
+    "difficulty": "medium",
+    "topic": "Elections"
+  },
+  {
+    "id": "q053",
+    "text": "What is the primary function of the executive branch?",
+    "options": ["Make laws", "Enforce laws", "Interpret laws", "Repeal laws"],
+    "correctAnswer": 1,
+    "explanation": "The executive branch, led by the President, enforces and administers federal laws. It includes federal agencies, departments, and the military.",
+    "difficulty": "medium",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q054",
+    "text": "Which amendment lowered the voting age to 18?",
+    "options": ["24th Amendment", "25th Amendment", "26th Amendment", "27th Amendment"],
+    "correctAnswer": 2,
+    "explanation": "The 26th Amendment, ratified in 1971, lowered the voting age from 21 to 18. The slogan 'old enough to fight, old enough to vote' reflected Vietnam War concerns.",
+    "difficulty": "medium",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q055",
+    "text": "What is the purpose of checks and balances?",
+    "options": ["Balance the budget", "Prevent any branch from becoming too powerful", "Manage the economy", "Conduct elections"],
+    "correctAnswer": 1,
+    "explanation": "Checks and balances allow each branch to limit the powers of the others. Examples include presidential vetoes, Senate confirmation, and judicial review.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q056",
+    "text": "What does the Full Faith and Credit Clause require?",
+    "options": ["Federal debt payment", "States must respect each other's laws and records", "Religious freedom", "Credit reporting"],
+    "correctAnswer": 1,
+    "explanation": "The Full Faith and Credit Clause requires states to recognize the legal documents, court decisions, and records of other states, promoting interstate unity.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q057",
+    "text": "What is the role of the Senate in treaty ratification?",
+    "options": ["Simple majority approval", "Two-thirds approval", "No role; President decides", "Unanimous consent"],
+    "correctAnswer": 1,
+    "explanation": "The Senate must approve treaties with a two-thirds vote. This gives the Senate significant influence over U.S. foreign policy.",
+    "difficulty": "medium",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q058",
+    "text": "Which amendment granted Washington D.C. electoral votes?",
+    "options": ["20th Amendment", "22nd Amendment", "23rd Amendment", "24th Amendment"],
+    "correctAnswer": 2,
+    "explanation": "The 23rd Amendment, ratified in 1961, gave Washington D.C. electoral votes equal to the least populous state (currently 3 votes).",
+    "difficulty": "medium",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q059",
+    "text": "What is a concurrent power?",
+    "options": ["Powers held only by states", "Powers held only by federal government", "Powers shared by federal and state governments", "Presidential emergency powers"],
+    "correctAnswer": 2,
+    "explanation": "Concurrent powers are shared by both federal and state governments, such as the power to tax, build roads, and establish courts.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q060",
+    "text": "Which case established the Miranda rights?",
+    "options": ["Gideon v. Wainwright", "Mapp v. Ohio", "Miranda v. Arizona", "Escobedo v. Illinois"],
+    "correctAnswer": 2,
+    "explanation": "Miranda v. Arizona (1966) established that suspects must be informed of their rights (right to remain silent, right to an attorney) before police interrogation.",
+    "difficulty": "medium",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q061",
+    "text": "What is the Supremacy Clause?",
+    "options": ["Presidential authority", "Federal law takes precedence over state law", "Supreme Court jurisdiction", "Senate leadership"],
+    "correctAnswer": 1,
+    "explanation": "The Supremacy Clause (Article VI) establishes that the Constitution, federal laws, and treaties are the supreme law of the land, above state laws.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q062",
+    "text": "What is the War Powers Resolution?",
+    "options": ["Declares war authority", "Limits President's power to deploy troops without Congress", "Military budget process", "Defense strategy"],
+    "correctAnswer": 1,
+    "explanation": "The War Powers Resolution (1973) requires the President to notify Congress within 48 hours of deploying military forces and limits deployments to 60 days without congressional approval.",
+    "difficulty": "medium",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q063",
+    "text": "Which amendment deals with presidential disability and succession?",
+    "options": ["20th Amendment", "22nd Amendment", "23rd Amendment", "25th Amendment"],
+    "correctAnswer": 3,
+    "explanation": "The 25th Amendment, ratified in 1967, clarifies presidential succession and establishes procedures for dealing with presidential disability.",
+    "difficulty": "medium",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q064",
+    "text": "What is the purpose of the Emoluments Clause?",
+    "options": ["Set congressional salaries", "Prevent federal officials from accepting foreign gifts", "Establish pensions", "Define benefits"],
+    "correctAnswer": 1,
+    "explanation": "The Emoluments Clause prohibits federal officials from accepting gifts, titles, or payments from foreign governments without congressional consent, preventing corruption.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q065",
+    "text": "What does the 14th Amendment's Equal Protection Clause guarantee?",
+    "options": ["Voting rights", "Equal treatment under law", "Property rights", "Freedom of speech"],
+    "correctAnswer": 1,
+    "explanation": "The Equal Protection Clause requires states to provide equal protection of the laws to all people. It has been the basis for many civil rights advances.",
+    "difficulty": "medium",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q066",
+    "text": "What is the difference between a primary and a caucus?",
+    "options": ["Federal vs. state", "Secret ballot vs. public meeting", "Party vs. independent", "Winner-take-all vs. proportional"],
+    "correctAnswer": 1,
+    "explanation": "Primaries use secret ballots like general elections, while caucuses are public meetings where participants openly show support. Primaries typically have higher turnout.",
+    "difficulty": "medium",
+    "topic": "Elections"
+  },
+  {
+    "id": "q067",
+    "text": "Which court case established that states cannot tax federal institutions?",
+    "options": ["Marbury v. Madison", "McCulloch v. Maryland", "Gibbons v. Ogden", "Dred Scott v. Sandford"],
+    "correctAnswer": 1,
+    "explanation": "McCulloch v. Maryland (1819) established federal supremacy and ruled that states cannot tax federal institutions. Chief Justice Marshall wrote 'the power to tax is the power to destroy.'",
+    "difficulty": "medium",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q068",
+    "text": "What is habeas corpus?",
+    "options": ["Right to remain silent", "Protection from illegal detention", "Right to trial by jury", "Freedom of assembly"],
+    "correctAnswer": 1,
+    "explanation": "Habeas corpus is the right to challenge unlawful detention before a court. The Constitution states it can only be suspended in cases of rebellion or invasion.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q069",
+    "text": "Which amendment prohibited slavery?",
+    "options": ["12th Amendment", "13th Amendment", "14th Amendment", "15th Amendment"],
+    "correctAnswer": 1,
+    "explanation": "The 13th Amendment, ratified in December 1865 after the Civil War, abolished slavery and involuntary servitude except as punishment for a crime.",
+    "difficulty": "medium",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q070",
+    "text": "What is stare decisis?",
+    "options": ["Standing in court", "Following precedent", "State rights", "Jury nullification"],
+    "correctAnswer": 1,
+    "explanation": "Stare decisis is the legal principle of following precedent. Courts generally follow previous decisions on similar cases, promoting consistency and predictability.",
+    "difficulty": "medium",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q071",
+    "text": "What is the primary purpose of the census conducted every 10 years?",
+    "options": ["Tax collection", "Determine congressional representation", "Military recruitment", "School funding"],
+    "correctAnswer": 1,
+    "explanation": "The census counts the U.S. population to determine how many House seats each state gets and how electoral votes are distributed. It also guides federal funding.",
+    "difficulty": "medium",
+    "topic": "Civic Participation"
+  },
+  {
+    "id": "q072",
+    "text": "What is an executive order?",
+    "options": ["A law passed by Congress", "A presidential directive with force of law", "A Supreme Court ruling", "A military command"],
+    "correctAnswer": 1,
+    "explanation": "An executive order is a directive issued by the President that has the force of law. It must be based on constitutional or statutory authority and can be challenged in court.",
+    "difficulty": "medium",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q073",
+    "text": "Which amendment extended voting rights regardless of race?",
+    "options": ["13th Amendment", "14th Amendment", "15th Amendment", "19th Amendment"],
+    "correctAnswer": 2,
+    "explanation": "The 15th Amendment, ratified in 1870, prohibited denying the right to vote based on race, color, or previous condition of servitude.",
+    "difficulty": "medium",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q074",
+    "text": "What is the role of the President Pro Tempore of the Senate?",
+    "options": ["Presides when Vice President is absent", "Majority leader", "Investigates corruption", "Confirms judges"],
+    "correctAnswer": 0,
+    "explanation": "The President Pro Tempore, typically the most senior majority party senator, presides over the Senate when the Vice President is absent.",
+    "difficulty": "medium",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q075",
+    "text": "What does the 8th Amendment prohibit?",
+    "options": ["Self-incrimination", "Unreasonable search", "Cruel and unusual punishment", "Double jeopardy"],
+    "correctAnswer": 2,
+    "explanation": "The 8th Amendment prohibits excessive bail, excessive fines, and cruel and unusual punishment. It's often cited in death penalty and prison condition cases.",
+    "difficulty": "medium",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q076",
+    "text": "What is the significance of the Three-Fifths Compromise?",
+    "options": ["Senate representation", "Tax rates", "Counted enslaved people as 3/5 of a person for representation", "Tariff policy"],
+    "correctAnswer": 2,
+    "explanation": "The Three-Fifths Compromise counted each enslaved person as three-fifths of a person for representation and taxation purposes. It was nullified by the 13th and 14th Amendments.",
+    "difficulty": "hard",
+    "topic": "U.S. History"
+  },
+  {
+    "id": "q077",
+    "text": "Which constitutional provision prevents states from making treaties with foreign nations?",
+    "options": ["Commerce Clause", "Supremacy Clause", "Treaty Clause", "Article I, Section 10"],
+    "correctAnswer": 3,
+    "explanation": "Article I, Section 10 explicitly prohibits states from entering into treaties, alliances, or confederations, reserving foreign policy to the federal government.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q078",
+    "text": "What was the significance of Gibbons v. Ogden?",
+    "options": ["Established judicial review", "Defined interstate commerce power", "Ended segregation", "Protected speech"],
+    "correctAnswer": 1,
+    "explanation": "Gibbons v. Ogden (1824) broadly interpreted Congress's power to regulate interstate commerce, establishing federal authority over economic activities crossing state lines.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q079",
+    "text": "What is incorporation doctrine?",
+    "options": ["Business formation", "Applying Bill of Rights to states via 14th Amendment", "Federal agencies", "Territory admission"],
+    "correctAnswer": 1,
+    "explanation": "Incorporation doctrine is the process by which the Supreme Court has applied most Bill of Rights protections to states through the 14th Amendment's Due Process Clause.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q080",
+    "text": "What is a writ of certiorari?",
+    "options": ["Arrest warrant", "Order for Supreme Court to review a case", "Subpoena", "Habeas corpus"],
+    "correctAnswer": 1,
+    "explanation": "A writ of certiorari is an order by which the Supreme Court agrees to review a lower court decision. The Court receives thousands but grants cert to fewer than 100 cases yearly.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q081",
+    "text": "Which case upheld the Affordable Care Act's individual mandate as a tax?",
+    "options": ["United States v. Lopez", "NFIB v. Sebelius", "Wickard v. Filburn", "United States v. Morrison"],
+    "correctAnswer": 1,
+    "explanation": "National Federation of Independent Business v. Sebelius (2012) upheld the ACA's individual mandate as a valid exercise of Congress's taxing power.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q082",
+    "text": "What is the difference between enumerated and implied powers?",
+    "options": ["State vs. federal", "Written in Constitution vs. necessary to carry out enumerated powers", "Legislative vs. executive", "Original vs. amended"],
+    "correctAnswer": 1,
+    "explanation": "Enumerated powers are explicitly listed in the Constitution. Implied powers, derived from the Necessary and Proper Clause, are needed to execute enumerated powers.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q083",
+    "text": "What was the main issue in United States v. Nixon?",
+    "options": ["War powers", "Executive privilege vs. judicial oversight", "Impeachment", "Election fraud"],
+    "correctAnswer": 1,
+    "explanation": "United States v. Nixon (1974) ruled that executive privilege is not absolute and that President Nixon had to turn over Watergate tapes, leading to his resignation.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q084",
+    "text": "What is the Lemon test?",
+    "options": ["Test for interstate commerce", "Three-part test for Establishment Clause cases", "Standard for due process", "Criminal procedure standard"],
+    "correctAnswer": 1,
+    "explanation": "The Lemon test (from Lemon v. Kurtzman, 1971) evaluates if government action violates the Establishment Clause: secular purpose, neither advances nor inhibits religion, no excessive entanglement.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q085",
+    "text": "Which amendment changed the start date for presidential and congressional terms?",
+    "options": ["18th Amendment", "19th Amendment", "20th Amendment", "21st Amendment"],
+    "correctAnswer": 2,
+    "explanation": "The 20th Amendment (1933) moved presidential inauguration from March 4 to January 20 and congressional sessions to January 3, reducing the lame duck period.",
+    "difficulty": "hard",
+    "topic": "Amendments"
+  },
+  {
+    "id": "q086",
+    "text": "What is the significance of the Slaughterhouse Cases?",
+    "options": ["Food safety", "Narrowly interpreted 14th Amendment Privileges or Immunities Clause", "Interstate commerce", "Labor rights"],
+    "correctAnswer": 1,
+    "explanation": "The Slaughterhouse Cases (1873) narrowly interpreted the 14th Amendment's Privileges or Immunities Clause, limiting federal protection of civil rights for decades.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q087",
+    "text": "What is the exclusionary rule?",
+    "options": ["Immigration policy", "Evidence obtained illegally cannot be used in court", "Senate rules", "Executive privilege"],
+    "correctAnswer": 1,
+    "explanation": "The exclusionary rule, established in Mapp v. Ohio (1961), prohibits using evidence obtained through illegal searches and seizures in criminal trials.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q088",
+    "text": "Which case addressed whether the federal government could regulate local activities affecting interstate commerce?",
+    "options": ["Gibbons v. Ogden", "Wickard v. Filburn", "McCulloch v. Maryland", "Heart of Atlanta Motel v. United States"],
+    "correctAnswer": 1,
+    "explanation": "Wickard v. Filburn (1942) held that even purely local activity (growing wheat for personal use) could be regulated if it substantially affects interstate commerce.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q089",
+    "text": "What is a continuing resolution in Congress?",
+    "options": ["Permanent law", "Temporary funding to avoid government shutdown", "Constitutional amendment process", "Impeachment procedure"],
+    "correctAnswer": 1,
+    "explanation": "A continuing resolution temporarily funds government operations when Congress hasn't passed regular appropriation bills, preventing a shutdown.",
+    "difficulty": "hard",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q090",
+    "text": "What was the significance of New York Times Co. v. United States?",
+    "options": ["Established freedom of press", "Allowed publication of Pentagon Papers", "Created libel standards", "Protected whistleblowers"],
+    "correctAnswer": 1,
+    "explanation": "New York Times Co. v. United States (1971) rejected prior restraint and allowed publication of the Pentagon Papers, strongly protecting press freedom.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q091",
+    "text": "What is the Presentment Clause?",
+    "options": ["Presidential veto power", "Requires bills to be presented to President for signature", "Inauguration requirements", "State of the Union"],
+    "correctAnswer": 1,
+    "explanation": "The Presentment Clause (Article I, Section 7) requires that bills passed by Congress be presented to the President for approval or veto before becoming law.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q092",
+    "text": "Which case established the right to counsel in criminal cases?",
+    "options": ["Miranda v. Arizona", "Gideon v. Wainwright", "Mapp v. Ohio", "Escobedo v. Illinois"],
+    "correctAnswer": 1,
+    "explanation": "Gideon v. Wainwright (1963) established that states must provide attorneys for criminal defendants who cannot afford them, incorporating the 6th Amendment right.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q093",
+    "text": "What is the difference between a concurrent resolution and a joint resolution?",
+    "options": ["Nothing; they're the same", "Concurrent doesn't require presidential signature; joint does", "Concurrent is binding; joint is not", "Different chambers use different terms"],
+    "correctAnswer": 1,
+    "explanation": "Concurrent resolutions address matters affecting both chambers but don't have force of law and don't require presidential signature. Joint resolutions require signature and can become law.",
+    "difficulty": "hard",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q094",
+    "text": "What was the main holding in Citizens United v. FEC?",
+    "options": ["Campaign donation limits upheld", "Corporate political spending is protected speech", "Public financing requirements", "Disclosure rules struck down"],
+    "correctAnswer": 1,
+    "explanation": "Citizens United v. FEC (2010) held that corporate and union political spending is protected by the First Amendment, striking down limits on independent expenditures.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q095",
+    "text": "What is the Origination Clause?",
+    "options": ["Bills must originate in committee", "Revenue bills must originate in House", "Treaties originate in Senate", "Amendments originate in states"],
+    "correctAnswer": 1,
+    "explanation": "The Origination Clause (Article I, Section 7) requires that all revenue-raising bills originate in the House of Representatives, though the Senate can propose amendments.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q096",
+    "text": "Which case established the 'clear and present danger' test for free speech?",
+    "options": ["Brandenburg v. Ohio", "Schenck v. United States", "Texas v. Johnson", "Tinker v. Des Moines"],
+    "correctAnswer": 1,
+    "explanation": "Schenck v. United States (1919) established the 'clear and present danger' test, later refined. Speech can be restricted if it creates a clear and present danger of harm.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q097",
+    "text": "What is the significance of the Guarantee Clause?",
+    "options": ["Guarantees civil rights", "Guarantees each state a republican form of government", "Guarantees federal funding", "Guarantees voting rights"],
+    "correctAnswer": 1,
+    "explanation": "The Guarantee Clause (Article IV, Section 4) requires the U.S. to guarantee each state a republican (representative) form of government.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q098",
+    "text": "What was decided in Shelby County v. Holder?",
+    "options": ["Upheld Voting Rights Act", "Struck down Voting Rights Act preclearance formula", "Established voter ID requirements", "Protected voting machines"],
+    "correctAnswer": 1,
+    "explanation": "Shelby County v. Holder (2013) struck down the formula determining which jurisdictions required federal preclearance for voting changes, effectively ending preclearance enforcement.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q099",
+    "text": "What is the Appointments Clause?",
+    "options": ["Congressional committees", "President nominates officers with Senate consent", "Electoral College procedures", "Cabinet formation"],
+    "correctAnswer": 1,
+    "explanation": "The Appointments Clause (Article II, Section 2) gives the President power to nominate principal officers with Senate advice and consent, establishing checks and balances.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q100",
+    "text": "Which case established that school-sponsored prayer violates the Establishment Clause?",
+    "options": ["Lemon v. Kurtzman", "Engel v. Vitale", "Abington v. Schempp", "Lee v. Weisman"],
+    "correctAnswer": 1,
+    "explanation": "Engel v. Vitale (1962) ruled that state-sponsored prayer in public schools violates the Establishment Clause, even if voluntary and non-denominational.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q101",
+    "text": "What is the Recess Appointments Clause?",
+    "options": ["Congressional vacation scheduling", "President can make temporary appointments during Senate recess", "Court scheduling", "Emergency powers"],
+    "correctAnswer": 1,
+    "explanation": "The Recess Appointments Clause allows the President to temporarily fill vacancies when the Senate is in recess. These appointments expire at the end of the next Senate session.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q102",
+    "text": "What was the main issue in Bush v. Gore?",
+    "options": ["Campaign finance", "Florida recount in 2000 presidential election", "Electoral College procedures", "Voting machine standards"],
+    "correctAnswer": 1,
+    "explanation": "Bush v. Gore (2000) halted the Florida recount, effectively deciding the 2000 presidential election. The Court ruled varying recount standards violated Equal Protection.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q103",
+    "text": "What is the Pardon Power?",
+    "options": ["Congressional amnesty", "President can grant pardons for federal offenses", "Judicial sentence reduction", "State clemency"],
+    "correctAnswer": 1,
+    "explanation": "Article II gives the President power to grant pardons and reprieves for federal offenses (except impeachment). This power is broad and unreviewable by other branches.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q104",
+    "text": "Which case held that the death penalty as applied constituted cruel and unusual punishment?",
+    "options": ["Gregg v. Georgia", "Furman v. Georgia", "Atkins v. Virginia", "Roper v. Simmons"],
+    "correctAnswer": 1,
+    "explanation": "Furman v. Georgia (1972) found death penalty procedures arbitrary and discriminatory, effectively suspending executions. Gregg v. Georgia (1976) later reinstated it with new procedures.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q105",
+    "text": "What is a discharge petition?",
+    "options": ["Military release", "Procedure to force a bill out of committee", "Impeachment process", "Pardons"],
+    "correctAnswer": 1,
+    "explanation": "A discharge petition allows a House majority (218 members) to bring a bill to the floor for a vote even if the committee chair refuses to advance it. It's rarely successful.",
+    "difficulty": "hard",
+    "topic": "Branches of Government"
+  },
+  {
+    "id": "q106",
+    "text": "What is substantive due process?",
+    "options": ["Criminal procedure rules", "Protection of fundamental rights not explicitly in Constitution", "Civil trial procedures", "Administrative law"],
+    "correctAnswer": 1,
+    "explanation": "Substantive due process protects fundamental rights not explicitly stated in the Constitution. It has been used to protect privacy, marriage, and other liberty interests.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q107",
+    "text": "Which case established that the Second Amendment protects an individual right to bear arms?",
+    "options": ["United States v. Miller", "District of Columbia v. Heller", "McDonald v. Chicago", "Printz v. United States"],
+    "correctAnswer": 1,
+    "explanation": "District of Columbia v. Heller (2008) held that the Second Amendment protects an individual right to possess firearms unconnected with militia service.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q108",
+    "text": "What is the Speech or Debate Clause?",
+    "options": ["First Amendment protection", "Congressional immunity for legislative acts", "Campaign speech rules", "Supreme Court oral arguments"],
+    "correctAnswer": 1,
+    "explanation": "The Speech or Debate Clause (Article I, Section 6) protects members of Congress from civil or criminal liability for legislative activities, ensuring legislative independence.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q109",
+    "text": "What was the significance of Youngstown Sheet & Tube Co. v. Sawyer?",
+    "options": ["Labor rights", "Limited presidential power to seize private property", "Steel industry regulation", "War powers"],
+    "correctAnswer": 1,
+    "explanation": "Youngstown Sheet & Tube Co. v. Sawyer (1952) ruled that President Truman exceeded his authority by seizing steel mills, establishing limits on executive power.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q110",
+    "text": "What is the Taxing and Spending Clause?",
+    "options": ["IRS authority", "Congress's power to tax and spend for general welfare", "Budget process", "State taxation limits"],
+    "correctAnswer": 1,
+    "explanation": "The Taxing and Spending Clause (Article I, Section 8) gives Congress broad power to tax and spend for the general welfare, a major source of federal power.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q111",
+    "text": "Which case established that states cannot interfere with federal functions?",
+    "options": ["Gibbons v. Ogden", "McCulloch v. Maryland", "Marbury v. Madison", "United States v. Lopez"],
+    "correctAnswer": 1,
+    "explanation": "McCulloch v. Maryland (1819) established federal supremacy, ruling that states cannot tax or otherwise interfere with legitimate federal operations.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q112",
+    "text": "What is the Compact Clause?",
+    "options": ["Interstate agreements", "States need congressional consent for compacts with other states", "Treaty ratification", "Federal-state cooperation"],
+    "correctAnswer": 1,
+    "explanation": "The Compact Clause (Article I, Section 10) requires congressional consent for interstate compacts that increase state power at federal expense, though not all agreements require consent.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q113",
+    "text": "What was decided in Obergefell v. Hodges?",
+    "options": ["Civil unions recognized", "Same-sex marriage is a constitutional right", "Adoption rights", "Employment discrimination"],
+    "correctAnswer": 1,
+    "explanation": "Obergefell v. Hodges (2015) held that the 14th Amendment requires states to license and recognize same-sex marriages, legalizing it nationwide.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q114",
+    "text": "What is the Take Care Clause?",
+    "options": ["Healthcare mandate", "President must faithfully execute laws", "Environmental protection", "Social welfare"],
+    "correctAnswer": 1,
+    "explanation": "The Take Care Clause (Article II, Section 3) requires the President to 'take Care that the Laws be faithfully executed,' establishing executive duty to enforce laws.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q115",
+    "text": "Which case addressed whether Congress can regulate non-economic activity under the Commerce Clause?",
+    "options": ["Wickard v. Filburn", "United States v. Lopez", "Gibbons v. Ogden", "Heart of Atlanta Motel v. United States"],
+    "correctAnswer": 1,
+    "explanation": "United States v. Lopez (1995) ruled that Congress exceeded Commerce Clause authority by prohibiting guns near schools, limiting federal power over non-economic local activity.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q116",
+    "text": "What is the Advice and Consent role of the Senate?",
+    "options": ["Legislative guidance", "Senate approval of presidential appointments and treaties", "Executive oversight", "Constitutional amendments"],
+    "correctAnswer": 1,
+    "explanation": "The Senate's advice and consent role requires it to approve presidential appointments (majority vote) and treaties (two-thirds vote), checking executive power.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q117",
+    "text": "What was the significance of Roe v. Wade (prior to being overturned)?",
+    "options": ["Privacy rights generally", "Established constitutional right to abortion", "Healthcare access", "Women's equality"],
+    "correctAnswer": 1,
+    "explanation": "Roe v. Wade (1973) recognized a constitutional right to abortion under privacy rights. It was overturned by Dobbs v. Jackson Women's Health Organization (2022).",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q118",
+    "text": "What is the Privileges and Immunities Clause?",
+    "options": ["Fifth Amendment protections", "Prevents states from discriminating against out-of-state citizens", "Congressional immunity", "Diplomatic immunity"],
+    "correctAnswer": 1,
+    "explanation": "The Privileges and Immunities Clause (Article IV, Section 2) prevents states from discriminating against citizens of other states regarding fundamental rights.",
+    "difficulty": "hard",
+    "topic": "Constitution"
+  },
+  {
+    "id": "q119",
+    "text": "Which case established strict scrutiny for racial classifications?",
+    "options": ["Plessy v. Ferguson", "Brown v. Board of Education", "Korematsu v. United States", "Loving v. Virginia"],
+    "correctAnswer": 3,
+    "explanation": "Loving v. Virginia (1967) struck down anti-miscegenation laws and established that racial classifications are subject to strict scrutiny, the highest level of judicial review.",
+    "difficulty": "hard",
+    "topic": "Supreme Court"
+  },
+  {
+    "id": "q120",
+    "text": "What is the difference between a standing committee and a select committee in Congress?",
+    "options": ["No difference", "Standing is permanent; select is temporary for specific purpose", "One in House; one in Senate", "Different powers"],
+    "correctAnswer": 1,
+    "explanation": "Standing committees are permanent and handle ongoing legislative work in specific areas. Select or special committees are temporary and created for specific investigations or issues.",
+    "difficulty": "hard",
+    "topic": "Branches of Government"
+  }
+]
