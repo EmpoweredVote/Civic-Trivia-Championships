@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 
 ## Current Position
 
-Phase: 2 of 7 (Game Core) — COMPLETE
-Plan: 4 of 4 complete
-Status: Phase complete
-Last activity: 2026-02-10 - Phase 2 verified (8/8 must-haves passed)
+Phase: 3 of 7 (Scoring System) — IN PROGRESS
+Plan: 1 of 4 complete
+Status: In progress
+Last activity: 2026-02-10 - Completed 03-01-PLAN.md (Server-side scoring)
 
-Progress: [███░░░░░░░] ~29%
+Progress: [███░░░░░░░] ~32%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 3.5 min
-- Total execution time: 28 min
+- Total plans completed: 9
+- Average duration: 3.6 min
+- Total execution time: 32 min
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [███░░░░░░░] ~29%
 |-------|-------|-------|----------|
 | 01-foundation-auth | 4/4 | 12 min | 3 min |
 | 02-game-core | 4/4 | 16 min | 4 min |
+| 03-scoring-system | 1/4 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (1 min), 02-01 (6 min), 02-02 (2 min), 02-03 (2 min), 02-04 (8 min)
+- Last 5 plans: 02-01 (6 min), 02-02 (2 min), 02-03 (2 min), 02-04 (8 min), 03-01 (4 min)
 - Trend: Strong velocity
 
 *Updated after each plan completion*
@@ -63,6 +64,12 @@ Recent decisions affecting current work:
 | Lift useGameState to Game.tsx | 02-04 | Single state instance avoids duplicate state machines |
 | 25s question duration | 02-04 | User preference (was 20s) |
 | 2s question preview | 02-04 | Read question before options and timer appear |
+| Server-authority scoring | 03-01 | Prevents client-side score manipulation |
+| 3-tier speed bonus system | 03-01 | >=15s: +50, >=5s: +25, <5s: +0 points |
+| In-memory session storage | 03-01 | Simple MVP approach, 1-hour expiry with auto-cleanup |
+| Plausibility checks without penalties | 03-01 | Flags suspicious timing but doesn't penalize for MVP |
+| Strip correctAnswer from session questions | 03-01 | Prevents client cheat while allowing reveal |
+| Anonymous user support | 03-01 | Sessions work without auth (userId='anonymous') |
 
 ### Pending Todos
 
@@ -70,13 +77,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None — Phase 2 complete and verified. Ready for Phase 3 (Scoring System).
+None — Phase 3 Plan 1 complete. Server-side scoring system operational.
 
 ## Session Continuity
 
-Last session: 2026-02-10 19:15 UTC
-Stopped at: Phase 2 complete, verified
+Last session: 2026-02-10 22:58 UTC
+Stopped at: Completed 03-01-PLAN.md (Server-side scoring)
 Resume file: None
 
 ---
-*Next step: Plan Phase 3 (Scoring System)*
+*Next step: Continue Phase 3 (Frontend integration with server scoring)*
