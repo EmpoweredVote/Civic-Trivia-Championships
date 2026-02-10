@@ -38,10 +38,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 01-01-PLAN.md — Project foundation (Vite React + Express TypeScript setup)
-- [ ] 01-02-PLAN.md — Backend auth infrastructure (PostgreSQL, Redis, JWT endpoints)
-- [ ] 01-03-PLAN.md — Frontend auth (Zustand store, API service, Login/Signup pages)
-- [ ] 01-04-PLAN.md — Integration (Protected routes, session persistence, verification)
+- [x] 01-01-PLAN.md — Project foundation (Vite React + Express TypeScript setup)
+- [x] 01-02-PLAN.md — Backend auth infrastructure (PostgreSQL, Redis, JWT endpoints)
+- [x] 01-03-PLAN.md — Frontend auth (Zustand store, API service, Login/Signup pages)
+- [x] 01-04-PLAN.md — Integration (Protected routes, session persistence, verification)
 
 ### Phase 2: Game Core
 **Goal**: Users can play a full 10-question trivia game with visual timer, answer selection, and explanations
@@ -56,12 +56,13 @@ Plans:
   6. Answer reveal includes 1-3 sentence explanation
   7. Questions progress automatically after reveal
   8. Results screen shows final score and accuracy breakdown
-**Plans**: TBD
+**Plans**: 4 plans in 4 waves
 
 Plans:
-- [ ] 02-01: TBD during phase planning
-- [ ] 02-02: TBD during phase planning
-- [ ] 02-03: TBD during phase planning
+- [ ] 02-01-PLAN.md — Game types, question bank (100+ questions), API endpoint, dependencies
+- [ ] 02-02-PLAN.md — Game state machine (reducer, useGameState hook, keyboard shortcuts)
+- [ ] 02-03-PLAN.md — Game screen UI (timer, answer grid, animations, Millionaire aesthetic)
+- [ ] 02-04-PLAN.md — Results screen, routing, end-to-end integration, verification
 
 ### Phase 3: Scoring System
 **Goal**: Scores are calculated server-side with base points and speed bonuses, displayed throughout game
@@ -156,7 +157,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 4/4 | Complete | 2026-02-04 |
-| 2. Game Core | 0/TBD | Not started | - |
+| 2. Game Core | 0/4 | Not started | - |
 | 3. Scoring System | 0/TBD | Not started | - |
 | 4. Learning & Content | 0/TBD | Not started | - |
 | 5. Progression & Profile | 0/TBD | Not started | - |
