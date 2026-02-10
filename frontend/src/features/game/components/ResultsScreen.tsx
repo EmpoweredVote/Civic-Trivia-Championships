@@ -26,28 +26,80 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
         >
           <h1 className="text-4xl font-bold text-white mb-6">Game Complete!</h1>
 
-          {/* Score and accuracy with equal visual weight */}
-          <div className="flex items-center justify-center gap-8 mb-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
-            >
-              <div className="text-6xl font-bold text-teal-400">
+          {/* Primary score display */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+            className="mb-8"
+          >
+            <div className="text-7xl font-bold text-teal-400 mb-2">
+              {result.totalScore}
+            </div>
+            <div className="text-slate-400 text-xl">Total Points</div>
+          </motion.div>
+
+          {/* Score breakdown */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+            className="flex items-center justify-center gap-8 mb-8"
+          >
+            <div className="text-center">
+              <div className="text-3xl font-bold text-white">
                 {result.totalCorrect}/{result.totalQuestions}
               </div>
-              <div className="text-slate-400 text-lg mt-2">Questions Correct</div>
-            </motion.div>
+              <div className="text-slate-400 text-sm mt-1">Correct</div>
+            </div>
 
+            <div className="text-center">
+              <div className="text-3xl font-bold text-white">
+                {accuracy}%
+              </div>
+              <div className="text-slate-400 text-sm mt-1">Accuracy</div>
+            </div>
+
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-400">
+                {result.totalBasePoints}
+              </div>
+              <div className="text-slate-400 text-sm mt-1">Base Points</div>
+            </div>
+
+            <div className="text-center">
+              <div className="text-3xl font-bold text-yellow-400">
+                +{result.totalSpeedBonus}
+              </div>
+              <div className="text-slate-400 text-sm mt-1">Speed Bonus</div>
+            </div>
+          </motion.div>
+
+          {/* Fastest answer badge */}
+          {result.fastestAnswer && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
-              className="text-6xl font-bold text-white"
+              transition={{ delay: 0.3, duration: 0.3 }}
+              className="mb-8"
             >
-              {accuracy}%
+              <div className="inline-block bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 rounded-lg px-6 py-3">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  <div>
+                    <div className="text-white font-bold">
+                      Fastest Answer: {result.fastestAnswer.responseTime.toFixed(1)}s
+                    </div>
+                    <div className="text-slate-400 text-sm">
+                      Question {result.fastestAnswer.questionIndex + 1} ({result.fastestAnswer.points} pts)
+                    </div>
+                  </div>
+                </div>
+              </div>
             </motion.div>
-          </div>
+          )}
 
           {/* Review answers button */}
           <motion.button
@@ -110,10 +162,23 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
 
                     return (
                       <div key={question.id} className="border-b border-slate-700 pb-6 last:border-b-0">
-                        {/* Question number and text */}
-                        <div className="mb-4">
-                          <span className="text-teal-400 font-bold">Question {index + 1}</span>
-                          <p className="text-white text-lg mt-1">{question.text}</p>
+                        {/* Question number, text, and score */}
+                        <div className="mb-4 flex items-start justify-between">
+                          <div className="flex-1">
+                            <span className="text-teal-400 font-bold">Question {index + 1}</span>
+                            <p className="text-white text-lg mt-1">{question.text}</p>
+                          </div>
+                          <div className="ml-4 text-right flex-shrink-0">
+                            <div className={`text-2xl font-bold ${isCorrect ? 'text-teal-400' : 'text-slate-600'}`}>
+                              {answer.totalPoints}
+                            </div>
+                            <div className="text-slate-500 text-xs">
+                              {answer.basePoints} + {answer.speedBonus}
+                            </div>
+                            <div className="text-slate-500 text-xs">
+                              {answer.responseTime.toFixed(1)}s
+                            </div>
+                          </div>
                         </div>
 
                         {/* Player's answer */}
@@ -134,12 +199,12 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                           )}
                         </div>
 
-                        {/* Correct answer (always shown) */}
+                        {/* Correct answer (shown if incorrect) */}
                         {!isCorrect && (
                           <div className="mb-2">
                             <span className="text-slate-400 text-sm">Correct answer:</span>
                             <div className="text-green-400 font-medium mt-1">
-                              {question.options[question.correctAnswer]}
+                              {question.options[answer.correctAnswer]}
                             </div>
                           </div>
                         )}
