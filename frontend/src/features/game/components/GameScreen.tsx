@@ -207,7 +207,11 @@ export function GameScreen({
                   <AnswerGrid
                     options={currentQuestion.options}
                     selectedOption={state.selectedOption}
-                    correctAnswer={currentQuestion.correctAnswer}
+                    correctAnswer={
+                      state.phase === 'revealing' && state.answers.length > 0
+                        ? state.answers[state.answers.length - 1].correctAnswer
+                        : 0
+                    }
                     phase={state.phase}
                     onSelect={selectAnswer}
                     onLockIn={onLockIn}
