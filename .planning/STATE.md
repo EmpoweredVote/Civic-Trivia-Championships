@@ -10,28 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 ## Current Position
 
 Phase: 2 of 7 (Game Core)
-Plan: 0 of TBD complete
-Status: Ready for planning
-Last activity: 2026-02-04 - Completed Phase 1 (Foundation & Auth)
+Plan: 1 of TBD complete
+Status: In progress
+Last activity: 2026-02-10 - Completed 02-01-PLAN.md
 
-Progress: [██░░░░░░░░] ~14%
+Progress: [██░░░░░░░░] ~16%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 3 min
-- Total execution time: 12 min
+- Total plans completed: 5
+- Average duration: 4 min
+- Total execution time: 18 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-auth | 4/4 | 12 min | 3 min |
+| 02-game-core | 1/TBD | 6 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4 min), 01-02 (4 min), 01-03 (3 min), 01-04 (1 min)
-- Trend: Accelerating (tasks already implemented)
+- Last 5 plans: 01-02 (4 min), 01-03 (3 min), 01-04 (1 min), 02-01 (6 min)
+- Trend: Steady velocity
 
 *Updated after each plan completion*
 
@@ -53,6 +54,9 @@ Recent decisions affecting current work:
 | Field-specific error display | 01-03 | Shows server validation under each field |
 | AuthInitializer wraps entire app | 01-04 | Session restore on mount before any route renders |
 | 401 auto-retry with refresh | 01-04 | Seamless token refresh on API failures |
+| fs.readFileSync for JSON in ESM | 02-01 | NodeNext module resolution compatibility |
+| Fisher-Yates shuffle for randomization | 02-01 | Performant in-memory randomization for small datasets |
+| 120 question bank | 02-01 | Variety reduces gameplay repetition |
 
 ### Pending Todos
 
@@ -60,13 +64,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None - Phase 1 complete and verified. Ready for Phase 2.
+None - Phase 2 Plan 1 complete. Game data foundation ready for state machine and UI.
 
 ## Session Continuity
 
-Last session: 2026-02-04 - Completed Phase 1 (Foundation & Auth)
-Stopped at: Ready for Phase 2 planning
+Last session: 2026-02-10 18:36 UTC
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None
 
 ---
-*Next step: /gsd:discuss-phase 2 or /gsd:plan-phase 2*
+*Next step: Continue with Phase 2 planning and execution*
