@@ -1,0 +1,44 @@
+// Game type definitions for civic trivia game
+
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
+export type Question = {
+  id: string;
+  text: string;
+  options: string[]; // Always exactly 4 options
+  correctAnswer: number; // Index (0-3) of correct option
+  explanation: string;
+  difficulty: Difficulty;
+  topic: string;
+};
+
+export type GamePhase =
+  | 'idle' // No game in progress
+  | 'starting' // Brief countdown before first question
+  | 'answering' // Timer running, player can select
+  | 'selected' // Player has highlighted an answer but not locked in
+  | 'locked' // Player confirmed answer, suspense pause
+  | 'revealing' // Showing correct/incorrect + explanation
+  | 'complete'; // All 10 questions done, show results
+
+export type GameAnswer = {
+  questionId: string;
+  selectedOption: number | null;
+  correct: boolean;
+  timeRemaining: number;
+};
+
+export type GameResult = {
+  answers: GameAnswer[];
+  totalCorrect: number;
+  totalQuestions: number;
+};
+
+export type GameState = {
+  phase: GamePhase;
+  questions: Question[];
+  currentQuestionIndex: number;
+  selectedOption: number | null;
+  answers: GameAnswer[];
+  isTimerPaused: boolean;
+};
