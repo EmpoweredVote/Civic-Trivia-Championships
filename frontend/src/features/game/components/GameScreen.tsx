@@ -6,6 +6,8 @@ import { ProgressDots } from './ProgressDots';
 import { QuestionCard } from './QuestionCard';
 import { AnswerGrid } from './AnswerGrid';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
+import { ScoreDisplay } from './ScoreDisplay';
+import { ScorePopup } from './ScorePopup';
 import type { GameState, Question } from '../../../types/game';
 
 const QUESTION_DURATION = 25; // seconds
@@ -36,6 +38,9 @@ export function GameScreen({
   const [timerKey, setTimerKey] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
   const [currentTimeRemaining, setCurrentTimeRemaining] = useState(QUESTION_DURATION);
+  const [shouldShake, setShouldShake] = useState(false);
+  const [showRedFlash, setShowRedFlash] = useState(false);
+  const [showScorePopup, setShowScorePopup] = useState(false);
 
   // Question preview: show question text for 2s, then reveal options and start timer
   useEffect(() => {
@@ -54,6 +59,28 @@ export function GameScreen({
       setShowOptions(false);
     }
   }, [state.currentQuestionIndex]);
+
+  // Handle score animations and feedback on reveal phase
+  useEffect(() => {
+    if (state.phase === 'revealing' && state.answers.length > 0) {
+      const latestAnswer = state.answers[state.answers.length - 1];
+
+      // Check if it's a wrong answer (not timeout)
+      if (!latestAnswer.correct && latestAnswer.selectedOption !== null) {
+        setShouldShake(true);
+        setShowRedFlash(true);
+        setTimeout(() => {
+          setShouldShake(false);
+          setShowRedFlash(false);
+        }, 500);
+      } else {
+        // Correct answer or timeout - show score popup
+        setShowScorePopup(true);
+      }
+    } else {
+      setShowScorePopup(false);
+    }
+  }, [state.phase, state.answers.length]);
 
   // Keyboard shortcuts for answer selection (only when options visible)
   const canUseKeyboard = (state.phase === 'answering' || state.phase === 'selected') && showOptions;
@@ -153,6 +180,13 @@ export function GameScreen({
             total={state.questions.length}
           />
 
+          {/* Score display */}
+          <ScoreDisplay
+            score={state.totalScore}
+            shouldShake={shouldShake}
+            showRedFlash={showRedFlash}
+          />
+
           {/* Timer - paused during question preview */}
           <GameTimer
             key={timerKey}
@@ -178,6 +212,20 @@ export function GameScreen({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Score popup during reveal phase */}
+        {showScorePopup && state.answers.length > 0 && (() => {
+          const latestAnswer = state.answers[state.answers.length - 1];
+          return (
+            <ScorePopup
+              basePoints={latestAnswer.basePoints}
+              speedBonus={latestAnswer.speedBonus}
+              isCorrect={latestAnswer.correct}
+              isTimeout={latestAnswer.selectedOption === null}
+              onComplete={() => setShowScorePopup(false)}
+            />
+          );
+        })()}
 
         {/* Question and answers - with AnimatePresence for transitions */}
         <AnimatePresence mode="wait">
