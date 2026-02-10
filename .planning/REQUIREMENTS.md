@@ -17,20 +17,20 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 
 ### Game Flow
 
-- [ ] **GAME-01**: User can start a solo quick play session
-- [ ] **GAME-02**: Game presents 10 multiple-choice questions (4 options each)
-- [ ] **GAME-03**: Visual countdown timer shows time remaining (progress bar, not digits)
-- [ ] **GAME-04**: Timer color transitions: teal → yellow (50%) → orange (25%) → red (final 3s)
-- [ ] **GAME-05**: User can select one answer per question
-- [ ] **GAME-06**: Selected answer shows lock-in confirmation
-- [ ] **GAME-07**: Answer reveal shows correct/incorrect with explanation (1-3 sentences)
-- [ ] **GAME-08**: Incorrect answers use "Not quite" language (never "Wrong")
-- [ ] **GAME-09**: Questions progress automatically after reveal
+- [x] **GAME-01**: User can start a solo quick play session
+- [x] **GAME-02**: Game presents 10 multiple-choice questions (4 options each)
+- [x] **GAME-03**: Visual countdown timer shows time remaining (progress bar, not digits)
+- [x] **GAME-04**: Timer color transitions: teal → yellow (50%) → orange (25%) → red (final 3s)
+- [x] **GAME-05**: User can select one answer per question
+- [x] **GAME-06**: Selected answer shows lock-in confirmation
+- [x] **GAME-07**: Answer reveal shows correct/incorrect with explanation (1-3 sentences)
+- [x] **GAME-08**: Incorrect answers use "Not quite" language (never "Wrong")
+- [x] **GAME-09**: Questions progress automatically after reveal
 - [ ] **GAME-10**: Final question includes wager round option
 - [ ] **GAME-11**: Wager allows betting up to half current score
 - [ ] **GAME-12**: Wager shows potential outcomes before locking in
 - [ ] **GAME-13**: User can skip wager and play for standard points
-- [ ] **GAME-14**: Results screen shows final score, accuracy, breakdown
+- [x] **GAME-14**: Results screen shows final score, accuracy, breakdown
 
 ### Learning Flow
 
@@ -65,11 +65,11 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 
 ### Content
 
-- [ ] **CONT-01**: Question pool includes 100+ questions minimum
-- [ ] **CONT-02**: Questions span easy, medium, and hard difficulty
-- [ ] **CONT-03**: Each question has exactly one correct answer
-- [ ] **CONT-04**: Each question has explanation text
-- [ ] **CONT-05**: Questions randomized per game session
+- [x] **CONT-01**: Question pool includes 100+ questions minimum
+- [x] **CONT-02**: Questions span easy, medium, and hard difficulty
+- [x] **CONT-03**: Each question has exactly one correct answer
+- [x] **CONT-04**: Each question has explanation text
+- [x] **CONT-05**: Questions randomized per game session
 - [ ] **CONT-06**: "Learn more" content available for 10+ topics
 
 ### Accessibility
@@ -142,20 +142,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-03 | Phase 1 | Complete |
 | AUTH-04 | Phase 1 | Complete |
 | AUTH-05 | Phase 1 | Complete |
-| GAME-01 | Phase 2 | Pending |
-| GAME-02 | Phase 2 | Pending |
-| GAME-03 | Phase 2 | Pending |
-| GAME-04 | Phase 2 | Pending |
-| GAME-05 | Phase 2 | Pending |
-| GAME-06 | Phase 2 | Pending |
-| GAME-07 | Phase 2 | Pending |
-| GAME-08 | Phase 2 | Pending |
-| GAME-09 | Phase 2 | Pending |
+| GAME-01 | Phase 2 | Complete |
+| GAME-02 | Phase 2 | Complete |
+| GAME-03 | Phase 2 | Complete |
+| GAME-04 | Phase 2 | Complete |
+| GAME-05 | Phase 2 | Complete |
+| GAME-06 | Phase 2 | Complete |
+| GAME-07 | Phase 2 | Complete |
+| GAME-08 | Phase 2 | Complete |
+| GAME-09 | Phase 2 | Complete |
 | GAME-10 | Phase 6 | Pending |
 | GAME-11 | Phase 6 | Pending |
 | GAME-12 | Phase 6 | Pending |
 | GAME-13 | Phase 6 | Pending |
-| GAME-14 | Phase 2 | Pending |
+| GAME-14 | Phase 2 | Complete |
 | LEARN-01 | Phase 4 | Pending |
 | LEARN-02 | Phase 4 | Pending |
 | LEARN-03 | Phase 4 | Pending |
@@ -175,11 +175,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROF-03 | Phase 5 | Pending |
 | PROF-04 | Phase 5 | Pending |
 | PROF-05 | Phase 5 | Pending |
-| CONT-01 | Phase 2 | Pending |
-| CONT-02 | Phase 2 | Pending |
-| CONT-03 | Phase 2 | Pending |
-| CONT-04 | Phase 2 | Pending |
-| CONT-05 | Phase 2 | Pending |
+| CONT-01 | Phase 2 | Complete |
+| CONT-02 | Phase 2 | Complete |
+| CONT-03 | Phase 2 | Complete |
+| CONT-04 | Phase 2 | Complete |
+| CONT-05 | Phase 2 | Complete |
 | CONT-06 | Phase 4 | Pending |
 | A11Y-01 | Phase 7 | Pending |
 | A11Y-02 | Phase 7 | Pending |

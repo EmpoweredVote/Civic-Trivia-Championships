@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-03)
 
 **Core value:** Make civic learning fun through game show mechanics — play, not study
-**Current focus:** Phase 2 - Game Core
+**Current focus:** Phase 2 complete, ready for Phase 3
 
 ## Current Position
 
-Phase: 2 of 7 (Game Core)
-Plan: 3 of TBD complete
-Status: In progress
-Last activity: 2026-02-10 - Completed 02-03-PLAN.md
+Phase: 2 of 7 (Game Core) — COMPLETE
+Plan: 4 of 4 complete
+Status: Phase complete
+Last activity: 2026-02-10 - Phase 2 verified (8/8 must-haves passed)
 
-Progress: [██░░░░░░░░] ~19%
+Progress: [███░░░░░░░] ~29%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 3.1 min
-- Total execution time: 22 min
+- Total plans completed: 8
+- Average duration: 3.5 min
+- Total execution time: 28 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-auth | 4/4 | 12 min | 3 min |
-| 02-game-core | 3/TBD | 10 min | 3.3 min |
+| 02-game-core | 4/4 | 16 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (1 min), 02-01 (6 min), 02-02 (2 min), 02-03 (2 min)
+- Last 5 plans: 01-04 (1 min), 02-01 (6 min), 02-02 (2 min), 02-03 (2 min), 02-04 (8 min)
 - Trend: Strong velocity
 
 *Updated after each plan completion*
@@ -59,11 +59,10 @@ Recent decisions affecting current work:
 | 120 question bank | 02-01 | Variety reduces gameplay repetition |
 | useReducer for game state machine | 02-02 | Pure reducer ensures predictable state transitions |
 | 1.5s suspense pause after lock-in | 02-02 | Dramatic tension before reveal |
-| 4s auto-advance after reveal | 02-02 | Balances reading time with game pace |
-| Circular timer color transitions | 02-03 | Teal->yellow->orange->red creates dramatic tension |
-| Neutral progress dots | 02-03 | Position only, no judgment coloring |
-| Two-step lock-in UI | 02-03 | Select then confirm prevents accidental submissions |
-| Non-judgmental feedback | 02-03 | "Not quite" instead of "Wrong" maintains encouraging tone |
+| 6s auto-advance after reveal | 02-04 | User preference for more reading time (was 4s) |
+| Lift useGameState to Game.tsx | 02-04 | Single state instance avoids duplicate state machines |
+| 25s question duration | 02-04 | User preference (was 20s) |
+| 2s question preview | 02-04 | Read question before options and timer appear |
 
 ### Pending Todos
 
@@ -71,13 +70,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None - Phase 2 Plans 1-3 complete. Game screen UI ready for routing integration (Plan 02-04).
+None — Phase 2 complete and verified. Ready for Phase 3 (Scoring System).
 
 ## Session Continuity
 
-Last session: 2026-02-10 18:57 UTC
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-02-10 19:15 UTC
+Stopped at: Phase 2 complete, verified
 Resume file: None
 
 ---
-*Next step: Continue with Phase 2 planning and execution*
+*Next step: Plan Phase 3 (Scoring System)*

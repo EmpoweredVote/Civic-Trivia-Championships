@@ -13,7 +13,7 @@ This roadmap delivers a polished, educational trivia game in 7 phases. We build 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Auth** - Project setup and authentication system
-- [ ] **Phase 2: Game Core** - Basic game flow with questions, timer, and answer reveal
+- [x] **Phase 2: Game Core** - Basic game flow with questions, timer, and answer reveal
 - [ ] **Phase 3: Scoring System** - Server-side score calculation and validation
 - [ ] **Phase 4: Learning & Content** - Educational explanations, modals, and content management
 - [ ] **Phase 5: Progression & Profile** - XP, gems, badges, and user profile
@@ -59,10 +59,10 @@ Plans:
 **Plans**: 4 plans in 4 waves
 
 Plans:
-- [ ] 02-01-PLAN.md — Game types, question bank (100+ questions), API endpoint, dependencies
-- [ ] 02-02-PLAN.md — Game state machine (reducer, useGameState hook, keyboard shortcuts)
-- [ ] 02-03-PLAN.md — Game screen UI (timer, answer grid, animations, Millionaire aesthetic)
-- [ ] 02-04-PLAN.md — Results screen, routing, end-to-end integration, verification
+- [x] 02-01-PLAN.md — Game types, question bank (100+ questions), API endpoint, dependencies
+- [x] 02-02-PLAN.md — Game state machine (reducer, useGameState hook, keyboard shortcuts)
+- [x] 02-03-PLAN.md — Game screen UI (timer, answer grid, animations, Millionaire aesthetic)
+- [x] 02-04-PLAN.md — Results screen, routing, end-to-end integration, verification
 
 ### Phase 3: Scoring System
 **Goal**: Scores are calculated server-side with base points and speed bonuses, displayed throughout game
@@ -157,7 +157,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 4/4 | Complete | 2026-02-04 |
-| 2. Game Core | 0/4 | Not started | - |
+| 2. Game Core | 4/4 | Complete | 2026-02-10 |
 | 3. Scoring System | 0/TBD | Not started | - |
 | 4. Learning & Content | 0/TBD | Not started | - |
 | 5. Progression & Profile | 0/TBD | Not started | - |
