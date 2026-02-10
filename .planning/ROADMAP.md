@@ -74,11 +74,12 @@ Plans:
   3. Running score displayed throughout game
   4. Score calculated server-side to prevent manipulation
   5. Results screen shows accurate final score breakdown
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
 
 Plans:
-- [ ] 03-01: TBD during phase planning
-- [ ] 03-02: TBD during phase planning
+- [ ] 03-01-PLAN.md — Backend session service, score calculation, and API endpoints
+- [ ] 03-02-PLAN.md — Frontend types, reducer, hook, and API service wiring for server scoring
+- [ ] 03-03-PLAN.md — Score display UI, animations, popups, and enhanced results screen
 
 ### Phase 4: Learning & Content
 **Goal**: Users can access deeper educational content without leaving the game flow
@@ -152,13 +153,13 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Auth | 4/4 | Complete | 2026-02-04 |
 | 2. Game Core | 4/4 | Complete | 2026-02-10 |
-| 3. Scoring System | 0/TBD | Not started | - |
+| 3. Scoring System | 0/3 | Not started | - |
 | 4. Learning & Content | 0/TBD | Not started | - |
 | 5. Progression & Profile | 0/TBD | Not started | - |
 | 6. Wager Mechanics | 0/TBD | Not started | - |
