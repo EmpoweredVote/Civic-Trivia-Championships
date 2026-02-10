@@ -1,25 +1,34 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameState } from '../hooks/useGameState';
 import { useKeyPress } from '../hooks/useKeyPress';
 import { GameTimer } from './GameTimer';
 import { ProgressDots } from './ProgressDots';
 import { QuestionCard } from './QuestionCard';
 import { AnswerGrid } from './AnswerGrid';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
+import type { GameState, Question } from '../../../types/game';
 
 const QUESTION_DURATION = 20; // seconds
 
-export function GameScreen() {
-  const {
-    state,
-    currentQuestion,
-    startGame,
-    selectAnswer,
-    lockAnswer,
-    handleTimeout,
-    quitGame,
-  } = useGameState();
+interface GameScreenProps {
+  state: GameState;
+  currentQuestion: Question | null;
+  startGame: () => Promise<void>;
+  selectAnswer: (optionIndex: number) => void;
+  lockAnswer: (timeRemaining: number) => void;
+  handleTimeout: () => void;
+  quitGame: () => void;
+}
+
+export function GameScreen({
+  state,
+  currentQuestion,
+  startGame,
+  selectAnswer,
+  lockAnswer,
+  handleTimeout,
+  quitGame,
+}: GameScreenProps) {
 
   const [showQuitDialog, setShowQuitDialog] = useState(false);
   const [showTimeoutFlash, setShowTimeoutFlash] = useState(false);
@@ -86,33 +95,6 @@ export function GameScreen() {
             className="px-12 py-4 bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold rounded-lg shadow-2xl transition-all transform hover:scale-105"
           >
             Quick Play
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Complete state - show completion message (results screen will be added in Plan 04)
-  if (state.phase === 'complete') {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <h1 className="text-4xl font-bold text-white mb-4">
-            Game Complete!
-          </h1>
-          <p className="text-slate-400 mb-8">
-            You answered {state.answers.filter((a) => a.correct).length} out of{' '}
-            {state.questions.length} correctly
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg transition-colors"
-          >
-            Play Again
           </button>
         </motion.div>
       </div>

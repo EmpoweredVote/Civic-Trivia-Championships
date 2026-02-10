@@ -5,22 +5,36 @@ import { ResultsScreen } from '../features/game/components/ResultsScreen';
 
 export function Game() {
   const navigate = useNavigate();
-  const gameState = useGameState();
+  const {
+    state,
+    currentQuestion,
+    startGame,
+    selectAnswer,
+    lockAnswer,
+    handleTimeout,
+    quitGame,
+    gameResult,
+  } = useGameState();
 
   const handlePlayAgain = () => {
-    gameState.startGame();
+    startGame();
   };
 
   const handleHome = () => {
     navigate('/dashboard');
   };
 
+  const handleQuit = () => {
+    quitGame();
+    navigate('/dashboard');
+  };
+
   // Show results screen when game is complete
-  if (gameState.state.phase === 'complete' && gameState.gameResult) {
+  if (state.phase === 'complete' && gameResult) {
     return (
       <ResultsScreen
-        result={gameState.gameResult}
-        questions={gameState.state.questions}
+        result={gameResult}
+        questions={state.questions}
         onPlayAgain={handlePlayAgain}
         onHome={handleHome}
       />
@@ -28,8 +42,15 @@ export function Game() {
   }
 
   // Otherwise show the game screen
-  // Note: GameScreen currently calls useGameState internally
-  // For now, we'll let it manage its own state, but in a future refactor
-  // we could pass the state down as props to avoid duplicate hook calls
-  return <GameScreen />;
+  return (
+    <GameScreen
+      state={state}
+      currentQuestion={currentQuestion}
+      startGame={startGame}
+      selectAnswer={selectAnswer}
+      lockAnswer={lockAnswer}
+      handleTimeout={handleTimeout}
+      quitGame={handleQuit}
+    />
+  );
 }
