@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 ## Current Position
 
 Phase: 3 of 7 (Scoring System) — IN PROGRESS
-Plan: 1 of 4 complete
+Plan: 2 of 4 complete
 Status: In progress
-Last activity: 2026-02-10 - Completed 03-01-PLAN.md (Server-side scoring)
+Last activity: 2026-02-10 - Completed 03-02-PLAN.md (Frontend scoring integration)
 
-Progress: [███░░░░░░░] ~32%
+Progress: [███░░░░░░░] ~36%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 3.6 min
-- Total execution time: 32 min
+- Total execution time: 36 min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [███░░░░░░░] ~32%
 |-------|-------|-------|----------|
 | 01-foundation-auth | 4/4 | 12 min | 3 min |
 | 02-game-core | 4/4 | 16 min | 4 min |
-| 03-scoring-system | 1/4 | 4 min | 4 min |
+| 03-scoring-system | 2/4 | 8 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (6 min), 02-02 (2 min), 02-03 (2 min), 02-04 (8 min), 03-01 (4 min)
+- Last 5 plans: 02-02 (2 min), 02-03 (2 min), 02-04 (8 min), 03-01 (4 min), 03-02 (4 min)
 - Trend: Strong velocity
 
 *Updated after each plan completion*
@@ -70,6 +70,11 @@ Recent decisions affecting current work:
 | Plausibility checks without penalties | 03-01 | Flags suspicious timing but doesn't penalize for MVP |
 | Strip correctAnswer from session questions | 03-01 | Prevents client cheat while allowing reveal |
 | Anonymous user support | 03-01 | Sessions work without auth (userId='anonymous') |
+| SESSION_CREATED replaces START_GAME | 03-02 | Explicit session creation action with sessionId |
+| Promise.all for suspense + server | 03-02 | Ensures minimum suspense pause while server responds |
+| correctAnswer from server response | 03-02 | Questions lack correctAnswer (stripped), comes in submitAnswer |
+| Running totalScore in state | 03-02 | Enables mid-game score display |
+| onTimeUpdate callback pattern | 03-02 | GameTimer exposes time for accurate server submission |
 
 ### Pending Todos
 
@@ -77,13 +82,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None — Phase 3 Plan 1 complete. Server-side scoring system operational.
+None — Phase 3 Plan 2 complete. Frontend fully integrated with server-side scoring.
 
 ## Session Continuity
 
-Last session: 2026-02-10 22:58 UTC
-Stopped at: Completed 03-01-PLAN.md (Server-side scoring)
+Last session: 2026-02-10 20:26 UTC
+Stopped at: Completed 03-02-PLAN.md (Frontend scoring integration)
 Resume file: None
 
 ---
-*Next step: Continue Phase 3 (Frontend integration with server scoring)*
+*Next step: Continue Phase 3 Plan 3 (Leaderboard system)*
