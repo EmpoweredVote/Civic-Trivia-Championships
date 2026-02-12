@@ -34,19 +34,19 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 
 ### Learning Flow
 
-- [ ] **LEARN-01**: Answer reveal includes "Learn more" link for deeper content
-- [ ] **LEARN-02**: "Learn more" opens modal without leaving game
-- [ ] **LEARN-03**: Modal shows expanded explanation (2-3 paragraphs)
-- [ ] **LEARN-04**: User can close modal and continue game
-- [ ] **LEARN-05**: Results screen lists topics covered during game
+- [x] **LEARN-01**: Answer reveal includes "Learn more" link for deeper content
+- [x] **LEARN-02**: "Learn more" opens modal without leaving game
+- [x] **LEARN-03**: Modal shows expanded explanation (2-3 paragraphs)
+- [x] **LEARN-04**: User can close modal and continue game
+- [x] **LEARN-05**: Results screen lists topics covered during game
 
 ### Scoring
 
-- [ ] **SCORE-01**: Base points awarded for correct answers (+100)
-- [ ] **SCORE-02**: Speed bonus calculated from time remaining (up to +50)
+- [x] **SCORE-01**: Base points awarded for correct answers (+100)
+- [x] **SCORE-02**: Speed bonus calculated from time remaining (up to +50)
 - [ ] **SCORE-03**: Wager points added/subtracted based on final answer
-- [ ] **SCORE-04**: Running score displayed throughout game
-- [ ] **SCORE-05**: Score calculated server-side (prevents manipulation)
+- [x] **SCORE-04**: Running score displayed throughout game
+- [x] **SCORE-05**: Score calculated server-side (prevents manipulation)
 
 ### Progression
 
@@ -70,7 +70,7 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 - [x] **CONT-03**: Each question has exactly one correct answer
 - [x] **CONT-04**: Each question has explanation text
 - [x] **CONT-05**: Questions randomized per game session
-- [ ] **CONT-06**: "Learn more" content available for 10+ topics
+- [x] **CONT-06**: "Learn more" content available for 10+ topics
 
 ### Accessibility
 
@@ -156,16 +156,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GAME-12 | Phase 6 | Pending |
 | GAME-13 | Phase 6 | Pending |
 | GAME-14 | Phase 2 | Complete |
-| LEARN-01 | Phase 4 | Pending |
-| LEARN-02 | Phase 4 | Pending |
-| LEARN-03 | Phase 4 | Pending |
-| LEARN-04 | Phase 4 | Pending |
-| LEARN-05 | Phase 4 | Pending |
-| SCORE-01 | Phase 3 | Pending |
-| SCORE-02 | Phase 3 | Pending |
+| LEARN-01 | Phase 4 | Complete |
+| LEARN-02 | Phase 4 | Complete |
+| LEARN-03 | Phase 4 | Complete |
+| LEARN-04 | Phase 4 | Complete |
+| LEARN-05 | Phase 4 | Complete |
+| SCORE-01 | Phase 3 | Complete |
+| SCORE-02 | Phase 3 | Complete |
 | SCORE-03 | Phase 6 | Pending |
-| SCORE-04 | Phase 3 | Pending |
-| SCORE-05 | Phase 3 | Pending |
+| SCORE-04 | Phase 3 | Complete |
+| SCORE-05 | Phase 3 | Complete |
 | PROG-01 | Phase 5 | Pending |
 | PROG-02 | Phase 5 | Pending |
 | PROG-03 | Phase 5 | Pending |
@@ -180,7 +180,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONT-03 | Phase 2 | Complete |
 | CONT-04 | Phase 2 | Complete |
 | CONT-05 | Phase 2 | Complete |
-| CONT-06 | Phase 4 | Pending |
+| CONT-06 | Phase 4 | Complete |
 | A11Y-01 | Phase 7 | Pending |
 | A11Y-02 | Phase 7 | Pending |
 | A11Y-03 | Phase 7 | Pending |
