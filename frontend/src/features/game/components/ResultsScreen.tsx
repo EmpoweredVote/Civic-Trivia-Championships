@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion';
-import type { GameResult, Question } from '../../../types/game';
+import type { GameResult, Question, LearningContent } from '../../../types/game';
+import { TOPIC_ICONS, TOPIC_LABELS } from './TopicIcon';
+import { LearnMoreModal } from './LearnMoreModal';
 
 interface ResultsScreenProps {
   result: GameResult;
@@ -11,6 +13,7 @@ interface ResultsScreenProps {
 
 export function ResultsScreen({ result, questions, onPlayAgain, onHome }: ResultsScreenProps) {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
+  const [learnMoreQuestion, setLearnMoreQuestion] = useState<{ content: LearningContent; userAnswer: number | null; correctAnswer: number } | null>(null);
   const motionScore = useMotionValue(0);
 
   const accuracy = Math.round((result.totalCorrect / result.totalQuestions) * 100);
@@ -46,6 +49,22 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
       newExpanded.add(index);
     }
     setExpandedQuestions(newExpanded);
+  };
+
+  const handleOpenLearnMore = (questionIndex: number) => {
+    const question = questions[questionIndex];
+    const answer = result.answers[questionIndex];
+    if (question.learningContent) {
+      setLearnMoreQuestion({
+        content: question.learningContent,
+        userAnswer: answer.selectedOption,
+        correctAnswer: answer.correctAnswer,
+      });
+    }
+  };
+
+  const handleCloseLearnMore = () => {
+    setLearnMoreQuestion(null);
   };
 
   return (
@@ -242,9 +261,20 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                       className="w-full text-left p-4 hover:bg-slate-700/30 transition-colors flex items-start justify-between gap-4"
                     >
                       <div className="flex-1">
-                        <span className="text-teal-400 font-bold text-sm">
-                          Question {index + 1}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-teal-400 font-bold text-sm">
+                            Question {index + 1}
+                          </span>
+                          {question.topicCategory && (() => {
+                            const TopicIconComponent = TOPIC_ICONS[question.topicCategory];
+                            return (
+                              <span className="inline-flex items-center gap-1 text-xs text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full">
+                                <TopicIconComponent className="w-4 h-4" />
+                                {TOPIC_LABELS[question.topicCategory]}
+                              </span>
+                            );
+                          })()}
+                        </div>
                         <p className="text-white text-base mt-1">{question.text}</p>
                       </div>
 
@@ -346,6 +376,32 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                             <div className="mt-3 text-slate-300 text-sm bg-slate-900/50 p-3 rounded">
                               {question.explanation}
                             </div>
+
+                            {/* Learn More button (only if learningContent exists) */}
+                            {question.learningContent && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenLearnMore(index);
+                                }}
+                                className="mt-3 text-teal-400 hover:text-teal-300 text-sm font-medium flex items-center gap-1 transition-colors"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                                  />
+                                </svg>
+                                Learn More
+                              </button>
+                            )}
                           </div>
                         </motion.div>
                       )}
@@ -356,6 +412,15 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
             </div>
           </div>
         </motion.div>
+
+        {/* LearnMoreModal - rendered outside scrollable area */}
+        <LearnMoreModal
+          isOpen={learnMoreQuestion !== null}
+          onClose={handleCloseLearnMore}
+          content={learnMoreQuestion?.content ?? { topic: 'voting', paragraphs: [], corrections: {}, source: { name: '', url: '' } }}
+          userAnswer={learnMoreQuestion?.userAnswer ?? null}
+          correctAnswer={learnMoreQuestion?.correctAnswer ?? 0}
+        />
       </div>
     </div>
   );

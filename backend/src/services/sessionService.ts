@@ -15,6 +15,16 @@ export interface Question {
   explanation: string;
   difficulty: string;
   topic: string;
+  topicCategory: string;
+  learningContent?: {
+    topic: string;
+    paragraphs: string[];
+    corrections: Record<string, string>;
+    source: {
+      name: string;
+      url: string;
+    };
+  };
 }
 
 // Server-side answer record with scoring and plausibility flag
