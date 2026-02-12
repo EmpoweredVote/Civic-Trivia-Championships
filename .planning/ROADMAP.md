@@ -110,11 +110,13 @@ Plans:
   4. User can view their profile with total XP and gems
   5. Profile shows games played, best score, and overall accuracy percentage
   6. Progression updates persist to user profile
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 05-01: TBD during phase planning
-- [ ] 05-02: TBD during phase planning
+- [ ] 05-01-PLAN.md — DB schema, progression service, game route wiring with optional auth
+- [ ] 05-02-PLAN.md — Results screen XP/gems display with count-up animations
+- [ ] 05-03-PLAN.md — Profile API endpoints and avatar upload with security validation
+- [ ] 05-04-PLAN.md — Profile page UI, Avatar component, hamburger menu navigation
 
 ### Phase 6: Wager Mechanics
 **Goal**: Users can bet up to half their current score on the final question
@@ -162,7 +164,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 2. Game Core | 4/4 | Complete | 2026-02-10 |
 | 3. Scoring System | 3/3 | Complete | 2026-02-10 |
 | 4. Learning & Content | 3/3 | Complete | 2026-02-12 |
-| 5. Progression & Profile | 0/TBD | Not started | - |
+| 5. Progression & Profile | 0/4 | Not started | - |
 | 6. Wager Mechanics | 0/TBD | Not started | - |
 | 7. Polish & Performance | 0/TBD | Not started | - |
 
