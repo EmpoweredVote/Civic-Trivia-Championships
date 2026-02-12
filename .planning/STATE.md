@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-03)
 
 **Core value:** Make civic learning fun through game show mechanics — play, not study
-**Current focus:** Phase 3 complete, ready for Phase 4
+**Current focus:** Phase 4 Plan 02 complete - Learn More Modal UI
 
 ## Current Position
 
 Phase: 4 of 7 (Learning & Content) — IN PROGRESS
-Plan: 1 of TBD
-Status: Data model established
-Last activity: 2026-02-12 - Completed 04-01-PLAN.md (Data Model & Content Foundation)
+Plan: 2 of 3 complete
+Status: Learn More UI complete, ready for AI content generation
+Last activity: 2026-02-12 - Completed 04-02-PLAN.md (Learn More Modal UI)
 
-Progress: [████░░░░░░] ~44%
+Progress: [████░░░░░░] ~46%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: 4.0 min
-- Total execution time: 48 min
+- Total execution time: 52 min
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [████░░░░░░] ~44%
 | 01-foundation-auth | 4/4 | 12 min | 3 min |
 | 02-game-core | 4/4 | 16 min | 4 min |
 | 03-scoring-system | 3/3 | 12 min | 4 min |
-| 04-learning-content | 1/TBD | 8 min | 8 min |
+| 04-learning-content | 2/3 | 12 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (4 min), 03-02 (4 min), 03-03 (4 min), 04-01 (8 min)
-- Trend: Steady pace, larger plan took proportionally more time
+- Last 5 plans: 03-02 (4 min), 03-03 (4 min), 04-01 (8 min), 04-02 (4 min)
+- Trend: Consistent 4-minute pace for standard plans, 8-minute for complex plans
 
 *Updated after each plan completion*
 
@@ -85,6 +85,10 @@ Recent decisions affecting current work:
 | Build-time AI generation | 04-01 | Static content faster, cheaper, reviewable vs runtime generation |
 | Keep existing topic field | 04-01 | Add topicCategory field without breaking existing code |
 | Require topicCategory, optional learningContent | 04-01 | Every question categorized, content added incrementally |
+| Tooltip only auto-shows once per session | 04-02 | Avoid annoying users with repeated tooltips across 10 questions |
+| Timer pause preserves exact remaining time | 04-02 | Users shouldn't be penalized for reading educational content |
+| Modal renders answer-aware opener | 04-02 | Contextualize content to user's answer (right/wrong/timeout) |
+| No modal header/title | 04-02 | Educational content should feel conversational, not formal |
 
 ### Pending Todos
 
@@ -92,13 +96,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None — Phase 4 Plan 01 complete. Data model and content foundation established.
+None — Phase 4 Plan 02 complete. Learn More UI ready for AI-generated content.
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 04-01-PLAN.md (Data Model & Content Foundation)
+Stopped at: Completed 04-02-PLAN.md (Learn More Modal UI)
 Resume file: None
 
 ---
-*Next step: Continue Phase 4 with next plan (Learn More Modal UI)*
+*Next step: Continue Phase 4 with Plan 03 (AI Content Generation Script)*
