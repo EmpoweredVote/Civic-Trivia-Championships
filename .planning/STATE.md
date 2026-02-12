@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-03)
 
 **Core value:** Make civic learning fun through game show mechanics — play, not study
-**Current focus:** Phase 2 complete, ready for Phase 3
+**Current focus:** Phase 3 complete, ready for Phase 4
 
 ## Current Position
 
-Phase: 3 of 7 (Scoring System) — IN PROGRESS
-Plan: 2 of 4 complete
-Status: In progress
-Last activity: 2026-02-10 - Completed 03-02-PLAN.md (Frontend scoring integration)
+Phase: 4 of 7 (Learning & Content) — IN PROGRESS
+Plan: 1 of TBD
+Status: Data model established
+Last activity: 2026-02-12 - Completed 04-01-PLAN.md (Data Model & Content Foundation)
 
-Progress: [███░░░░░░░] ~36%
+Progress: [████░░░░░░] ~44%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 3.6 min
-- Total execution time: 36 min
+- Total plans completed: 12
+- Average duration: 4.0 min
+- Total execution time: 48 min
 
 **By Phase:**
 
@@ -29,11 +29,12 @@ Progress: [███░░░░░░░] ~36%
 |-------|-------|-------|----------|
 | 01-foundation-auth | 4/4 | 12 min | 3 min |
 | 02-game-core | 4/4 | 16 min | 4 min |
-| 03-scoring-system | 2/4 | 8 min | 4 min |
+| 03-scoring-system | 3/3 | 12 min | 4 min |
+| 04-learning-content | 1/TBD | 8 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (2 min), 02-03 (2 min), 02-04 (8 min), 03-01 (4 min), 03-02 (4 min)
-- Trend: Strong velocity
+- Last 5 plans: 03-01 (4 min), 03-02 (4 min), 03-03 (4 min), 04-01 (8 min)
+- Trend: Steady pace, larger plan took proportionally more time
 
 *Updated after each plan completion*
 
@@ -75,6 +76,15 @@ Recent decisions affecting current work:
 | correctAnswer from server response | 03-02 | Questions lack correctAnswer (stripped), comes in submitAnswer |
 | Running totalScore in state | 03-02 | Enables mid-game score display |
 | onTimeUpdate callback pattern | 03-02 | GameTimer exposes time for accurate server submission |
+| Spring physics for score counter | 03-03 | useMotionValue with spring gives game-show feel |
+| 3-state feedback system | 03-03 | Correct (teal/gold), wrong (red/shake), timeout (amber) are distinct |
+| Individual question accordions | 03-03 | Each question expandable independently in results |
+| Perfect game golden treatment | 03-03 | 10/10 gets amber/gold text + "Perfect Game!" label |
+| 9 granular topic categories | 04-01 | More specific than 5 broad categories for better content organization |
+| Answer-specific corrections | 04-01 | Each wrong option gets tailored explanation, not generic "incorrect" |
+| Build-time AI generation | 04-01 | Static content faster, cheaper, reviewable vs runtime generation |
+| Keep existing topic field | 04-01 | Add topicCategory field without breaking existing code |
+| Require topicCategory, optional learningContent | 04-01 | Every question categorized, content added incrementally |
 
 ### Pending Todos
 
@@ -82,13 +92,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None — Phase 3 Plan 2 complete. Frontend fully integrated with server-side scoring.
+None — Phase 4 Plan 01 complete. Data model and content foundation established.
 
 ## Session Continuity
 
-Last session: 2026-02-10 20:26 UTC
-Stopped at: Completed 03-02-PLAN.md (Frontend scoring integration)
+Last session: 2026-02-12
+Stopped at: Completed 04-01-PLAN.md (Data Model & Content Foundation)
 Resume file: None
 
 ---
-*Next step: Continue Phase 3 Plan 3 (Leaderboard system)*
+*Next step: Continue Phase 4 with next plan (Learn More Modal UI)*
