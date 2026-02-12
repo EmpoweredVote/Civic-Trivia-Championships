@@ -14,6 +14,10 @@ export function Game() {
     handleTimeout,
     quitGame,
     gameResult,
+    pauseAutoAdvance,
+    resumeAutoAdvance,
+    hasShownTooltip,
+    setHasShownTooltip,
   } = useGameState();
 
   const handlePlayAgain = () => {
@@ -51,6 +55,10 @@ export function Game() {
       lockAnswer={lockAnswer}
       handleTimeout={handleTimeout}
       quitGame={handleQuit}
+      pauseAutoAdvance={pauseAutoAdvance}
+      resumeAutoAdvance={resumeAutoAdvance}
+      hasShownTooltip={hasShownTooltip}
+      setHasShownTooltip={setHasShownTooltip}
     />
   );
 }

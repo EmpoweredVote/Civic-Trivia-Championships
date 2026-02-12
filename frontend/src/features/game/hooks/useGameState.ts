@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useRef } from 'react';
+import { useReducer, useEffect, useRef, useState } from 'react';
 import { gameReducer, initialGameState } from '../gameReducer';
 import { createGameSession, submitAnswer } from '../../../services/gameService';
 import type { GameState, Question, GameResult } from '../../../types/game';
@@ -17,15 +17,22 @@ interface UseGameStateReturn {
   nextQuestion: () => void;
   quitGame: () => void;
   gameResult: GameResult | null;
+  pauseAutoAdvance: () => void;
+  resumeAutoAdvance: () => void;
+  hasShownTooltip: boolean;
+  setHasShownTooltip: (value: boolean) => void;
 }
 
 export function useGameState(): UseGameStateReturn {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
+  const [hasShownTooltip, setHasShownTooltip] = useState(false);
 
   // Refs to track timeouts for cleanup and sessionId for server calls
   const suspenseTimeoutRef = useRef<number | null>(null);
   const autoAdvanceTimeoutRef = useRef<number | null>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const autoAdvancePausedAtRef = useRef<number | null>(null);
+  const revealStartTimeRef = useRef<number | null>(null);
 
   // Derived values
   const currentQuestion = state.questions[state.currentQuestionIndex] || null;
@@ -61,6 +68,7 @@ export function useGameState(): UseGameStateReturn {
     try {
       const { sessionId, questions } = await createGameSession();
       sessionIdRef.current = sessionId;
+      setHasShownTooltip(false); // Reset tooltip flag for new game
       dispatch({ type: 'SESSION_CREATED', sessionId, questions });
     } catch (error) {
       console.error('Failed to create game session:', error);
@@ -185,6 +193,30 @@ export function useGameState(): UseGameStateReturn {
     dispatch({ type: 'QUIT_GAME' });
   };
 
+  // Pause auto-advance timer and save remaining time
+  const pauseAutoAdvance = () => {
+    if (autoAdvanceTimeoutRef.current && revealStartTimeRef.current) {
+      const elapsed = Date.now() - revealStartTimeRef.current;
+      const remaining = AUTO_ADVANCE_MS - elapsed;
+      autoAdvancePausedAtRef.current = remaining > 0 ? remaining : 0;
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+  };
+
+  // Resume auto-advance timer with saved remaining time
+  const resumeAutoAdvance = () => {
+    if (autoAdvancePausedAtRef.current !== null) {
+      const remainingTime = autoAdvancePausedAtRef.current;
+      autoAdvanceTimeoutRef.current = setTimeout(() => {
+        dispatch({ type: 'NEXT_QUESTION' });
+      }, remainingTime);
+      autoAdvancePausedAtRef.current = null;
+      // Update reveal start time to account for the pause
+      revealStartTimeRef.current = Date.now() - (AUTO_ADVANCE_MS - remainingTime);
+    }
+  };
+
   // Auto-advance logic when entering revealing phase
   useEffect(() => {
     if (state.phase === 'revealing') {
@@ -192,6 +224,9 @@ export function useGameState(): UseGameStateReturn {
       if (autoAdvanceTimeoutRef.current) {
         clearTimeout(autoAdvanceTimeoutRef.current);
       }
+
+      // Record when reveal phase started
+      revealStartTimeRef.current = Date.now();
 
       // Start auto-advance timer
       autoAdvanceTimeoutRef.current = setTimeout(() => {
@@ -230,5 +265,9 @@ export function useGameState(): UseGameStateReturn {
     nextQuestion,
     quitGame,
     gameResult,
+    pauseAutoAdvance,
+    resumeAutoAdvance,
+    hasShownTooltip,
+    setHasShownTooltip,
   };
 }

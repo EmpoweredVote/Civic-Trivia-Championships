@@ -8,7 +8,10 @@ import { AnswerGrid } from './AnswerGrid';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { ScoreDisplay } from './ScoreDisplay';
 import { ScorePopup } from './ScorePopup';
-import type { GameState, Question } from '../../../types/game';
+import { LearnMoreButton } from './LearnMoreButton';
+import { LearnMoreTooltip } from './LearnMoreTooltip';
+import { LearnMoreModal } from './LearnMoreModal';
+import type { GameState, Question, LearningContent } from '../../../types/game';
 
 const QUESTION_DURATION = 25; // seconds
 const QUESTION_PREVIEW_MS = 2000; // show question before revealing options
@@ -21,6 +24,10 @@ interface GameScreenProps {
   lockAnswer: (timeRemaining: number) => void;
   handleTimeout: () => void;
   quitGame: () => void;
+  pauseAutoAdvance: () => void;
+  resumeAutoAdvance: () => void;
+  hasShownTooltip: boolean;
+  setHasShownTooltip: (value: boolean) => void;
 }
 
 export function GameScreen({
@@ -31,6 +38,10 @@ export function GameScreen({
   lockAnswer,
   handleTimeout,
   quitGame,
+  pauseAutoAdvance,
+  resumeAutoAdvance,
+  hasShownTooltip,
+  setHasShownTooltip,
 }: GameScreenProps) {
 
   const [showQuitDialog, setShowQuitDialog] = useState(false);
@@ -41,6 +52,43 @@ export function GameScreen({
   const [shouldShake, setShouldShake] = useState(false);
   const [showRedFlash, setShowRedFlash] = useState(false);
   const [showScorePopup, setShowScorePopup] = useState(false);
+  const [isLearnMoreOpen, setIsLearnMoreOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  // Determine if current question has learning content
+  const learningContent = currentQuestion?.learningContent ?? null;
+  const latestAnswer = state.answers.length > 0 ? state.answers[state.answers.length - 1] : null;
+
+  // Tooltip auto-show logic: show once per session when first reveal happens
+  useEffect(() => {
+    if (state.phase === 'revealing' && learningContent && !hasShownTooltip) {
+      const timer = setTimeout(() => {
+        setShowTooltip(true);
+        setHasShownTooltip(true);
+      }, 1000); // Delay to let reveal settle
+      return () => clearTimeout(timer);
+    }
+  }, [state.phase, learningContent, hasShownTooltip, setHasShownTooltip]);
+
+  // Handle opening Learn More modal
+  const handleOpenLearnMore = () => {
+    setShowTooltip(false);
+    setIsLearnMoreOpen(true);
+    pauseAutoAdvance();
+  };
+
+  // Handle closing Learn More modal
+  const handleCloseLearnMore = () => {
+    setIsLearnMoreOpen(false);
+    resumeAutoAdvance();
+  };
+
+  // Extract teaser text (first sentence of first paragraph)
+  const getTeaserText = (content: LearningContent): string => {
+    const firstParagraph = content.paragraphs[0] || '';
+    const sentences = firstParagraph.split('. ');
+    return sentences[0] + (sentences.length > 1 ? '...' : '');
+  };
 
   // Question preview: show question text for 2s, then reveal options and start timer
   useEffect(() => {
@@ -88,6 +136,10 @@ export function GameScreen({
   useKeyPress('b', () => selectAnswer(1), canUseKeyboard);
   useKeyPress('c', () => selectAnswer(2), canUseKeyboard);
   useKeyPress('d', () => selectAnswer(3), canUseKeyboard);
+
+  // Keyboard shortcut for Learn More (only during reveal when content exists)
+  const canOpenLearnMore = state.phase === 'revealing' && !!learningContent && !isLearnMoreOpen;
+  useKeyPress('l', handleOpenLearnMore, canOpenLearnMore);
 
   // Handle timeout with flash message
   const onTimeout = () => {
@@ -264,12 +316,41 @@ export function GameScreen({
                     onLockIn={onLockIn}
                     explanation={currentQuestion.explanation}
                   />
+
+                  {/* Learn More button and tooltip - shown during reveal when content exists */}
+                  {state.phase === 'revealing' && learningContent && (
+                    <div className="relative flex justify-end mt-6 max-w-5xl mx-auto">
+                      <div className="relative">
+                        <LearnMoreButton
+                          onOpenModal={handleOpenLearnMore}
+                          hasContent={!!learningContent}
+                        />
+                        <LearnMoreTooltip
+                          teaserText={getTeaserText(learningContent)}
+                          show={showTooltip}
+                          onDismiss={() => setShowTooltip(false)}
+                          onReadMore={handleOpenLearnMore}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Learn More modal - rendered outside main content */}
+      {learningContent && latestAnswer && (
+        <LearnMoreModal
+          isOpen={isLearnMoreOpen}
+          onClose={handleCloseLearnMore}
+          content={learningContent}
+          userAnswer={latestAnswer.selectedOption}
+          correctAnswer={latestAnswer.correctAnswer}
+        />
+      )}
 
       {/* Quit confirmation dialog */}
       <ConfirmDialog
