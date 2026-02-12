@@ -2,6 +2,27 @@
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+export type TopicCategory =
+  | 'voting'
+  | 'elections'
+  | 'congress'
+  | 'executive'
+  | 'judiciary'
+  | 'bill-of-rights'
+  | 'amendments'
+  | 'federalism'
+  | 'civic-participation';
+
+export type LearningContent = {
+  topic: TopicCategory;
+  paragraphs: string[]; // 2-3 paragraphs
+  corrections: Record<string, string>; // Keys are option indices as strings for wrong answers
+  source: {
+    name: string;
+    url: string;
+  };
+};
+
 export type Question = {
   id: string;
   text: string;
@@ -10,6 +31,8 @@ export type Question = {
   explanation: string;
   difficulty: Difficulty;
   topic: string;
+  topicCategory: TopicCategory; // Required granular category
+  learningContent?: LearningContent; // Optional expanded educational content
 };
 
 export type GamePhase =
