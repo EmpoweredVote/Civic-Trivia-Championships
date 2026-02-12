@@ -197,7 +197,7 @@ export function GameScreen({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-x-hidden">
       {/* Radial gradient bloom effect */}
       <div className="absolute inset-0 bg-gradient-radial from-teal-900/10 via-transparent to-transparent opacity-30" />
 
@@ -287,7 +287,7 @@ export function GameScreen({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col justify-center gap-12"
+            className="flex-1 flex flex-col justify-start pt-[10vh] gap-12"
           >
             {/* Question card */}
             <QuestionCard
