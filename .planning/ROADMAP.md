@@ -31,7 +31,10 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
   2. Content generation script can produce new learning content when invoked
   3. Phase 3 VERIFICATION.md exists with test results and acceptance criteria
   4. All v1.0 phases have complete documentation (PLANs, SUMMARYs, VERIFICATIONs)
-**Plans**: TBD
+**Plans**: 2 plans in 1 wave
+Plans:
+- [ ] 08-01-PLAN.md — Fix generateLearningContent.ts (install SDK, fix env var, preview-before-commit)
+- [ ] 08-02-PLAN.md — Create Phase 3 VERIFICATION.md and audit v1.0 documentation
 
 ### Phase 9: Redis Session Migration
 **Goal**: Game sessions persist across server restarts and support multi-instance deployment
@@ -88,7 +91,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Dev Tooling & Documentation | 0/0 | Not Started | — |
+| 8. Dev Tooling & Documentation | 0/2 | Planning Complete | — |
 | 9. Redis Session Migration | 0/0 | Not Started | — |
 | 10. Game UX Improvements | 0/0 | Not Started | — |
 | 11. Plausibility Enhancement | 0/0 | Not Started | — |
