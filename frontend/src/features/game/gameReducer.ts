@@ -22,7 +22,9 @@ export type GameAction =
   | { type: 'START_WAGER'; category: string }
   | { type: 'SET_WAGER'; amount: number }
   | { type: 'LOCK_WAGER' }
-  | { type: 'START_FINAL_QUESTION' };
+  | { type: 'START_FINAL_QUESTION' }
+  | { type: 'PAUSE_GAME' }
+  | { type: 'RESUME_GAME' };
 
 // Initial game state
 export const initialGameState: GameState = {
@@ -32,6 +34,7 @@ export const initialGameState: GameState = {
   selectedOption: null,
   answers: [],
   isTimerPaused: false,
+  isPaused: false,
   sessionId: null,
   totalScore: 0,
   wagerAmount: 0,
@@ -248,6 +251,26 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         phase: 'answering',
         selectedOption: null,
         isTimerPaused: false,
+      };
+    }
+
+    case 'PAUSE_GAME': {
+      // Guard: only valid during answering or selected phases (when timer is running)
+      if (state.phase !== 'answering' && state.phase !== 'selected') {
+        return state;
+      }
+      return {
+        ...state,
+        isTimerPaused: true,
+        isPaused: true,
+      };
+    }
+
+    case 'RESUME_GAME': {
+      return {
+        ...state,
+        isTimerPaused: false,
+        isPaused: false,
       };
     }
 

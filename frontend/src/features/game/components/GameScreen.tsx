@@ -13,7 +13,9 @@ import { LearnMoreTooltip } from './LearnMoreTooltip';
 import { LearnMoreModal } from './LearnMoreModal';
 import { FinalQuestionAnnouncement } from './FinalQuestionAnnouncement';
 import { WagerScreen } from './WagerScreen';
+import { PauseOverlay } from './PauseOverlay';
 import { useAuthStore } from '../../../store/authStore';
+import { announce } from '../../../utils/announce';
 import type { GameState, Question, LearningContent } from '../../../types/game';
 
 const QUESTION_DURATION = 25; // seconds
@@ -35,6 +37,8 @@ interface GameScreenProps {
   setWagerAmount: (amount: number) => void;
   lockWager: () => void;
   isFinalQuestion: boolean;
+  pauseGame: () => void;
+  resumeGame: () => void;
 }
 
 export function GameScreen({
@@ -52,6 +56,8 @@ export function GameScreen({
   setWagerAmount,
   lockWager,
   isFinalQuestion,
+  pauseGame,
+  resumeGame,
 }: GameScreenProps) {
 
   const [showQuitDialog, setShowQuitDialog] = useState(false);
@@ -170,6 +176,22 @@ export function GameScreen({
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [state.phase, showOptions, selectAnswer]);
 
+  // Escape key handler for pause overlay
+  useEffect(() => {
+    const handleEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // Only pause during answering or selected phases (not during reveal, wager, or already paused)
+        if ((state.phase === 'answering' || state.phase === 'selected') && !state.isPaused) {
+          pauseGame();
+          announce.polite('Game paused');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleEscapeKey);
+    return () => window.removeEventListener('keydown', handleEscapeKey);
+  }, [state.phase, state.isPaused, pauseGame]);
+
   // Keyboard shortcut for Learn More (only during reveal when content exists)
   const canOpenLearnMore = state.phase === 'revealing' && !!learningContent && !isLearnMoreOpen;
   useKeyPress('l', handleOpenLearnMore, canOpenLearnMore);
@@ -260,7 +282,7 @@ export function GameScreen({
           {/* Quit button */}
           <button
             onClick={handleQuitClick}
-            className="text-slate-400 hover:text-white transition-colors p-2"
+            className="min-w-[48px] min-h-[48px] text-slate-400 hover:text-white transition-colors p-2 flex items-center justify-center"
             aria-label="Quit game"
           >
             <svg
@@ -428,6 +450,17 @@ export function GameScreen({
         confirmText="Quit"
         cancelText="Continue Playing"
       />
+
+      {/* Pause overlay */}
+      {state.isPaused && (
+        <PauseOverlay
+          onResume={() => {
+            resumeGame();
+            announce.polite('Game resumed');
+          }}
+          onQuit={quitGame}
+        />
+      )}
     </div>
   );
 }

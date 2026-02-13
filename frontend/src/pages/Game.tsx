@@ -21,6 +21,8 @@ export function Game() {
     setWagerAmount,
     lockWager,
     isFinalQuestion,
+    pauseGame,
+    resumeGame,
   } = useGameState();
 
   const handlePlayAgain = () => {
@@ -65,6 +67,8 @@ export function Game() {
       setWagerAmount={setWagerAmount}
       lockWager={lockWager}
       isFinalQuestion={isFinalQuestion}
+      pauseGame={pauseGame}
+      resumeGame={resumeGame}
     />
   );
 }

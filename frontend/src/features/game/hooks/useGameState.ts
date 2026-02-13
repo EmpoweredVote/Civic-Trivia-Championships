@@ -29,6 +29,8 @@ interface UseGameStateReturn {
   setWagerAmount: (amount: number) => void;
   lockWager: () => void;
   isFinalQuestion: boolean;
+  pauseGame: () => void;
+  resumeGame: () => void;
 }
 
 export function useGameState(): UseGameStateReturn {
@@ -273,6 +275,16 @@ export function useGameState(): UseGameStateReturn {
     }
   };
 
+  // Pause game (user-initiated via Escape key)
+  const pauseGame = () => {
+    dispatch({ type: 'PAUSE_GAME' });
+  };
+
+  // Resume game (from pause overlay)
+  const resumeGame = () => {
+    dispatch({ type: 'RESUME_GAME' });
+  };
+
   // Auto-advance logic when entering revealing phase
   useEffect(() => {
     if (state.phase === 'revealing') {
@@ -362,5 +374,7 @@ export function useGameState(): UseGameStateReturn {
     setWagerAmount,
     lockWager,
     isFinalQuestion,
+    pauseGame,
+    resumeGame,
   };
 }

@@ -92,6 +92,7 @@ export type GameState = {
   selectedOption: number | null;
   answers: GameAnswer[];
   isTimerPaused: boolean;
+  isPaused: boolean; // User-initiated pause via Escape key
   sessionId: string | null;
   totalScore: number;
   wagerAmount: number; // Wager amount for final question (defaults to 0)
