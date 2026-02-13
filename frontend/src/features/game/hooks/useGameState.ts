@@ -8,6 +8,8 @@ import { useAuthStore } from '../../../store/authStore';
 // Timing constants
 const SUSPENSE_PAUSE_MS = 1500; // Pause after lock-in before reveal
 const AUTO_ADVANCE_MS = 6000; // Auto-advance after reveal
+const ANNOUNCEMENT_DURATION_MS = 2500; // 2.5s for "FINAL QUESTION" screen
+const WAGER_SUSPENSE_MS = 1500; // Suspense pause after locking wager
 
 interface UseGameStateReturn {
   state: GameState;
@@ -23,6 +25,10 @@ interface UseGameStateReturn {
   resumeAutoAdvance: () => void;
   hasShownTooltip: boolean;
   setHasShownTooltip: (value: boolean) => void;
+  startWager: () => void;
+  setWagerAmount: (amount: number) => void;
+  lockWager: () => void;
+  isFinalQuestion: boolean;
 }
 
 export function useGameState(): UseGameStateReturn {
@@ -39,6 +45,7 @@ export function useGameState(): UseGameStateReturn {
 
   // Derived values
   const currentQuestion = state.questions[state.currentQuestionIndex] || null;
+  const isFinalQuestion = state.currentQuestionIndex === 9;
 
   const gameResult: GameResult | null =
     state.phase === 'complete'
@@ -64,6 +71,18 @@ export function useGameState(): UseGameStateReturn {
             };
           })(),
           progression: progression,
+          wagerResult: (() => {
+            // Check if final answer (Q10) has a wager
+            const finalAnswer = state.answers[9];
+            if (finalAnswer?.wager !== undefined) {
+              return {
+                wagerAmount: finalAnswer.wager,
+                won: finalAnswer.correct,
+                pointsChange: finalAnswer.totalPoints,
+              };
+            }
+            return null;
+          })(),
         }
       : null;
 
@@ -100,13 +119,17 @@ export function useGameState(): UseGameStateReturn {
     const currentQuestion = state.questions[state.currentQuestionIndex];
     if (!currentQuestion) return;
 
+    // Include wager for final question (Q10)
+    const wager = state.currentQuestionIndex === 9 ? state.wagerAmount : undefined;
+
     try {
       const [serverResponse] = await Promise.all([
         submitAnswer(
           sessionIdRef.current,
           currentQuestion.id,
           state.selectedOption,
-          timeRemaining
+          timeRemaining,
+          wager
         ),
         new Promise((resolve) => setTimeout(resolve, SUSPENSE_PAUSE_MS)),
       ]);
@@ -146,12 +169,16 @@ export function useGameState(): UseGameStateReturn {
     const currentQuestion = state.questions[state.currentQuestionIndex];
     if (!currentQuestion) return;
 
+    // Include wager for final question (Q10)
+    const wager = state.currentQuestionIndex === 9 ? state.wagerAmount : undefined;
+
     try {
       const serverResponse = await submitAnswer(
         sessionIdRef.current,
         currentQuestion.id,
         null,
-        0
+        0,
+        wager
       );
 
       dispatch({
@@ -195,6 +222,31 @@ export function useGameState(): UseGameStateReturn {
   // Quit game
   const quitGame = () => {
     dispatch({ type: 'QUIT_GAME' });
+  };
+
+  // Start wager phase (called after final announcement timer)
+  const startWager = () => {
+    const currentQuestion = state.questions[state.currentQuestionIndex];
+    if (!currentQuestion) return;
+
+    // Use topicCategory, fallback to topic if not available
+    const category = currentQuestion.topicCategory || currentQuestion.topic;
+    dispatch({ type: 'START_WAGER', category });
+  };
+
+  // Set wager amount during wagering phase
+  const setWagerAmount = (amount: number) => {
+    dispatch({ type: 'SET_WAGER', amount });
+  };
+
+  // Lock in wager with suspense pause before final question
+  const lockWager = () => {
+    dispatch({ type: 'LOCK_WAGER' });
+
+    // After suspense pause, start the final question
+    setTimeout(() => {
+      dispatch({ type: 'START_FINAL_QUESTION' });
+    }, WAGER_SUSPENSE_MS);
   };
 
   // Pause auto-advance timer and save remaining time
@@ -247,6 +299,17 @@ export function useGameState(): UseGameStateReturn {
     };
   }, [state.phase]);
 
+  // Handle final announcement phase - auto-transition to wager screen
+  useEffect(() => {
+    if (state.phase === 'final-announcement') {
+      const timer = setTimeout(() => {
+        startWager();
+      }, ANNOUNCEMENT_DURATION_MS);
+
+      return () => clearTimeout(timer);
+    }
+  }, [state.phase]);
+
   // Fetch progression data when game completes (authenticated users only)
   useEffect(() => {
     if (state.phase === 'complete' && sessionIdRef.current) {
@@ -295,5 +358,9 @@ export function useGameState(): UseGameStateReturn {
     resumeAutoAdvance,
     hasShownTooltip,
     setHasShownTooltip,
+    startWager,
+    setWagerAmount,
+    lockWager,
+    isFinalQuestion,
   };
 }

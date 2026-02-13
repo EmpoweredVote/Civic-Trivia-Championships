@@ -93,7 +93,7 @@ router.post('/session', optionalAuth, (req: Request, res: Response) => {
 // POST /answer - Submit an answer for scoring
 router.post('/answer', (req: Request, res: Response) => {
   try {
-    const { sessionId, questionId, selectedOption, timeRemaining } = req.body;
+    const { sessionId, questionId, selectedOption, timeRemaining, wager } = req.body;
 
     // Validate required fields
     if (!sessionId || !questionId || timeRemaining === undefined) {
@@ -107,7 +107,8 @@ router.post('/answer', (req: Request, res: Response) => {
       sessionId,
       questionId,
       selectedOption ?? null,
-      timeRemaining
+      timeRemaining,
+      wager
     );
 
     // Get the question to return the correct answer
@@ -130,9 +131,10 @@ router.post('/answer', (req: Request, res: Response) => {
       basePoints: answer.basePoints,
       speedBonus: answer.speedBonus,
       totalPoints: answer.totalPoints,
-      correct: answer.basePoints > 0,
+      correct: answer.basePoints > 0 || (answer.wager !== undefined && answer.totalPoints > 0),
       correctAnswer: question.correctAnswer,
-      flagged: answer.flagged
+      flagged: answer.flagged,
+      ...(answer.wager !== undefined ? { wager: answer.wager } : {}),
     });
   } catch (error) {
     console.error('Error submitting answer:', error);

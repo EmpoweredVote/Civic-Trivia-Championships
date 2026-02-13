@@ -37,6 +37,7 @@ export interface ServerAnswer {
   totalPoints: number;
   responseTime: number;
   flagged: boolean; // Plausibility check flag
+  wager?: number; // Optional wager amount for final question
 }
 
 // Game session stored in memory
@@ -63,12 +64,18 @@ export interface GameSessionResult {
     responseTime: number;
     points: number;
   } | null;
+  wagerResult?: {
+    wagerAmount: number;
+    won: boolean;
+    pointsChange: number;
+  } | null;
 }
 
 // Constants
 const SESSION_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const QUESTION_DURATION = 25; // seconds
+const FINAL_QUESTION_DURATION = 50; // seconds (for Q10)
 const MIN_PLAUSIBLE_RESPONSE_TIME = 0.5; // seconds
 const MAX_PLAUSIBLE_TIME_REMAINING = 25; // seconds
 
@@ -134,6 +141,7 @@ export class SessionManager {
    * @param questionId - Question ID being answered
    * @param selectedOption - Selected option index (0-3) or null for timeout
    * @param timeRemaining - Time remaining when answer submitted
+   * @param wager - Optional wager amount (only allowed on final question)
    * @returns Server answer with scoring
    * @throws Error if session invalid, question not found, or already answered
    */
@@ -141,7 +149,8 @@ export class SessionManager {
     sessionId: string,
     questionId: string,
     selectedOption: number | null,
-    timeRemaining: number
+    timeRemaining: number,
+    wager?: number
   ): ServerAnswer {
     // Validate session exists
     const session = this.getSession(sessionId);
@@ -162,17 +171,45 @@ export class SessionManager {
       return existingAnswer;
     }
 
-    // Calculate response time
-    const responseTime = calculateResponseTime(QUESTION_DURATION, timeRemaining);
+    // Determine if this is the final question (Q10 = index 9)
+    const questionIndex = session.questions.findIndex(q => q.id === questionId);
+    const isFinalQuestion = questionIndex === 9;
 
-    // Plausibility checks
+    // Wager validation
+    if (wager !== undefined) {
+      // Wager only allowed on final question
+      if (!isFinalQuestion) {
+        throw new Error('Wager only allowed on final question');
+      }
+
+      // Validate wager is non-negative
+      if (wager < 0) {
+        throw new Error('Wager must be non-negative');
+      }
+
+      // Calculate current score from all previous answers
+      const currentScore = session.answers.reduce((sum, a) => sum + a.totalPoints, 0);
+      const maxWager = Math.floor(currentScore / 2);
+
+      // Validate wager doesn't exceed maximum
+      if (wager > maxWager) {
+        throw new Error(`Wager ${wager} exceeds maximum allowed ${maxWager}`);
+      }
+    }
+
+    // Calculate response time (use appropriate duration for final question)
+    const duration = isFinalQuestion ? FINAL_QUESTION_DURATION : QUESTION_DURATION;
+    const responseTime = calculateResponseTime(duration, timeRemaining);
+
+    // Plausibility checks (use appropriate max time for final question)
+    const maxPlausibleTime = isFinalQuestion ? FINAL_QUESTION_DURATION : MAX_PLAUSIBLE_TIME_REMAINING;
     let flagged = false;
     if (responseTime < MIN_PLAUSIBLE_RESPONSE_TIME) {
       console.warn(`⚠️  Suspicious answer: responseTime ${responseTime}s < ${MIN_PLAUSIBLE_RESPONSE_TIME}s (sessionId: ${sessionId}, questionId: ${questionId})`);
       flagged = true;
     }
-    if (timeRemaining > MAX_PLAUSIBLE_TIME_REMAINING) {
-      console.warn(`⚠️  Suspicious answer: timeRemaining ${timeRemaining}s > ${MAX_PLAUSIBLE_TIME_REMAINING}s (sessionId: ${sessionId}, questionId: ${questionId})`);
+    if (timeRemaining > maxPlausibleTime) {
+      console.warn(`⚠️  Suspicious answer: timeRemaining ${timeRemaining}s > ${maxPlausibleTime}s (sessionId: ${sessionId}, questionId: ${questionId})`);
       flagged = true;
     }
 
@@ -180,7 +217,26 @@ export class SessionManager {
     const isCorrect = selectedOption === question.correctAnswer;
 
     // Calculate score
-    const score = calculateScore(isCorrect, timeRemaining);
+    let score: { basePoints: number; speedBonus: number; totalPoints: number };
+
+    if (isFinalQuestion && wager !== undefined) {
+      // Final question with wager: use wager-only scoring (no base points, no speed bonus)
+      score = {
+        basePoints: 0,
+        speedBonus: 0,
+        totalPoints: isCorrect ? wager : -wager,
+      };
+    } else if (isFinalQuestion && wager === undefined) {
+      // Final question without wager: treat as 0 wager
+      score = {
+        basePoints: 0,
+        speedBonus: 0,
+        totalPoints: 0,
+      };
+    } else {
+      // Normal question: use standard scoring
+      score = calculateScore(isCorrect, timeRemaining);
+    }
 
     // Create answer record
     const answer: ServerAnswer = {
@@ -191,7 +247,8 @@ export class SessionManager {
       speedBonus: score.speedBonus,
       totalPoints: score.totalPoints,
       responseTime,
-      flagged
+      flagged,
+      ...(wager !== undefined ? { wager } : {}),
     };
 
     // Store answer
@@ -245,6 +302,19 @@ export class SessionManager {
       }
     }
 
+    // Check for wager result (final question is index 9)
+    let wagerResult: GameSessionResult['wagerResult'] = null;
+    if (session.answers.length >= 10) {
+      const finalAnswer = session.answers[9];
+      if (finalAnswer.wager !== undefined) {
+        wagerResult = {
+          wagerAmount: finalAnswer.wager,
+          won: finalAnswer.totalPoints > 0,
+          pointsChange: finalAnswer.totalPoints,
+        };
+      }
+    }
+
     return {
       answers: session.answers,
       totalScore,
@@ -252,7 +322,8 @@ export class SessionManager {
       totalSpeedBonus,
       totalCorrect,
       totalQuestions: session.questions.length,
-      fastestAnswer
+      fastestAnswer,
+      wagerResult,
     };
   }
 
