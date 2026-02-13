@@ -171,7 +171,7 @@ export function Profile() {
             // Empty state
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <p className="text-lg text-slate-400">No games played yet!</p>
-              <p className="text-slate-500">
+              <p className="text-slate-400">
                 Play your first game to start tracking your stats.
               </p>
               <button

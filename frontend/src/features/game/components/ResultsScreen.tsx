@@ -395,7 +395,7 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
             </button>
             <button
               onClick={onHome}
-              className="px-8 py-4 bg-transparent border-2 border-slate-600 hover:border-slate-500 text-white text-lg font-bold rounded-lg transition-colors min-h-[48px]"
+              className="px-8 py-4 bg-transparent border-2 border-slate-500 hover:border-slate-400 text-white text-lg font-bold rounded-lg transition-colors min-h-[48px]"
             >
               Home
             </button>
@@ -477,7 +477,7 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                                 ? 'text-teal-400'
                                 : timedOut
                                 ? 'text-amber-500'
-                                : 'text-slate-500'
+                                : 'text-slate-400'
                             }`}
                           >
                             {answer.totalPoints >= 0 ? '+' : ''}{answer.totalPoints}
@@ -536,10 +536,10 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                                 // Q10 with 0 wager: "Played for Fun"
                                 <>
                                   <span className="text-slate-400">
-                                    Wager: <span className="text-slate-500">0 (played for fun)</span>
+                                    Wager: <span className="text-slate-400">0 (played for fun)</span>
                                   </span>
                                   <span className="text-slate-600">|</span>
-                                  <span className="text-slate-500">0 points</span>
+                                  <span className="text-slate-400">0 points</span>
                                   <span className="text-slate-600">|</span>
                                   <span className="text-slate-400">
                                     Time: <span className="text-white">{answer.responseTime.toFixed(1)}s</span>
@@ -562,7 +562,7 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                                   </span>
                                 </>
                               ) : (
-                                <span className="text-slate-500">No points awarded</span>
+                                <span className="text-slate-400">No points awarded</span>
                               )}
                             </div>
 

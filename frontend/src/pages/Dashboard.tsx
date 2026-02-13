@@ -20,7 +20,7 @@ export function Dashboard() {
           <div className="text-center py-8">
             <button
               onClick={() => navigate('/play')}
-              className="px-12 py-4 bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold rounded-lg shadow-lg transition-all transform hover:scale-105"
+              className="px-12 py-4 min-h-[48px] bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold rounded-lg shadow-lg transition-all transform hover:scale-105"
             >
               Quick Play
             </button>

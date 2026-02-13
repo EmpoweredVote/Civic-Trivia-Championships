@@ -16,7 +16,7 @@ export function Button({
   variant = 'primary',
 }: ButtonProps) {
   const baseClasses =
-    'w-full flex justify-center py-2 px-4 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+    'w-full flex justify-center py-2 px-4 min-h-[48px] border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
 
   const variantClasses = {
     primary:

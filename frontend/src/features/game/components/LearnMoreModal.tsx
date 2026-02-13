@@ -75,7 +75,7 @@ export function LearnMoreModal({
                 {/* Close button */}
                 <button
                   onClick={onClose}
-                  className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+                  className="absolute top-4 right-4 min-w-[48px] min-h-[48px] text-slate-300 hover:text-white transition-colors flex items-center justify-center"
                   aria-label="Close modal"
                 >
                 <svg

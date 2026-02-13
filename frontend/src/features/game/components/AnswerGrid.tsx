@@ -51,7 +51,7 @@ export function AnswerGrid({
     }
 
     // Default state
-    return 'bg-slate-800 border-slate-600 hover:border-teal-500 hover:bg-slate-700';
+    return 'bg-slate-800 border-slate-500 hover:border-teal-500 hover:bg-slate-700';
   };
 
   const getOptionScale = (index: number) => {
@@ -142,7 +142,7 @@ export function AnswerGrid({
             `}
           >
             {/* Letter label */}
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-900/50 border border-slate-600 flex items-center justify-center text-white font-bold text-lg">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-900/50 border border-slate-500 flex items-center justify-center text-white font-bold text-lg">
               {OPTION_LETTERS[index]}
             </div>
 

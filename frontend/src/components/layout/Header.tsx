@@ -64,7 +64,7 @@ export function Header() {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                  className="min-w-[48px] min-h-[48px] p-2 text-gray-500 hover:text-gray-700 transition-colors flex items-center justify-center"
                   aria-label="Menu"
                 >
                   <svg
