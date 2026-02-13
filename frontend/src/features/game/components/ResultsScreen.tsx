@@ -142,7 +142,7 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
               animate={isPerfectGame ? { scale: [1, 1.05, 1] } : {}}
               transition={{ duration: 0.5, repeat: 2, delay: 0.5 }}
               className={`text-7xl font-bold mb-2 ${
-                isPerfectGame ? 'text-yellow-400' : 'text-teal-400'
+                isPerfectGame ? 'text-yellow-400' : result.totalScore < 0 ? 'text-red-400' : 'text-teal-400'
               }`}
               style={
                 isPerfectGame
@@ -193,22 +193,95 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
             )}
           </motion.div>
 
-          {/* Score breakdown: base + speed */}
+          {/* Score breakdown: base + speed + wager */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.3 }}
             className="text-slate-300 text-lg mb-8"
           >
-            {result.totalBasePoints.toLocaleString()} base +{' '}
-            {result.totalSpeedBonus.toLocaleString()} speed
+            {(() => {
+              // If wager exists and wagerAmount > 0, calculate Q1-Q9 base+speed separately
+              if (result.wagerResult && result.wagerResult.wagerAmount > 0) {
+                const q1to9BasePoints = result.answers.slice(0, 9).reduce((sum, a) => sum + a.basePoints, 0);
+                const q1to9SpeedBonus = result.answers.slice(0, 9).reduce((sum, a) => sum + a.speedBonus, 0);
+                const wagerSign = result.wagerResult.won ? '+' : '-';
+                const wagerColor = result.wagerResult.won ? 'text-green-400' : 'text-red-400';
+                return (
+                  <>
+                    {q1to9BasePoints.toLocaleString()} base +{' '}
+                    {q1to9SpeedBonus.toLocaleString()} speed{' '}
+                    <span className={wagerColor}>
+                      {wagerSign} {result.wagerResult.wagerAmount.toLocaleString()} wager
+                    </span>
+                  </>
+                );
+              }
+              // No wager: original breakdown
+              return (
+                <>
+                  {result.totalBasePoints.toLocaleString()} base +{' '}
+                  {result.totalSpeedBonus.toLocaleString()} speed
+                </>
+              );
+            })()}
           </motion.div>
+
+          {/* Wager Breakdown Section (if wager was placed) */}
+          {result.wagerResult && result.wagerResult.wagerAmount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.3 }}
+              className={`max-w-md mx-auto mb-8 rounded-lg p-6 border ${
+                result.wagerResult.won
+                  ? 'bg-gradient-to-r from-green-500/10 to-teal-500/10 border-green-500/40'
+                  : 'bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-500/40'
+              }`}
+            >
+              <div className="text-center">
+                <h3 className="text-lg font-bold text-white mb-2">Final Question Wager</h3>
+                <div className="text-slate-300 mb-3">
+                  Bet: {result.wagerResult.wagerAmount.toLocaleString()} points
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  {result.wagerResult.won ? (
+                    <>
+                      <svg className="w-8 h-8 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-2xl font-bold text-green-400">
+                        Won! +{result.wagerResult.wagerAmount.toLocaleString()}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-8 h-8 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-2xl font-bold text-red-400">
+                        Lost -{result.wagerResult.wagerAmount.toLocaleString()}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Accuracy display */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.3 }}
+            transition={{ delay: 0.3, duration: 0.3 }}
             className="flex items-center justify-center gap-8 mb-8"
           >
             <div className="text-center">
@@ -229,7 +302,7 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.3 }}
+              transition={{ delay: 0.35, duration: 0.3 }}
               className="mb-8"
             >
               <div className="inline-block bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border border-teal-500/50 rounded-lg px-6 py-3">
@@ -259,7 +332,7 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.35 }}
+            transition={{ delay: 0.4 }}
             onClick={() => {
               // Toggle all or clear all
               if (expandedQuestions.size > 0) {
@@ -292,7 +365,7 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.3 }}
+            transition={{ delay: 0.45, duration: 0.3 }}
             className="flex items-center justify-center gap-4 mb-8"
           >
             <button
@@ -358,14 +431,16 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                         <div className="text-right">
                           <div
                             className={`text-xl font-bold ${
-                              isCorrect
+                              answer.totalPoints < 0
+                                ? 'text-red-400'
+                                : isCorrect
                                 ? 'text-teal-400'
                                 : timedOut
                                 ? 'text-amber-500'
                                 : 'text-slate-500'
                             }`}
                           >
-                            +{answer.totalPoints}
+                            {answer.totalPoints >= 0 ? '+' : ''}{answer.totalPoints}
                           </div>
                         </div>
                         <svg
@@ -399,7 +474,39 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                           <div className="px-4 pb-4 pt-2 border-t border-slate-700 bg-slate-900/30">
                             {/* Score breakdown */}
                             <div className="mb-4 flex items-center gap-4 text-sm">
-                              {isCorrect ? (
+                              {index === 9 && answer.wager !== undefined && answer.wager > 0 ? (
+                                // Q10 with wager: show wager-specific info
+                                <>
+                                  <span className="text-slate-400">
+                                    Wager: <span className="text-white">{answer.wager.toLocaleString()} points</span>
+                                  </span>
+                                  <span className="text-slate-600">|</span>
+                                  <span className={`text-slate-400 ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                                    {isCorrect ? '+' : '-'}
+                                    <span className={isCorrect ? 'text-green-400' : 'text-red-400'}>
+                                      {answer.wager.toLocaleString()}
+                                    </span>
+                                  </span>
+                                  <span className="text-slate-600">|</span>
+                                  <span className="text-slate-400">
+                                    Time: <span className="text-white">{answer.responseTime.toFixed(1)}s</span>
+                                  </span>
+                                </>
+                              ) : index === 9 && answer.wager !== undefined && answer.wager === 0 ? (
+                                // Q10 with 0 wager: "Played for Fun"
+                                <>
+                                  <span className="text-slate-400">
+                                    Wager: <span className="text-slate-500">0 (played for fun)</span>
+                                  </span>
+                                  <span className="text-slate-600">|</span>
+                                  <span className="text-slate-500">0 points</span>
+                                  <span className="text-slate-600">|</span>
+                                  <span className="text-slate-400">
+                                    Time: <span className="text-white">{answer.responseTime.toFixed(1)}s</span>
+                                  </span>
+                                </>
+                              ) : isCorrect ? (
+                                // Regular questions Q1-Q9: base + speed breakdown
                                 <>
                                   <span className="text-slate-400">
                                     Base: <span className="text-white">+{answer.basePoints}</span>
