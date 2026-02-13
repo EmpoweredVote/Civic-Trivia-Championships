@@ -7,38 +7,57 @@ import cookieParser from 'cookie-parser';
 import { router as authRouter } from './routes/auth.js';
 import { router as gameRouter } from './routes/game.js';
 import { router as profileRouter } from './routes/profile.js';
+import { router as healthRouter } from './routes/health.js';
+import { storageFactory } from './config/redis.js';
+import { initializeSessionManager } from './services/sessionService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-// Middleware
-app.use(cors({
-  origin: FRONTEND_URL,
-  credentials: true
-}));
-app.use(cookieParser());
-app.use(express.json());
+/**
+ * Start server with async initialization
+ * Ensures storage is initialized before accepting requests
+ */
+async function startServer() {
+  // Initialize storage (Redis or Memory fallback)
+  await storageFactory.initialize();
 
-// Static file serving for uploads
-app.use('/uploads', express.static('uploads'));
+  // Initialize session manager with storage backend
+  initializeSessionManager(storageFactory.getStorage());
 
-// Health check endpoint
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok' });
-});
+  // Middleware
+  app.use(cors({
+    origin: FRONTEND_URL,
+    credentials: true
+  }));
+  app.use(cookieParser());
+  app.use(express.json());
 
-// Auth routes
-app.use('/auth', authRouter);
+  // Static file serving for uploads
+  app.use('/uploads', express.static('uploads'));
 
-// Game routes
-app.use('/api/game', gameRouter);
+  // Health check endpoint
+  app.use('/health', healthRouter);
 
-// Profile routes
-app.use('/api/users/profile', profileRouter);
+  // Auth routes
+  app.use('/auth', authRouter);
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`CORS enabled for: ${FRONTEND_URL}`);
+  // Game routes
+  app.use('/api/game', gameRouter);
+
+  // Profile routes
+  app.use('/api/users/profile', profileRouter);
+
+  // Start server
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`CORS enabled for: ${FRONTEND_URL}`);
+    console.log(`Storage: ${storageFactory.isDegradedMode() ? 'in-memory (degraded)' : 'Redis'}`);
+  });
+}
+
+startServer().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });

@@ -5,6 +5,7 @@ import { dirname, join } from 'path';
 import { sessionManager, Question } from '../services/sessionService.js';
 import { optionalAuth } from '../middleware/auth.js';
 import { updateUserProgression } from '../services/progressionService.js';
+import { storageFactory } from '../config/redis.js';
 
 const router = Router();
 
@@ -51,7 +52,7 @@ router.get('/questions', (_req: Request, res: Response) => {
 });
 
 // POST /session - Create a new game session
-router.post('/session', optionalAuth, (req: Request, res: Response) => {
+router.post('/session', optionalAuth, async (req: Request, res: Response) => {
   try {
     const { questionIds } = req.body;
 
@@ -74,12 +75,13 @@ router.post('/session', optionalAuth, (req: Request, res: Response) => {
 
     // Get userId from auth middleware (authenticated) or use 'anonymous'
     const userId = req.user?.userId ?? 'anonymous';
-    const sessionId = sessionManager.createSession(userId, selectedQuestions);
+    const sessionId = await sessionManager.createSession(userId, selectedQuestions);
 
     // Return session with questions stripped of correctAnswer
     res.status(201).json({
       sessionId,
-      questions: stripAnswers(selectedQuestions)
+      questions: stripAnswers(selectedQuestions),
+      degraded: storageFactory.isDegradedMode()
     });
   } catch (error) {
     console.error('Error creating session:', error);
@@ -91,7 +93,7 @@ router.post('/session', optionalAuth, (req: Request, res: Response) => {
 });
 
 // POST /answer - Submit an answer for scoring
-router.post('/answer', (req: Request, res: Response) => {
+router.post('/answer', async (req: Request, res: Response) => {
   try {
     const { sessionId, questionId, selectedOption, timeRemaining, wager } = req.body;
 
@@ -103,7 +105,7 @@ router.post('/answer', (req: Request, res: Response) => {
     }
 
     // Submit answer to session manager
-    const answer = sessionManager.submitAnswer(
+    const answer = await sessionManager.submitAnswer(
       sessionId,
       questionId,
       selectedOption ?? null,
@@ -112,14 +114,14 @@ router.post('/answer', (req: Request, res: Response) => {
     );
 
     // Get the question to return the correct answer
-    const session = sessionManager.getSession(sessionId);
+    const session = await sessionManager.getSession(sessionId);
     if (!session) {
       return res.status(404).json({
         error: 'Session not found'
       });
     }
 
-    const question = session.questions.find(q => q.id === questionId);
+    const question = session.questions.find((q: Question) => q.id === questionId);
     if (!question) {
       return res.status(404).json({
         error: 'Question not found'
@@ -158,10 +160,10 @@ router.get('/results/:sessionId', async (req: Request, res: Response) => {
     }
 
     // Get aggregated results
-    const results = sessionManager.getResults(sessionId);
+    const results = await sessionManager.getResults(sessionId);
 
     // Get session to check for authenticated user
-    const session = sessionManager.getSession(sessionId);
+    const session = await sessionManager.getSession(sessionId);
     if (!session) {
       return res.status(404).json({
         error: 'Session not found'
@@ -186,7 +188,8 @@ router.get('/results/:sessionId', async (req: Request, res: Response) => {
 
     res.status(200).json({
       ...results,
-      progression
+      progression,
+      degraded: storageFactory.isDegradedMode()
     });
   } catch (error) {
     console.error('Error fetching results:', error);
