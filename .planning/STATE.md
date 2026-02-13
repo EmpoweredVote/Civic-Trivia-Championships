@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 
 ## Current Position
 
-Phase: 5 of 7 (Progression & Profile) — NOT STARTED
-Plan: 0 of TBD
-Status: Ready to plan
-Last activity: 2026-02-12 - Completed Phase 4 (Learning & Content)
+Phase: 5 of 7 (Progression & Profile) — IN PROGRESS
+Plan: 1 of 4 complete
+Status: Progression backend complete, ready for frontend integration
+Last activity: 2026-02-12 - Completed 05-01-PLAN.md (Progression Backend)
 
-Progress: [██████░░░░] ~57%
+Progress: [██████░░░░] ~60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: 4.3 min
-- Total execution time: 60 min
+- Total execution time: 64 min
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [██████░░░░] ~57%
 | 02-game-core | 4/4 | 16 min | 4 min |
 | 03-scoring-system | 3/3 | 12 min | 4 min |
 | 04-learning-content | 3/3 | 20 min | 7 min |
+| 05-progression-profile | 1/4 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (4 min), 04-01 (8 min), 04-02 (4 min), 04-03 (6 min)
-- Trend: Consistent pace, checkpoint plans take longer due to user interaction
+- Last 5 plans: 04-01 (8 min), 04-02 (4 min), 04-03 (6 min), 05-01 (4 min)
+- Trend: Consistent pace, backend-only plans faster than UI plans
 
 *Updated after each plan completion*
 
@@ -91,6 +92,11 @@ Recent decisions affecting current work:
 | No modal header/title | 04-02 | Educational content should feel conversational, not formal |
 | overflow-x-hidden instead of overflow-hidden | 04-03 | Prevents clipping Learn More button while avoiding horizontal scroll |
 | justify-start pt-[10vh] instead of justify-center | 04-03 | Prevents question card from shifting when answer options fade in |
+| XP formula: 50 base + 1 per correct | 05-01 | Simple, predictable progression rewarding both participation and performance |
+| Gems formula: 10 base + 1 per correct | 05-01 | Parallel to XP, future currency for cosmetics |
+| best_score uses GREATEST, not increment | 05-01 | Keeps maximum score achieved, more meaningful than cumulative |
+| Progression on results endpoint | 05-01 | Awards once at completion, not incrementally during play |
+| progressionAwarded flag prevents double-award | 05-01 | Idempotent results endpoint safe for multiple calls |
 
 ### Pending Todos
 
@@ -98,13 +104,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None — Phase 4 complete. All learning content features verified.
+None — Progression backend complete. Ready for results screen and profile UI integration.
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed Phase 4 (Learning & Content)
+Stopped at: Completed 05-01-PLAN.md (Progression Backend)
 Resume file: None
 
 ---
-*Next step: Plan Phase 5 (Progression & Profile)*
+*Next step: Execute 05-02 (Results Screen Rewards Display)*
