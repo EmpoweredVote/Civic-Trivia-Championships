@@ -1,8 +1,10 @@
-// Run: CLAUDE_API_KEY=sk-xxx npx tsx backend/src/scripts/generateLearningContent.ts
+// Run: ANTHROPIC_API_KEY=sk-xxx npx tsx backend/src/scripts/generateLearningContent.ts
+// Or: Create backend/.env with ANTHROPIC_API_KEY=sk-xxx
 //
 // Build-time script for AI content generation via Claude API
 // Generates educational content for questions missing learningContent
 
+import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -27,10 +29,8 @@ interface Question {
   };
 }
 
-// Initialize Claude client
-const client = new Anthropic({
-  apiKey: process.env.CLAUDE_API_KEY || '',
-});
+// Initialize Claude client (SDK auto-detects ANTHROPIC_API_KEY)
+const client = new Anthropic();
 
 function buildPrompt(question: Question): string {
   const wrongOptions = question.options
@@ -162,22 +162,24 @@ async function main() {
   }
 
   // Check API key
-  if (!process.env.CLAUDE_API_KEY) {
-    console.error('Error: CLAUDE_API_KEY environment variable not set');
-    console.error('Usage: CLAUDE_API_KEY=sk-xxx npx tsx backend/src/scripts/generateLearningContent.ts');
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('Error: ANTHROPIC_API_KEY environment variable not set');
+    console.error('Usage: ANTHROPIC_API_KEY=sk-xxx npx tsx backend/src/scripts/generateLearningContent.ts');
+    console.error('Or: Create backend/.env with ANTHROPIC_API_KEY=sk-xxx');
     process.exit(1);
   }
 
   // Generate content for each question
   let successCount = 0;
   let failCount = 0;
+  const generatedContent: Record<string, { learningContent: any }> = {};
 
   for (const question of questionsNeedingContent) {
     console.log(`Generating content for ${question.id}: ${question.text}`);
 
     try {
       const learningContent = await generateWithRetry(question);
-      question.learningContent = learningContent;
+      generatedContent[question.id] = { learningContent };
       successCount++;
       console.log(`  ✓ Success\n`);
 
@@ -191,14 +193,30 @@ async function main() {
     }
   }
 
-  // Write updated questions back to file
-  writeFileSync(questionsPath, JSON.stringify(questions, null, 2), 'utf-8');
+  // Write to temp file for review
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const outputPath = join(process.cwd(), `generated-content-${timestamp}.json`);
+  writeFileSync(outputPath, JSON.stringify(generatedContent, null, 2), 'utf-8');
 
   console.log('\n' + '='.repeat(60));
   console.log('Generation complete!');
   console.log(`  Success: ${successCount}`);
   console.log(`  Failed: ${failCount}`);
   console.log(`  Total: ${successCount + failCount}`);
+  console.log('='.repeat(60));
+  console.log('\nGenerated content summary:\n');
+
+  for (const [questionId, content] of Object.entries(generatedContent)) {
+    const firstParagraph = content.learningContent.paragraphs[0];
+    const preview = firstParagraph.length > 80 ? firstParagraph.slice(0, 80) + '...' : firstParagraph;
+    const sourceUrl = content.learningContent.source.url;
+    console.log(`${questionId}: ${preview}`);
+    console.log(`  Source: ${sourceUrl}\n`);
+  }
+
+  console.log('='.repeat(60));
+  console.log(`\nReview the generated content in: ${outputPath}`);
+  console.log(`To apply, run: npx tsx backend/src/scripts/applyContent.ts ${outputPath}`);
   console.log('='.repeat(60));
 }
 
