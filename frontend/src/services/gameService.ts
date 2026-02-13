@@ -31,7 +31,8 @@ export async function submitAnswer(
   sessionId: string,
   questionId: string,
   selectedOption: number | null,
-  timeRemaining: number
+  timeRemaining: number,
+  wager?: number
 ): Promise<{
   basePoints: number;
   speedBonus: number;
@@ -39,7 +40,26 @@ export async function submitAnswer(
   correct: boolean;
   correctAnswer: number;
   flagged: boolean;
+  wager?: number;
 }> {
+  const body: {
+    sessionId: string;
+    questionId: string;
+    selectedOption: number | null;
+    timeRemaining: number;
+    wager?: number;
+  } = {
+    sessionId,
+    questionId,
+    selectedOption,
+    timeRemaining,
+  };
+
+  // Only include wager if provided
+  if (wager !== undefined) {
+    body.wager = wager;
+  }
+
   const response = await apiRequest<{
     basePoints: number;
     speedBonus: number;
@@ -47,14 +67,10 @@ export async function submitAnswer(
     correct: boolean;
     correctAnswer: number;
     flagged: boolean;
+    wager?: number;
   }>('/api/game/answer', {
     method: 'POST',
-    body: JSON.stringify({
-      sessionId,
-      questionId,
-      selectedOption,
-      timeRemaining,
-    }),
+    body: JSON.stringify(body),
   });
 
   return response;

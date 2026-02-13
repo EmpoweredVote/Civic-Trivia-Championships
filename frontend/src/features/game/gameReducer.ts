@@ -17,7 +17,12 @@ export type GameAction =
   | { type: 'REVEAL_ANSWER'; timeRemaining: number; scoreData: ScoreData }
   | { type: 'TIMEOUT'; timeRemaining: number; scoreData: ScoreData }
   | { type: 'NEXT_QUESTION' }
-  | { type: 'QUIT_GAME' };
+  | { type: 'QUIT_GAME' }
+  | { type: 'SHOW_FINAL_ANNOUNCEMENT' }
+  | { type: 'START_WAGER'; category: string }
+  | { type: 'SET_WAGER'; amount: number }
+  | { type: 'LOCK_WAGER' }
+  | { type: 'START_FINAL_QUESTION' };
 
 // Initial game state
 export const initialGameState: GameState = {
@@ -29,6 +34,8 @@ export const initialGameState: GameState = {
   isTimerPaused: false,
   sessionId: null,
   totalScore: 0,
+  wagerAmount: 0,
+  wagerCategory: null,
 };
 
 // Pure reducer function for game state transitions
@@ -45,6 +52,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         answers: [],
         totalScore: 0,
         isTimerPaused: false,
+        wagerAmount: 0,
+        wagerCategory: null,
       };
 
     case 'SELECT_ANSWER': {
@@ -91,7 +100,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         basePoints: action.scoreData.basePoints,
         speedBonus: action.scoreData.speedBonus,
         totalPoints: action.scoreData.totalPoints,
-        responseTime: 25 - action.timeRemaining, // Calculate actual response time
+        responseTime: (state.currentQuestionIndex === 9 ? 50 : 25) - action.timeRemaining,
+        ...(state.currentQuestionIndex === 9 && state.wagerAmount > 0 ? { wager: state.wagerAmount } : {}),
       };
 
       return {
@@ -122,7 +132,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         basePoints: action.scoreData.basePoints,
         speedBonus: action.scoreData.speedBonus,
         totalPoints: action.scoreData.totalPoints,
-        responseTime: 25 - action.timeRemaining,
+        responseTime: (state.currentQuestionIndex === 9 ? 50 : 25) - action.timeRemaining,
+        ...(state.currentQuestionIndex === 9 && state.wagerAmount > 0 ? { wager: state.wagerAmount } : {}),
       };
 
       return {
@@ -147,6 +158,17 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         };
       }
 
+      // Check if next question is Q10 (0-indexed: 9) - trigger final announcement
+      if (nextIndex === 9) {
+        return {
+          ...state,
+          phase: 'final-announcement',
+          currentQuestionIndex: nextIndex,
+          selectedOption: null,
+          isTimerPaused: false,
+        };
+      }
+
       // Move to next question
       return {
         ...state,
@@ -161,6 +183,73 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...initialGameState,
       };
+
+    case 'SHOW_FINAL_ANNOUNCEMENT': {
+      // Guard: only valid from revealing phase
+      if (state.phase !== 'revealing') {
+        return state;
+      }
+      return {
+        ...state,
+        phase: 'final-announcement',
+      };
+    }
+
+    case 'START_WAGER': {
+      // Guard: only valid from final-announcement phase
+      if (state.phase !== 'final-announcement') {
+        return state;
+      }
+      // Set default wager to 25% of max allowed (half of current score)
+      const maxWager = Math.floor(state.totalScore / 2);
+      const defaultWager = Math.floor(maxWager * 0.25);
+      return {
+        ...state,
+        phase: 'wagering',
+        wagerCategory: action.category,
+        wagerAmount: defaultWager,
+      };
+    }
+
+    case 'SET_WAGER': {
+      // Guard: only valid during wagering phase
+      if (state.phase !== 'wagering') {
+        return state;
+      }
+      // Clamp wager to valid range [0, half of current score]
+      const maxWager = Math.floor(state.totalScore / 2);
+      const clampedAmount = Math.max(0, Math.min(action.amount, maxWager));
+      return {
+        ...state,
+        wagerAmount: clampedAmount,
+      };
+    }
+
+    case 'LOCK_WAGER': {
+      // Guard: only valid during wagering phase
+      if (state.phase !== 'wagering') {
+        return state;
+      }
+      return {
+        ...state,
+        phase: 'wager-locked',
+        isTimerPaused: true,
+      };
+    }
+
+    case 'START_FINAL_QUESTION': {
+      // Guard: only valid from wager-locked phase
+      if (state.phase !== 'wager-locked') {
+        return state;
+      }
+      // Transition to answering phase for Q10 (reuse existing answering logic)
+      return {
+        ...state,
+        phase: 'answering',
+        selectedOption: null,
+        isTimerPaused: false,
+      };
+    }
 
     default:
       return state;

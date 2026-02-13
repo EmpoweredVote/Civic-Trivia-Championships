@@ -42,6 +42,9 @@ export type GamePhase =
   | 'selected' // Player has highlighted an answer but not locked in
   | 'locked' // Player confirmed answer, suspense pause
   | 'revealing' // Showing correct/incorrect + explanation
+  | 'final-announcement' // "FINAL QUESTION" screen before wagering
+  | 'wagering' // Player selecting wager amount
+  | 'wager-locked' // Wager confirmed, suspense pause before final question
   | 'complete'; // All 10 questions done, show results
 
 export type GameAnswer = {
@@ -54,6 +57,7 @@ export type GameAnswer = {
   speedBonus: number;
   totalPoints: number;
   responseTime: number;
+  wager?: number; // Optional wager amount (only present for Q10)
 };
 
 export type Progression = {
@@ -74,6 +78,11 @@ export type GameResult = {
     points: number;
   } | null;
   progression?: Progression | null;
+  wagerResult?: {
+    wagerAmount: number;
+    won: boolean;
+    pointsChange: number;
+  } | null;
 };
 
 export type GameState = {
@@ -85,4 +94,6 @@ export type GameState = {
   isTimerPaused: boolean;
   sessionId: string | null;
   totalScore: number;
+  wagerAmount: number; // Wager amount for final question (defaults to 0)
+  wagerCategory: string | null; // Category for final question wagering (defaults to null)
 };
