@@ -13,6 +13,7 @@ import { LearnMoreTooltip } from './LearnMoreTooltip';
 import { LearnMoreModal } from './LearnMoreModal';
 import { FinalQuestionAnnouncement } from './FinalQuestionAnnouncement';
 import { WagerScreen } from './WagerScreen';
+import { useAuthStore } from '../../../store/authStore';
 import type { GameState, Question, LearningContent } from '../../../types/game';
 
 const QUESTION_DURATION = 25; // seconds
@@ -63,6 +64,13 @@ export function GameScreen({
   const [showScorePopup, setShowScorePopup] = useState(false);
   const [isLearnMoreOpen, setIsLearnMoreOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+
+  // Get timer multiplier from auth store (defaults to 1.0)
+  const timerMultiplier = useAuthStore((s) => s.timerMultiplier);
+
+  // Calculate adjusted durations based on multiplier
+  const questionDuration = Math.round(QUESTION_DURATION * timerMultiplier);
+  const finalQuestionDuration = Math.round(FINAL_QUESTION_DURATION * timerMultiplier);
 
   // Determine if current question has learning content
   const learningContent = currentQuestion?.learningContent ?? null;
@@ -277,7 +285,7 @@ export function GameScreen({
           {/* Timer - paused during question preview, extended for final question */}
           <GameTimer
             key={timerKey}
-            duration={isFinalQuestion ? FINAL_QUESTION_DURATION : QUESTION_DURATION}
+            duration={isFinalQuestion ? finalQuestionDuration : questionDuration}
             onTimeout={onTimeout}
             onTimeUpdate={setCurrentTimeRemaining}
             isPaused={state.isTimerPaused || !showOptions}

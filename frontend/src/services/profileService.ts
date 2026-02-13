@@ -11,6 +11,7 @@ export interface ProfileStats {
   avatarUrl: string | null;
   name: string;
   email: string;
+  timerMultiplier: number;
 }
 
 export async function fetchProfile(): Promise<ProfileStats> {
@@ -44,4 +45,17 @@ export async function uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
   }
 
   return response.json();
+}
+
+export async function updateTimerMultiplier(multiplier: number): Promise<{ timerMultiplier: number }> {
+  const { accessToken } = useAuthStore.getState();
+
+  return apiRequest<{ timerMultiplier: number }>('/api/users/profile/settings', {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ timerMultiplier: multiplier }),
+  });
 }

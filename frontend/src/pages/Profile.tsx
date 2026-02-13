@@ -4,7 +4,8 @@ import { Header } from '../components/layout/Header';
 import { Avatar } from '../components/Avatar';
 import { XpIcon } from '../components/icons/XpIcon';
 import { GemIcon } from '../components/icons/GemIcon';
-import { fetchProfile, uploadAvatar, ProfileStats } from '../services/profileService';
+import { fetchProfile, uploadAvatar, updateTimerMultiplier, ProfileStats } from '../services/profileService';
+import { useAuthStore } from '../store/authStore';
 
 export function Profile() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export function Profile() {
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [updatingTimer, setUpdatingTimer] = useState(false);
 
   const loadProfile = async () => {
     setLoading(true);
@@ -20,6 +22,8 @@ export function Profile() {
     try {
       const data = await fetchProfile();
       setProfile(data);
+      // Sync timer multiplier to auth store
+      useAuthStore.getState().setTimerMultiplier(data.timerMultiplier);
     } catch (err: any) {
       setError(err?.error || 'Failed to load profile');
     } finally {
@@ -48,6 +52,26 @@ export function Profile() {
       setUploadError(err?.error || 'Failed to upload avatar');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleTimerMultiplierChange = async (multiplier: number) => {
+    setUpdatingTimer(true);
+    try {
+      await updateTimerMultiplier(multiplier);
+      // Update local profile state
+      if (profile) {
+        setProfile({
+          ...profile,
+          timerMultiplier: multiplier,
+        });
+      }
+      // Update auth store for gameplay
+      useAuthStore.getState().setTimerMultiplier(multiplier);
+    } catch (err: any) {
+      setError(err?.error || 'Failed to update timer setting');
+    } finally {
+      setUpdatingTimer(false);
     }
   };
 
@@ -178,6 +202,38 @@ export function Profile() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Settings section */}
+        <div className="bg-slate-800 rounded-lg p-8">
+          <h2 className="text-2xl font-bold text-white mb-6">Settings</h2>
+
+          <div className="space-y-6">
+            {/* Extended Time setting */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Extended Time</h3>
+                <p className="text-sm text-slate-400 mt-1">Adjusts the timer for all questions</p>
+              </div>
+
+              <div className="flex space-x-2">
+                {[1.0, 1.5, 2.0].map((multiplier) => (
+                  <button
+                    key={multiplier}
+                    onClick={() => handleTimerMultiplierChange(multiplier)}
+                    disabled={updatingTimer}
+                    className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                      profile.timerMultiplier === multiplier
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    } ${updatingTimer ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {multiplier}x
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
