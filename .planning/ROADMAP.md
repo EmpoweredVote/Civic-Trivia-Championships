@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Game Core** - Basic game flow with questions, timer, and answer reveal
 - [x] **Phase 3: Scoring System** - Server-side score calculation and validation
 - [x] **Phase 4: Learning & Content** - Educational explanations, modals, and content management
-- [ ] **Phase 5: Progression & Profile** - XP, gems, badges, and user profile
+- [x] **Phase 5: Progression & Profile** - XP, gems, badges, and user profile
 - [ ] **Phase 6: Wager Mechanics** - Final question betting system
 - [ ] **Phase 7: Polish & Performance** - Accessibility, animations, optimization
 
@@ -113,10 +113,10 @@ Plans:
 **Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 05-01-PLAN.md — DB schema, progression service, game route wiring with optional auth
-- [ ] 05-02-PLAN.md — Results screen XP/gems display with count-up animations
-- [ ] 05-03-PLAN.md — Profile API endpoints and avatar upload with security validation
-- [ ] 05-04-PLAN.md — Profile page UI, Avatar component, hamburger menu navigation
+- [x] 05-01-PLAN.md — DB schema, progression service, game route wiring with optional auth
+- [x] 05-02-PLAN.md — Results screen XP/gems display with count-up animations
+- [x] 05-03-PLAN.md — Profile API endpoints and avatar upload with security validation
+- [x] 05-04-PLAN.md — Profile page UI, Avatar component, hamburger menu navigation
 
 ### Phase 6: Wager Mechanics
 **Goal**: Users can bet up to half their current score on the final question
@@ -164,7 +164,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 2. Game Core | 4/4 | Complete | 2026-02-10 |
 | 3. Scoring System | 3/3 | Complete | 2026-02-10 |
 | 4. Learning & Content | 3/3 | Complete | 2026-02-12 |
-| 5. Progression & Profile | 0/4 | Not started | - |
+| 5. Progression & Profile | 4/4 | Complete | 2026-02-12 |
 | 6. Wager Mechanics | 0/TBD | Not started | - |
 | 7. Polish & Performance | 0/TBD | Not started | - |
 

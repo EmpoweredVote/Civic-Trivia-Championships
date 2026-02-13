@@ -50,18 +50,18 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 
 ### Progression
 
-- [ ] **PROG-01**: XP earned per game completion (50 base + 1 per correct)
-- [ ] **PROG-02**: Gems earned per game completion (10 base + 1 per correct)
-- [ ] **PROG-03**: Results screen shows rewards earned
-- [ ] **PROG-04**: Progression updates persist to user profile
+- [x] **PROG-01**: XP earned per game completion (50 base + 1 per correct)
+- [x] **PROG-02**: Gems earned per game completion (10 base + 1 per correct)
+- [x] **PROG-03**: Results screen shows rewards earned
+- [x] **PROG-04**: Progression updates persist to user profile
 
 ### User Profile
 
-- [ ] **PROF-01**: User can view their profile
-- [ ] **PROF-02**: Profile shows total XP and gems
-- [ ] **PROF-03**: Profile shows games played count
-- [ ] **PROF-04**: Profile shows best score
-- [ ] **PROF-05**: Profile shows overall accuracy percentage
+- [x] **PROF-01**: User can view their profile
+- [x] **PROF-02**: Profile shows total XP and gems
+- [x] **PROF-03**: Profile shows games played count
+- [x] **PROF-04**: Profile shows best score
+- [x] **PROF-05**: Profile shows overall accuracy percentage
 
 ### Content
 
@@ -166,15 +166,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCORE-03 | Phase 6 | Pending |
 | SCORE-04 | Phase 3 | Complete |
 | SCORE-05 | Phase 3 | Complete |
-| PROG-01 | Phase 5 | Pending |
-| PROG-02 | Phase 5 | Pending |
-| PROG-03 | Phase 5 | Pending |
-| PROG-04 | Phase 5 | Pending |
-| PROF-01 | Phase 5 | Pending |
-| PROF-02 | Phase 5 | Pending |
-| PROF-03 | Phase 5 | Pending |
-| PROF-04 | Phase 5 | Pending |
-| PROF-05 | Phase 5 | Pending |
+| PROG-01 | Phase 5 | Complete |
+| PROG-02 | Phase 5 | Complete |
+| PROG-03 | Phase 5 | Complete |
+| PROG-04 | Phase 5 | Complete |
+| PROF-01 | Phase 5 | Complete |
+| PROF-02 | Phase 5 | Complete |
+| PROF-03 | Phase 5 | Complete |
+| PROF-04 | Phase 5 | Complete |
+| PROF-05 | Phase 5 | Complete |
 | CONT-01 | Phase 2 | Complete |
 | CONT-02 | Phase 2 | Complete |
 | CONT-03 | Phase 2 | Complete |
