@@ -5,6 +5,9 @@ import { TOPIC_ICONS, TOPIC_LABELS } from './TopicIcon';
 import { LearnMoreModal } from './LearnMoreModal';
 import { XpIcon } from '../../../components/icons/XpIcon';
 import { GemIcon } from '../../../components/icons/GemIcon';
+import { useConfettiStore } from '../../../store/confettiStore';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
+import { announce } from '../../../utils/announce';
 
 interface ResultsScreenProps {
   result: GameResult;
@@ -25,6 +28,20 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
 
   const accuracy = Math.round((result.totalCorrect / result.totalQuestions) * 100);
   const isPerfectGame = result.totalCorrect === result.totalQuestions;
+
+  // Confetti store for perfect game celebration
+  const { fireConfettiRain } = useConfettiStore();
+  const reducedMotion = useReducedMotion();
+
+  // Perfect game celebration - fire confetti rain on mount
+  useEffect(() => {
+    if (isPerfectGame) {
+      if (!reducedMotion) {
+        fireConfettiRain();
+      }
+      announce.polite('Perfect game! You answered all 10 questions correctly!');
+    }
+  }, [isPerfectGame, reducedMotion, fireConfettiRain]);
 
   // Animate total score with spring physics
   useEffect(() => {

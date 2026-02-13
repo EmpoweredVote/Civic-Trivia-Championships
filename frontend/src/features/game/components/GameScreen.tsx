@@ -14,7 +14,10 @@ import { LearnMoreModal } from './LearnMoreModal';
 import { FinalQuestionAnnouncement } from './FinalQuestionAnnouncement';
 import { WagerScreen } from './WagerScreen';
 import { PauseOverlay } from './PauseOverlay';
+import { CelebrationEffects } from '../../../components/animations/CelebrationEffects';
 import { useAuthStore } from '../../../store/authStore';
+import { useConfettiStore } from '../../../store/confettiStore';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { announce } from '../../../utils/announce';
 import type { GameState, Question, LearningContent } from '../../../types/game';
 
@@ -73,6 +76,10 @@ export function GameScreen({
 
   // Get timer multiplier from auth store (defaults to 1.0)
   const timerMultiplier = useAuthStore((s) => s.timerMultiplier);
+
+  // Confetti store for celebrations
+  const { fireSmallBurst, fireMediumBurst } = useConfettiStore();
+  const reducedMotion = useReducedMotion();
 
   // Calculate adjusted durations based on multiplier
   const questionDuration = Math.round(QUESTION_DURATION * timerMultiplier);
@@ -203,6 +210,23 @@ export function GameScreen({
     }
   }, [currentTimeRemaining, state.phase]);
 
+  // Streak celebrations - fire confetti on milestones
+  useEffect(() => {
+    if (reducedMotion) return;
+
+    if (state.currentStreak === 3) {
+      fireSmallBurst();
+    } else if (state.currentStreak === 5) {
+      fireMediumBurst();
+      announce.polite('On Fire! 5 in a row!');
+    } else if (state.currentStreak >= 7) {
+      fireMediumBurst();
+      if (state.currentStreak === 7) {
+        announce.polite('Unstoppable! 7 in a row!');
+      }
+    }
+  }, [state.currentStreak, reducedMotion, fireSmallBurst, fireMediumBurst]);
+
   // Question number announcements for screen readers
   useEffect(() => {
     if (state.phase === 'answering' && showOptions) {
@@ -322,6 +346,9 @@ export function GameScreen({
       {/* Radial gradient bloom effect */}
       <div className="absolute inset-0 bg-gradient-radial from-teal-900/10 via-transparent to-transparent opacity-30" />
 
+      {/* Celebration effects for streaks */}
+      <CelebrationEffects streak={state.currentStreak} />
+
       {/* Main content container */}
       <div className="relative min-h-screen flex flex-col py-8 px-4">
         {/* Top HUD - Quit button, Progress, Timer */}
@@ -407,10 +434,10 @@ export function GameScreen({
         <AnimatePresence mode="wait">
           <motion.div
             key={state.currentQuestionIndex}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ duration: reducedMotion ? 0 : 0.3 }}
             className="flex-1 flex flex-col justify-start pt-[10vh] gap-12"
           >
             {/* Final question badge */}
