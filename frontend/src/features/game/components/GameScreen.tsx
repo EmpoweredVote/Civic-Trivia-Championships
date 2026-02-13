@@ -11,9 +11,12 @@ import { ScorePopup } from './ScorePopup';
 import { LearnMoreButton } from './LearnMoreButton';
 import { LearnMoreTooltip } from './LearnMoreTooltip';
 import { LearnMoreModal } from './LearnMoreModal';
+import { FinalQuestionAnnouncement } from './FinalQuestionAnnouncement';
+import { WagerScreen } from './WagerScreen';
 import type { GameState, Question, LearningContent } from '../../../types/game';
 
 const QUESTION_DURATION = 25; // seconds
+const FINAL_QUESTION_DURATION = 50; // seconds for Q10
 const QUESTION_PREVIEW_MS = 2000; // show question before revealing options
 
 interface GameScreenProps {
@@ -28,6 +31,9 @@ interface GameScreenProps {
   resumeAutoAdvance: () => void;
   hasShownTooltip: boolean;
   setHasShownTooltip: (value: boolean) => void;
+  setWagerAmount: (amount: number) => void;
+  lockWager: () => void;
+  isFinalQuestion: boolean;
 }
 
 export function GameScreen({
@@ -42,6 +48,9 @@ export function GameScreen({
   resumeAutoAdvance,
   hasShownTooltip,
   setHasShownTooltip,
+  setWagerAmount,
+  lockWager,
+  isFinalQuestion,
 }: GameScreenProps) {
 
   const [showQuitDialog, setShowQuitDialog] = useState(false);
@@ -107,6 +116,13 @@ export function GameScreen({
       setShowOptions(false);
     }
   }, [state.currentQuestionIndex]);
+
+  // Reset timer when entering answering phase for final question
+  useEffect(() => {
+    if (state.phase === 'answering' && isFinalQuestion) {
+      setTimerKey((prev) => prev + 1);
+    }
+  }, [state.phase, isFinalQuestion]);
 
   // Handle score animations and feedback on reveal phase
   useEffect(() => {
@@ -191,6 +207,25 @@ export function GameScreen({
     );
   }
 
+  // Final announcement phase - show dramatic "FINAL QUESTION" screen
+  if (state.phase === 'final-announcement') {
+    return <FinalQuestionAnnouncement show={true} />;
+  }
+
+  // Wagering phases - show wager input screen
+  if (state.phase === 'wagering' || state.phase === 'wager-locked') {
+    return (
+      <WagerScreen
+        currentScore={state.totalScore}
+        category={state.wagerCategory || 'General'}
+        wagerAmount={state.wagerAmount}
+        onSetWager={setWagerAmount}
+        onLockWager={lockWager}
+        isLocked={state.phase === 'wager-locked'}
+      />
+    );
+  }
+
   // Main game screen
   if (!currentQuestion) {
     return null;
@@ -239,10 +274,10 @@ export function GameScreen({
             showRedFlash={showRedFlash}
           />
 
-          {/* Timer - paused during question preview */}
+          {/* Timer - paused during question preview, extended for final question */}
           <GameTimer
             key={timerKey}
-            duration={QUESTION_DURATION}
+            duration={isFinalQuestion ? FINAL_QUESTION_DURATION : QUESTION_DURATION}
             onTimeout={onTimeout}
             onTimeUpdate={setCurrentTimeRemaining}
             isPaused={state.isTimerPaused || !showOptions}
@@ -265,8 +300,8 @@ export function GameScreen({
           )}
         </AnimatePresence>
 
-        {/* Score popup during reveal phase */}
-        {showScorePopup && state.answers.length > 0 && (() => {
+        {/* Score popup during reveal phase - disabled for final question (wager-only scoring) */}
+        {showScorePopup && !isFinalQuestion && state.answers.length > 0 && (() => {
           const latestAnswer = state.answers[state.answers.length - 1];
           return (
             <ScorePopup
@@ -289,11 +324,22 @@ export function GameScreen({
             transition={{ duration: 0.3 }}
             className="flex-1 flex flex-col justify-start pt-[10vh] gap-12"
           >
-            {/* Question card */}
-            <QuestionCard
-              question={currentQuestion}
-              questionNumber={state.currentQuestionIndex + 1}
-            />
+            {/* Final question badge */}
+            {isFinalQuestion && (
+              <div className="flex justify-center">
+                <div className="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1 rounded-full text-sm font-bold">
+                  FINAL QUESTION
+                </div>
+              </div>
+            )}
+
+            {/* Question card - with amber glow for final question */}
+            <div className={isFinalQuestion ? 'border border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.15)] rounded-xl p-1' : ''}>
+              <QuestionCard
+                question={currentQuestion}
+                questionNumber={state.currentQuestionIndex + 1}
+              />
+            </div>
 
             {/* Answer grid - revealed after question preview */}
             <AnimatePresence>

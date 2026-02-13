@@ -18,6 +18,9 @@ export function Game() {
     resumeAutoAdvance,
     hasShownTooltip,
     setHasShownTooltip,
+    setWagerAmount,
+    lockWager,
+    isFinalQuestion,
   } = useGameState();
 
   const handlePlayAgain = () => {
@@ -59,6 +62,9 @@ export function Game() {
       resumeAutoAdvance={resumeAutoAdvance}
       hasShownTooltip={hasShownTooltip}
       setHasShownTooltip={setHasShownTooltip}
+      setWagerAmount={setWagerAmount}
+      lockWager={lockWager}
+      isFinalQuestion={isFinalQuestion}
     />
   );
 }
