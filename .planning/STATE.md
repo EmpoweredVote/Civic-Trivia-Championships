@@ -10,22 +10,22 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: Phase 9 (Redis Session Migration)
-Plan: 1 of 3 (In progress)
-Status: Plan 09-01 complete - Storage abstraction layer created
-Last activity: 2026-02-13 — Completed 09-01-PLAN.md (Storage abstraction layer)
+Plan: 2 of 3 (In progress)
+Status: Plan 09-02 complete - Core session migration to async storage
+Last activity: 2026-02-13 — Completed 09-02-PLAN.md (Async SessionManager migration)
 
-Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 25% (1.3/5 phases)
+Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 30% (1.7/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): 3/12 requirements delivered (LCONT-01, DOCS-01, STOR-01 partial)
+- v1.1 (Phases 8-12): 4/12 requirements delivered (LCONT-01, DOCS-01, STOR-01, STOR-02)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29
+- Total plans completed: 30
 - Average duration: 3.8 min
-- Total execution time: 111 min
+- Total execution time: 115 min
 
 **By Phase:**
 
@@ -39,10 +39,10 @@ Progress: [████████░░░░░░░░░░░░] v1.0: 1
 | 06-wager-mechanics | 3/3 | 9 min | 3 min |
 | 07-polish-performance | 5/5 | 22 min | 4.4 min |
 | 08-dev-tooling-documentation | 2/2 | 4 min | 2 min |
-| 09-redis-session-migration | 1/3 | 3 min | 3 min |
+| 09-redis-session-migration | 2/3 | 7 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 07-04 (4 min), 07-05 (5 min), 08-01 (2 min), 08-02 (2 min), 09-01 (3 min)
+- Last 5 plans: 07-05 (5 min), 08-01 (2 min), 08-02 (2 min), 09-01 (3 min), 09-02 (4 min)
 - Trend: Strong 2-5 min velocity maintained
 
 *Updated after each plan completion*
@@ -161,15 +161,19 @@ Recent decisions affecting current work:
 | Graceful degradation to MemoryStorage | 09-01 | App always starts even if Redis unavailable, prevents downtime |
 | Legacy redis export maintained | 09-01 | Backward compatibility with tokenUtils token storage |
 | Docker noeviction policy | 09-01 | 256MB limit prevents session loss from eviction |
+| Cleanup interval only for MemoryStorage | 09-02 | Redis TTL handles expiry automatically, manual cleanup redundant |
+| Auto-refresh TTL on getSession() | 09-02 | Extends session lifetime on activity, prevents mid-game expiration |
+| Persist session after each answer | 09-02 | Ensures Redis has latest state, enables crash recovery mid-game |
+| Proxy-based singleton export | 09-02 | Backward compatibility while enforcing initialization |
+| Degraded flag in API responses | 09-02 | Frontend detects fallback mode without polling health endpoint |
+| Health endpoint 503 for degraded mode | 09-02 | Load balancers can detect Redis failure and route traffic |
 
 ### Pending Todos
 
-Phase 9 (Redis Session Migration) - Plan 09-02:
-- Migrate SessionManager to use SessionStorage interface
-- Make SessionManager methods async (createSession, getSession, submitAnswer, getResults)
-- Call storageFactory.initialize() on server startup
-- Update all SessionManager consumers to handle async methods
-- Test session persistence across server restart with Redis
+Phase 9 (Redis Session Migration) - Plan 09-03:
+- Test session persistence across server restarts
+- Verify graceful degradation when Redis goes down mid-operation
+- Document Redis deployment requirements
 
 Phase 10 (Game UX Improvements):
 - Reposition question card to 1/3 from top
@@ -194,8 +198,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-13 19:56:51 UTC
-Stopped at: Completed 09-01-PLAN.md (Storage abstraction layer)
+Last session: 2026-02-13 20:04:10 UTC
+Stopped at: Completed 09-02-PLAN.md (Async SessionManager migration)
 Resume file: None
 
 ---
