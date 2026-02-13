@@ -1,3 +1,89 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Screen reader only - visually hidden but accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip to content link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  background: #14b8a6;
+  color: #000;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  font-weight: 600;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #14b8a6;
+}
+
+/* Custom focus rings - teal glow for game-show theme */
+*:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px hsl(222 47% 11%),
+    0 0 0 5px #14b8a6,
+    0 0 15px rgba(20, 184, 166, 0.4);
+}
+
+/* Amber focus ring for primary action buttons */
+.focus-ring-primary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px hsl(222 47% 11%),
+    0 0 0 5px #f59e0b,
+    0 0 15px rgba(245, 158, 11, 0.4);
+}
+
+/* Inputs get subtler focus ring */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #14b8a6,
+    0 0 8px rgba(20, 184, 166, 0.3);
+}
+
+/* Range input focus - handled by thumb styles */
+input[type="range"]:focus-visible {
+  box-shadow: none;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *:focus-visible {
+    box-shadow:
+      0 0 0 3px hsl(222 47% 11%),
+      0 0 0 5px #14b8a6;
+  }
+  .focus-ring-primary:focus-visible {
+    box-shadow:
+      0 0 0 3px hsl(222 47% 11%),
+      0 0 0 5px #f59e0b;
+  }
+}
