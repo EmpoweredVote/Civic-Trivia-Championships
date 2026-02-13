@@ -9,23 +9,23 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: Phase 8 (Dev Tooling & Documentation)
-Plan: 2 of 2 (Complete)
-Status: Phase 8 complete — Dev tooling fixed, documentation audit complete
-Last activity: 2026-02-13 — Completed 08-02-PLAN.md (Phase 3 VERIFICATION + v1.0 audit)
+Phase: Phase 9 (Redis Session Migration)
+Plan: 1 of 3 (In progress)
+Status: Plan 09-01 complete - Storage abstraction layer created
+Last activity: 2026-02-13 — Completed 09-01-PLAN.md (Storage abstraction layer)
 
-Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 20% (1/5 phases)
+Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 25% (1.3/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): 2/12 requirements delivered (LCONT-01, DOCS-01)
+- v1.1 (Phases 8-12): 3/12 requirements delivered (LCONT-01, DOCS-01, STOR-01 partial)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28
-- Average duration: 3.9 min
-- Total execution time: 108 min
+- Total plans completed: 29
+- Average duration: 3.8 min
+- Total execution time: 111 min
 
 **By Phase:**
 
@@ -39,10 +39,11 @@ Progress: [████████░░░░░░░░░░░░] v1.0: 1
 | 06-wager-mechanics | 3/3 | 9 min | 3 min |
 | 07-polish-performance | 5/5 | 22 min | 4.4 min |
 | 08-dev-tooling-documentation | 2/2 | 4 min | 2 min |
+| 09-redis-session-migration | 1/3 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 07-03 (6 min), 07-04 (4 min), 07-05 (5 min), 08-01 (2 min), 08-02 (2 min)
-- Trend: Strong 2-6 min velocity, documentation plans especially fast
+- Last 5 plans: 07-04 (4 min), 07-05 (5 min), 08-01 (2 min), 08-02 (2 min), 09-01 (3 min)
+- Trend: Strong 2-5 min velocity maintained
 
 *Updated after each plan completion*
 
@@ -155,14 +156,20 @@ Recent decisions affecting current work:
 | Preview-before-commit for AI content | 08-01 | Output to temp file for review instead of auto-writing to questions.json |
 | ANTHROPIC_API_KEY for content generation | 08-01 | SDK default, simpler than CLAUDE_API_KEY |
 | dotenv for .env support | 08-01 | Allows backend/.env with ANTHROPIC_API_KEY for local development |
+| Async storage interface | 09-01 | Accommodates Redis while maintaining MemoryStorage compatibility |
+| SETEX for atomic TTL | 09-01 | Prevents race condition between set and expire operations |
+| Graceful degradation to MemoryStorage | 09-01 | App always starts even if Redis unavailable, prevents downtime |
+| Legacy redis export maintained | 09-01 | Backward compatibility with tokenUtils token storage |
+| Docker noeviction policy | 09-01 | 256MB limit prevents session loss from eviction |
 
 ### Pending Todos
 
-Phase 9 (Redis Session Migration):
-- Make SessionManager methods async
-- Replace in-memory Map with Redis JSON serialization
-- Add graceful fallback to Map if Redis unavailable
-- Test session persistence across server restart
+Phase 9 (Redis Session Migration) - Plan 09-02:
+- Migrate SessionManager to use SessionStorage interface
+- Make SessionManager methods async (createSession, getSession, submitAnswer, getResults)
+- Call storageFactory.initialize() on server startup
+- Update all SessionManager consumers to handle async methods
+- Test session persistence across server restart with Redis
 
 Phase 10 (Game UX Improvements):
 - Reposition question card to 1/3 from top
@@ -187,8 +194,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Phase 8 complete (08-02-PLAN.md) — ready for Phase 9 (Redis Session Migration)
+Last session: 2026-02-13 19:56:51 UTC
+Stopped at: Completed 09-01-PLAN.md (Storage abstraction layer)
 Resume file: None
 
 ---
