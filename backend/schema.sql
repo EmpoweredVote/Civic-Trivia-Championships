@@ -32,3 +32,23 @@ CREATE TRIGGER update_users_updated_at
   BEFORE UPDATE ON users
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- Add progression and profile columns to users table
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS total_xp INTEGER DEFAULT 0 NOT NULL,
+  ADD COLUMN IF NOT EXISTS total_gems INTEGER DEFAULT 0 NOT NULL,
+  ADD COLUMN IF NOT EXISTS games_played INTEGER DEFAULT 0 NOT NULL,
+  ADD COLUMN IF NOT EXISTS best_score INTEGER DEFAULT 0 NOT NULL,
+  ADD COLUMN IF NOT EXISTS total_correct INTEGER DEFAULT 0 NOT NULL,
+  ADD COLUMN IF NOT EXISTS total_questions INTEGER DEFAULT 0 NOT NULL,
+  ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);
+
+-- Add CHECK constraints for non-negative values
+ALTER TABLE users
+  ADD CONSTRAINT check_total_xp_non_negative CHECK (total_xp >= 0),
+  ADD CONSTRAINT check_total_gems_non_negative CHECK (total_gems >= 0),
+  ADD CONSTRAINT check_games_played_non_negative CHECK (games_played >= 0);
+
+-- Add indexes for leaderboard queries
+CREATE INDEX IF NOT EXISTS idx_users_total_xp_desc ON users(total_xp DESC);
+CREATE INDEX IF NOT EXISTS idx_users_best_score_desc ON users(best_score DESC);
