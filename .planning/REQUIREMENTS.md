@@ -74,19 +74,19 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 
 ### Accessibility
 
-- [ ] **A11Y-01**: All interactive elements keyboard navigable
-- [ ] **A11Y-02**: Screen reader announces question, options, timer status, results
-- [ ] **A11Y-03**: Color + icons used together (never color alone)
-- [ ] **A11Y-04**: Minimum 4.5:1 contrast ratio (WCAG AA)
-- [ ] **A11Y-05**: Touch targets minimum 48px
-- [ ] **A11Y-06**: Timer extension option available (hidden setting)
+- [x] **A11Y-01**: All interactive elements keyboard navigable
+- [x] **A11Y-02**: Screen reader announces question, options, timer status, results
+- [x] **A11Y-03**: Color + icons used together (never color alone)
+- [x] **A11Y-04**: Minimum 4.5:1 contrast ratio (WCAG AA)
+- [x] **A11Y-05**: Touch targets minimum 48px
+- [x] **A11Y-06**: Timer extension option available (hidden setting)
 
 ### Performance
 
 - [x] **PERF-01**: First Contentful Paint under 1.5 seconds
 - [x] **PERF-02**: Time to Interactive under 3 seconds
 - [x] **PERF-03**: Bundle size under 300KB gzipped
-- [ ] **PERF-04**: Animations run at 60fps
+- [x] **PERF-04**: Animations run at 60fps
 - [x] **PERF-05**: Mobile responsive design works on phones and tablets
 
 ## v2 Requirements
@@ -181,16 +181,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONT-04 | Phase 2 | Complete |
 | CONT-05 | Phase 2 | Complete |
 | CONT-06 | Phase 4 | Complete |
-| A11Y-01 | Phase 7 | Pending |
-| A11Y-02 | Phase 7 | Pending |
-| A11Y-03 | Phase 7 | Pending |
-| A11Y-04 | Phase 7 | Pending |
-| A11Y-05 | Phase 7 | Pending |
-| A11Y-06 | Phase 7 | Pending |
+| A11Y-01 | Phase 7 | Complete |
+| A11Y-02 | Phase 7 | Complete |
+| A11Y-03 | Phase 7 | Complete |
+| A11Y-04 | Phase 7 | Complete |
+| A11Y-05 | Phase 7 | Complete |
+| A11Y-06 | Phase 7 | Complete |
 | PERF-01 | Phase 1 | Complete |
 | PERF-02 | Phase 1 | Complete |
 | PERF-03 | Phase 1 | Complete |
-| PERF-04 | Phase 7 | Pending |
+| PERF-04 | Phase 7 | Complete |
 | PERF-05 | Phase 1 | Complete |
 
 **Coverage:**
