@@ -6,6 +6,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { router as authRouter } from './routes/auth.js';
 import { router as gameRouter } from './routes/game.js';
+import { router as profileRouter } from './routes/profile.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +20,9 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 
+// Static file serving for uploads
+app.use('/uploads', express.static('uploads'));
+
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
@@ -29,6 +33,9 @@ app.use('/auth', authRouter);
 
 // Game routes
 app.use('/api/game', gameRouter);
+
+// Profile routes
+app.use('/api/users/profile', profileRouter);
 
 // Start server
 app.listen(PORT, () => {
