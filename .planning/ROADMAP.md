@@ -149,11 +149,14 @@ Plans:
   6. Timer extension option available (hidden setting)
   7. Animations run at 60fps on mid-range devices
   8. Game has polished game-show aesthetic with subtle celebrations
-**Plans**: TBD
+**Plans**: 5 plans in 3 waves
 
 Plans:
-- [ ] 07-01: TBD during phase planning
-- [ ] 07-02: TBD during phase planning
+- [ ] 07-01-PLAN.md — A11Y foundation: deps, ARIA live regions, skip-to-content, focus rings, focus-trap modals
+- [ ] 07-02-PLAN.md — Timer extension setting: DB column, API endpoint, profile UI, game integration
+- [ ] 07-03-PLAN.md — Keyboard navigation: arrow/number keys, Escape pause overlay, screen reader announcements
+- [ ] 07-04-PLAN.md — Color & contrast: icon indicators, timer enhancements, WCAG AA audit, touch targets
+- [ ] 07-05-PLAN.md — Celebrations & performance: confetti, streak tracking, perfect game effects, Web Vitals
 
 ## Progress
 
@@ -168,7 +171,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 4. Learning & Content | 3/3 | Complete | 2026-02-12 |
 | 5. Progression & Profile | 4/4 | Complete | 2026-02-12 |
 | 6. Wager Mechanics | 3/3 | Complete | 2026-02-13 |
-| 7. Polish & Performance | 0/TBD | Not started | - |
+| 7. Polish & Performance | 0/5 | Not started | - |
 
 ## Requirement Coverage
 
