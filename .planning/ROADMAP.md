@@ -46,7 +46,11 @@ Plans:
   3. App gracefully degrades to in-memory storage if Redis unavailable
   4. Session storage performance remains sub-5ms (Redis local latency)
   5. Multiple backend instances can share session state (multi-instance ready)
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
+Plans:
+- [ ] 09-01-PLAN.md — Storage abstraction layer (interface, MemoryStorage, RedisStorage, Redis config, Docker Compose)
+- [ ] 09-02-PLAN.md — Async SessionManager migration, game route updates, health endpoint
+- [ ] 09-03-PLAN.md — Frontend degraded mode banner and end-to-end verification
 
 ### Phase 10: Game UX Improvements
 **Goal**: Game interface feels more polished with better visual hierarchy and streamlined interactions
@@ -92,7 +96,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 8. Dev Tooling & Documentation | 2/2 | Complete | 2026-02-13 |
-| 9. Redis Session Migration | 0/0 | Not Started | — |
+| 9. Redis Session Migration | 0/3 | Not Started | — |
 | 10. Game UX Improvements | 0/0 | Not Started | — |
 | 11. Plausibility Enhancement | 0/0 | Not Started | — |
 | 12. Learning Content Expansion | 0/0 | Not Started | — |
