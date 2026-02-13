@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 ## Current Position
 
 Phase: 6 of 7 (Wager Mechanics) — IN PROGRESS
-Plan: 1 of TBD
-Status: In progress - data layer complete
-Last activity: 2026-02-12 - Completed 06-01-PLAN.md
+Plan: 3 of 3
+Status: In progress - results display complete
+Last activity: 2026-02-13 - Completed 06-03-PLAN.md
 
-Progress: [███████░░░] ~72%
+Progress: [███████░░░] ~74%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
+- Total plans completed: 20
 - Average duration: 4.0 min
-- Total execution time: 77 min
+- Total execution time: 79 min
 
 **By Phase:**
 
@@ -32,11 +32,11 @@ Progress: [███████░░░] ~72%
 | 03-scoring-system | 3/3 | 12 min | 4 min |
 | 04-learning-content | 3/3 | 20 min | 7 min |
 | 05-progression-profile | 4/4 | 13 min | 3.3 min |
-| 06-wager-mechanics | 1/TBD | 4 min | 4 min |
+| 06-wager-mechanics | 2/3 | 6 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-02 (3 min), 05-03 (4 min), 05-04 (2 min), 06-01 (4 min)
-- Trend: Consistent velocity maintained, 06-01 data layer completed efficiently
+- Last 5 plans: 05-03 (4 min), 05-04 (2 min), 06-01 (4 min), 06-03 (2 min)
+- Trend: Excellent velocity on 06-03 (2 min), UI-focused plans executing efficiently
 
 *Updated after each plan completion*
 
@@ -115,6 +115,10 @@ Recent decisions affecting current work:
 | Wager-only scoring (no base/speed) | 06-01 | Final question uses only wager amount (+/- wager) for game show feel |
 | Default wager 25% of max | 06-01 | Pre-populate with 25% of maximum (half score) as middle ground |
 | Reuse 'answering' phase for Q10 | 06-01 | After wager locked, existing SELECT/LOCK/REVEAL/TIMEOUT work unchanged |
+| Wager section between score and accuracy | 06-03 | Dramatic reveal placement for maximum impact |
+| Q1-Q9 base+speed calculated separately | 06-03 | When wager exists, show score composition clearly |
+| Negative score displayed in red | 06-03 | Clear visual indication of wager loss |
+| Zero wager shows "played for fun" | 06-03 | Maintains positive tone even when not betting |
 
 ### Pending Todos
 
@@ -122,13 +126,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None — Wager data layer complete. Ready for UI implementation (06-02).
+None — Results display complete. Missing 06-02 (wager UI components) for full end-to-end flow.
 
 ## Session Continuity
 
-Last session: 2026-02-12
-Stopped at: Completed 06-01-PLAN.md (wager data layer)
+Last session: 2026-02-13
+Stopped at: Completed 06-03-PLAN.md (results wager display)
 Resume file: None
 
 ---
-*Next step: Execute 06-02-PLAN.md (wager UI components)*
+*Next step: Execute 06-02-PLAN.md (wager UI components) to complete Phase 6*
