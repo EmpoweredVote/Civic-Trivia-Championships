@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 
 ## Current Position
 
-Phase: 6 of 7 (Wager Mechanics) — NOT STARTED
-Plan: 0 of TBD
-Status: Ready to plan
-Last activity: 2026-02-12 - Completed Phase 5 (Progression & Profile)
+Phase: 6 of 7 (Wager Mechanics) — IN PROGRESS
+Plan: 1 of TBD
+Status: In progress - data layer complete
+Last activity: 2026-02-12 - Completed 06-01-PLAN.md
 
-Progress: [███████░░░] ~71%
+Progress: [███████░░░] ~72%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: 4.0 min
-- Total execution time: 73 min
+- Total execution time: 77 min
 
 **By Phase:**
 
@@ -32,10 +32,11 @@ Progress: [███████░░░] ~71%
 | 03-scoring-system | 3/3 | 12 min | 4 min |
 | 04-learning-content | 3/3 | 20 min | 7 min |
 | 05-progression-profile | 4/4 | 13 min | 3.3 min |
+| 06-wager-mechanics | 1/TBD | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (4 min), 05-02 (3 min), 05-03 (4 min), 05-04 (2 min)
-- Trend: Phase 5 completed efficiently, fastest phase average (3.3 min/plan)
+- Last 5 plans: 05-02 (3 min), 05-03 (4 min), 05-04 (2 min), 06-01 (4 min)
+- Trend: Consistent velocity maintained, 06-01 data layer completed efficiently
 
 *Updated after each plan completion*
 
@@ -109,6 +110,11 @@ Recent decisions affecting current work:
 | Deterministic avatar colors | 05-04 | Name hash selects color for consistency across sessions |
 | Empty state with CTA | 05-04 | Encouraging message better UX than showing zeros for new users |
 | Hamburger menu for navigation | 05-04 | Cleaner header, groups user actions (Profile + Log out) |
+| Wager as answer parameter | 06-01 | Integrated into answer submission, avoids race conditions |
+| 50s duration for final question | 06-01 | Doubled from 25s for complex final question after wager |
+| Wager-only scoring (no base/speed) | 06-01 | Final question uses only wager amount (+/- wager) for game show feel |
+| Default wager 25% of max | 06-01 | Pre-populate with 25% of maximum (half score) as middle ground |
+| Reuse 'answering' phase for Q10 | 06-01 | After wager locked, existing SELECT/LOCK/REVEAL/TIMEOUT work unchanged |
 
 ### Pending Todos
 
@@ -116,13 +122,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None — Phase 5 verified. Ready for Phase 6 (Wager Mechanics).
+None — Wager data layer complete. Ready for UI implementation (06-02).
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed Phase 5 (Progression & Profile) — verified
+Stopped at: Completed 06-01-PLAN.md (wager data layer)
 Resume file: None
 
 ---
-*Next step: Plan Phase 6 (Wager Mechanics)*
+*Next step: Execute 06-02-PLAN.md (wager UI components)*
