@@ -56,6 +56,11 @@ export type GameAnswer = {
   responseTime: number;
 };
 
+export type Progression = {
+  xpEarned: number;
+  gemsEarned: number;
+};
+
 export type GameResult = {
   answers: GameAnswer[];
   totalCorrect: number;
@@ -68,6 +73,7 @@ export type GameResult = {
     responseTime: number;
     points: number;
   } | null;
+  progression?: Progression | null;
 };
 
 export type GameState = {
