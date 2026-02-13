@@ -107,7 +107,7 @@ Requirements for tech debt hardening. Continues from v1.0 phases.
 
 ### Learning Content
 
-- [ ] **LCONT-01**: Fix generateLearningContent.ts TypeScript error (install @anthropic-ai/sdk)
+- [x] **LCONT-01**: Fix generateLearningContent.ts TypeScript error (install @anthropic-ai/sdk)
 - [ ] **LCONT-02**: Expand learningContent coverage to 25-30% of questions (~15 new deep-dives)
 
 ### Game UX
@@ -118,7 +118,7 @@ Requirements for tech debt hardening. Continues from v1.0 phases.
 
 ### Documentation
 
-- [ ] **DOCS-01**: Generate missing Phase 3 VERIFICATION.md
+- [x] **DOCS-01**: Generate missing Phase 3 VERIFICATION.md
 
 ## v2 Requirements
 
@@ -230,8 +230,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LCONT-01 | Phase 8 | Pending |
-| DOCS-01 | Phase 8 | Pending |
+| LCONT-01 | Phase 8 | Complete |
+| DOCS-01 | Phase 8 | Complete |
 | REDIS-01 | Phase 9 | Pending |
 | REDIS-02 | Phase 9 | Pending |
 | REDIS-03 | Phase 9 | Pending |
