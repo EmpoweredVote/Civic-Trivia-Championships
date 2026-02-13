@@ -8,9 +8,9 @@ import { GameSession } from '../sessionService.js';
 import { SessionStorage } from './SessionStorage.js';
 
 export class RedisStorage implements SessionStorage {
-  private client: RedisClientType;
+  private client: RedisClientType<any, any, any>;
 
-  constructor(client: RedisClientType) {
+  constructor(client: RedisClientType<any, any, any>) {
     this.client = client;
   }
 

@@ -29,3 +29,6 @@ Thumbs.db
 # Package lock files (keep package-lock.json, ignore others)
 yarn.lock
 pnpm-lock.yaml
+
+# Docker volumes
+redis-data
