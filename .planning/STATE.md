@@ -10,22 +10,22 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: Phase 8 (Dev Tooling & Documentation)
-Plan: Not started
-Status: v1.1 roadmap created, ready for phase planning
-Last activity: 2026-02-13 — v1.1 roadmap created
+Plan: 1 of 2
+Status: In progress
+Last activity: 2026-02-13 — Completed 08-01-PLAN.md (Content generation script fix)
 
-Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 0% (0/5)
+Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 4% (1/27)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): 0/12 requirements delivered
+- v1.1 (Phases 8-12): 1/12 requirements delivered
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26
-- Average duration: 4.0 min
-- Total execution time: 104 min
+- Total plans completed: 27
+- Average duration: 3.9 min
+- Total execution time: 106 min
 
 **By Phase:**
 
@@ -38,10 +38,11 @@ Progress: [████████░░░░░░░░░░░░] v1.0: 1
 | 05-progression-profile | 4/4 | 13 min | 3.3 min |
 | 06-wager-mechanics | 3/3 | 9 min | 3 min |
 | 07-polish-performance | 5/5 | 22 min | 4.4 min |
+| 08-dev-tooling-documentation | 1/2 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 07-01 (3 min), 07-02 (4 min), 07-03 (6 min), 07-04 (4 min), 07-05 (5 min)
-- Trend: Solid 3-6 min velocity, consistent throughout v1.0
+- Last 5 plans: 07-02 (4 min), 07-03 (6 min), 07-04 (4 min), 07-05 (5 min), 08-01 (2 min)
+- Trend: Fast execution on tooling fixes, maintaining strong velocity
 
 *Updated after each plan completion*
 
@@ -151,13 +152,16 @@ Recent decisions affecting current work:
 | Question transitions use x-axis slide | 07-05 | Left/right slide (30px) feels more natural than vertical for question progression |
 | Web Vitals dev-only logging | 07-05 | Console logs in development, silent in production (ready for analytics integration) |
 | GPU-only animations | 07-05 | All animations use transform/opacity to maintain 60fps performance |
+| Preview-before-commit for AI content | 08-01 | Output to temp file for review instead of auto-writing to questions.json |
+| ANTHROPIC_API_KEY for content generation | 08-01 | SDK default, simpler than CLAUDE_API_KEY |
+| dotenv for .env support | 08-01 | Allows backend/.env with ANTHROPIC_API_KEY for local development |
 
 ### Pending Todos
 
 Phase 8 (Dev Tooling & Documentation):
-- Install @anthropic-ai/sdk as devDependency
-- Verify generateLearningContent.ts runs without errors
-- Generate Phase 3 VERIFICATION.md
+- ✓ Install @anthropic-ai/sdk as devDependency (08-01)
+- ✓ Verify generateLearningContent.ts runs without errors (08-01)
+- Generate Phase 3 VERIFICATION.md (08-02)
 
 Phase 9 (Redis Session Migration):
 - Make SessionManager methods async
@@ -189,7 +193,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: v1.1 roadmap created, ready to plan Phase 8
+Stopped at: Completed 08-01-PLAN.md (Content generation script fix)
 Resume file: None
 
 ---
