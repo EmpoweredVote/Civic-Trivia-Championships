@@ -12,54 +12,27 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 
 ### Validated
 
-(None yet — ship to validate)
+- Solo game flow (10 questions, timer, answer reveal, wager, results) — v1.0
+- Server-side scoring with speed bonus and wager mechanics — v1.0
+- Learning content with "Learn more" modals — v1.0
+- XP/gems progression and user profile — v1.0
+- Auth system (email/password, JWT, session persistence) — v1.0
+- WCAG AA accessibility, keyboard nav, screen reader support — v1.0
+- 120 question bank with mixed difficulty — v1.0
+- Mobile responsive, FCP <1.5s, TTI <3s, bundle <300KB — v1.0
 
 ### Active
 
-**Solo Game Flow:**
-- [ ] Player can start a solo quick play session (10 questions, ~5 minutes)
-- [ ] Questions display with visual countdown timer (10-15 seconds)
-- [ ] Player selects answer, sees lock-in confirmation
-- [ ] Answer reveal shows correct/incorrect with explanation
-- [ ] "Learn more" opens deeper content without leaving game
-- [ ] "Save for later" bookmarks topics for later exploration
-- [ ] Wager round on final question (bet up to half score)
-- [ ] Results screen shows score breakdown, topics learned, rewards
+## Current Milestone: v1.1 Tech Debt Hardening
 
-**Scoring & Rewards:**
-- [ ] Base points (+100 per correct answer)
-- [ ] Speed bonus (up to +50 based on time remaining)
-- [ ] Wager mechanics (win/lose wagered points)
-- [ ] XP earned per game (50 base + 1 per correct)
-- [ ] Gems earned per game (10 base + 1 per correct)
-- [ ] Badge unlocks (First Game, Perfect Score, Curious Mind, Fact Collector)
+**Goal:** Address tech debt from v1.0 audit — harden for production readiness
 
-**Content:**
-- [ ] 100 questions with mixed difficulty (easy/medium/hard)
-- [ ] Each question has 4 answer options
-- [ ] Each question has 1-3 sentence explanation
-- [ ] 10+ "Learn more" deep-dive topics
-- [ ] Question content management (add/edit questions)
-
-**Platform Foundation:**
-- [ ] Auth system (email/password signup, login, logout)
-- [ ] Session persistence across browser refresh
-- [ ] User profile with stats (games played, best score, accuracy)
-- [ ] Learning Hub (saved topics)
-- [ ] Design system foundation (Empowered.Vote aesthetic)
-
-**Accessibility:**
-- [ ] WCAG AA contrast compliance
-- [ ] Keyboard navigation for all interactions
-- [ ] Screen reader support with proper announcements
-- [ ] Min 48px touch targets
-- [ ] Timer extension option (hidden setting)
-
-**Technical:**
-- [ ] Mobile responsive design
-- [ ] First Contentful Paint <1.5s
-- [ ] Time to Interactive <3s
-- [ ] Bundle size <300KB gzipped
+**Target items:**
+- [ ] Migrate in-memory game sessions to Redis (prevent data loss on restart)
+- [ ] Expand learningContent coverage beyond 18/120 questions (15%)
+- [ ] Enhance plausibility checks from passive logging to active response
+- [ ] Fix dev script TypeScript error (generateLearningContent.ts)
+- [ ] Generate missing Phase 3 VERIFICATION.md
 
 ### Out of Scope
 
@@ -117,4 +90,4 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 | "Not quite" instead of "Wrong" | Maintains encouraging tone | — Pending |
 
 ---
-*Last updated: 2026-02-03 after initialization*
+*Last updated: 2026-02-12 after v1.1 milestone start*
