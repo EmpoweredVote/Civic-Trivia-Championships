@@ -1,1180 +1,715 @@
-# Architecture Patterns for Trivia/Quiz Game Systems
+# Architecture Research: v1.1 Tech Debt Hardening - Redis Migration
 
-**Domain:** Trivia/Quiz Game Applications
-**Project:** Civic Trivia Championship
-**Researched:** 2026-02-03
-**Overall Confidence:** HIGH (verified with multiple sources, aligned with project tech stack)
-
----
+**Focus:** Redis migration for game session storage
+**Researched:** 2026-02-12
+**Confidence:** HIGH
 
 ## Executive Summary
 
-Trivia/quiz game systems follow well-established patterns with clear separation between **game state management**, **content delivery**, **session orchestration**, and **user progression tracking**. The architecture must balance simplicity for single-player flows with extensibility for future multiplayer features.
+The Civic Trivia Championship app currently stores game sessions in an in-memory Map with 1-hour TTL and cleanup intervals. This works for MVP but causes session loss on server restart. Redis is already installed and configured for JWT token blacklisting, making the migration path straightforward.
 
-**Core insight:** Quiz games are fundamentally **state machines** progressing through well-defined phases (Start → Question → Answer → Reveal → Next). Architecture should embrace this reality rather than fight it.
+**Recommendation:** Migrate to Redis using JSON serialization with the existing `redis` client (v4.6.12), maintaining the current SessionManager API to minimize breaking changes. The migration can be done incrementally with zero downtime using async conversion followed by storage replacement.
 
----
+## Current Session Architecture
 
-## Recommended Architecture
-
-### High-Level System Structure
+### Component Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ Game Shell   │  │ Question UI  │  │ Learning     │      │
-│  │ (State Mgmt) │  │ (Rendering)  │  │ (Modal)      │      │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
-│         │                  │                  │              │
-│         └──────────────────┼──────────────────┘              │
-│                            │                                 │
-│                    ┌───────▼────────┐                        │
-│                    │  Game Service  │                        │
-│                    │  (API Client)  │                        │
-│                    └───────┬────────┘                        │
-└────────────────────────────┼──────────────────────────────────┘
-                             │ REST/JSON
-┌────────────────────────────┼──────────────────────────────────┐
-│                    ┌───────▼────────┐                         │
-│                    │  API Gateway   │                         │
-│                    │  (Express)     │                         │
-│                    └───┬────────┬───┘                         │
-│                        │        │                             │
-│              ┌─────────┴───┐  ┌─┴──────────┐                 │
-│              │ Session     │  │ Content    │                 │
-│              │ Controller  │  │ Controller │                 │
-│              └──┬──────┬───┘  └─┬──────┬───┘                 │
-│                 │      │        │      │                     │
-│         ┌───────▼──┐ ┌▼─────┐ ┌▼────┐ ┌▼────────┐           │
-│         │ Progress │ │Redis │ │ DB  │ │ Content │           │
-│         │ Service  │ │Cache │ │(PG) │ │ Service │           │
-│         └──────────┘ └──────┘ └─────┘ └─────────┘           │
-│                        SERVER LAYER                           │
-└───────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ SessionManager (sessionService.ts)                      │
+│ - In-memory Map<string, GameSession>                    │
+│ - 1-hour expiry, 5-minute cleanup interval              │
+│ - Synchronous operations (createSession, getSession,    │
+│   submitAnswer, getResults)                             │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         │ Game Routes (game.ts)
+                         ↓
+┌─────────────────────────────────────────────────────────┐
+│ POST /api/game/session → sessionManager.createSession() │
+│ POST /api/game/answer  → sessionManager.submitAnswer()  │
+│ GET  /api/game/results → sessionManager.getResults()    │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Component Boundaries
+### Data Structure
 
-| Component | Responsibility | Communicates With | State Scope |
-|-----------|---------------|-------------------|-------------|
-| **Game Shell** | State machine orchestration, flow control, timer management | Question UI, Learning Modal, Game Service | Local (React state/Context) |
-| **Question UI** | Render question/answers, handle user input, animations | Game Shell | Props only (stateless) |
-| **Learning Modal** | Display educational content, "learn more" flows | Game Shell, Content Controller | Local modal state |
-| **Game Service** | API client, request/response handling, error boundaries | All UI components → API Gateway | No state (pure service) |
-| **Session Controller** | Game session lifecycle, scoring logic, wager handling | Redis Cache, Progress Service | Session stored in Redis |
-| **Content Controller** | Question delivery, randomization, difficulty selection | DB (PostgreSQL), Redis Cache | No state (queries DB/cache) |
-| **Progress Service** | XP/gems calculation, badge awards, profile updates | DB (PostgreSQL) | Persisted in DB |
-| **Redis Cache** | Session state, active game data, leaderboard cache | Session Controller, Content Controller | TTL-based expiry |
-| **PostgreSQL DB** | Questions, user profiles, game history, badges | All server-side services | Persistent storage |
-
----
-
-## Data Flow
-
-### Single-Player Game Session Flow
-
-```
-1. START GAME
-   Client: User clicks "Start Game" → Game Shell
-   ↓
-   Game Shell → Game Service.startSession()
-   ↓
-   API Gateway → Session Controller.createSession()
-   ↓
-   Session Controller:
-     - Generate sessionId
-     - Fetch questions from Content Controller
-     - Store session in Redis (TTL: 30 min)
-     - Return { sessionId, firstQuestion }
-   ↓
-   Client: Game Shell receives session, transitions to QUESTION state
-
-2. QUESTION DISPLAY
-   Game Shell:
-     - Starts timer (useEffect with cleanup)
-     - Renders Question UI with current question
-     - Listens for answer selection
-
-3. ANSWER SUBMISSION
-   Client: User selects answer → Question UI → Game Shell
-   ↓
-   Game Shell → Game Service.submitAnswer(sessionId, questionId, answerId)
-   ↓
-   Session Controller:
-     - Validate answer
-     - Calculate points (time bonus)
-     - Update session score in Redis
-     - Mark question complete
-     - Return { correct, points, explanation, nextQuestion }
-   ↓
-   Client: Game Shell transitions to REVEAL state
-
-4. REVEAL & EXPLANATION
-   Game Shell:
-     - Shows correct/incorrect animation
-     - Displays explanation
-     - "Learn more" button → opens Learning Modal
-     - After 3s or user action → next question
-
-5. REPEAT 2-4 until all questions answered
-
-6. WAGER QUESTION (if applicable)
-   Game Shell transitions to WAGER state
-   ↓
-   User selects wager amount → submitWager()
-   ↓
-   Session Controller updates wager in Redis
-   ↓
-   Present final question with higher stakes
-
-7. GAME COMPLETE
-   Game Shell → Game Service.completeSession(sessionId)
-   ↓
-   Session Controller:
-     - Finalize score
-     - Trigger Progress Service.awardRewards()
-   ↓
-   Progress Service:
-     - Calculate XP/gems
-     - Check badge criteria
-     - Update user profile in DB
-     - Return rewards summary
-   ↓
-   Client: Game Shell transitions to RESULTS state
-   ↓
-   Display: Final score, XP gained, gems earned, badges unlocked
-```
-
-### Learning Flow (Parallel to Game Flow)
-
-```
-User clicks "Learn more" → Learning Modal opens
-↓
-Game Service.getLearnMore(questionId)
-↓
-Content Controller fetches educational content from DB
-↓
-Learning Modal displays content
-↓
-User optionally saves for later → Progress Service.saveContent()
-↓
-User closes modal → returns to game (timer resumes or next question)
-```
-
-### Phase 2: Real-Time Multiplayer Flow (Future)
-
-```
-[WebSocket connection established on game start]
-
-Host creates room → POST /api/rooms
-↓
-Server: Session Controller creates room in Redis
-↓
-Players join → WebSocket: JOIN_ROOM event
-↓
-Session Controller adds players to room state
-↓
-Host starts game → WebSocket: START_GAME event
-↓
-Server broadcasts QUESTION_START to all players
-↓
-Each player submits answer → WebSocket: SUBMIT_ANSWER
-↓
-Server collects answers, waits for all or timeout
-↓
-Server broadcasts REVEAL with all players' answers and updated leaderboard
-↓
-Repeat for all questions
-↓
-Server broadcasts GAME_END with final standings
-```
-
----
-
-## State Management Patterns
-
-### Client-Side State Architecture
-
-**Recommended Approach:** React Context + useState/useReducer (START HERE)
-
-**Rationale:** Quiz games have localized, predictable state flows. Context provides sufficient structure without Redux overhead. Graduate to Zustand only if performance issues arise.
-
-#### State Layers
-
-| Layer | Solution | What It Manages | Confidence |
-|-------|----------|----------------|------------|
-| **Game Session State** | React Context | Current question, score, timer, game phase (FSM) | HIGH |
-| **UI State** | Local useState | Animations, modal open/close, button states | HIGH |
-| **Server State** | TanStack Query (React Query) | Questions, user profile, game history | MEDIUM |
-| **Cache** | TanStack Query cache | Recently fetched questions, user data | MEDIUM |
-
-#### Finite State Machine for Game Flow
-
-Implement game phases as explicit FSM states:
-
+**GameSession Interface:**
 ```typescript
-type GamePhase =
-  | 'IDLE'           // Not started
-  | 'LOADING'        // Fetching questions
-  | 'QUESTION'       // Displaying question + timer
-  | 'ANSWER_LOCKED'  // User selected, waiting to submit
-  | 'REVEAL'         // Show correct answer + explanation
-  | 'LEARNING'       // "Learn more" modal open
-  | 'WAGER'          // Special wager question
-  | 'COMPLETE'       // Game finished
-  | 'ERROR';         // Error occurred
-
-// Game Shell maintains FSM state
-const [gamePhase, setGamePhase] = useState<GamePhase>('IDLE');
-
-// Transitions are explicit
-const transitionTo = (nextPhase: GamePhase) => {
-  // Validate transition is allowed
-  // Log for debugging
-  // Update state
-  setGamePhase(nextPhase);
-};
-```
-
-**Why FSM?** Quiz games have well-defined phase transitions. Making these explicit prevents bugs from invalid state combinations (e.g., timer running during REVEAL).
-
-#### Timer Management
-
-**Pattern:** useEffect with cleanup + useRef for interval tracking
-
-```typescript
-const useQuestionTimer = (duration: number, onTimeout: () => void) => {
-  const [timeLeft, setTimeLeft] = useState(duration);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          onTimeout();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    // Cleanup prevents memory leaks when component unmounts
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [duration, onTimeout]);
-
-  return { timeLeft, pause: () => clearInterval(intervalRef.current!) };
-};
-```
-
-**Critical:** Always clear timers in useEffect cleanup. Failing to do so causes multiple timers, memory leaks, and flickering.
-
-### Server-Side State Architecture
-
-**Session State:** Stored in Redis with TTL
-
-```javascript
-// Session schema in Redis
 {
-  "session:{sessionId}": {
-    userId: string,
-    questions: Question[],
-    currentQuestionIndex: number,
-    answers: Answer[],
-    score: number,
-    startedAt: timestamp,
-    expiresAt: timestamp,
-    wagerAmount: number | null
-  }
+  sessionId: string;           // UUID
+  userId: string | number;     // User ID or 'anonymous'
+  questions: Question[];       // Array of 10 questions with answers
+  answers: ServerAnswer[];     // Submitted answers with scores
+  createdAt: Date;            // Session creation time
+  lastActivityTime: Date;     // Last access time (for TTL)
+  progressionAwarded: boolean; // Prevents double-awarding XP/gems
 }
-
-// TTL: 30 minutes (auto-cleanup abandoned games)
 ```
 
-**Why Redis?**
-- Sub-millisecond reads (critical for real-time feel)
-- Automatic expiry (no manual cleanup)
-- Pub/Sub for Phase 2 multiplayer
-- Leaderboard support with sorted sets
+**Key Operations:**
+- `createSession()` - Creates session, returns sessionId (sync)
+- `getSession()` - Retrieves session, updates lastActivityTime (sync)
+- `submitAnswer()` - Validates, scores, stores answer (sync)
+- `getResults()` - Aggregates answers, calculates totals (sync)
 
-**Persistent State:** PostgreSQL
+### Current Limitations
 
-```sql
--- Core tables
-users (id, username, email, xp, gems, created_at)
-questions (id, text, category, difficulty, explanation)
-answers (id, question_id, text, is_correct)
-game_history (id, user_id, score, duration, completed_at)
-badges (id, name, criteria, icon_url)
-user_badges (user_id, badge_id, earned_at)
-saved_content (user_id, question_id, saved_at)
+1. **Data loss on restart** - Server restart loses all active sessions
+2. **Single-server only** - Cannot share sessions across instances
+3. **Manual cleanup** - setInterval every 5 minutes to delete expired sessions
+4. **Memory leak risk** - If cleanup fails, memory grows unbounded
+
+## Target Architecture
+
+### Component Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ SessionManager (sessionService.ts)                      │
+│ - Redis client (already configured)                     │
+│ - Automatic TTL expiration (1 hour)                     │
+│ - Async operations (await on all methods)               │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         │ Redis (config/redis.ts)
+                         ↓
+┌─────────────────────────────────────────────────────────┐
+│ Redis Store                                             │
+│ Key: session:{sessionId}                                │
+│ Value: JSON-serialized GameSession                      │
+│ TTL: 3600 seconds (1 hour)                              │
+│ Expiration: Sliding TTL on each access                  │
+└─────────────────────────────────────────────────────────┘
 ```
 
-**Why PostgreSQL?**
-- Relational data (questions → answers, users → badges)
-- ACID guarantees for XP/gems
-- Complex queries for badge criteria
-- JSON columns for flexible question metadata
+### Redis Key Schema
 
----
-
-## Architecture Patterns to Follow
-
-### Pattern 1: State Machine for Game Flow
-
-**What:** Explicitly model game phases as FSM states with validated transitions.
-
-**When:** Always for quiz games. Phase transitions are predictable and constrained.
-
-**Benefits:**
-- Prevents invalid states (e.g., timer running after answer reveal)
-- Makes debugging trivial (log state transitions)
-- Simplifies testing (test each phase independently)
+**Pattern:** `session:{sessionId}`
 
 **Example:**
-```typescript
-const VALID_TRANSITIONS: Record<GamePhase, GamePhase[]> = {
-  IDLE: ['LOADING'],
-  LOADING: ['QUESTION', 'ERROR'],
-  QUESTION: ['ANSWER_LOCKED', 'REVEAL', 'ERROR'],
-  ANSWER_LOCKED: ['REVEAL'],
-  REVEAL: ['LEARNING', 'QUESTION', 'WAGER', 'COMPLETE'],
-  LEARNING: ['REVEAL'], // Return to reveal after learning modal
-  WAGER: ['QUESTION'], // Wager leads to final question
-  COMPLETE: ['IDLE'], // Restart
-  ERROR: ['IDLE']
-};
+```
+session:550e8400-e29b-41d4-a716-446655440000
 ```
 
-### Pattern 2: Optimistic UI for Answer Selection
+**Value:** JSON-serialized GameSession object
 
-**What:** Update UI immediately when user selects answer, then sync with server.
+**TTL Strategy:** Sliding expiration - reset to 3600s on each access via `getSession()`
 
-**When:** Non-wager questions where reversibility is acceptable.
+### Data Serialization
 
-**Benefits:**
-- Feels instant (no network latency)
-- Better UX on slow connections
-- Reduces perceived load time
+**Approach:** JSON serialization with Date handling
 
-**Example:**
 ```typescript
-const submitAnswer = async (answerId: string) => {
-  // 1. Optimistic update
-  setSelectedAnswer(answerId);
-  setGamePhase('ANSWER_LOCKED');
+// Store
+const sessionData = JSON.stringify({
+  ...session,
+  createdAt: session.createdAt.toISOString(),
+  lastActivityTime: session.lastActivityTime.toISOString()
+});
+await redis.set(`session:${sessionId}`, sessionData, { EX: 3600 });
+
+// Retrieve
+const data = await redis.get(`session:${sessionId}`);
+const session = JSON.parse(data);
+session.createdAt = new Date(session.createdAt);
+session.lastActivityTime = new Date(session.lastActivityTime);
+```
+
+**Why JSON over Redis Hashes:**
+- Sessions are always retrieved as a whole (no partial updates)
+- GameSession contains nested objects (questions, answers arrays)
+- Simpler serialization for complex nested data
+- Pattern matches existing JWT token storage in tokenUtils.ts
+
+**Alternative Considered:** Redis Hashes for flat data - Rejected because GameSession contains arrays and nested objects, making JSON more natural.
+
+## Migration Strategy
+
+### Phase 1: Async Wrapper (Minimal Breaking Change)
+
+**Goal:** Make SessionManager methods async while maintaining in-memory storage
+
+**Changes:**
+```typescript
+// Before (sync)
+createSession(userId, questions): string
+
+// After (async)
+async createSession(userId, questions): Promise<string>
+```
+
+**Impact:**
+- All route handlers calling sessionManager must await
+- No data migration needed yet
+- Tests continue to pass with in-memory storage
+
+**Files Modified:**
+- `backend/src/services/sessionService.ts` - Add async to all methods
+- `backend/src/routes/game.ts` - Add await to all sessionManager calls
+
+### Phase 2: Redis Implementation (Zero Downtime)
+
+**Goal:** Replace Map with Redis while maintaining API compatibility
+
+**Dual-Write Approach (Optional):**
+For zero downtime during migration, write to both stores:
+```typescript
+// Write to both
+this.sessions.set(sessionId, session);
+await redis.set(`session:${sessionId}`, JSON.stringify(session), { EX: 3600 });
+
+// Read from Redis first, fallback to Map
+let session = await this.getSessionFromRedis(sessionId);
+if (!session) {
+  session = this.sessions.get(sessionId);
+}
+```
+
+**Direct Migration (Recommended):**
+Since sessions are ephemeral (1-hour lifetime), simply switch storage:
+```typescript
+async createSession(userId, questions): Promise<string> {
+  const sessionId = randomUUID();
+  const session = { /* ... */ };
+
+  await redis.set(
+    `session:${sessionId}`,
+    JSON.stringify(session),
+    { EX: 3600 }
+  );
+
+  return sessionId;
+}
+```
+
+**Files Modified:**
+- `backend/src/services/sessionService.ts` - Replace Map with Redis operations
+- Remove cleanup interval (Redis TTL handles expiration)
+
+### Phase 3: Graceful Degradation (Production Hardening)
+
+**Goal:** Handle Redis failures without crashing the server
+
+**Pattern:** Circuit breaker with in-memory fallback
+
+```typescript
+async createSession(userId, questions): Promise<string> {
+  const sessionId = randomUUID();
+  const session = { /* ... */ };
 
   try {
-    // 2. Server validation
-    const result = await gameService.submitAnswer(sessionId, questionId, answerId);
-
-    // 3. Update with server response
-    setScore(result.score);
-    setGamePhase('REVEAL');
+    if (redis.isReady) {
+      await redis.set(
+        `session:${sessionId}`,
+        JSON.stringify(session),
+        { EX: 3600 }
+      );
+    } else {
+      // Fallback to in-memory (degraded mode)
+      this.fallbackSessions.set(sessionId, session);
+      console.warn('⚠️  Redis unavailable - using in-memory fallback');
+    }
   } catch (error) {
-    // 4. Rollback on error
-    setSelectedAnswer(null);
-    setGamePhase('QUESTION');
-    showError('Failed to submit answer');
+    console.error('Redis error:', error);
+    this.fallbackSessions.set(sessionId, session);
   }
-};
+
+  return sessionId;
+}
 ```
 
-### Pattern 3: Content Preloading
+**Files Modified:**
+- `backend/src/services/sessionService.ts` - Add error handling and fallback Map
 
-**What:** Fetch next question while user is viewing current question reveal.
+## Integration Points
 
-**When:** Always. Hides network latency.
+### Modified Components
 
-**Benefits:**
-- Seamless transitions between questions
-- Feels faster than it is
-- Better perceived performance
+| File | Changes | Impact |
+|------|---------|--------|
+| `backend/src/services/sessionService.ts` | Convert methods to async, replace Map with Redis calls | HIGH - Core session logic |
+| `backend/src/routes/game.ts` | Add await to all sessionManager calls | MEDIUM - Route handlers |
+| `backend/src/config/redis.ts` | Already configured - no changes needed | NONE |
 
-**Example:**
+### New Components
+
+None required - Redis client already configured and used for JWT tokens.
+
+### Integration with Existing Redis Usage
+
+**Current Pattern (tokenUtils.ts):**
 ```typescript
-const preloadNextQuestion = async (currentIndex: number) => {
-  if (currentIndex + 1 < questions.length) {
-    // TanStack Query will cache this
-    await queryClient.prefetchQuery({
-      queryKey: ['question', questions[currentIndex + 1].id],
-      queryFn: () => gameService.getQuestion(questions[currentIndex + 1].id)
-    });
-  }
-};
-
-// Trigger during REVEAL phase
-useEffect(() => {
-  if (gamePhase === 'REVEAL') {
-    preloadNextQuestion(currentQuestionIndex);
-  }
-}, [gamePhase, currentQuestionIndex]);
+await redis.set(key, '1', { EX: expirySeconds });
+const exists = await redis.exists(key);
 ```
 
-### Pattern 4: Session Resurrection
-
-**What:** Store minimal session state in localStorage to recover from page refresh.
-
-**When:** Single-player games where recovery is valuable.
-
-**Benefits:**
-- User doesn't lose progress on accidental refresh
-- Better UX for mobile (tab switching)
-
-**Example:**
+**Session Pattern (similar):**
 ```typescript
-// Save to localStorage on each state change
-useEffect(() => {
-  if (sessionId) {
-    localStorage.setItem('activeSession', JSON.stringify({
-      sessionId,
-      currentQuestionIndex,
-      score,
-      phase: gamePhase
-    }));
-  }
-}, [sessionId, currentQuestionIndex, score, gamePhase]);
-
-// Attempt recovery on mount
-useEffect(() => {
-  const saved = localStorage.getItem('activeSession');
-  if (saved) {
-    const session = JSON.parse(saved);
-    // Validate session still exists on server
-    gameService.validateSession(session.sessionId)
-      .then(isValid => {
-        if (isValid) {
-          // Resume session
-          setSessionId(session.sessionId);
-          setGamePhase(session.phase);
-        }
-      });
-  }
-}, []);
+await redis.set(`session:${sessionId}`, JSON.stringify(session), { EX: 3600 });
+const data = await redis.get(`session:${sessionId}`);
 ```
 
-### Pattern 5: Time-Boxed Server Operations
+**Consistency:** Both use:
+- Namespaced keys (`refresh:`, `blacklist:`, `session:`)
+- TTL with `EX` option
+- Async/await throughout
+- Same Redis client instance
 
-**What:** All server operations have explicit timeouts. Don't wait indefinitely.
+## Data Flow Changes
 
-**When:** Always. Network is unreliable.
+### Before (In-Memory Map)
 
-**Benefits:**
-- Prevents hanging UI
-- Clear error states
-- Better UX on poor connections
+```
+Client Request
+    │
+    ↓
+POST /api/game/session
+    │
+    ↓
+sessionManager.createSession() [SYNC]
+    │
+    ├─→ Generate UUID
+    ├─→ sessions.set(sessionId, session) [Map]
+    └─→ Return sessionId
+    │
+    ↓
+201 { sessionId, questions }
+```
 
-**Example:**
+**Characteristics:**
+- Synchronous operations
+- Instant read/write (in-process memory)
+- Manual cleanup via setInterval
+- Lost on server restart
+
+### After (Redis)
+
+```
+Client Request
+    │
+    ↓
+POST /api/game/session
+    │
+    ↓
+await sessionManager.createSession() [ASYNC]
+    │
+    ├─→ Generate UUID
+    ├─→ await redis.set(...) [Network call]
+    │   └─→ TTL: 3600s
+    └─→ Return sessionId
+    │
+    ↓
+201 { sessionId, questions }
+```
+
+**Characteristics:**
+- Asynchronous operations (network I/O)
+- ~1-5ms latency per Redis call (local Redis)
+- Automatic TTL expiration (no cleanup interval)
+- Survives server restart
+- Shareable across multiple server instances
+
+### Sliding TTL Implementation
+
+**Pattern:** Reset TTL on every access
+
 ```typescript
-const gameService = {
-  submitAnswer: async (sessionId, questionId, answerId) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+async getSession(sessionId: string): Promise<GameSession | null> {
+  const data = await redis.get(`session:${sessionId}`);
+
+  if (!data) return null;
+
+  const session = this.deserializeSession(data);
+
+  // Update lastActivityTime and reset TTL
+  session.lastActivityTime = new Date();
+  await redis.set(
+    `session:${sessionId}`,
+    JSON.stringify(session),
+    { EX: 3600 }  // Reset to 1 hour
+  );
+
+  return session;
+}
+```
+
+**Benefit:** Active sessions stay alive, inactive sessions expire automatically.
+
+## Build Order
+
+### Iteration 1: Async Migration (Non-Breaking)
+
+**Goal:** Prepare codebase for async operations without changing storage
+
+**Tasks:**
+1. Add async/await to SessionManager methods
+2. Update route handlers to await sessionManager calls
+3. Update tests to handle async operations
+4. Verify all game flows still work
+
+**Testing:**
+- Run existing game flow tests
+- Verify no regressions in POST /session, POST /answer, GET /results
+
+**Estimated Effort:** 1-2 hours
+
+### Iteration 2: Redis Implementation
+
+**Goal:** Replace in-memory Map with Redis storage
+
+**Tasks:**
+1. Create serialization/deserialization helpers
+2. Replace `sessions.set()` with `redis.set()`
+3. Replace `sessions.get()` with `redis.get()`
+4. Remove cleanup interval (rely on Redis TTL)
+5. Update tests to mock Redis client
+
+**Testing:**
+- Integration tests with real Redis instance
+- Verify session creation, retrieval, expiration
+- Test 1-hour TTL behavior
+
+**Estimated Effort:** 2-3 hours
+
+### Iteration 3: Error Handling & Fallback
+
+**Goal:** Graceful degradation when Redis unavailable
+
+**Tasks:**
+1. Add fallback Map for degraded mode
+2. Wrap Redis calls in try/catch
+3. Check `redis.isReady` before operations
+4. Add logging for fallback scenarios
+5. Add health check endpoint reporting Redis status
+
+**Testing:**
+- Simulate Redis connection failure
+- Verify fallback to in-memory storage
+- Verify recovery when Redis reconnects
+
+**Estimated Effort:** 2-3 hours
+
+### Iteration 4: Production Validation
+
+**Goal:** Verify migration in production environment
+
+**Tasks:**
+1. Monitor Redis connection metrics
+2. Verify session persistence across server restarts
+3. Check for memory leaks (should decrease)
+4. Validate TTL expiration behavior
+5. Test multi-instance scenario (if applicable)
+
+**Testing:**
+- Production smoke tests
+- Load testing with concurrent sessions
+- Server restart test (sessions should persist)
+
+**Estimated Effort:** 1-2 hours
+
+**Total Estimated Effort:** 6-10 hours
+
+## Performance Considerations
+
+### Latency Impact
+
+| Operation | Before (In-Memory) | After (Redis Local) | Impact |
+|-----------|-------------------|---------------------|--------|
+| createSession | <1ms | 1-3ms | Negligible |
+| getSession | <1ms | 1-3ms | Negligible |
+| submitAnswer | <1ms | 1-3ms | Negligible |
+| getResults | <1ms | 1-3ms | Negligible |
+
+**Analysis:** For local Redis, network latency adds ~1-2ms per operation. This is imperceptible to users and well within the app's performance budget (FCP <1.5s, TTI <3s).
+
+### Connection Pooling
+
+**Current Setup:** Single Redis client shared across all requests (already configured in `config/redis.ts`)
+
+**Best Practice:** node-redis (v4.6.12) uses connection pooling internally - no additional configuration needed for typical web app loads.
+
+**Monitoring:** Track Redis connection metrics via:
+```typescript
+redis.on('connect', () => console.log('Redis connected'));
+redis.on('error', (err) => console.error('Redis error:', err));
+```
+
+Already implemented in `config/redis.ts`.
+
+### Memory Usage
+
+**Before:** All sessions stored in Node.js heap
+- 10 sessions × ~50KB = 500KB
+- 100 sessions × ~50KB = 5MB
+- 1000 sessions × ~50KB = 50MB
+
+**After:** Sessions stored in Redis (separate process)
+- Node.js heap: Minimal (only active request data)
+- Redis: Same memory footprint, but isolated
+
+**Benefit:** Reduced risk of Node.js heap exhaustion under high load.
+
+## Error Handling Patterns
+
+### Pattern 1: Fail Fast (MVP - Simple)
+
+**When:** Redis is required, no fallback needed
+
+```typescript
+async createSession(...): Promise<string> {
+  try {
+    await redis.set(...);
+  } catch (error) {
+    console.error('Redis error:', error);
+    throw new Error('Session creation failed - try again');
+  }
+}
+```
+
+**Pro:** Simple, clear error reporting
+**Con:** Service downtime if Redis unavailable
+
+### Pattern 2: Graceful Degradation (Recommended)
+
+**When:** High availability required, short-term Redis outages acceptable
+
+```typescript
+async createSession(...): Promise<string> {
+  try {
+    if (redis.isReady) {
+      await redis.set(...);
+      return sessionId;
+    }
+  } catch (error) {
+    console.error('Redis error - using fallback:', error);
+  }
+
+  // Fallback to in-memory
+  this.fallbackSessions.set(sessionId, session);
+  return sessionId;
+}
+```
+
+**Pro:** Service remains available during Redis outages
+**Con:** Sessions created during outage lost on server restart
+
+### Pattern 3: Circuit Breaker (Advanced)
+
+**When:** Protecting Redis from cascading failures
+
+```typescript
+class CircuitBreaker {
+  private failures = 0;
+  private state: 'closed' | 'open' | 'half-open' = 'closed';
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'open') {
+      throw new Error('Circuit breaker open');
+    }
 
     try {
-      const response = await fetch('/api/answers', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId, questionId, answerId }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-      return response.json();
+      const result = await fn();
+      this.failures = 0;
+      return result;
     } catch (error) {
-      if (error.name === 'AbortError') {
-        throw new Error('Request timed out. Please check your connection.');
+      this.failures++;
+      if (this.failures > 5) {
+        this.state = 'open';
+        setTimeout(() => { this.state = 'half-open'; }, 30000);
       }
       throw error;
     }
   }
-};
+}
 ```
 
----
+**Pro:** Prevents Redis overload during partial failures
+**Con:** Added complexity, may not be needed for MVP
 
-## Anti-Patterns to Avoid
+**Recommendation:** Start with Pattern 2 (Graceful Degradation) for v1.1.
 
-### Anti-Pattern 1: Global Timer State
+## Testing Strategy
 
-**What goes wrong:** Storing timer in global state causes unnecessary re-renders across the entire component tree every second.
+### Unit Tests
 
-**Why bad:** Performance tanks. Every component subscribed to Context re-renders 10+ times per question.
-
-**Instead:** Keep timer state local to Timer component. Pass only `onTimeout` callback from parent.
-
+**Mock Redis Client:**
 ```typescript
-// ❌ BAD: Timer in Context causes re-renders
-const GameContext = createContext({ timeLeft: 10, ... });
-
-// ✅ GOOD: Timer is local, parent only cares about timeout
-const Timer = ({ duration, onTimeout }) => {
-  const [timeLeft, setTimeLeft] = useState(duration);
-  // ... timer logic
+const mockRedis = {
+  set: jest.fn().mockResolvedValue('OK'),
+  get: jest.fn().mockResolvedValue(JSON.stringify(mockSession)),
+  del: jest.fn().mockResolvedValue(1),
+  isReady: true
 };
 ```
 
-### Anti-Pattern 2: Storing Questions in Component State
+**Test Cases:**
+- ✓ createSession stores session with correct TTL
+- ✓ getSession retrieves and deserializes correctly
+- ✓ getSession resets TTL (sliding expiration)
+- ✓ submitAnswer updates session in Redis
+- ✓ getResults aggregates from Redis-stored session
+- ✓ Handles Redis errors gracefully (fallback mode)
+- ✓ Date serialization/deserialization preserves values
 
-**What goes wrong:** Questions stored in useState get lost on page refresh. No cache invalidation strategy.
+### Integration Tests
 
-**Why bad:** Wastes API calls, poor offline support, can't implement preloading.
+**Real Redis Instance:**
+Use test Redis instance (redis://localhost:6379/1)
 
-**Instead:** Use TanStack Query for server state. Automatic caching, invalidation, and background refetching.
+**Test Cases:**
+- ✓ Session persists after server restart
+- ✓ Session expires after 1 hour of inactivity
+- ✓ Sliding TTL extends active session lifetime
+- ✓ Concurrent requests don't corrupt session state
+- ✓ Multiple sessions isolated by sessionId
 
+### Load Tests
+
+**Scenario:** 100 concurrent users playing games
+
+**Metrics:**
+- Redis operations/sec
+- 95th percentile latency
+- Error rate
+- Memory usage (Node.js + Redis)
+
+**Tools:** Artillery, k6, or custom Node.js script
+
+## Security Considerations
+
+### Data Exposure
+
+**Risk:** Session data contains correct answers for all questions
+
+**Mitigation:** Already handled - questions stored without client access to correctAnswer until after submission.
+
+**Redis Security:**
+- Use `REDIS_URL` from environment (supports auth)
+- Example: `redis://:password@localhost:6379`
+- Production: Use TLS (`rediss://`) for encrypted connections
+
+### Session Hijacking
+
+**Current Protection:**
+- SessionId is UUID v4 (cryptographically random)
+- No session cookies (sessionId in request body)
+- Server-side score calculation prevents tampering
+
+**Redis Impact:** No change - same security model applies
+
+### Data Retention
+
+**Current:** 1-hour TTL, then deleted
+**Redis:** Same - TTL auto-expires after 3600s
+
+**Compliance:** No PII stored in sessions (userId is numeric ID, questions are public data)
+
+## Rollback Plan
+
+### If Migration Fails
+
+**Step 1:** Revert code changes
+```bash
+git revert <commit-hash>
+```
+
+**Step 2:** Restart server with old code
+```bash
+npm run build && npm start
+```
+
+**Impact:** Active sessions lost (same as current behavior on restart)
+
+### If Redis Performance Issues
+
+**Step 1:** Enable in-memory fallback mode
 ```typescript
-// ❌ BAD: Manual state management
-const [questions, setQuestions] = useState([]);
-useEffect(() => {
-  fetch('/api/questions').then(r => r.json()).then(setQuestions);
-}, []);
-
-// ✅ GOOD: TanStack Query handles caching, refetching, errors
-const { data: questions, isLoading, error } = useQuery({
-  queryKey: ['session', sessionId, 'questions'],
-  queryFn: () => gameService.getQuestions(sessionId),
-  staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-});
+const FORCE_FALLBACK = process.env.USE_MEMORY_SESSIONS === 'true';
 ```
 
-### Anti-Pattern 3: Synchronous Score Calculation on Client
+**Step 2:** Set environment variable
+```bash
+USE_MEMORY_SESSIONS=true npm start
+```
 
-**What goes wrong:** Client calculates score based on time, sends to server. Client and server can disagree.
+**Impact:** Returns to v1.0 behavior (in-memory sessions)
 
-**Why bad:** Exploitable (user can manipulate client-side timer), causes bugs when client/server time drift.
+## Production Deployment Checklist
 
-**Instead:** Server calculates score based on server timestamp. Client displays optimistic score for UX, reconciles with server response.
+- [ ] Redis server running and accessible
+- [ ] `REDIS_URL` environment variable configured
+- [ ] Redis authentication configured (if production)
+- [ ] TLS enabled for Redis connection (production only)
+- [ ] Health check endpoint reports Redis status
+- [ ] Monitoring alerts configured for Redis errors
+- [ ] Fallback mode tested and verified
+- [ ] Load tests completed successfully
+- [ ] Server restart test confirms session persistence
+- [ ] Rollback plan documented and tested
 
+## Monitoring & Observability
+
+### Key Metrics
+
+| Metric | What to Track | Alert Threshold |
+|--------|---------------|-----------------|
+| Redis Connection Status | `redis.isReady` | Alert if false > 30s |
+| Redis Operation Latency | Time for set/get operations | Alert if p95 > 50ms |
+| Redis Error Rate | Failed operations / total | Alert if > 1% |
+| Fallback Mode Activations | Count of fallback usage | Alert on any usage |
+| Active Sessions | Total session keys | Monitor for memory planning |
+
+### Logging
+
+**Session Operations:**
 ```typescript
-// ❌ BAD: Client calculates and sends score
-const score = calculateScore(isCorrect, timeLeft);
-await gameService.submitAnswer(sessionId, questionId, answerId, score);
-
-// ✅ GOOD: Server calculates, client displays optimistic then reconciles
-const optimisticScore = calculateScore(isCorrect, timeLeft); // For immediate UI feedback
-const result = await gameService.submitAnswer(sessionId, questionId, answerId);
-// Server returns authoritative score
-setScore(result.score); // Replace optimistic with real
+console.log(`✓ Session created: ${sessionId} (userId: ${userId})`);
+console.log(`✓ Session retrieved: ${sessionId}`);
+console.warn(`⚠️  Redis unavailable - using fallback`);
+console.error(`❌ Redis error:`, error);
 ```
 
-### Anti-Pattern 4: No Session Validation
-
-**What goes wrong:** Client assumes sessionId is always valid. Doesn't handle expired sessions.
-
-**Why bad:** Confusing errors when session expires (30 min TTL in Redis).
-
-**Instead:** Validate session before critical operations. Handle expiry gracefully.
-
+**Health Check Endpoint:**
 ```typescript
-// ❌ BAD: Assume session is valid
-const submitAnswer = async (answerId) => {
-  await gameService.submitAnswer(sessionId, questionId, answerId);
-};
-
-// ✅ GOOD: Validate session, handle expiry
-const submitAnswer = async (answerId) => {
-  try {
-    await gameService.submitAnswer(sessionId, questionId, answerId);
-  } catch (error) {
-    if (error.code === 'SESSION_EXPIRED') {
-      // Clear local state
-      localStorage.removeItem('activeSession');
-      // Show modal: "Your session expired. Start a new game?"
-      setGamePhase('ERROR');
-      showSessionExpiredModal();
-    }
-  }
-};
-```
-
-### Anti-Pattern 5: Blocking Real-Time Features with REST
-
-**What goes wrong:** Polling REST endpoints for multiplayer game state (e.g., `/api/game-state` every 500ms).
-
-**Why bad:** Wasteful (99% of polls return no changes), high latency (500ms best case), server load scales with players × poll rate.
-
-**Instead:** WebSockets for real-time events. REST for commands.
-
-```typescript
-// ❌ BAD: Polling for game state
-useEffect(() => {
-  const interval = setInterval(async () => {
-    const state = await fetch(`/api/games/${gameId}/state`).then(r => r.json());
-    setGameState(state);
-  }, 500);
-  return () => clearInterval(interval);
-}, [gameId]);
-
-// ✅ GOOD: WebSocket for state updates, REST for commands
-const socket = io('/game');
-socket.on('gameStateUpdate', (state) => setGameState(state));
-socket.emit('submitAnswer', { gameId, answerId });
-```
-
----
-
-## Scalability Considerations
-
-### At 100 Users (MVP - Current Target)
-
-**Bottlenecks:** None. Simple architecture works.
-
-**Approach:**
-- Single Express server
-- PostgreSQL for everything (questions + sessions)
-- No Redis yet (sessions in PostgreSQL)
-- No CDN (static assets from Express)
-
-**Cost:** ~$20/month (single Heroku dyno + Postgres)
-
-### At 10K Users (Growth Phase)
-
-**Bottlenecks:** Database connections, session lookup latency.
-
-**Approach:**
-- Redis introduced for session state (hot data)
-- PostgreSQL for persistent data only
-- Connection pooling (pg-pool)
-- CDN for static assets (Cloudflare)
-- Horizontal scaling: 2-3 Express instances behind load balancer
-
-**Cost:** ~$200/month (Redis $10, multiple dynos $50, Postgres $50, CDN free tier)
-
-### At 1M Users (Scale Phase)
-
-**Bottlenecks:** Database writes (game history), question delivery, WebSocket connections.
-
-**Approach:**
-- Redis Cluster for session state + leaderboards
-- Read replicas for PostgreSQL (questions are read-heavy)
-- Separate WebSocket servers from REST servers
-- Message queue (Redis Streams) for async processing (badge calculations, XP updates)
-- CDN with edge caching for questions (rarely change)
-- Separate game history writes to time-series DB (TimescaleDB)
-
-**Cost:** ~$2K/month (managed Redis $200, Postgres with replicas $500, multiple servers $1K, CDN $100)
-
-### Real-Time Multiplayer Considerations (Phase 2)
-
-**Additional Requirements:**
-- Sticky sessions (load balancer routes player to same WebSocket server)
-- Redis Pub/Sub for cross-server messaging
-- Room management (Redis sorted sets for lobbies)
-- Latency monitoring (critical for fairness)
-
-**Recommendation:** Start with Socket.io (has fallbacks, room support built-in). Graduate to bare WebSockets only if performance critical.
-
----
-
-## Suggested Build Order
-
-Build order minimizes rework and validates architecture early.
-
-### Phase 1: Core Game Loop (Week 1-2)
-
-**Why first:** Validates FSM pattern, establishes data flow.
-
-1. **Game Shell (FSM)** - State machine, phase transitions
-2. **Question UI** - Render question/answers (static data first)
-3. **Timer Component** - useEffect + cleanup pattern
-4. **API Client (Game Service)** - Service layer skeleton
-5. **Session Controller** - Create session, fetch questions
-6. **Integration** - Wire frontend to backend
-
-**Validation:** Can play a full game (hard-coded questions → real DB).
-
-### Phase 2: Scoring & Validation (Week 2)
-
-**Why second:** Establishes server authority pattern.
-
-1. **Answer Validation** - Server-side correctness check
-2. **Score Calculation** - Server-side, time-based scoring
-3. **Optimistic UI** - Client-side optimistic updates
-4. **Error Handling** - Timeout, validation failures
-
-**Validation:** Score calculated on server, client reconciles.
-
-### Phase 3: Learning Flow (Week 3)
-
-**Why third:** Parallel flow, tests modal state management.
-
-1. **Learning Modal** - Modal component, open/close
-2. **Content Controller** - Fetch educational content
-3. **Save for Later** - Persist saved content to DB
-4. **Integration** - "Learn more" button → modal → save
-
-**Validation:** Learning flow works without disrupting game flow.
-
-### Phase 4: Progression System (Week 3-4)
-
-**Why fourth:** Depends on completed game loop.
-
-1. **Progress Service** - XP/gems calculation
-2. **Badge System** - Badge criteria evaluation
-3. **Profile Updates** - Persist rewards to DB
-4. **Results Screen** - Display rewards
-
-**Validation:** Completing game awards XP, gems, badges.
-
-### Phase 5: Redis Introduction (Week 4)
-
-**Why fifth:** Optimization, not core functionality.
-
-1. **Session Storage Migration** - Move sessions from Postgres to Redis
-2. **TTL Configuration** - Auto-expire abandoned sessions
-3. **Cache Layer** - Cache frequently-accessed questions
-
-**Validation:** Performance improves, functionality unchanged.
-
-### Phase 6: Polish & Error States (Week 5)
-
-**Why last:** Refine based on user testing.
-
-1. **Session Resurrection** - localStorage recovery
-2. **Error Boundaries** - Graceful error handling
-3. **Loading States** - Skeletons, spinners
-4. **Animations** - Framer Motion transitions
-
-**Validation:** Feels polished, handles edge cases.
-
-### Phase 7 (Future): Real-Time Multiplayer
-
-**Dependencies:** Phases 1-5 complete, tested at scale.
-
-1. **WebSocket Server** - Socket.io setup
-2. **Room Management** - Redis-backed rooms
-3. **Synchronization** - State sync across players
-4. **Leaderboard** - Redis sorted sets
-
-**Validation:** Multiple players can compete in real-time.
-
----
-
-## Technology-Specific Patterns
-
-### React + TypeScript Patterns
-
-**Type-safe FSM:**
-```typescript
-type GameState =
-  | { phase: 'IDLE' }
-  | { phase: 'LOADING' }
-  | { phase: 'QUESTION'; question: Question; timeLeft: number }
-  | { phase: 'REVEAL'; question: Question; isCorrect: boolean; points: number }
-  | { phase: 'COMPLETE'; finalScore: number; rewards: Rewards };
-
-// TypeScript enforces valid state access
-const GameShell = ({ state }: { state: GameState }) => {
-  if (state.phase === 'QUESTION') {
-    // TypeScript knows `state.question` exists
-    return <QuestionUI question={state.question} timeLeft={state.timeLeft} />;
-  }
-  // ...
-};
-```
-
-**Custom Hooks for Reusable Logic:**
-```typescript
-// useGameSession.ts
-export const useGameSession = (sessionId: string) => {
-  const [gameState, setGameState] = useState<GameState>({ phase: 'IDLE' });
-
-  const startGame = useCallback(async () => {
-    setGameState({ phase: 'LOADING' });
-    const session = await gameService.startSession();
-    setGameState({
-      phase: 'QUESTION',
-      question: session.firstQuestion,
-      timeLeft: 10
-    });
-  }, []);
-
-  return { gameState, startGame, submitAnswer, ... };
-};
-```
-
-### Express + Node.js Patterns
-
-**Controller Layer (Thin):**
-```javascript
-// sessionController.js
-export const createSession = async (req, res, next) => {
-  try {
-    const { userId } = req.user; // From JWT middleware
-    const session = await sessionService.createSession(userId);
-    res.json(session);
-  } catch (error) {
-    next(error); // Pass to error middleware
-  }
-};
-```
-
-**Service Layer (Business Logic):**
-```javascript
-// sessionService.js
-export const createSession = async (userId) => {
-  const sessionId = uuidv4();
-  const questions = await questionService.getRandomQuestions(10, userId);
-
-  const session = {
-    sessionId,
-    userId,
-    questions: questions.map(q => q.id),
-    currentQuestionIndex: 0,
-    answers: [],
-    score: 0,
-    startedAt: Date.now(),
-    expiresAt: Date.now() + 30 * 60 * 1000 // 30 min
-  };
-
-  await redis.setex(`session:${sessionId}`, 1800, JSON.stringify(session));
-
-  return {
-    sessionId,
-    firstQuestion: questions[0]
-  };
-};
-```
-
-### PostgreSQL Patterns
-
-**Prepared Statements (Prevent SQL Injection):**
-```javascript
-const getQuestionsByCategory = async (category, limit) => {
-  const query = `
-    SELECT q.id, q.text, q.explanation, json_agg(a) as answers
-    FROM questions q
-    JOIN answers a ON a.question_id = q.id
-    WHERE q.category = $1
-    GROUP BY q.id
-    ORDER BY RANDOM()
-    LIMIT $2
-  `;
-  const result = await db.query(query, [category, limit]);
-  return result.rows;
-};
-```
-
-**Transactions for Rewards (ACID):**
-```javascript
-const awardRewards = async (userId, xp, gems, badgeIds) => {
-  const client = await db.pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // Update XP and gems
-    await client.query(
-      'UPDATE users SET xp = xp + $1, gems = gems + $2 WHERE id = $3',
-      [xp, gems, userId]
-    );
-
-    // Award badges
-    for (const badgeId of badgeIds) {
-      await client.query(
-        'INSERT INTO user_badges (user_id, badge_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [userId, badgeId]
-      );
-    }
-
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
-};
-```
-
-### Redis Patterns
-
-**Session Management with TTL:**
-```javascript
-// Store session
-await redis.setex(`session:${sessionId}`, 1800, JSON.stringify(session));
-
-// Get session
-const sessionData = await redis.get(`session:${sessionId}`);
-const session = sessionData ? JSON.parse(sessionData) : null;
-
-// Update session (refresh TTL)
-await redis.setex(`session:${sessionId}`, 1800, JSON.stringify(updatedSession));
-```
-
-**Leaderboard (Sorted Sets):**
-```javascript
-// Add player score
-await redis.zadd('leaderboard:daily', score, userId);
-
-// Get top 10
-const topPlayers = await redis.zrevrange('leaderboard:daily', 0, 9, 'WITHSCORES');
-
-// Get player rank
-const rank = await redis.zrevrank('leaderboard:daily', userId);
-```
-
----
-
-## Offline-First Considerations (Future Enhancement)
-
-For PWA support (not MVP requirement):
-
-### App Shell Architecture
-
-**Core Principle:** Cache UI shell separately from dynamic content.
-
-```javascript
-// service-worker.js
-const CACHE_NAME = 'civic-trivia-v1';
-const SHELL_CACHE = [
-  '/',
-  '/index.html',
-  '/app.js',
-  '/styles.css',
-  '/fonts/*'
-];
-
-// Cache shell on install
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL_CACHE))
-  );
-});
-
-// Serve from cache, fallback to network
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    })
-  );
-});
-```
-
-### Offline Question Storage
-
-**Strategy:** Cache questions in IndexedDB for offline play.
-
-```typescript
-// offlineStorage.ts
-import { openDB } from 'idb';
-
-const dbPromise = openDB('civic-trivia', 1, {
-  upgrade(db) {
-    db.createObjectStore('questions', { keyPath: 'id' });
-    db.createObjectStore('offlineSessions', { keyPath: 'sessionId' });
-  }
-});
-
-export const cacheQuestions = async (questions: Question[]) => {
-  const db = await dbPromise;
-  const tx = db.transaction('questions', 'readwrite');
-  for (const question of questions) {
-    await tx.store.put(question);
-  }
-};
-
-export const getOfflineQuestions = async (limit: number) => {
-  const db = await dbPromise;
-  const allQuestions = await db.getAll('questions');
-  return shuffleArray(allQuestions).slice(0, limit);
-};
-```
-
-**Sync Strategy:** Background sync when online.
-
-```javascript
-// Sync offline session results when connection restored
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-sessions') {
-    event.waitUntil(syncOfflineSessions());
-  }
-});
-
-const syncOfflineSessions = async () => {
-  const db = await openDB('civic-trivia', 1);
-  const sessions = await db.getAll('offlineSessions');
-
-  for (const session of sessions) {
-    try {
-      await fetch('/api/sessions/sync', {
-        method: 'POST',
-        body: JSON.stringify(session)
-      });
-      await db.delete('offlineSessions', session.sessionId);
-    } catch (error) {
-      // Keep session for next sync attempt
-    }
-  }
-};
-```
-
----
-
-## Build Order Implications
-
-### Critical Path Dependencies
-
-```
-[DB Schema] → [Content Controller] → [Session Controller] → [API Gateway]
-                                                                  ↓
-                                              [Game Service (Client)] ← [Game Shell FSM]
-                                                                  ↓
-                                              [Question UI] + [Timer] + [Learning Modal]
-```
-
-**Parallelizable Work:**
-- **Backend Team:** DB schema → Content Controller → Session Controller
-- **Frontend Team:** Game Shell FSM → Question UI → Timer (mock API initially)
-- **Integration Point:** Game Service (API client) connects both
-
-### Testing Strategy by Phase
-
-| Phase | What to Test | How |
-|-------|-------------|-----|
-| Core Game Loop | FSM transitions, timer cleanup | Jest + React Testing Library |
-| Scoring & Validation | Server-side calculation, optimistic UI | Integration tests (Supertest) |
-| Learning Flow | Modal state, content fetching | E2E (Playwright) |
-| Progression System | XP/gems calculation, badge awards | Unit tests (Jest) |
-| Redis Introduction | Session persistence, cache hits | Integration tests |
-| Real-Time Multiplayer | Synchronization, race conditions | Load testing (Socket.io test suite) |
-
----
-
-## Phase 2 Real-Time Architecture Preview
-
-### WebSocket Event Architecture
-
-```typescript
-// Client → Server Events
-type ClientEvent =
-  | { type: 'JOIN_ROOM'; roomId: string; userId: string }
-  | { type: 'SUBMIT_ANSWER'; roomId: string; questionId: string; answerId: string }
-  | { type: 'LEAVE_ROOM'; roomId: string };
-
-// Server → Client Events
-type ServerEvent =
-  | { type: 'PLAYER_JOINED'; player: Player }
-  | { type: 'QUESTION_START'; question: Question; timeLimit: number }
-  | { type: 'PLAYER_ANSWERED'; playerId: string }
-  | { type: 'REVEAL'; correctAnswer: string; leaderboard: Leaderboard }
-  | { type: 'GAME_END'; finalStandings: Player[] };
-```
-
-### Room State Management
-
-```javascript
-// roomService.js (Redis-backed)
-export const createRoom = async (hostId) => {
-  const roomId = uuidv4();
-  const room = {
-    roomId,
-    hostId,
-    players: [{ id: hostId, name: 'Host', score: 0 }],
-    status: 'WAITING', // WAITING | IN_PROGRESS | COMPLETE
-    questions: [],
-    currentQuestionIndex: 0,
-    createdAt: Date.now()
-  };
-
-  await redis.setex(`room:${roomId}`, 3600, JSON.stringify(room));
-  return room;
-};
-
-export const addPlayerToRoom = async (roomId, player) => {
-  const roomData = await redis.get(`room:${roomId}`);
-  if (!roomData) throw new Error('Room not found');
-
-  const room = JSON.parse(roomData);
-  if (room.status !== 'WAITING') throw new Error('Game already started');
-
-  room.players.push(player);
-  await redis.setex(`room:${roomId}`, 3600, JSON.stringify(room));
-
-  // Notify all players in room via Pub/Sub
-  await redis.publish(`room:${roomId}:events`, JSON.stringify({
-    type: 'PLAYER_JOINED',
-    player
-  }));
-};
-```
-
-### Synchronization Pattern
-
-**Critical:** All players must see the same question at the same time.
-
-```javascript
-// WebSocket server
-io.to(roomId).emit('QUESTION_START', {
-  question: sanitizeQuestion(question), // Remove correct answer
-  timeLimit: 10,
-  startsAt: Date.now() // Use for client-side clock sync
-});
-
-// Collect answers with timeout
-const answerCollector = new AnswerCollector(roomId, players.length, 10000);
-answerCollector.on('allAnswered', async (answers) => {
-  const results = await scoreAnswers(answers);
-  io.to(roomId).emit('REVEAL', {
-    correctAnswer: question.correctAnswerId,
-    leaderboard: calculateLeaderboard(results)
+app.get('/health', async (req, res) => {
+  const redisStatus = redis.isReady ? 'connected' : 'disconnected';
+  res.json({
+    status: 'ok',
+    redis: redisStatus,
+    fallbackMode: !redis.isReady
   });
 });
 ```
 
----
+## Open Questions
 
-## Confidence Assessment
+**Q1:** Should we implement dual-write for zero-downtime migration?
+**A1:** Not needed - sessions are ephemeral (1-hour lifetime), acceptable to lose in-flight sessions during deployment.
 
-| Area | Confidence | Source | Notes |
-|------|-----------|--------|-------|
-| FSM Pattern | HIGH | Multiple sources, standard practice | Well-established pattern for quiz games |
-| State Management (Context) | HIGH | React docs, 2025 comparisons | Context sufficient for MVP, clear upgrade path |
-| Timer Implementation | HIGH | Multiple React tutorials, code examples | useEffect + cleanup is standard, well-documented |
-| Redis for Sessions | HIGH | Redis docs, scalability articles | Standard use case, proven at scale |
-| WebSocket Architecture | MEDIUM | Socket.io docs, examples | Standard for multiplayer, but complex at scale |
-| Offline-First | LOW | PWA docs, limited quiz-specific examples | General PWA patterns, quiz-specific implementation unclear |
+**Q2:** Do we need to support multiple Redis instances (Redis Cluster)?
+**A2:** Not for v1.1 - single Redis instance sufficient for MVP scale. Consider for future scaling.
 
----
+**Q3:** Should we migrate existing in-memory sessions to Redis during deployment?
+**A3:** Not needed - sessions expire within 1 hour anyway. Simpler to let old sessions expire naturally.
 
 ## Sources
 
-### Architecture & Patterns
-- [A scalable, realtime quiz framework to build EdTech apps](https://ably.com/blog/a-scalable-realtime-quiz-framework-to-build-edtech-apps)
-- [Building a Real-Time Multiplayer Game Server with Socket.io and Redis](https://dev.to/dowerdev/building-a-real-time-multiplayer-game-server-with-socketio-and-redis-architecture-and-583m)
-- [Real-time multiplayer quiz on GitHub](https://github.com/harsh5692/quiz-time)
-- [Node.js: Novice to Ninja - Chapter 14: Example Real-time Multiplayer Quiz: Architecture](https://www.oreilly.com/library/view/nodejs-novice-to/9781098141004/Text/ultimatenode1-ch14.html)
+**HIGH Confidence (Official Documentation):**
+- [node-redis Client Guide](https://redis.io/docs/latest/develop/clients/nodejs/) - Connection management, async patterns
+- [node-redis GitHub](https://github.com/redis/node-redis) - TypeScript patterns, error handling
+- [Redis Session Storage Tutorial](https://redis.io/learn/develop/node/nodecrashcourse/sessionstorage) - Express + Redis integration
+- [Redis Error Handling](https://redis.io/docs/latest/develop/clients/nodejs/error-handling/) - Official error handling patterns
+- [Redis TTL Documentation](https://redis.io/commands/ttl/) - Expiration mechanisms
 
-### State Management
-- [State Management in 2025: When to Use Context, Redux, Zustand, or Jotai](https://dev.to/hijazi313/state-management-in-2025-when-to-use-context-redux-zustand-or-jotai-2d2k)
-- [React State Management in 2025: What You Actually Need](https://www.developerway.com/posts/react-state-management-2025)
-- [Do You Need State Management in 2025? React Context vs Zustand vs Jotai vs Redux](https://dev.to/saswatapal/do-you-need-state-management-in-2025-react-context-vs-zustand-vs-jotai-vs-redux-1ho)
+**MEDIUM Confidence (Recent 2026 Articles):**
+- [How to Use Redis Key Expiration Effectively](https://oneuptime.com/blog/post/2026-01-25-redis-key-expiration-effectively/view) - TTL best practices
+- [How to Implement Sliding TTL in Redis](https://oneuptime.com/blog/post/2026-01-26-redis-sliding-ttl/view) - Sliding expiration pattern
+- [How to Build Session Storage with Redis](https://oneuptime.com/blog/post/2026-01-28-session-storage-redis/view) - Session management patterns
+- [Redis JSON Storage](https://redis.io/glossary/json-storage/) - JSON serialization approaches
+- [How to Configure Connection Pooling for Redis](https://oneuptime.com/blog/post/2026-01-25-redis-connection-pooling/view) - Connection pool patterns
 
-### Timer Implementation
-- [Adding countdown timer in React quiz app using effect hook](https://medium.com/@biswajitpanda973/adding-countdown-timer-in-our-react-quiz-app-using-effect-hook-7ae4f3750e8f)
-- [How to create a countdown timer using React Hooks](https://blog.greenroots.info/how-to-create-a-countdown-timer-using-react-hooks)
-- [Creating a Custom Hook - useCountdown](https://www.kodaps.dev/en/blog/creating-a-custom-hook-usecountdown-creating-a-react-quiz-app-part-2)
-
-### Database Design
-- [Guide To Design Database For Quiz In MySQL](https://www.tutorials24x7.com/mysql/guide-to-design-database-for-quiz-in-mysql)
-- [Question database structure - MoodleDocs](https://docs.moodle.org/dev/Question_database_structure)
-
-### Redis & Caching
-- [Intelligent Caching Strategies for High-Performance Applications with Redis](https://medium.com/@elammarisoufiane/intelligent-caching-strategies-for-high-performance-applications-with-redis-bb3b559d6125)
-- [Redis Cache - GeeksforGeeks](https://www.geeksforgeeks.org/system-design/redis-cache/)
-
-### PWA & Offline-First
-- [Progressive Web Apps: bridging web and mobile in 2025](https://tsh.io/blog/progressive-web-apps-in-2025)
-- [Building Real Progressive Web Apps in 2025](https://medium.com/@ancilartech/building-real-progressive-web-apps-in-2025-lessons-from-the-trenches-23422e1970d6)
-- [PWA and Offline Games](https://dev.to/aerabi/pwa-and-offline-games-3b2e)
-
-### Frontend Architecture
-- [The 5 Frontend Architectures You Must Know in 2025](https://feature-sliced.design/blog/frontend-architecture-guide)
-- [Front End System Design Interview](https://www.frontendinterviewhandbook.com/front-end-system-design)
-
----
-
-**END OF DOCUMENT**
+**MEDIUM Confidence (Migration Patterns):**
+- [Reliable Redis Connections in Node.js](https://medium.com/@backendwithali/reliable-redis-connections-in-node-js-lazy-loading-retry-logic-circuit-breakers-5d8597bbc62c) - Circuit breaker patterns
+- [Building Resilient REST API Integrations](https://medium.com/@oshiryaeva/building-resilient-rest-api-integrations-graceful-degradation-and-combining-patterns-e8352d8e29c0) - Graceful degradation patterns
+- [Migrate from ioredis](https://redis.io/docs/latest/develop/clients/nodejs/migration/) - Client comparison context

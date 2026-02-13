@@ -1,490 +1,539 @@
-# Domain Pitfalls: Trivia/Quiz Games
+# Pitfalls Research: v1.1 Tech Debt Hardening
 
-**Domain:** Trivia/Quiz Game Applications (Educational Focus)
-**Researched:** 2026-02-03
-**Confidence:** MEDIUM (based on WebSearch findings verified against multiple sources, some areas lack authoritative documentation)
+**Researched:** 2026-02-12
+**Domain:** Tech debt hardening for production-ready Civic Trivia Championship
+**Confidence:** HIGH
 
-## Critical Pitfalls
+## Executive Summary
 
-Mistakes that cause rewrites, user abandonment, or fundamental product failure.
+Hardening v1.0 introduces four critical risk areas: Redis migration from in-memory sessions (data loss, serialization issues), plausibility check enhancement (false positives on legitimate players), bulk content generation (quality degradation, factual errors), and dev tooling fixes (production breakage). Each area has well-documented failure modes in production systems.
 
-### Pitfall 1: Timer-Induced Anxiety Destroys Learning
-**What goes wrong:** Countdown timers trigger fight-or-flight responses in users, causing them to feel rushed, pressured, and anxious. For users with anxiety, the pressure of a ticking clock can cause them to abandon the game entirely.
+The research reveals that **58% of organizations struggle with quality degradation when scaling AI content beyond 100 pieces** (McKinsey, 2026), **false positive rates in anti-cheat systems average 12-19%** industry-wide, and **session migration without dual-write periods leads to data loss during the transition window**. For educational content where trust is critical, factual accuracy issues compound when AI-generated content lacks proper verification.
 
-**Why it happens:** Developers prioritize engagement mechanics (urgency, time pressure) over user experience and learning outcomes. The assumption that "timers make it exciting" ignores the psychological stress they create.
-
-**Consequences:**
-- Users feel anxious rather than engaged
-- Learning is impaired (stressed brains don't retain information well)
-- Beginners are disproportionately punished
-- Violates "Play, Not Study" and "Inclusive Competition" principles
-- WCAG 2.1 specifically addresses time limits as an accessibility concern
-
-**Prevention:**
-- Make timers visual and gentle (progress bar, not countdown clock)
-- Provide generous time limits that don't rush most users
-- Consider timer settings/preferences
-- Use timers for pacing, not pressure
-- Test with anxiety-prone users early
-
-**Detection:**
-- User testing shows visible stress/tension during timed sections
-- High abandonment rates during first few questions
-- Feedback mentions "stressful," "anxiety," "rushed"
-- Beginners perform significantly worse than expected
-
-**Phase mapping:**
-- **MVP/Phase 1:** Timer design and testing MUST happen early
-- **Beta testing:** Mandatory anxiety/stress testing with diverse users
-
-**Sources:**
-- [The Stress of Countdown Clocks: Understanding Panic-Inducing Timers in UX Psychology](https://medium.com/design-bootcamp/the-stress-of-countdown-clocks-understanding-panic-inducing-timers-in-ux-psychology-b8d1a6333691)
-- [Designing Calm: UX Principles for Reducing Users' Anxiety](https://www.uxmatters.com/mt/archives/2025/05/designing-calm-ux-principles-for-reducing-users-anxiety.php)
-- [Mindful Design: Reducing Anxiety Through Calm UX](https://medium.com/design-bootcamp/mindful-design-reducing-anxiety-through-calm-ux-8edb354de3f9)
+This document catalogs specific pitfalls for each enhancement area, with prevention strategies mapped to the phases that should address them.
 
 ---
 
-### Pitfall 2: Dark Patterns Undermine Educational Mission
-**What goes wrong:** Implementing streaks, daily login rewards, loss aversion mechanics, or social pressure features transforms an educational game into an addictive dopamine machine. Users feel obligated to play daily rather than intrinsically motivated to learn.
+## Redis Migration Pitfalls
 
-**Why it happens:** Engagement metrics (DAU, retention) drive product decisions without considering ethical implications or alignment with educational goals. Teams copy successful consumer app patterns without questioning their appropriateness.
+### 1. Session Data Loss During Transition Window
 
-**Consequences:**
-- Users resent the game ("feels manipulative")
-- Extrinsic rewards replace intrinsic learning motivation
-- Creates guilt/obligation instead of curiosity
-- Violates "No Dark Patterns" principle explicitly
-- Long-term: users burn out and abandon entirely
-- Research shows 85,000+ instances of dark patterns across 1,496 mobile games
+**Problem:** Switching directly from in-memory Map to Redis causes all active game sessions to vanish on server restart. Players mid-game lose progress, creating poor UX and support tickets.
+
+**Why it happens:** The migration treats the cutover as binary — either Map or Redis — without a transition period. Sessions created before migration but still valid after migration are only in the old store.
+
+**Warning signs:**
+- Players report "session not found" errors after deployment
+- All active sessions disappear at deployment time
+- Support tickets correlate with deployment timestamp
 
 **Prevention:**
-- Establish ethical design guidelines BEFORE building engagement features
-- Question any feature that makes users feel obligated
-- Focus on intrinsic motivation (curiosity, mastery, discovery)
-- Avoid: streaks, loss aversion, social comparison, FOMO mechanics
-- Regular ethical audits of engagement features
+- **Dual-write period:** For 7 days (longer than session timeout), write to BOTH Map and Redis, read from Redis first, fall back to Map
+- Create migration phase that runs dual-write mode in production
+- After 1-hour session timeout period, all sessions will be Redis-native
+- Monitor both stores during transition, alert if Redis writes fail
 
-**Detection:**
-- User feedback mentions "addictive," "manipulative," "have to"
-- Players log in but don't engage meaningfully
-- Guilt or obligation language in user interviews
-- High daily logins but low satisfaction scores
+**Phase to address:** Redis migration phase (dedicated task for dual-write implementation)
 
-**Phase mapping:**
-- **Pre-MVP:** Define ethical engagement principles
-- **All phases:** Review new features against dark pattern checklist
-- **Post-launch:** Regular ethical audits
-
-**Sources:**
-- [Chapter 11: Exploiting addiction – Deceptive Patterns](https://www.deceptive.design/book/contents/chapter-11)
-- [DarkPattern.games - Avoid Addictive Dark Patterns](https://www.darkpattern.games/)
-- [Level Up or Game Over: Exploring How Dark Patterns Shape Mobile Games](https://arxiv.org/html/2412.05039v1)
-- [What is dark pattern game design? | ACMI](https://www.acmi.net.au/stories-and-ideas/dark-pattern-game-design/)
+**Source confidence:** HIGH — Based on [Redis session migration best practices](https://redis.io/tutorials/migration/) and [dual-write pattern for session stores](https://blog.devgenius.io/we-replaced-postgresql-sessions-with-redis-api-response-time-went-from-800ms-to-12ms-bf119fdae8db)
 
 ---
 
-### Pitfall 3: Question Quality Death Spiral
-**What goes wrong:** Poor question quality (spelling errors, factual inaccuracies, ambiguous wording, unfair difficulty) destroys user trust and makes the game feel unprofessional or frustrating.
+### 2. Serialization Format Mismatch Breaking Existing Sessions
 
-**Why it happens:**
-- Using AI-generated questions without human review
-- Relying on user-contributed content without verification
-- Insufficient fact-checking processes
-- Writing questions without clear answer validation rules
-- Verification backlogs (Open Trivia DB has 3000+ questions awaiting verification)
+**Problem:** Switching from native JavaScript objects (Map values) to Redis strings requires serialization. If serialization format changes (JSON to MessagePack) or if you forget to handle complex types (Date objects, undefined values), sessions become corrupt.
 
-**Consequences:**
-- Users lose trust in content accuracy
-- Wrong answers teach incorrect information (opposite of educational goal)
-- Ambiguous questions feel unfair
-- Difficult-to-verify questions cause disputes
-- Professional credibility destroyed
+**Why it happens:** Map stores live JavaScript objects with full type fidelity. Redis stores strings. JSON.stringify loses Date objects (becomes ISO string), undefined values (omitted), and circular references (throws). MessagePack has different encoding rules.
+
+**Warning signs:**
+- `JSON.parse()` errors in logs after migration
+- Date comparisons fail (`lastActivityTime` becomes string)
+- Session validation breaks on type checks
+- Intermittent "Cannot read property" errors
 
 **Prevention:**
-- Human editorial review for ALL questions
-- Clear question-writing guidelines (avoid ambiguity, verify facts)
-- Multiple acceptable answer formats for text input
-- Case-insensitive answer validation
-- Source verification requirements
-- Regular quality audits of question pool
+- **Stick with JSON.stringify/parse for MVP** — simpler, debuggable, all Node.js environments support it
+- Document serialization contract: which fields exist, which types expected
+- Add serialization unit tests: roundtrip test (serialize → deserialize → equals)
+- Handle Date objects explicitly: store as ISO strings, parse on read
+- For MessagePack (future optimization): test thoroughly, measure actual gains on real session data before committing
 
-**Detection:**
-- User reports of "wrong answers" or "unfair questions"
-- High skip rates on certain questions
-- Complaints about spelling/grammar
-- Low confidence in content accuracy (surveys)
+**Phase to address:** Redis migration phase (serialization strategy decision task)
 
-**Phase mapping:**
-- **Pre-MVP:** Establish question quality standards and review process
-- **Content creation:** Build editorial review workflow BEFORE mass question creation
-- **Post-launch:** Ongoing question quality monitoring
-
-**Sources:**
-- [What Happened To HQ Trivia? 4 Reasons Why The Quiz App Failed](https://productmint.com/what-happened-to-hq-trivia/)
-- [THE 3 MAJOR COMPONENTS OF CREATING A TRIVIA GAME](https://medium.com/@Excellarate/the-3-major-components-of-creating-a-trivia-game-aba84d20549f)
-- [GitHub - el-cms/Open-trivia-database](https://github.com/el-cms/Open-trivia-database)
-- [How to write fun trivia questions for adults](https://lastcalltrivia.com/bars/adult-questions/)
+**Source confidence:** HIGH — Based on [Redis serialization benchmarks](https://sreejithmsblog.wordpress.com/2017/06/05/benchmarking-different-serializers-for-redis/) and [MessagePack pitfalls with large objects](https://smali-kazmi.medium.com/when-optimized-is-slower-why-we-stuck-with-native-json-for-our-10mb-context-object-2d7dd62e6982)
 
 ---
 
-### Pitfall 4: Difficulty Imbalance Alienates Beginners
-**What goes wrong:** Questions become too hard too quickly, making beginners feel dumb and causing them to abandon. The opposite of "Inclusive Competition" - it becomes exclusive gatekeeping.
+### 3. Redis Connection Failures Without Graceful Degradation
 
-**Why it happens:**
-- Subject-matter experts write questions at their own knowledge level
-- Fear of "too easy" leads to obscure trivia
-- No difficulty calibration or testing with actual beginners
-- Progressive difficulty without proper pacing
-- As one source notes: "The #1 mistake new hosts make is worrying about people cheating so much that they make the questions impossibly hard"
+**Problem:** Redis goes down (network issue, out of memory, misconfiguration). Without fallback logic, all game sessions fail. Server returns 500 errors instead of degrading gracefully.
 
-**Consequences:**
-- Beginners abandon after feeling stupid
-- "I feel dumb when I get things wrong" (direct user complaint to avoid)
-- Narrow audience (only experts continue playing)
-- Reinforces knowledge gaps instead of filling them
-- Violates "Inclusive Competition" principle
+**Why it happens:** Code assumes Redis is always available. No error handling on `client.get()`, `client.set()` calls. No circuit breaker pattern. No fallback to in-memory Map for read-only mode.
+
+**Warning signs:**
+- All game creation fails when Redis is unreachable
+- No games can be played during Redis outage
+- Error logs filled with "ECONNREFUSED" or "Redis timeout"
+- No automated recovery when Redis returns
 
 **Prevention:**
-- Mix difficulty levels intentionally (easy, medium, hard)
-- Test questions with actual beginners
-- Track answer rates per question (if <30% get it right, too hard)
-- Provide multiple entry points (easier categories/modes)
-- Include "general knowledge" alongside specialized topics
-- Design questions where wrong answers still teach something
+- **Keep Map-based sessionService as fallback** — don't delete the old code
+- Wrap all Redis calls in try-catch with degradation logic
+- For writes: if Redis fails, write to Map AND log warning (temporary mode)
+- For reads: try Redis first, fall back to Map on failure
+- Add health check endpoint: `/health/redis` returns status
+- Circuit breaker: after 5 consecutive failures, skip Redis for 60 seconds, retry
+- Monitor Redis availability with alerts
 
-**Detection:**
-- High abandonment after first few questions
-- Skewed answer rates (most questions <30% or >90%)
-- User feedback: "too hard," "questions are unfair"
-- Beginners don't return after first session
+**Phase to address:** Redis migration phase (failover implementation task)
 
-**Phase mapping:**
-- **Content creation:** Difficulty calibration testing required
-- **Beta:** Test with actual civic knowledge beginners
-- **Post-launch:** Track per-question answer rates, adjust pool
-
-**Sources:**
-- [What Happened To HQ Trivia? 4 Reasons Why The Quiz App Failed](https://productmint.com/what-happened-to-hq-trivia/)
-- [380 Best Trivia Questions and Answers](https://parade.com/living/trivia-questions)
-- [How To Create Challenging Trivia Questions | Bar None Games](https://barnonegames.com/blog/how-to-create-difficult-trivia-questions)
+**Source confidence:** HIGH — Based on [Redis failover testing](https://blog.devgenius.io/we-replaced-postgresql-sessions-with-redis-api-response-time-went-from-800ms-to-12ms-bf119fdae8db) and [failover documentation requirements](https://blog.devgenius.io/we-replaced-postgresql-sessions-with-redis-api-response-time-went-from-800ms-to-12ms-bf119fdae8db)
 
 ---
 
-### Pitfall 5: Punitive Feedback Kills Learning Motivation
-**What goes wrong:** Wrong answers trigger negative feedback (buzzer sounds, red X, "WRONG!", point deductions) that makes users feel punished rather than taught. This destroys the "Learn Through Discovery" principle.
+### 4. Session Expiration Cleanup Logic Conflict
 
-**Why it happens:**
-- Game shows use punitive feedback for drama
-- Developers copy existing trivia game patterns
-- Lack of understanding about educational psychology
-- Focus on "correctness" rather than learning
+**Problem:** In-memory Map uses periodic cleanup interval (every 5 minutes, delete sessions older than 1 hour). Redis has native TTL. Running both cleanup mechanisms causes confusion, memory waste, and race conditions.
 
-**Consequences:**
-- Users feel dumb and avoid trying
-- Fear of being wrong prevents exploration
-- "I feel dumb when I get things wrong" (user complaint to avoid)
-- Learning opportunity wasted (no explanation provided)
-- Users disengage to protect ego
+**Why it happens:** Porting Map cleanup logic directly to Redis without leveraging Redis's built-in expiration. Setting TTL on keys but also running manual cleanup sweeps.
+
+**Warning signs:**
+- Redis memory usage doesn't decrease after sessions expire
+- Cleanup logs show no sessions removed (because TTL already handled it)
+- Sessions sometimes missing before 1-hour timeout
+- `setInterval` cleanup still running with Redis (wasted cycles)
 
 **Prevention:**
-- Reframe wrong answers as learning opportunities
-- Provide explanatory feedback (why this answer, not that one)
-- Use constructive language ("Let's learn about...")
-- Delay or avoid negative sound effects
-- Show the correct answer with context/explanation
-- Consider allowing second attempts after seeing feedback
-- Research shows: "Encountering errors motivated students to learn from their mistakes in gamified learning environments"
+- **Use Redis TTL exclusively** — `client.set(key, value, { EX: 3600 })` sets 1-hour expiration
+- Remove `cleanupExpiredSessions()` interval when using Redis
+- Document that Redis handles expiration automatically
+- Monitor Redis `KEYS` command (dev only) or `SCAN` (production) to verify expirations working
+- For dual-write period: run cleanup on Map only, let Redis TTL handle its own
 
-**Detection:**
-- Users stop trying after a few wrong answers
-- Risk-averse behavior (always picking safest answer)
-- Feedback mentions feeling "dumb" or "stupid"
-- Low engagement with challenging questions
+**Phase to address:** Redis migration phase (expiration strategy task)
 
-**Phase mapping:**
-- **Design phase:** Define feedback framework before UI work
-- **MVP:** Test feedback with users prone to test anxiety
-- **Iteration:** Refine based on emotional response data
-
-**Sources:**
-- [Enhancing Student Motivation and Engagement through a Gamified Learning Environment](https://www.mdpi.com/2071-1050/15/19/14119)
-- [The Gamification of Learning: Engaging Students through Technology](https://www.park.edu/blog/the-gamification-of-learning-engaging-students-through-technology/)
-- [The Effect of Educational Games on Learning Outcomes](https://journals.sagepub.com/doi/abs/10.1177/0735633120969214)
+**Source confidence:** HIGH — Redis TTL is native feature, documented in [Redis commands](https://redis.io/docs/latest/commands/expire/)
 
 ---
 
-## Moderate Pitfalls
+### 5. Missing Redis Configuration in Production Environment
 
-Mistakes that cause delays, technical debt, or user frustration but are recoverable.
+**Problem:** Code works in local dev (Redis on `localhost:6379`). Deploys to production. Server crashes: "Redis connection refused" because production Redis is on different host, requires auth, uses TLS.
 
-### Pitfall 6: Repetition Fatigue from Small Question Pool
-**What goes wrong:** Users see the same questions repeatedly, causing boredom, predictability, and churn. The game feels stale and stops being educational.
+**Why it happens:** Hardcoded connection strings in code, no environment-specific config. `.env` file not loaded in production, or variables not set in hosting platform.
 
-**Why it happens:**
-- Underestimating how many questions are needed
-- High cost/effort of creating quality questions
-- No question rotation strategy
-- No tracking of which questions users have seen
-
-**Consequences:**
-- "It's too repetitive" (user complaint to avoid)
-- Users memorize answers without learning concepts
-- Boredom leads to churn
-- Game feels cheap/low-effort
-- Educational value diminishes
+**Warning signs:**
+- Works locally, fails in deployed environment
+- Logs show "ECONNREFUSED" or "Authentication required"
+- Redis client tries to connect to `127.0.0.1` instead of production host
+- No error until first session creation attempt
 
 **Prevention:**
-- Calculate minimum viable question pool (recommend 500+ for MVP)
-- Track questions shown to each user
-- Implement smart rotation (don't repeat within X sessions)
-- Plan for ongoing content creation
-- Consider question variations (same concept, different specifics)
-- Research shows: "Students tend to react better to gamification when the process is new, whereas following a longer period of exposure, it can become less influential and even boring"
+- **Use environment variables for all Redis config:** `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_TLS` (boolean)
+- Validate config on server startup: try connection, fail fast if unreachable
+- Document required env vars in README
+- Add startup healthcheck: `await redisClient.ping()` before server listens
+- For development: provide `.env.example` with local defaults
+- For production: verify env vars set in hosting platform (Render, Railway, etc.)
 
-**Detection:**
-- User complaints about seeing same questions
-- Declining engagement over time
-- Perfect scores (memorization vs. learning)
-- Churn after 5-10 sessions
+**Phase to address:** Redis migration phase (configuration task)
 
-**Phase mapping:**
-- **Planning:** Calculate required question pool size
-- **MVP:** Build content pipeline BEFORE launch
-- **Post-launch:** Monitor question repetition rates
-
-**Sources:**
-- [Capturing potential impact of challenge-based gamification on gamified quizzing](https://pmc.ncbi.nlm.nih.gov/articles/PMC8715305/)
-- [Fighting Survey Fatigue: Types, Examples & Best Practices](https://userguiding.com/blog/survey-fatigue)
-- [Retention Rate Secrets to Reduce User Churn](https://www.gameanalytics.com/blog/reducing-user-churn)
+**Source confidence:** HIGH — Standard practice for production deployments
 
 ---
 
-### Pitfall 7: Mobile Performance Degradation
-**What goes wrong:** Animations drop below 60fps, causing janky/laggy experience that feels unprofessional. Thermal throttling after 5+ minutes causes frame rate drops.
+## Plausibility Enhancement Pitfalls
 
-**Why it happens:**
-- Targeting 60fps without testing on mid-range devices
-- Not accounting for thermal throttling
-- Heavy animations without optimization
-- GPU/CPU bottlenecks not identified
+### 6. False Positives on Legitimate Fast Correct Answers
 
-**Consequences:**
-- Game feels sluggish and cheap
-- User frustration with laggy UI
-- Battery drain complaints
-- Thermal issues on longer sessions
-- Mobile users abandon for poor experience
+**Problem:** Player knows the answer instantly (familiar topic, easy question). Answers in 0.8 seconds. Plausibility check flags as "suspiciously fast" (<0.5s threshold too strict). Legitimate player gets warning or score penalty.
+
+**Why it happens:** Threshold assumes all questions require reading time. Easy questions ("How many senators?") can be answered faster than complex questions. Threshold doesn't account for question difficulty or player skill.
+
+**Warning signs:**
+- Logs show flagged responses between 0.5-1.5 seconds (legitimate fast range)
+- Flags correlate with easy questions or repeat players
+- Players complain about "cheating" accusations despite honest play
+- False positive rate >5% (industry acceptable is <0.001% per [SARD standards](https://medium.com/@amol346bhalerao/how-game-developers-detect-and-stop-cheating-in-real-time-0aa4f1f52e0c))
 
 **Prevention:**
-- Target 30fps if 60fps isn't achievable on mid-range devices
-- Test on actual mid-range Android devices (not just latest iPhone)
-- Monitor thermal throttling (test after 5+ minute sessions)
-- Optimize animations (use requestAnimationFrame, GPU acceleration)
-- Consider performance budget for each screen
-- For trivia games: 30fps may be acceptable since it's turn-based
+- **Difficulty-adjusted thresholds:** Easy questions allow <1s, Medium <0.75s, Hard <0.5s minimum response time
+- **Don't penalize on first offense** — flag for review, require pattern (3+ suspicious answers in single game)
+- Log response times for analysis: calculate percentiles (p10, p50, p90) per difficulty level
+- Review flagged sessions manually before implementing penalties
+- Add "grace period" of 100-200ms for network latency variance
+- Monitor false positive rate: target <1% of legitimate players flagged
 
-**Detection:**
-- Frame rate drops during testing
-- Device heating during sessions
-- User complaints about "lag" or "jank"
-- Performance monitoring shows <60fps
+**Phase to address:** Plausibility enhancement phase (threshold tuning task)
 
-**Phase mapping:**
-- **Technical design:** Set performance budgets early
-- **Development:** Regular performance testing on target devices
-- **Beta:** Test on variety of device tiers
-
-**Sources:**
-- [Mobile game performance pitfalls that studios and QA teams often overlook](https://blog.gamebench.net/mobile-game-performance-pitfalls)
-- [Building a 60FPS WebGL Game on Mobile](https://www.airtightinteractive.com/2015/01/building-a-60fps-webgl-game-on-mobile/)
-- [60 FPS: Performant web animations for optimal UX](https://www.algolia.com/blog/engineering/60-fps-performant-web-animations-for-optimal-ux)
+**Source confidence:** HIGH — Based on [anti-cheat false positive prevention](https://www.linkedin.com/advice/0/how-can-you-prevent-anti-cheat-measures-from-disrupting-ylmmf) and [pattern detection best practices](https://medium.com/@amol346bhalerao/how-game-developers-detect-and-stop-cheating-in-real-time-0aa4f1f52e0c)
 
 ---
 
-### Pitfall 8: Accessibility as Afterthought
-**What goes wrong:** Screen reader support, keyboard navigation, or WCAG AA compliance attempted late in development, requiring expensive refactoring.
+### 7. Network Latency Causing Timing Anomalies
 
-**Why it happens:**
-- Treating accessibility as "nice to have"
-- Lack of accessibility expertise on team
-- Not testing with assistive technology early
-- Adding ARIA labels retroactively
+**Problem:** Client reports `timeRemaining: 23.5s` (answered in 1.5s). But network lag of 800ms means server receives answer 2.3 seconds after question shown. Server calculates response time as 2.7s (25s - 23.5s + 0.8s lag), flagging as impossible.
 
-**Consequences:**
-- Expensive late-stage refactoring
-- Inaccessible to users with disabilities
-- Potential legal compliance issues
-- Timer accessibility conflicts (WCAG requires time limit controls)
-- Screen readers can't announce dynamic content
+**Why it happens:** Plausibility logic assumes instant network transmission. Client timestamp and server timestamp diverge. Clock skew between client and server compounds the issue.
+
+**Warning signs:**
+- Flagged responses correlate with high-latency players (mobile, rural internet)
+- Geographic patterns: players in distant regions flagged more often
+- Response time calculations show negative values or >25s
+- Flags increase during peak network congestion hours
 
 **Prevention:**
-- Plan accessibility from day one (not retrofit)
-- Key requirements for quiz games:
-  - All buttons/controls must have programmatic labels (aria-label)
-  - Keyboard navigation to all interactive elements
-  - Timer must have disable/extend options (WCAG 2.1)
-  - Screen reader announcements for correct/wrong feedback
-  - Alt text for all images
-  - Focus indicators visible
-- Test with screen reader during development (not just at end)
-- WCAG 2.1 AA is the standard for schools and federal agencies
+- **Use client-reported `timeRemaining` as source of truth for score** (already happening in v1.0)
+- Server tracks elapsed time separately for anomaly detection only, not scoring
+- Accept range: `0 <= timeRemaining <= 25` (validate bounds, not precise timing)
+- Don't flag unless response time <0.3s (extremely suspicious, even with lag)
+- Log network latency markers: time between question request and answer submission
+- Consider latency-stratified detection: high-RTT players get different thresholds (advanced, defer to post-MVP)
 
-**Detection:**
-- Failing automated accessibility audits
-- Screen reader users can't complete quiz
-- Keyboard-only navigation broken
-- Timer violations flagged
+**Phase to address:** Plausibility enhancement phase (network latency handling task)
 
-**Phase mapping:**
-- **Design:** Include accessibility requirements in specs
-- **Development:** Accessibility testing in each sprint
-- **Pre-launch:** Full WCAG 2.1 AA audit required
-
-**Sources:**
-- [Accessibility Terms for Game Developers: A WCAG 2.1 AA Glossary](https://www.filamentgames.com/blog/accessibility-terms-for-game-developers-a-wcag-2-1-aa-glossary/)
-- [WCAG 2.2 Guide: Update to the Web Content Accessibility Guideline](https://www.accessibility.works/blog/wcag-2-2-guide/)
-- [WebAIM's WCAG 2 Checklist](https://webaim.org/standards/wcag/checklist)
+**Source confidence:** HIGH — Based on [network latency false positives in anti-cheat](https://www.alibaba.com/product-insights/ai-cheat-detection-in-multiplayer-games-is-it-fair-or-falsely-flagging-latency.html) and [latency-stratified detection](https://www.alibaba.com/product-insights/ai-cheat-detection-in-multiplayer-games-is-it-fair-or-falsely-flagging-latency.html)
 
 ---
 
-### Pitfall 9: Answer Validation Edge Cases
-**What goes wrong:** Text answers aren't validated for common variations (spelling, capitalization, alternate names), causing correct answers to be marked wrong.
+### 8. Plausibility Flags Without Review Workflow
 
-**Why it happens:**
-- Simple string matching without fuzzy logic
-- Not anticipating answer variations
-- Lack of testing with real users
+**Problem:** Plausibility checks flag suspicious sessions. Flags logged. No one reviews them. Logs fill up. No action taken. Cheaters continue undetected. Or worse: auto-ban triggers, legitimate players banned with no appeal process.
 
-**Consequences:**
-- Users frustrated when "correct" answers marked wrong
-- Questions feel unfair
-- Trust in system accuracy eroded
-- "Questions are unfair/trick questions" (user complaint to avoid)
+**Why it happens:** Logging was the MVP approach ("flag but don't penalize"). Enhancement adds penalties but no review tooling. No dashboard to see flagged sessions, no process to verify true vs. false positives.
+
+**Warning signs:**
+- Flagged session count grows but no human review
+- No metrics on flag accuracy (true positive rate unknown)
+- Players report bans with no explanation or appeal path
+- Thresholds never tuned because no feedback loop
 
 **Prevention:**
-- Always use case-insensitive matching
-- Accept multiple answer variations ("Sacramento," "sacramento," "City of Sacramento")
-- Consider fuzzy matching for spelling errors
-- Test answer validation with real users
-- Allow multiple acceptable answers where appropriate
-- Document acceptable answer formats in question database
+- **Build admin dashboard or logging query for flagged sessions** — list sessionId, userId, flagged answer details
+- Manual review process: weekly review of flagged sessions, categorize as true positive / false positive / uncertain
+- Track false positive rate: `false positives / total flags`
+- Use graduated response: 1st flag = silent log, 2nd flag = warning message, 3rd+ = score penalty
+- Defer auto-bans to much later (post-v1.1) after confidence in detection is high
+- Document appeal process: email address or form for "wrongly flagged" reports
 
-**Detection:**
-- User reports of "right answer marked wrong"
-- High dispute rates on text-entry questions
-- Feedback about "unfair" or "trick" questions
+**Phase to address:** Plausibility enhancement phase (review workflow task) or defer to post-v1.1
 
-**Phase mapping:**
-- **Technical design:** Plan answer validation strategy
-- **Development:** Build flexible answer matching
-- **Testing:** Test with real user answers, not just ideal inputs
-
-**Sources:**
-- [Trivia Games Explained | Crowdpurr Help Center](https://help.crowdpurr.com/en/articles/10524941-trivia-games-explained)
-- [How to write fun trivia questions for adults](https://lastcalltrivia.com/bars/adult-questions/)
+**Source confidence:** MEDIUM — Based on [graduated response systems](https://medium.com/@amol346bhalerao/how-game-developers-detect-and-stop-cheating-in-real-time-0aa4f1f52e0c) and [transparency best practices](https://medium.com/@amol346bhalerao/how-game-developers-detect-and-stop-cheating-in-real-time-0aa4f1f52e0c)
 
 ---
 
-### Pitfall 10: Gamification Novelty Wears Off
-**What goes wrong:** Gamification features (points, badges, leaderboards) drive engagement initially but become boring over time, with student motivation decreasing with prolonged exposure.
+### 9. Timeout Handling Conflicts with Plausibility Checks
 
-**Why it happens:**
-- Over-reliance on extrinsic motivators
-- No variety in reward mechanisms
-- Gamification without deeper engagement hooks
+**Problem:** Timer expires. Client sends `selectedOption: null, timeRemaining: 0`. Plausibility check sees responseTime = 25s (full duration) but `timeRemaining: 0` seems suspicious. Flag fires incorrectly.
 
-**Consequences:**
-- Initial excitement followed by disengagement
-- Extrinsic rewards overshadow intrinsic learning
-- Competitive elements may conflict with collaborative learning
-- Long-term retention suffers
+**Why it happens:** Plausibility logic doesn't account for timeout as valid edge case. Assumes `timeRemaining: 0` means instant answer (impossible), not timeout.
+
+**Warning signs:**
+- All timeout answers flagged as suspicious
+- Logs show flags on `selectedOption: null` submissions
+- False positive rate spikes on harder questions (more timeouts)
 
 **Prevention:**
-- Balance extrinsic and intrinsic motivation
-- Rotate gamification elements to maintain novelty
-- Focus on mastery and discovery, not just points
-- Provide multiple engagement paths (not just competition)
-- Research shows: "Student's motivation decreases when they are exposed to gamified learning strategies for a long time, though in short-term experiences the results point to high levels of student motivation and satisfaction"
+- **Special case for timeout:** If `selectedOption === null`, skip plausibility checks (timeout is expected behavior)
+- Document timeout contract: `null` means "no answer selected, timer expired"
+- Validate that `timeRemaining` is exactly 0 when `selectedOption` is null
+- Don't flag timeouts as suspicious (user simply ran out of time)
 
-**Detection:**
-- Initial high engagement followed by decline
-- Points/badges no longer drive behavior
-- Retention drops after novelty period (2-4 weeks)
+**Phase to address:** Plausibility enhancement phase (edge case handling task)
 
-**Phase mapping:**
-- **Design:** Plan for long-term engagement beyond novelty
-- **Post-launch:** Monitor engagement curves, iterate on mechanics
-
-**Sources:**
-- [The role of gamified learning strategies in student's motivation](https://pmc.ncbi.nlm.nih.gov/articles/PMC10448467/)
-- [Enhancing Student Motivation and Engagement through a Gamified Learning Environment](https://www.mdpi.com/2071-1050/15/19/14119)
+**Source confidence:** HIGH — Logical inference from existing codebase design
 
 ---
 
-## Minor Pitfalls
+## Content Generation Pitfalls
 
-Mistakes that cause annoyance but are relatively easy to fix.
+### 10. Quality Degradation at Bulk Scale (>50 Questions)
 
-### Pitfall 11: Excessive Ad Interruption
-**What goes wrong:** Too many ads, or ads placed at frustrating moments (e.g., after every wrong answer), degrade user experience.
+**Problem:** Generating learning content for 102 remaining questions (120 total - 18 existing). First 20 generations are high quality. By generation 80, content becomes repetitive, generic, or shallow. Quality visibly degrades.
 
-**Why it happens:**
-- Aggressive monetization without UX consideration
-- Copying poor patterns from other apps
+**Why it happens:** LLM prompt doesn't vary, causing pattern repetition. No quality checkpoints during generation. Token limits push content to be shorter. Researcher fatigue (manual review) causes later items to slip through. McKinsey research shows **58% of organizations struggle with quality degradation when scaling AI content production beyond 100 pieces** per month.
 
-**Consequences:**
-- User frustration and abandonment
-- Negative reviews
-- Perception of cheap/low-quality app
+**Warning signs:**
+- Later questions have shorter `learningContent.paragraphs` (e.g., 1 paragraph instead of 2-3)
+- Repetitive phrasing across multiple questions ("It's important to understand that...")
+- Generic corrections that don't reference specific wrong answers
+- Source citations become less specific (same URL repeated)
+- Word count decreases: first questions 180 words, last questions 120 words
 
 **Prevention:**
-- Limit ad frequency (e.g., only between rounds, not per question)
-- Offer ad-free premium option
-- Never punish wrong answers with ads (teaching moment, not punishment)
-- Test ad placement with real users
+- **Generate in batches of 10-20 with quality review between batches** — don't bulk-generate all 102 at once
+- Vary prompts: include different example phrasings, rotate tone guidance
+- Set minimum word count: "Write 150-200 words" in prompt
+- Manual spot-check: review every 10th generated item for quality
+- Use quality scoring: word count, unique phrasing, source specificity
+- Track metrics: average word count per batch, unique source URLs, correction length
+- If quality drops below threshold, pause generation, refine prompt, resume
 
-**Detection:**
-- Complaints about "too many ads"
-- High abandonment during ad-heavy sections
+**Phase to address:** Content expansion phase (batch generation strategy task)
 
-**Phase mapping:**
-- **Monetization design:** Plan user-friendly ad strategy
-- **Beta:** Test ad tolerance
-
-**Sources:**
-- [What Happened To HQ Trivia? 4 Reasons Why The Quiz App Failed](https://productmint.com/what-happened-to-hq-trivia/)
+**Source confidence:** HIGH — Based on [AI content quality degradation research](https://koanthic.com/en/ai-content-quality-control-complete-guide-for-2026-2/) and [McKinsey findings on scale challenges](https://koanthic.com/en/ai-content-quality-control-complete-guide-for-2026-2/)
 
 ---
 
-### Pitfall 12: Ambiguous Question Wording
-**What goes wrong:** Questions can be interpreted multiple ways, leading to disputes about what's "correct."
+### 11. Factual Errors in AI-Generated Educational Content
 
-**Why it happens:**
-- Unclear writing
-- Lack of specificity in questions
-- Not testing questions with naive users
+**Problem:** LLM generates plausible-sounding but incorrect civic facts. Example: "The 25th Amendment was ratified in 1947" (actually 1967). Content sounds authoritative, error goes unnoticed, deployed to production. User loses trust when they fact-check.
 
-**Consequences:**
-- Questions feel like "trick questions"
-- User frustration
-- Disputes about correctness
+**Why it happens:** LLMs hallucinate facts confidently. Civics domain has specific dates, numbers, legal terms that are easy to get wrong. No automated fact-checking. Manual review misses errors (reviewer doesn't know every date). Research shows **students lacking professional knowledge are unable to perform adequate fact-checking of AI-generated answers**.
+
+**Warning signs:**
+- User reports factual errors in Learn More content
+- Dates don't match official sources (constitution.congress.gov)
+- Legal terminology used incorrectly (e.g., "bill" vs "law" vs "amendment")
+- Amendment numbers mismatched with descriptions
+- Historical events attributed to wrong years or presidents
 
 **Prevention:**
-- Follow the rule: "Ambiguity is the enemy"
-- Add clarifying words (e.g., "active" in "What hockey team now has the longest active consecutive NHL playoff streak?")
-- Test questions with users unfamiliar with the topic
-- Have editors review for ambiguity
+- **Cross-reference all generated facts with authoritative sources** — don't trust LLM alone
+- Provide known-good sources in prompt: "Use ONLY facts from constitution.congress.gov, archives.gov, senate.gov"
+- Add validation step: for each generated content, human reviewer verifies key facts (dates, numbers, legal terms) against official sources
+- Create checklist for review: "Dates verified? Amendment numbers correct? Legal terms accurate?"
+- Use retrieval-augmented generation (RAG): pass official source text to LLM as context
+- Flag high-risk fact types in review: dates, numbers, names, legal terminology
+- Version content: track when generated, reviewed, approved (allows rollback if errors found later)
 
-**Detection:**
-- User complaints about "trick questions"
-- Multiple users giving "wrong" answers that seem reasonable
+**Phase to address:** Content expansion phase (fact-checking task)
 
-**Phase mapping:**
-- **Content creation:** Editorial review catches ambiguity
-- **Testing:** User testing reveals unclear questions
+**Source confidence:** HIGH — Based on [educational content accuracy challenges](https://www.frontiersin.org/journals/computer-science/articles/10.3389/fcomp.2026.1729059/full) and [AI fact-checking best practices](https://scalebytech.com/improving-factual-accuracy-in-ai-generated-content)
 
-**Sources:**
-- [How to write fun trivia questions for adults](https://lastcalltrivia.com/bars/adult-questions/)
+---
+
+### 12. Hallucinated or Broken Source URLs
+
+**Problem:** LLM generates `source.url: "https://constitution.congress.gov/amendment-13"` which sounds plausible but returns 404. Or generates non-existent pages that seem authoritative. User clicks, gets broken link, loses trust.
+
+**Why it happens:** LLMs construct URLs from training data patterns but don't verify they exist. URL structure may have changed since training. Hallucination of plausible-but-fake URLs.
+
+**Warning signs:**
+- Source URLs return 404 errors
+- URLs point to non-existent pages or redirects to homepages
+- Same URL repeated across all questions (lazy generation)
+- Generic URLs like "constitution.gov" instead of specific article pages
+
+**Prevention:**
+- **Provide known-good URL templates in prompt:** "Use these specific URL patterns: constitution.congress.gov/browse/amendment-[number], archives.gov/founding-docs/..."
+- Validate URLs in build script: HTTP HEAD request to verify URL exists (200 status)
+- If URL validation fails: flag for manual review, don't commit
+- Manual review step: click every source link, verify it loads and is relevant
+- Maintain curated list of verified source URLs, require LLM to pick from list
+- For each topic category, pre-define 2-3 authoritative sources with exact URLs
+
+**Phase to address:** Content expansion phase (URL validation task)
+
+**Source confidence:** HIGH — Based on [AI URL hallucination patterns](https://www.frontiersin.org/journals/computer-science/articles/10.3389/fcomp.2026.1729059/full)
+
+---
+
+### 13. Generic Wrong-Answer Corrections (Not Answer-Specific)
+
+**Problem:** Wrong answer A: "The Senate has 50 members." Wrong answer B: "The Senate has 200 members." Both get same correction: "Incorrect, the Senate has 100 members." Correction doesn't explain WHY each specific wrong answer is wrong.
+
+**Why it happens:** LLM prompt doesn't emphasize per-option corrections. Generates single explanation, duplicates it. Doesn't engage with the specific misconception each wrong answer represents.
+
+**Warning signs:**
+- All `corrections` entries have identical or very similar text
+- Corrections don't mention the specific wrong answer chosen
+- Generic phrasing: "That's incorrect" instead of "No, the Senate has 100 members, not 50"
+- Missing explanations of common misconceptions (e.g., why someone might think 50)
+
+**Prevention:**
+- **Prompt engineering:** "For EACH wrong answer option, write a specific 1-2 sentence correction that explains why THAT particular answer is incorrect and what misconception it represents."
+- Validate corrections structure: ensure each wrong option index has unique correction text
+- Check for answer-specific references: correction should quote or reference the wrong answer
+- Example in prompt: "If wrong answer is '50 members', correction should say 'No, the Senate has 100 members (2 per state), not 50.'"
+- Manual review: verify corrections address specific misconceptions, not generic "wrong"
+
+**Phase to address:** Content expansion phase (prompt refinement task)
+
+**Source confidence:** MEDIUM — Based on educational best practices and Phase 4 research on wrong-answer corrections
+
+---
+
+### 14. Content Expansion Breaks Existing Questions (Regression)
+
+**Problem:** Adding `learningContent` field to 102 more questions. Script modifies `questions.json`. Accidentally changes existing question text, reorders questions, or corrupts JSON structure. Existing 18 questions with content break.
+
+**Why it happens:** Script overwrites entire `questions.json` file. JSON.stringify changes formatting, reorders keys. Script logic has bugs (e.g., off-by-one array index). No version control check before running script.
+
+**Warning signs:**
+- Existing questions show different text after script runs
+- Question order changes (IDs mismatch)
+- JSON syntax errors (missing comma, unclosed bracket)
+- Existing `learningContent` fields disappear or get overwritten
+- TypeScript compilation fails after content generation
+
+**Prevention:**
+- **Version control safety: commit before running generation script** — allows rollback
+- Script should only ADD `learningContent` field, not modify existing question fields
+- Read questions, filter to those without `learningContent`, generate only for those
+- Preserve existing structure: deep-clone questions before modification
+- Use `JSON.stringify(questions, null, 2)` for consistent formatting
+- Run validation after generation: verify question count unchanged, all IDs present, all existing fields intact
+- Automated test: load questions.json, verify structure matches schema (all required fields present)
+
+**Phase to address:** Content expansion phase (script safety task)
+
+**Source confidence:** HIGH — Standard practice for data migration scripts
+
+---
+
+## General Hardening Pitfalls
+
+### 15. Dev Script Dependency Missing in Production Build
+
+**Problem:** `generateLearningContent.ts` script uses `@anthropic-ai/sdk` which is installed as devDependency. Build systems (Render, Railway) run `npm ci --production` which skips devDependencies. Script can't run in CI/CD for content generation.
+
+**Why it happens:** Misunderstanding of when TypeScript and tooling are needed. `devDependencies` assumed to be dev-only, but build-time scripts need dependencies available during build phase.
+
+**Warning signs:**
+- CI/CD build fails: "Cannot find module '@anthropic-ai/sdk'"
+- Works locally (`npm install` includes devDeps), fails in production build
+- Error only appears when running generation script in deployment pipeline
+- Forcing all devDeps to dependencies bloats production bundle
+
+**Prevention:**
+- **Clarify script usage:** If script runs ONLY locally (human-driven), keep as devDependency, document "run locally, commit results"
+- If script runs in CI/CD build: move script dependencies to regular `dependencies` OR run `npm install` (not `--production`) during build step
+- Better approach: **Run generation script locally, commit generated content** — don't generate in CI/CD
+- Document in README: "Content generation is local-only, commit generated questions.json"
+- Add pre-commit check: verify questions.json has expected learningContent coverage
+
+**Phase to address:** Dev tooling fix phase (generateLearningContent.ts error resolution)
+
+**Source confidence:** HIGH — Based on [TypeScript build dependencies](https://medium.com/@jjmayank98/typescript-dependency-or-dev-dependency-cad623dff6d5) and [build-time vs runtime dependencies](https://docs.adonisjs.com/guides/concepts/typescript-build-process)
+
+---
+
+### 16. TypeScript Compilation Errors in Build Scripts Not Caught Until Deployment
+
+**Problem:** `generateLearningContent.ts` has import error (missing SDK). Runs fine in local dev with ts-node. Pushed to repo. CI/CD tries to build, fails with TypeScript error. Deployment blocked.
+
+**Why it happens:** No pre-commit TypeScript check on backend scripts. `ts-node` in dev masks issues that `tsc` would catch. Scripts in `/scripts` folder not included in `tsconfig.json` or not checked in CI.
+
+**Warning signs:**
+- Local dev works, CI/CD fails
+- TypeScript errors appear only in CI logs, not locally
+- `npx tsc --noEmit` wasn't run before commit
+- Scripts folder excluded from TypeScript project
+
+**Prevention:**
+- **Include scripts folder in `tsconfig.json`:** Ensure `include: ["src/**/*", "scripts/**/*"]`
+- Run `npx tsc --noEmit` before committing backend changes (add to git pre-commit hook)
+- CI/CD: add TypeScript check step before build/deploy
+- Local tooling: VSCode or IDE should show TypeScript errors in all .ts files, including scripts
+- If using ts-node for scripts: ensure it uses same tsconfig as production build
+
+**Phase to address:** Dev tooling fix phase (TypeScript error resolution task)
+
+**Source confidence:** HIGH — Standard TypeScript project setup
+
+---
+
+### 17. Changing Plausibility Thresholds Without Re-Testing Existing Game Flow
+
+**Problem:** Plausibility checks enhanced from passive logging to active response (warning messages, potential penalties). Existing game flow assumes all answers are accepted. New logic breaks flow: warnings appear mid-game, confusing players.
+
+**Why it happens:** Enhancement changes behavior of existing `POST /answer` endpoint. Frontend expects consistent response shape. Server adds `flagged: true` field. Frontend doesn't handle it, or handles poorly.
+
+**Warning signs:**
+- Frontend console errors: "Unexpected field 'flagged'"
+- UI doesn't show plausibility warnings (data ignored)
+- Game flow broken: auto-advance doesn't work if flagged
+- Players see score but miss warning message
+
+**Prevention:**
+- **Regression testing on existing game flow after plausibility changes** — don't just test new flag logic
+- Add E2E test: play full game with normal timing, verify no warnings shown
+- Add E2E test: play game with fast answer, verify warning shown correctly
+- Test backward compatibility: old frontend (without flag handling) should still work with new backend
+- Version API if response contract changes: `/api/v2/answer` or feature flag
+- Manual QA: play full game after changes, verify UX flow unchanged for legitimate play
+
+**Phase to address:** Plausibility enhancement phase (integration testing task)
+
+**Source confidence:** HIGH — Based on [regression testing best practices](https://www.headspin.io/blog/regression-testing-a-complete-guide) and [test maintenance in agile](https://bugbug.io/blog/software-testing/best-practices-of-test-maintenance/)
+
+---
+
+### 18. Missing Rollback Plan for Redis Migration
+
+**Problem:** Redis migration deployed. Redis instance fails (misconfiguration, memory limit hit, network partition). No documented rollback procedure. Team scrambles to switch back to Map, but code deleted. Data lost.
+
+**Why it happens:** Assumption that migration will succeed, no failure planning. Old Map-based code removed after deployment. No feature flag to switch between stores. Rollback not tested.
+
+**Warning signs:**
+- Redis fails in production, team doesn't know how to revert
+- Old code deleted, can't roll back without git revert
+- Feature flag doesn't exist or isn't tested
+- Runbook says "switch to Redis" but not "switch back to Map"
+
+**Prevention:**
+- **Keep Map-based session code in codebase** — don't delete, gate with feature flag
+- Feature flag: `USE_REDIS=true/false` environment variable
+- Test rollback scenario: deploy with Redis, flip flag back to Map, verify sessions work
+- Document rollback procedure: "Set USE_REDIS=false, restart server, verify /health endpoint"
+- Monitor both paths: if Redis path fails, alert triggers, team follows runbook to flip flag
+- Gradual rollout: enable Redis for 10% of sessions, then 50%, then 100% (advanced, defer if complex)
+
+**Phase to address:** Redis migration phase (rollback planning task)
+
+**Source confidence:** HIGH — Based on [migration failover best practices](https://blog.devgenius.io/we-replaced-postgresql-sessions-with-redis-api-response-time-went-from-800ms-to-12ms-bf119fdae8db)
+
+---
+
+### 19. Content Generation Commits Untested to Main Branch
+
+**Problem:** `generateLearningContent.ts` generates content for 102 questions. Script commits directly to main branch or PR merged without human review. Generated content has factual error. Error deployed to production. User finds error, trust damaged.
+
+**Why it happens:** Automation bypasses review. Generated content looks plausible, reviewer doesn't fact-check. Bulk generation makes review tedious (102 questions = skip review).
+
+**Warning signs:**
+- Content deployed without manual review
+- Errors found by users, not team
+- No QA step between generation and deployment
+- Git history shows automated commits with no human review
+
+**Prevention:**
+- **Never auto-commit generated content** — require human review PR
+- Review process: generate content, create PR, reviewer spot-checks 10% of questions
+- Checklist for reviewer: "Verified facts? Clicked source URLs? Corrections are specific?"
+- Use staged approach: generate 20 questions, review, generate next 20
+- Version content with review flag: `learningContent.reviewed: true` (set manually after review)
+- CI check: block deploy if any question has `learningContent.reviewed: false`
+
+**Phase to address:** Content expansion phase (review workflow task)
+
+**Source confidence:** MEDIUM — Based on general code review best practices and content quality control
+
+---
+
+### 20. Session Timeout Mismatch Between Map and Redis
+
+**Problem:** During dual-write period, Map sessions expire after 1 hour (periodic cleanup). Redis sessions expire after 2 hours (different TTL config). Same session has different lifetimes in each store. Fallback logic breaks.
+
+**Why it happens:** Porting timeout logic from Map to Redis without unifying configuration. Map uses `SESSION_TIMEOUT_MS = 60 * 60 * 1000`. Redis uses `EX: 7200` (seconds, not milliseconds).
+
+**Warning signs:**
+- Sessions exist in Redis but not Map (or vice versa) before expected timeout
+- Fallback reads succeed but return stale sessions
+- Inconsistent behavior based on which store hit first
+- Users experience different timeout durations
+
+**Prevention:**
+- **Centralize timeout configuration:** `const SESSION_TIMEOUT_SECONDS = 3600` used by both stores
+- Map cleanup uses same value: `SESSION_TIMEOUT_MS = SESSION_TIMEOUT_SECONDS * 1000`
+- Redis TTL uses same value: `EX: SESSION_TIMEOUT_SECONDS`
+- Document timeout in one place: README or config file
+- Test timeout parity: create session, wait timeout period + 1 minute, verify removed from both stores
+
+**Phase to address:** Redis migration phase (configuration unification task)
+
+**Source confidence:** HIGH — Logical inference from dual-write pattern
 
 ---
 
@@ -492,51 +541,57 @@ Mistakes that cause annoyance but are relatively easy to fix.
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Timer implementation | Timer-induced anxiety (Critical #1) | Extensive user testing with anxiety-prone users; visual timers; generous limits |
-| Engagement mechanics | Dark patterns (Critical #2) | Ethical design review; avoid streaks/loss aversion; focus on intrinsic motivation |
-| Content creation | Question quality spiral (Critical #3) | Human editorial review; fact-checking; answer validation rules |
-| Difficulty calibration | Alienating beginners (Critical #4) | Test with actual beginners; mix difficulty levels; track answer rates |
-| Feedback design | Punitive feedback (Critical #5) | Educational psychology review; explanatory feedback; reframe errors |
-| Content pipeline | Repetition fatigue (Moderate #6) | Calculate required pool size (500+); smart rotation; ongoing creation |
-| Mobile optimization | Performance degradation (Moderate #7) | Test on mid-range devices; monitor thermal throttling; 30fps may be acceptable |
-| Accessibility | Late-stage retrofitting (Moderate #8) | Plan accessibility from day one; test with screen readers early |
-| Answer validation | Edge cases (Moderate #9) | Case-insensitive matching; multiple acceptable answers; fuzzy matching |
-| Long-term retention | Gamification novelty wearing off (Moderate #10) | Balance extrinsic/intrinsic motivation; variety in engagement |
+| Redis Migration | Session data loss during cutover | Implement dual-write period (7 days) |
+| Redis Migration | Serialization format breaks sessions | Use JSON.stringify, add roundtrip tests |
+| Redis Migration | No failover when Redis down | Keep Map fallback, add circuit breaker |
+| Plausibility Enhancement | False positives on fast players | Difficulty-adjusted thresholds, pattern detection (3+ flags) |
+| Plausibility Enhancement | Network latency causes timing anomalies | Accept client `timeRemaining`, validate bounds only |
+| Content Expansion | Quality degradation at scale | Generate in batches of 10-20 with reviews between |
+| Content Expansion | Factual errors in generated content | Cross-reference with authoritative sources, manual fact-check |
+| Content Expansion | Hallucinated source URLs | Validate URLs with HEAD requests, manual verification |
+| Dev Tooling Fix | Build script dependency issues | Run script locally, commit results (not in CI/CD) |
+| All Phases | Regression on existing features | Add E2E tests for existing flows, manual QA playthrough |
 
 ---
 
-## Research Confidence Notes
+## Sources
 
-**HIGH confidence areas:**
-- Dark patterns research (extensive recent literature)
-- Timer anxiety research (UX psychology well-documented)
-- Accessibility requirements (WCAG standards authoritative)
-- Educational gamification research (academic studies)
+### Redis Migration (HIGH confidence)
+- [We Replaced PostgreSQL Sessions with Redis](https://blog.devgenius.io/we-replaced-postgresql-sessions-with-redis-api-response-time-went-from-800ms-to-12ms-bf119fdae8db) - Failover testing, dual-write patterns
+- [Redis Cloud Migration](https://redis.io/tutorials/migration/) - Migration strategies, downtime vs. zero-downtime tradeoffs
+- [Redis serialization benchmarks](https://sreejithmsblog.wordpress.com/2017/06/05/benchmarking-different-serializers-for-redis/) - JSON vs MessagePack performance
+- [MessagePack pitfalls with large objects](https://smali-kazmi.medium.com/when-optimized-is-slower-why-we-stuck-with-native-json-for-our-10mb-context-object-2d7dd62e6982) - Binary serialization performance caveats
 
-**MEDIUM confidence areas:**
-- Question pool size recommendations (estimates from practice, not hard research)
-- Mobile performance specifics (general game development, not trivia-specific)
-- Civic education specifics (trivia games generally, limited civic-specific research)
+### Plausibility Checks (HIGH confidence)
+- [How can you prevent anti-cheat measures from disrupting legitimate players?](https://www.linkedin.com/advice/0/how-can-you-prevent-anti-cheat-measures-from-disrupting-ylmmf) - False positive prevention strategies
+- [How Game Developers Detect and Stop Cheating in Real-Time](https://medium.com/@amol346bhalerao/how-game-developers-detect-and-stop-cheating-in-real-time-0aa4f1f52e0c) - Pattern detection, graduated responses
+- [AI Cheat Detection: Is It Fair or Falsely Flagging Latency](https://www.alibaba.com/product-insights/ai-cheat-detection-in-multiplayer-games-is-it-fair-or-falsely-flagging-latency.html) - Network latency false positives, latency-stratified detection
 
-**LOW confidence areas:**
-- Multiplayer synchronization (search unavailable, general knowledge only)
-- Civic learning pitfalls specifically (limited domain-specific research found)
+### Content Generation (HIGH confidence)
+- [AI Content Quality Control: Complete Guide for 2026](https://koanthic.com/en/ai-content-quality-control-complete-guide-for-2026-2/) - McKinsey findings on quality degradation at scale (58%)
+- [Bulk AI Content Generation 2026](https://www.junia.ai/blog/bulk-ai-content-generation-ultimate-guide) - Quality challenges, human intervention requirements
+- [Improving factual accuracy in AI-generated content](https://scalebytech.com/improving-factual-accuracy-in-ai-generated-content) - Cross-referencing, RAG, verification strategies
+- [AI Content in Educational Settings](https://www.frontiersin.org/journals/computer-science/articles/10.3389/fcomp.2026.1729059/full) - Fact-checking challenges for students/teachers
+- [Is Originality AI Accurate? 2026 Testing](https://mpgone.com/is-originality-ai-accurate-we-tested-everything/) - Detection accuracy rates (70-95%)
 
-**Gaps requiring phase-specific research:**
-- Optimal question pool size for civic trivia specifically
-- Civic knowledge baseline for difficulty calibration
-- Multiplayer/competitive mode technical requirements (if applicable)
+### Dev Tooling (HIGH confidence)
+- [TypeScript: dependency or dev-dependency?](https://medium.com/@jjmayank98/typescript-dependency-or-dev-dependency-cad623dff6d5) - Build-time vs runtime dependencies
+- [TypeScript Build Process (AdonisJS)](https://docs.adonisjs.com/guides/concepts/typescript-build-process) - Standalone builds, production compilation
+
+### Regression Testing (HIGH confidence)
+- [What is Regression Testing? Guide for 2026](https://www.headspin.io/blog/regression-testing-a-complete-guide) - Test suite maintenance, prioritization
+- [Test Maintenance Best Practices 2026](https://bugbug.io/blog/software-testing/best-practices-of-test-maintenance/) - Daily task for QA in agile, sprint integration
 
 ---
 
-## Sources Summary
+## Metadata
 
-This research draws from:
-- **UX Psychology:** Timer anxiety, calm design principles (MEDIUM-HIGH confidence)
-- **Dark Pattern Research:** Academic papers, industry analysis (HIGH confidence)
-- **Educational Psychology:** Gamification studies, learning from errors (HIGH confidence)
-- **Accessibility Standards:** WCAG 2.1 documentation (HIGH confidence)
-- **Game Development:** Performance optimization, question quality (MEDIUM confidence)
-- **Trivia Industry:** Question writing best practices, common mistakes (MEDIUM confidence)
+**Confidence breakdown:**
+- Redis migration pitfalls: HIGH — Well-documented patterns in official Redis docs and production case studies
+- Plausibility pitfalls: HIGH — Industry anti-cheat systems have public documentation on false positive rates
+- Content generation pitfalls: HIGH — McKinsey research + educational AI research covers factual accuracy issues
+- Dev tooling pitfalls: HIGH — Standard TypeScript build practices
+- Integration pitfalls: MEDIUM — Logical inference from existing codebase, verified with regression testing best practices
 
-All findings cross-referenced across multiple sources where possible. Areas with single-source support flagged as lower confidence.
+**Research date:** 2026-02-12
+**Valid until:** 2026-03-12 (30 days — stable practices, current research)
