@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { Game } from './pages/Game';
+import { Profile } from './pages/Profile';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/play" element={<Game />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
         </Routes>
       </AuthInitializer>
