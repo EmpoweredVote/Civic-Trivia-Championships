@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import type { GameResult, Question, LearningContent } from '../../../types/game';
 import { TOPIC_ICONS, TOPIC_LABELS } from './TopicIcon';
@@ -19,6 +19,9 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
   const motionScore = useMotionValue(0);
   const xpMotionValue = useMotionValue(0);
   const gemsMotionValue = useMotionValue(0);
+
+  // Refs for accordion keyboard navigation
+  const accordionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const accuracy = Math.round((result.totalCorrect / result.totalQuestions) * 100);
   const isPerfectGame = result.totalCorrect === result.totalQuestions;
@@ -117,6 +120,22 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
 
   const handleCloseLearnMore = () => {
     setLearnMoreQuestion(null);
+  };
+
+  // Keyboard handler for accordion navigation
+  const handleAccordionKeyDown = (e: React.KeyboardEvent, index: number) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        const nextIndex = (index + 1) % questions.length;
+        accordionButtonRefs.current[nextIndex]?.focus();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        const prevIndex = (index + questions.length - 1) % questions.length;
+        accordionButtonRefs.current[prevIndex]?.focus();
+        break;
+    }
   };
 
   return (
@@ -405,7 +424,11 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                   >
                     {/* Collapsed view - question + points badge */}
                     <button
+                      ref={(el) => (accordionButtonRefs.current[index] = el)}
                       onClick={() => toggleQuestion(index)}
+                      onKeyDown={(e) => handleAccordionKeyDown(e, index)}
+                      aria-expanded={isExpanded}
+                      aria-controls={`question-detail-${index}`}
                       className="w-full text-left p-4 hover:bg-slate-700/30 transition-colors flex items-start justify-between gap-4"
                     >
                       <div className="flex-1">
@@ -471,7 +494,7 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                           transition={{ duration: 0.2 }}
                           className="overflow-hidden"
                         >
-                          <div className="px-4 pb-4 pt-2 border-t border-slate-700 bg-slate-900/30">
+                          <div id={`question-detail-${index}`} className="px-4 pb-4 pt-2 border-t border-slate-700 bg-slate-900/30">
                             {/* Score breakdown */}
                             <div className="mb-4 flex items-center gap-4 text-sm">
                               {index === 9 && answer.wager !== undefined && answer.wager > 0 ? (

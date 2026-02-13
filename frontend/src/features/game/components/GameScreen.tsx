@@ -154,12 +154,21 @@ export function GameScreen({
     }
   }, [state.phase, state.answers.length]);
 
-  // Keyboard shortcuts for answer selection (only when options visible)
-  const canUseKeyboard = (state.phase === 'answering' || state.phase === 'selected') && showOptions;
-  useKeyPress('a', () => selectAnswer(0), canUseKeyboard);
-  useKeyPress('b', () => selectAnswer(1), canUseKeyboard);
-  useKeyPress('c', () => selectAnswer(2), canUseKeyboard);
-  useKeyPress('d', () => selectAnswer(3), canUseKeyboard);
+  // Global number key handler for answer selection (when AnswerGrid doesn't have focus)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const canUseKeyboard = (state.phase === 'answering' || state.phase === 'selected') && showOptions;
+      if (!canUseKeyboard) return;
+
+      if (e.key >= '1' && e.key <= '4') {
+        const index = parseInt(e.key) - 1;
+        selectAnswer(index);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [state.phase, showOptions, selectAnswer]);
 
   // Keyboard shortcut for Learn More (only during reveal when content exists)
   const canOpenLearnMore = state.phase === 'revealing' && !!learningContent && !isLearnMoreOpen;
@@ -301,7 +310,10 @@ export function GameScreen({
               exit={{ opacity: 0, scale: 0.8 }}
               className="fixed inset-0 flex items-center justify-center z-30 pointer-events-none"
             >
-              <div className="bg-red-600 text-white text-3xl font-bold px-12 py-6 rounded-lg shadow-2xl">
+              <div className="bg-red-600 text-white text-3xl font-bold px-12 py-6 rounded-lg shadow-2xl flex items-center gap-3">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 Time's up!
               </div>
             </motion.div>

@@ -35,6 +35,30 @@ export function WagerScreen({
     onSetWager(value);
   };
 
+  // Handle keyboard navigation for slider
+  const handleSliderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (isLocked) return;
+
+    switch (e.key) {
+      case 'PageDown':
+        e.preventDefault();
+        onSetWager(Math.max(0, wagerAmount - 50));
+        break;
+      case 'PageUp':
+        e.preventDefault();
+        onSetWager(Math.min(maxWager, wagerAmount + 50));
+        break;
+      case 'Home':
+        e.preventDefault();
+        onSetWager(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        onSetWager(maxWager);
+        break;
+    }
+  };
+
   // Determine button text and style
   const buttonText = wagerAmount === 0 ? 'Play for Fun' : 'Lock In Wager';
   const buttonStyle = wagerAmount === 0
@@ -81,7 +105,12 @@ export function WagerScreen({
                 step={10}
                 value={wagerAmount}
                 onChange={handleSliderChange}
+                onKeyDown={handleSliderKeyDown}
                 disabled={isLocked}
+                aria-label="Wager amount"
+                aria-valuemin={0}
+                aria-valuemax={maxWager}
+                aria-valuenow={wagerAmount}
                 aria-valuetext={`${wagerAmount} points`}
                 className={`w-full h-3 rounded-full appearance-none cursor-pointer slider-track ${
                   isLocked ? 'opacity-50 cursor-not-allowed' : ''
@@ -103,7 +132,7 @@ export function WagerScreen({
           )}
 
           {/* Outcome Preview */}
-          <div className="space-y-2" aria-live="polite">
+          <div className="space-y-2" role="group" aria-label="Wager outcome preview" aria-live="polite">
             <div className="flex justify-between items-center p-3 bg-slate-900/50 rounded-lg">
               <span className="text-slate-300">If correct:</span>
               <span className="text-green-400 font-bold text-xl transition-all duration-200">

@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { GamePhase } from '../../../types/game';
 
@@ -25,6 +26,11 @@ export function AnswerGrid({
   const isAnswering = phase === 'answering' || phase === 'selected';
   const isRevealing = phase === 'revealing';
   const isLocked = phase === 'locked';
+
+  // Keyboard navigation state
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const lockInButtonRef = useRef<HTMLButtonElement>(null);
 
   const getOptionStyle = (index: number) => {
     // Revealing phase styling
@@ -57,6 +63,58 @@ export function AnswerGrid({
 
   const canSelect = isAnswering && !isLocked;
 
+  // Reset focused index when can't select anymore
+  useEffect(() => {
+    if (!canSelect) {
+      setFocusedIndex(null);
+    }
+  }, [canSelect]);
+
+  // Focus the button when focusedIndex changes
+  useEffect(() => {
+    if (focusedIndex !== null && buttonRefs.current[focusedIndex]) {
+      buttonRefs.current[focusedIndex]?.focus();
+    }
+  }, [focusedIndex]);
+
+  // Keyboard handler for answer buttons
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    if (!canSelect) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusedIndex((index + 1) % 4);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusedIndex((index + 3) % 4);
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (phase === 'selected') {
+          onLockIn();
+        } else if (phase === 'answering') {
+          if (selectedOption === null) {
+            onSelect(index);
+          } else {
+            onLockIn();
+          }
+        }
+        break;
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+        e.preventDefault();
+        const selectedIdx = parseInt(e.key) - 1;
+        onSelect(selectedIdx);
+        setFocusedIndex(selectedIdx);
+        break;
+    }
+  };
+
   return (
     <div className="w-full max-w-3xl mx-auto px-6">
       {/* Answer grid */}
@@ -64,8 +122,12 @@ export function AnswerGrid({
         {options.map((option, index) => (
           <motion.button
             key={index}
+            ref={(el) => (buttonRefs.current[index] = el)}
             onClick={() => canSelect && onSelect(index)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
             disabled={!canSelect}
+            tabIndex={focusedIndex === index ? 0 : index === 0 && focusedIndex === null ? 0 : -1}
+            aria-label={`Option ${OPTION_LETTERS[index]}: ${option}`}
             animate={{
               scale: getOptionScale(index),
               opacity: isRevealing && index !== correctAnswer && index !== selectedOption ? 0.3 : 1,
@@ -88,6 +150,28 @@ export function AnswerGrid({
             <div className="text-white text-lg font-medium flex-1">
               {option}
             </div>
+
+            {/* Status icons - shown during reveal phase */}
+            {isRevealing && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                {index === correctAnswer && (
+                  // Checkmark for correct answer
+                  <svg className="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {index === selectedOption && index !== correctAnswer && (
+                  // X icon for incorrect selected answer
+                  <svg className="w-6 h-6 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </motion.div>
+            )}
           </motion.button>
         ))}
       </div>
@@ -100,8 +184,9 @@ export function AnswerGrid({
           className="flex justify-center mb-6"
         >
           <button
+            ref={lockInButtonRef}
             onClick={onLockIn}
-            className="px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-lg rounded-lg shadow-lg transition-colors"
+            className="px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-lg rounded-lg shadow-lg transition-colors focus-ring-primary"
           >
             Lock In
           </button>
