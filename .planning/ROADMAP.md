@@ -129,10 +129,12 @@ Plans:
   4. User can skip wager and play for standard points
   5. Wager points added/subtracted based on final answer
   6. Results screen reflects wager outcome in final score
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 06-01: TBD during phase planning
+- [ ] 06-01-PLAN.md — Backend wager validation/scoring, types, state machine, hook, API service
+- [ ] 06-02-PLAN.md — FinalQuestionAnnouncement, WagerScreen components, GameScreen integration
+- [ ] 06-03-PLAN.md — Results screen wager breakdown section and Q10 answer review
 
 ### Phase 7: Polish & Performance
 **Goal**: App meets WCAG AA accessibility standards, runs smoothly at 60fps, and has game-show aesthetic
@@ -165,7 +167,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 3. Scoring System | 3/3 | Complete | 2026-02-10 |
 | 4. Learning & Content | 3/3 | Complete | 2026-02-12 |
 | 5. Progression & Profile | 4/4 | Complete | 2026-02-12 |
-| 6. Wager Mechanics | 0/TBD | Not started | - |
+| 6. Wager Mechanics | 0/3 | Not started | - |
 | 7. Polish & Performance | 0/TBD | Not started | - |
 
 ## Requirement Coverage
