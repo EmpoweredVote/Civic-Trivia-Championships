@@ -39,6 +39,7 @@ export const initialGameState: GameState = {
   totalScore: 0,
   wagerAmount: 0,
   wagerCategory: null,
+  currentStreak: 0,
 };
 
 // Pure reducer function for game state transitions
@@ -57,6 +58,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         isTimerPaused: false,
         wagerAmount: 0,
         wagerCategory: null,
+        currentStreak: 0,
       };
 
     case 'SELECT_ANSWER': {
@@ -112,6 +114,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         phase: 'revealing',
         answers: [...state.answers, answer],
         totalScore: state.totalScore + action.scoreData.totalPoints,
+        currentStreak: action.scoreData.correct ? state.currentStreak + 1 : 0,
       };
     }
 
@@ -146,6 +149,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         answers: [...state.answers, answer],
         totalScore: state.totalScore + action.scoreData.totalPoints,
         isTimerPaused: true,
+        currentStreak: 0,
       };
     }
 

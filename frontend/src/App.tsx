@@ -3,6 +3,7 @@ import { AuthInitializer } from './components/AuthInitializer';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SkipToContent } from './components/accessibility/SkipToContent';
 import { LiveRegions } from './components/accessibility/LiveRegions';
+import { ConfettiController } from './components/animations/ConfettiController';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
@@ -14,6 +15,7 @@ function App() {
     <BrowserRouter>
       <SkipToContent />
       <LiveRegions />
+      <ConfettiController />
       <AuthInitializer>
         <main id="main-content" tabIndex={-1}>
           <Routes>

@@ -97,4 +97,5 @@ export type GameState = {
   totalScore: number;
   wagerAmount: number; // Wager amount for final question (defaults to 0)
   wagerCategory: string | null; // Category for final question wagering (defaults to null)
+  currentStreak: number; // Tracks consecutive correct answers
 };
