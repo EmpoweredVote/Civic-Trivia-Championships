@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 ## Current Position
 
 Phase: 5 of 7 (Progression & Profile) — IN PROGRESS
-Plan: 1 of 4 complete
-Status: Progression backend complete, ready for frontend integration
-Last activity: 2026-02-12 - Completed 05-01-PLAN.md (Progression Backend)
+Plan: 2 of 4 complete
+Status: Progression rewards display complete, ready for profile page
+Last activity: 2026-02-13 - Completed 05-02-PLAN.md (Results Screen Rewards Display)
 
-Progress: [██████░░░░] ~60%
+Progress: [██████░░░░] ~65%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Average duration: 4.3 min
-- Total execution time: 64 min
+- Total plans completed: 16
+- Average duration: 4.2 min
+- Total execution time: 67 min
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [██████░░░░] ~60%
 | 02-game-core | 4/4 | 16 min | 4 min |
 | 03-scoring-system | 3/3 | 12 min | 4 min |
 | 04-learning-content | 3/3 | 20 min | 7 min |
-| 05-progression-profile | 1/4 | 4 min | 4 min |
+| 05-progression-profile | 2/4 | 7 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (8 min), 04-02 (4 min), 04-03 (6 min), 05-01 (4 min)
-- Trend: Consistent pace, backend-only plans faster than UI plans
+- Last 5 plans: 04-02 (4 min), 04-03 (6 min), 05-01 (4 min), 05-02 (3 min)
+- Trend: Consistent pace, phase 5 faster than average
 
 *Updated after each plan completion*
 
@@ -97,6 +97,10 @@ Recent decisions affecting current work:
 | best_score uses GREATEST, not increment | 05-01 | Keeps maximum score achieved, more meaningful than cumulative |
 | Progression on results endpoint | 05-01 | Awards once at completion, not incrementally during play |
 | progressionAwarded flag prevents double-award | 05-01 | Idempotent results endpoint safe for multiple calls |
+| Icons + numbers only, no rewards label | 05-02 | Cleaner UI, icons are self-explanatory in context |
+| Fetch progression from server on complete | 05-02 | Server is source of truth, prevents client manipulation |
+| Same spring animation for XP/gems as score | 05-02 | Visual consistency across all count-up animations |
+| Golden treatment for perfect game rewards | 05-02 | Matches existing score treatment, reinforces achievement |
 
 ### Pending Todos
 
@@ -104,13 +108,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None — Progression backend complete. Ready for results screen and profile UI integration.
+None — Progression rewards display complete. Ready for profile page and leveling system.
 
 ## Session Continuity
 
-Last session: 2026-02-12
-Stopped at: Completed 05-01-PLAN.md (Progression Backend)
+Last session: 2026-02-13
+Stopped at: Completed 05-02-PLAN.md (Results Screen Rewards Display)
 Resume file: None
 
 ---
-*Next step: Execute 05-02 (Results Screen Rewards Display)*
+*Next step: Execute 05-03 (Profile Page) or 05-04 (Leveling System)*
