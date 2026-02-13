@@ -98,4 +98,5 @@ export type GameState = {
   wagerAmount: number; // Wager amount for final question (defaults to 0)
   wagerCategory: string | null; // Category for final question wagering (defaults to null)
   currentStreak: number; // Tracks consecutive correct answers
+  degraded: boolean; // True when backend is running in-memory fallback mode
 };

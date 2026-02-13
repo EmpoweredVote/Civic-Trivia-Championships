@@ -91,10 +91,10 @@ export function useGameState(): UseGameStateReturn {
   // Start game by creating a server session
   const startGame = async () => {
     try {
-      const { sessionId, questions } = await createGameSession();
+      const { sessionId, questions, degraded } = await createGameSession();
       sessionIdRef.current = sessionId;
       setHasShownTooltip(false); // Reset tooltip flag for new game
-      dispatch({ type: 'SESSION_CREATED', sessionId, questions });
+      dispatch({ type: 'SESSION_CREATED', sessionId, questions, degraded });
     } catch (error) {
       console.error('Failed to create game session:', error);
       // Stay in idle phase on error

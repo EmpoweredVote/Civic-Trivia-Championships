@@ -15,6 +15,7 @@ import { FinalQuestionAnnouncement } from './FinalQuestionAnnouncement';
 import { WagerScreen } from './WagerScreen';
 import { PauseOverlay } from './PauseOverlay';
 import { CelebrationEffects } from '../../../components/animations/CelebrationEffects';
+import { DegradedBanner } from '../../../components/DegradedBanner';
 import { useAuthStore } from '../../../store/authStore';
 import { useConfettiStore } from '../../../store/confettiStore';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
@@ -343,6 +344,9 @@ export function GameScreen({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-x-hidden">
+      {/* Degraded mode banner - shown only when backend is in fallback mode */}
+      <DegradedBanner visible={state.degraded} />
+
       {/* Radial gradient bloom effect */}
       <div className="absolute inset-0 bg-gradient-radial from-teal-900/10 via-transparent to-transparent opacity-30" />
 

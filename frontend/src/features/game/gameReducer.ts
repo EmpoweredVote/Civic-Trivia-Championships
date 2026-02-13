@@ -11,7 +11,7 @@ export type ScoreData = {
 
 // Action types for the game state machine
 export type GameAction =
-  | { type: 'SESSION_CREATED'; sessionId: string; questions: Question[] }
+  | { type: 'SESSION_CREATED'; sessionId: string; questions: Question[]; degraded: boolean }
   | { type: 'SELECT_ANSWER'; optionIndex: number }
   | { type: 'LOCK_ANSWER' }
   | { type: 'REVEAL_ANSWER'; timeRemaining: number; scoreData: ScoreData }
@@ -40,6 +40,7 @@ export const initialGameState: GameState = {
   wagerAmount: 0,
   wagerCategory: null,
   currentStreak: 0,
+  degraded: false,
 };
 
 // Pure reducer function for game state transitions
@@ -59,6 +60,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         wagerAmount: 0,
         wagerCategory: null,
         currentStreak: 0,
+        degraded: action.degraded,
       };
 
     case 'SELECT_ANSWER': {

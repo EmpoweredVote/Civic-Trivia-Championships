@@ -15,15 +15,19 @@ export async function fetchQuestions(): Promise<Question[]> {
 }
 
 // Create a new game session
-export async function createGameSession(): Promise<{ sessionId: string; questions: Question[] }> {
-  const response = await apiRequest<{ sessionId: string; questions: Question[] }>(
+export async function createGameSession(): Promise<{ sessionId: string; questions: Question[]; degraded: boolean }> {
+  const response = await apiRequest<{ sessionId: string; questions: Question[]; degraded?: boolean }>(
     '/api/game/session',
     {
       method: 'POST',
     }
   );
 
-  return response;
+  return {
+    sessionId: response.sessionId,
+    questions: response.questions,
+    degraded: response.degraded ?? false, // Default to false if not present
+  };
 }
 
 // Submit an answer to the server for scoring
