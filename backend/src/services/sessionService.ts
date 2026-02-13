@@ -5,6 +5,8 @@
 
 import { randomUUID } from 'crypto';
 import { calculateScore, calculateResponseTime } from './scoreService.js';
+import { SessionStorage } from './storage/SessionStorage.js';
+import { MemoryStorage } from './storage/MemoryStorage.js';
 
 // Question type matching backend data structure
 export interface Question {
@@ -84,16 +86,20 @@ const MAX_PLAUSIBLE_TIME_REMAINING = 25; // seconds
  * Creates sessions, validates answers, calculates scores, aggregates results
  */
 export class SessionManager {
-  private sessions: Map<string, GameSession>;
-  private cleanupInterval: NodeJS.Timeout;
+  private storage: SessionStorage;
+  private cleanupInterval?: NodeJS.Timeout;
 
-  constructor() {
-    this.sessions = new Map();
+  constructor(storage: SessionStorage) {
+    this.storage = storage;
 
-    // Start cleanup interval
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupExpiredSessions();
-    }, CLEANUP_INTERVAL_MS);
+    // Start cleanup interval only for MemoryStorage (Redis uses TTL)
+    if (storage instanceof MemoryStorage) {
+      this.cleanupInterval = setInterval(() => {
+        this.storage.cleanup().catch(err => {
+          console.error('Error during cleanup:', err);
+        });
+      }, CLEANUP_INTERVAL_MS);
+    }
   }
 
   /**
@@ -102,7 +108,7 @@ export class SessionManager {
    * @param questions - Array of questions for this game
    * @returns Session ID
    */
-  createSession(userId: string | number, questions: Question[]): string {
+  async createSession(userId: string | number, questions: Question[]): Promise<string> {
     const sessionId = randomUUID();
     const now = new Date();
 
@@ -116,20 +122,22 @@ export class SessionManager {
       progressionAwarded: false
     };
 
-    this.sessions.set(sessionId, session);
+    await this.storage.set(sessionId, session, 3600); // 1 hour TTL
     return sessionId;
   }
 
   /**
    * Get a session by ID
-   * Updates lastActivityTime on access
+   * Updates lastActivityTime on access and refreshes TTL
    * @param sessionId - Session ID to retrieve
    * @returns Session or null if not found
    */
-  getSession(sessionId: string): GameSession | null {
-    const session = this.sessions.get(sessionId);
+  async getSession(sessionId: string): Promise<GameSession | null> {
+    const session = await this.storage.get(sessionId);
     if (session) {
       session.lastActivityTime = new Date();
+      // Refresh TTL on access
+      await this.storage.set(sessionId, session, 3600);
     }
     return session || null;
   }
@@ -145,15 +153,15 @@ export class SessionManager {
    * @returns Server answer with scoring
    * @throws Error if session invalid, question not found, or already answered
    */
-  submitAnswer(
+  async submitAnswer(
     sessionId: string,
     questionId: string,
     selectedOption: number | null,
     timeRemaining: number,
     wager?: number
-  ): ServerAnswer {
+  ): Promise<ServerAnswer> {
     // Validate session exists
-    const session = this.getSession(sessionId);
+    const session = await this.getSession(sessionId);
     if (!session) {
       throw new Error('Invalid or expired session');
     }
@@ -251,8 +259,9 @@ export class SessionManager {
       ...(wager !== undefined ? { wager } : {}),
     };
 
-    // Store answer
+    // Store answer and persist updated session
     session.answers.push(answer);
+    await this.storage.set(sessionId, session, 3600);
 
     return answer;
   }
@@ -264,8 +273,8 @@ export class SessionManager {
    * @returns Aggregated game results
    * @throws Error if session not found
    */
-  getResults(sessionId: string): GameSessionResult {
-    const session = this.getSession(sessionId);
+  async getResults(sessionId: string): Promise<GameSessionResult> {
+    const session = await this.getSession(sessionId);
     if (!session) {
       throw new Error('Invalid or expired session');
     }
@@ -328,33 +337,47 @@ export class SessionManager {
   }
 
   /**
-   * Remove expired sessions (> 1 hour since last activity)
-   * Runs automatically every 5 minutes
-   */
-  private cleanupExpiredSessions(): void {
-    const now = new Date();
-    let cleanedCount = 0;
-
-    for (const [sessionId, session] of this.sessions.entries()) {
-      const timeSinceActivity = now.getTime() - session.lastActivityTime.getTime();
-      if (timeSinceActivity > SESSION_EXPIRY_MS) {
-        this.sessions.delete(sessionId);
-        cleanedCount++;
-      }
-    }
-
-    if (cleanedCount > 0) {
-      console.log(`🧹 Cleaned up ${cleanedCount} expired session(s)`);
-    }
-  }
-
-  /**
    * Stop cleanup interval (for testing/shutdown)
    */
   destroy(): void {
-    clearInterval(this.cleanupInterval);
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
   }
 }
 
-// Singleton instance
-export const sessionManager = new SessionManager();
+// Singleton instance (initialized during server startup)
+let sessionManagerInstance: SessionManager | null = null;
+
+/**
+ * Initialize the session manager with a storage backend
+ * Must be called before getSessionManager()
+ * @param storage - SessionStorage implementation
+ * @returns SessionManager instance
+ */
+export function initializeSessionManager(storage: SessionStorage): SessionManager {
+  sessionManagerInstance = new SessionManager(storage);
+  return sessionManagerInstance;
+}
+
+/**
+ * Get the initialized session manager
+ * @returns SessionManager instance
+ * @throws Error if not initialized
+ */
+export function getSessionManager(): SessionManager {
+  if (!sessionManagerInstance) {
+    throw new Error('SessionManager not initialized. Call initializeSessionManager() first.');
+  }
+  return sessionManagerInstance;
+}
+
+/**
+ * Singleton export for backward compatibility
+ * IMPORTANT: This will throw if accessed before initialization
+ */
+export const sessionManager = new Proxy({} as SessionManager, {
+  get(_target, prop) {
+    return getSessionManager()[prop as keyof SessionManager];
+  }
+});
