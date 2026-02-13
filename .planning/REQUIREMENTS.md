@@ -89,6 +89,37 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 - [x] **PERF-04**: Animations run at 60fps
 - [x] **PERF-05**: Mobile responsive design works on phones and tablets
 
+## v1.1 Requirements
+
+Requirements for tech debt hardening. Continues from v1.0 phases.
+
+### Redis Sessions
+
+- [ ] **REDIS-01**: Game sessions stored in Redis with automatic TTL expiry
+- [ ] **REDIS-02**: Sessions persist across server restarts
+- [ ] **REDIS-03**: Graceful fallback to in-memory storage if Redis unavailable
+
+### Plausibility Enhancement
+
+- [ ] **PLAUS-01**: Difficulty-adjusted timing thresholds for plausibility checks
+- [ ] **PLAUS-02**: Flagged answers receive 30% point reduction (not just logging)
+- [ ] **PLAUS-03**: Timer multiplier users get adjusted thresholds (no false positives)
+
+### Learning Content
+
+- [ ] **LCONT-01**: Fix generateLearningContent.ts TypeScript error (install @anthropic-ai/sdk)
+- [ ] **LCONT-02**: Expand learningContent coverage to 25-30% of questions (~15 new deep-dives)
+
+### Game UX
+
+- [ ] **GUX-01**: Question card positioned at 1/3 from top of screen (not centered)
+- [ ] **GUX-02**: Answer options positioned at 2/3 from top of screen
+- [ ] **GUX-03**: Single-click answer selection (remove lock-in confirmation step)
+
+### Documentation
+
+- [ ] **DOCS-01**: Generate missing Phase 3 VERIFICATION.md
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -193,12 +224,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERF-04 | Phase 7 | Complete |
 | PERF-05 | Phase 1 | Complete |
 
-**Coverage:**
-- v1 requirements: 50 total
+**Coverage (v1.0):**
+- v1.0 requirements: 50 total
 - Mapped to phases: 50
 - Unmapped: 0
 
-**By Phase:**
+**By Phase (v1.0):**
 - Phase 1 (Foundation & Auth): 9 requirements
 - Phase 2 (Game Core): 15 requirements
 - Phase 3 (Scoring System): 4 requirements
@@ -207,6 +238,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Phase 6 (Wager Mechanics): 5 requirements
 - Phase 7 (Polish & Performance): 7 requirements
 
+**Coverage (v1.1):**
+- v1.1 requirements: 12 total
+- Mapped to phases: 0 (pending roadmap)
+- Unmapped: 12
+
 ---
 *Requirements defined: 2026-02-03*
-*Last updated: 2026-02-03 after roadmap creation*
+*Last updated: 2026-02-12 after v1.1 requirements definition*
