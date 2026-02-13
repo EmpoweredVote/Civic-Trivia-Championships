@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { SkipToContent } from './components/accessibility/SkipToContent';
 import { LiveRegions } from './components/accessibility/LiveRegions';
 import { ConfettiController } from './components/animations/ConfettiController';
+import { useWebVitals } from './hooks/useWebVitals';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
@@ -11,6 +12,9 @@ import { Game } from './pages/Game';
 import { Profile } from './pages/Profile';
 
 function App() {
+  // Monitor Web Vitals in production
+  useWebVitals();
+
   return (
     <BrowserRouter>
       <SkipToContent />
