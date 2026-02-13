@@ -1,7 +1,9 @@
 import { useReducer, useEffect, useRef, useState } from 'react';
 import { gameReducer, initialGameState } from '../gameReducer';
 import { createGameSession, submitAnswer } from '../../../services/gameService';
-import type { GameState, Question, GameResult } from '../../../types/game';
+import type { GameState, Question, GameResult, Progression } from '../../../types/game';
+import { apiRequest } from '../../../services/api';
+import { useAuthStore } from '../../../store/authStore';
 
 // Timing constants
 const SUSPENSE_PAUSE_MS = 1500; // Pause after lock-in before reveal
@@ -26,6 +28,7 @@ interface UseGameStateReturn {
 export function useGameState(): UseGameStateReturn {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
   const [hasShownTooltip, setHasShownTooltip] = useState(false);
+  const [progression, setProgression] = useState<Progression | null>(null);
 
   // Refs to track timeouts for cleanup and sessionId for server calls
   const suspenseTimeoutRef = useRef<number | null>(null);
@@ -60,6 +63,7 @@ export function useGameState(): UseGameStateReturn {
               points: fastest.totalPoints,
             };
           })(),
+          progression: progression,
         }
       : null;
 
@@ -241,6 +245,28 @@ export function useGameState(): UseGameStateReturn {
         autoAdvanceTimeoutRef.current = null;
       }
     };
+  }, [state.phase]);
+
+  // Fetch progression data when game completes (authenticated users only)
+  useEffect(() => {
+    if (state.phase === 'complete' && sessionIdRef.current) {
+      const isAuthenticated = useAuthStore.getState().isAuthenticated;
+
+      if (isAuthenticated) {
+        // Fetch results from server to get progression data
+        apiRequest<{ progression: Progression | null }>(`/api/game/results/${sessionIdRef.current}`)
+          .then((response) => {
+            setProgression(response.progression);
+          })
+          .catch((error) => {
+            console.error('Failed to fetch progression:', error);
+            setProgression(null);
+          });
+      } else {
+        // Anonymous user - no progression
+        setProgression(null);
+      }
+    }
   }, [state.phase]);
 
   // Cleanup all timeouts on unmount

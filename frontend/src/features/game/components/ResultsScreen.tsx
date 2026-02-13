@@ -3,6 +3,8 @@ import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import type { GameResult, Question, LearningContent } from '../../../types/game';
 import { TOPIC_ICONS, TOPIC_LABELS } from './TopicIcon';
 import { LearnMoreModal } from './LearnMoreModal';
+import { XpIcon } from '../../../components/icons/XpIcon';
+import { GemIcon } from '../../../components/icons/GemIcon';
 
 interface ResultsScreenProps {
   result: GameResult;
@@ -15,6 +17,8 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
   const [learnMoreQuestion, setLearnMoreQuestion] = useState<{ content: LearningContent; userAnswer: number | null; correctAnswer: number } | null>(null);
   const motionScore = useMotionValue(0);
+  const xpMotionValue = useMotionValue(0);
+  const gemsMotionValue = useMotionValue(0);
 
   const accuracy = Math.round((result.totalCorrect / result.totalQuestions) * 100);
   const isPerfectGame = result.totalCorrect === result.totalQuestions;
@@ -40,6 +44,54 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
     });
     return unsubscribe;
   }, [motionScore]);
+
+  // Animate XP with spring physics (if progression exists)
+  useEffect(() => {
+    if (result.progression) {
+      const controls = animate(xpMotionValue, result.progression.xpEarned, {
+        type: 'spring',
+        stiffness: 100,
+        damping: 20,
+        mass: 0.5,
+        duration: 1.5,
+      });
+
+      return () => controls.stop();
+    }
+  }, [result.progression, xpMotionValue]);
+
+  // Subscribe to XP motion value for display
+  const [displayXP, setDisplayXP] = useState(0);
+  useEffect(() => {
+    const unsubscribe = xpMotionValue.on('change', (latest) => {
+      setDisplayXP(Math.round(latest));
+    });
+    return unsubscribe;
+  }, [xpMotionValue]);
+
+  // Animate gems with spring physics (if progression exists)
+  useEffect(() => {
+    if (result.progression) {
+      const controls = animate(gemsMotionValue, result.progression.gemsEarned, {
+        type: 'spring',
+        stiffness: 100,
+        damping: 20,
+        mass: 0.5,
+        duration: 1.5,
+      });
+
+      return () => controls.stop();
+    }
+  }, [result.progression, gemsMotionValue]);
+
+  // Subscribe to gems motion value for display
+  const [displayGems, setDisplayGems] = useState(0);
+  useEffect(() => {
+    const unsubscribe = gemsMotionValue.on('change', (latest) => {
+      setDisplayGems(Math.round(latest));
+    });
+    return unsubscribe;
+  }, [gemsMotionValue]);
 
   const toggleQuestion = (index: number) => {
     const newExpanded = new Set(expandedQuestions);
@@ -114,6 +166,29 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
                 className="mt-3 text-2xl font-bold text-yellow-400"
               >
                 ⭐ Perfect Game! ⭐
+              </motion.div>
+            )}
+
+            {/* XP and gems display (only for authenticated users) */}
+            {result.progression && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.3 }}
+                className="flex items-center justify-center gap-8 mt-4"
+              >
+                <div className="flex items-center gap-2">
+                  <XpIcon className={`w-6 h-6 ${isPerfectGame ? 'text-yellow-400' : 'text-cyan-400'}`} />
+                  <span className={`text-2xl font-bold ${isPerfectGame ? 'text-yellow-400' : 'text-cyan-400'}`}>
+                    +{displayXP}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <GemIcon className={`w-6 h-6 ${isPerfectGame ? 'text-yellow-400' : 'text-purple-400'}`} />
+                  <span className={`text-2xl font-bold ${isPerfectGame ? 'text-yellow-400' : 'text-purple-400'}`}>
+                    +{displayGems}
+                  </span>
+                </div>
               </motion.div>
             )}
           </motion.div>
