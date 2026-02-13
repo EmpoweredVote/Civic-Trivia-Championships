@@ -14,6 +14,7 @@ export interface User {
   totalCorrect: number;
   totalQuestions: number;
   avatarUrl: string | null;
+  timerMultiplier: number;
 }
 
 export interface UserProfileStats {
@@ -24,6 +25,7 @@ export interface UserProfileStats {
   totalCorrect: number;
   totalQuestions: number;
   avatarUrl: string | null;
+  timerMultiplier: number;
 }
 
 export interface CreateUserData {
@@ -43,7 +45,7 @@ export const User = {
               total_xp as "totalXp", total_gems as "totalGems",
               games_played as "gamesPlayed", best_score as "bestScore",
               total_correct as "totalCorrect", total_questions as "totalQuestions",
-              avatar_url as "avatarUrl"
+              avatar_url as "avatarUrl", timer_multiplier as "timerMultiplier"
        FROM users
        WHERE email = $1`,
       [email]
@@ -61,7 +63,7 @@ export const User = {
               total_xp as "totalXp", total_gems as "totalGems",
               games_played as "gamesPlayed", best_score as "bestScore",
               total_correct as "totalCorrect", total_questions as "totalQuestions",
-              avatar_url as "avatarUrl"
+              avatar_url as "avatarUrl", timer_multiplier as "timerMultiplier"
        FROM users
        WHERE id = $1`,
       [id]
@@ -95,7 +97,7 @@ export const User = {
       `SELECT total_xp as "totalXp", total_gems as "totalGems",
               games_played as "gamesPlayed", best_score as "bestScore",
               total_correct as "totalCorrect", total_questions as "totalQuestions",
-              avatar_url as "avatarUrl"
+              avatar_url as "avatarUrl", timer_multiplier as "timerMultiplier"
        FROM users
        WHERE id = $1`,
       [id]
@@ -146,6 +148,21 @@ export const User = {
     await pool.query(
       `UPDATE users SET avatar_url = $1 WHERE id = $2`,
       [avatarUrl, id]
+    );
+  },
+
+  /**
+   * Update user timer multiplier setting
+   */
+  async updateTimerMultiplier(id: number, multiplier: number): Promise<void> {
+    const validMultipliers = [1.0, 1.5, 2.0];
+    if (!validMultipliers.includes(multiplier)) {
+      throw new Error('Invalid timer multiplier. Must be 1.0, 1.5, or 2.0');
+    }
+
+    await pool.query(
+      `UPDATE users SET timer_multiplier = $1 WHERE id = $2`,
+      [multiplier, id]
     );
   }
 };

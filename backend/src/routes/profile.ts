@@ -89,10 +89,38 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       avatarUrl: stats.avatarUrl,
       name: user.name,
       email: user.email,
+      timerMultiplier: stats.timerMultiplier,
     });
   } catch (error) {
     console.error('Error fetching profile:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+/**
+ * PATCH /settings - Update user settings (timer multiplier, etc.)
+ */
+router.patch('/settings', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { timerMultiplier } = req.body;
+
+    // Validate timerMultiplier
+    const validMultipliers = [1.0, 1.5, 2.0];
+    if (!timerMultiplier || !validMultipliers.includes(timerMultiplier)) {
+      res.status(400).json({
+        error: 'Invalid timer multiplier. Must be 1.0, 1.5, or 2.0'
+      });
+      return;
+    }
+
+    // Update setting
+    await User.updateTimerMultiplier(userId, timerMultiplier);
+
+    res.json({ timerMultiplier });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 
