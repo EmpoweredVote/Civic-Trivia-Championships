@@ -42,11 +42,12 @@ export interface ServerAnswer {
 // Game session stored in memory
 export interface GameSession {
   sessionId: string;
-  userId: string;
+  userId: string | number;
   questions: Question[];
   answers: ServerAnswer[];
   createdAt: Date;
   lastActivityTime: Date;
+  progressionAwarded: boolean; // Prevents double-awarding progression
 }
 
 // Results returned to client
@@ -90,11 +91,11 @@ export class SessionManager {
 
   /**
    * Create a new game session
-   * @param userId - User identifier (or "anonymous")
+   * @param userId - User identifier (number for authenticated, 'anonymous' for unauthenticated)
    * @param questions - Array of questions for this game
    * @returns Session ID
    */
-  createSession(userId: string, questions: Question[]): string {
+  createSession(userId: string | number, questions: Question[]): string {
     const sessionId = randomUUID();
     const now = new Date();
 
@@ -104,7 +105,8 @@ export class SessionManager {
       questions,
       answers: [],
       createdAt: now,
-      lastActivityTime: now
+      lastActivityTime: now,
+      progressionAwarded: false
     };
 
     this.sessions.set(sessionId, session);

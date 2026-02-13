@@ -3,6 +3,8 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { sessionManager, Question } from '../services/sessionService.js';
+import { optionalAuth } from '../middleware/auth.js';
+import { updateUserProgression } from '../services/progressionService.js';
 
 const router = Router();
 
@@ -49,7 +51,7 @@ router.get('/questions', (_req: Request, res: Response) => {
 });
 
 // POST /session - Create a new game session
-router.post('/session', (req: Request, res: Response) => {
+router.post('/session', optionalAuth, (req: Request, res: Response) => {
   try {
     const { questionIds } = req.body;
 
@@ -70,8 +72,8 @@ router.post('/session', (req: Request, res: Response) => {
       selectedQuestions = shuffled.slice(0, 10);
     }
 
-    // Create session with userId (use "anonymous" for now - auth is optional per Phase 1)
-    const userId = 'anonymous'; // TODO: Get from auth middleware when auth is enforced
+    // Get userId from auth middleware (authenticated) or use 'anonymous'
+    const userId = req.user?.userId ?? 'anonymous';
     const sessionId = sessionManager.createSession(userId, selectedQuestions);
 
     // Return session with questions stripped of correctAnswer
@@ -143,7 +145,7 @@ router.post('/answer', (req: Request, res: Response) => {
 });
 
 // GET /results/:sessionId - Get final game results
-router.get('/results/:sessionId', (req: Request, res: Response) => {
+router.get('/results/:sessionId', async (req: Request, res: Response) => {
   try {
     const { sessionId } = req.params;
 
@@ -156,7 +158,34 @@ router.get('/results/:sessionId', (req: Request, res: Response) => {
     // Get aggregated results
     const results = sessionManager.getResults(sessionId);
 
-    res.status(200).json(results);
+    // Get session to check for authenticated user
+    const session = sessionManager.getSession(sessionId);
+    if (!session) {
+      return res.status(404).json({
+        error: 'Session not found'
+      });
+    }
+
+    // Calculate and award progression for authenticated users (only once)
+    let progression: { xpEarned: number; gemsEarned: number } | null = null;
+
+    if (typeof session.userId === 'number' && !session.progressionAwarded) {
+      // Authenticated user and progression not yet awarded
+      progression = await updateUserProgression(
+        session.userId,
+        results.totalScore,
+        results.totalCorrect,
+        results.totalQuestions
+      );
+
+      // Mark progression as awarded to prevent double-awarding
+      session.progressionAwarded = true;
+    }
+
+    res.status(200).json({
+      ...results,
+      progression
+    });
   } catch (error) {
     console.error('Error fetching results:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch results';
