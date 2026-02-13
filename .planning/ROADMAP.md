@@ -2,42 +2,120 @@
 
 ## Overview
 
-This roadmap delivers a polished, educational trivia game in 7 phases. We build foundation first (project setup + auth), then implement the core game loop with scoring and learning features, add progression mechanics, enable wager betting on final questions, and finish with polish (accessibility, performance, animations). Each phase delivers a complete, verifiable capability that builds toward the solo MVP experience where players learn civic concepts through game-show-style trivia.
+This roadmap delivers a polished, educational trivia game across two milestones. v1.0 (Phases 1-7) built the solo MVP with authentication, game flow, scoring, learning content, progression, wager mechanics, and accessibility. v1.1 (Phases 8-12) hardens for production readiness by addressing tech debt: dev tooling fixes, Redis session migration, game UX improvements, plausibility enhancement, and strategic learning content expansion.
 
-## Phases
+## Current Milestone: v1.1 Tech Debt Hardening
+
+**Phases 8-12** address critical gaps from v1.0 audit: Redis session storage (prevent data loss on restart), enhanced plausibility detection, learning content expansion (15% to 25-30%), game UX refinements, and dev tooling fixes.
+
+- [ ] **Phase 8: Dev Tooling & Documentation** - Fix content generation script, complete missing docs
+- [ ] **Phase 9: Redis Session Migration** - Persistent session storage with graceful degradation
+- [ ] **Phase 10: Game UX Improvements** - Visual positioning and interaction refinements
+- [ ] **Phase 11: Plausibility Enhancement** - Difficulty-adjusted anti-cheat with point penalties
+- [ ] **Phase 12: Learning Content Expansion** - Strategic deep-dive content for 25-30% coverage
+
+## Phase Details (v1.1)
 
 **Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+- Integer phases (8, 9, 10): Planned milestone work
+- Decimal phases (8.1, 8.2): Urgent insertions (marked with INSERTED)
 
-Decimal phases appear between their surrounding integers in numeric order.
+Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
 
-- [x] **Phase 1: Foundation & Auth** - Project setup and authentication system
-- [x] **Phase 2: Game Core** - Basic game flow with questions, timer, and answer reveal
-- [x] **Phase 3: Scoring System** - Server-side score calculation and validation
-- [x] **Phase 4: Learning & Content** - Educational explanations, modals, and content management
-- [x] **Phase 5: Progression & Profile** - XP, gems, badges, and user profile
-- [x] **Phase 6: Wager Mechanics** - Final question betting system
-- [x] **Phase 7: Polish & Performance** - Accessibility, animations, optimization
+### Phase 8: Dev Tooling & Documentation
+**Goal**: Content generation tooling works and documentation is complete
+**Depends on**: Nothing (v1.1 starting point)
+**Requirements**: LCONT-01, DOCS-01
+**Success Criteria** (what must be TRUE):
+  1. generateLearningContent.ts script runs without TypeScript errors
+  2. Content generation script can produce new learning content when invoked
+  3. Phase 3 VERIFICATION.md exists with test results and acceptance criteria
+  4. All v1.0 phases have complete documentation (PLANs, SUMMARYs, VERIFICATIONs)
+**Plans**: TBD
 
-## Phase Details
+### Phase 9: Redis Session Migration
+**Goal**: Game sessions persist across server restarts and support multi-instance deployment
+**Depends on**: Phase 8
+**Requirements**: REDIS-01, REDIS-02, REDIS-03
+**Success Criteria** (what must be TRUE):
+  1. Active game sessions survive server restart without data loss
+  2. Sessions stored in Redis with automatic TTL expiry (1-hour)
+  3. App gracefully degrades to in-memory storage if Redis unavailable
+  4. Session storage performance remains sub-5ms (Redis local latency)
+  5. Multiple backend instances can share session state (multi-instance ready)
+**Plans**: TBD
+
+### Phase 10: Game UX Improvements
+**Goal**: Game interface feels more polished with better visual hierarchy and streamlined interactions
+**Depends on**: Phase 9
+**Requirements**: GUX-01, GUX-02, GUX-03
+**Success Criteria** (what must be TRUE):
+  1. Question card positioned at 1/3 from top of screen (not vertically centered)
+  2. Answer options positioned at 2/3 from top of screen (below question)
+  3. User can select answer with single click (no lock-in confirmation step)
+  4. Visual hierarchy guides eye flow: question -> options -> timer
+  5. Answer selection feels more responsive and game-show-like
+**Plans**: TBD
+
+### Phase 11: Plausibility Enhancement
+**Goal**: Plausibility detection is more accurate and actively penalizes suspicious behavior
+**Depends on**: Phase 10
+**Requirements**: PLAUS-01, PLAUS-02, PLAUS-03
+**Success Criteria** (what must be TRUE):
+  1. Timing thresholds adjust based on question difficulty (easy allows <1s, medium <0.75s, hard <0.5s)
+  2. Flagged answers receive 30% point reduction (not just passive logging)
+  3. Users with timer multiplier settings get adjusted thresholds (no false positives)
+  4. Legitimate fast correct answers are not penalized
+  5. Pattern-based detection requires 3+ suspicious answers before penalties apply
+**Plans**: TBD
+
+### Phase 12: Learning Content Expansion
+**Goal**: Learning content coverage increases from 15% to 25-30% with strategic deep-dives
+**Depends on**: Phase 11
+**Requirements**: LCONT-02
+**Success Criteria** (what must be TRUE):
+  1. Learning content coverage reaches 25-30% of question bank (~30-36 out of 120 questions)
+  2. Content prioritizes frequently missed questions and high-interest topics
+  3. All generated content cross-referenced with authoritative sources
+  4. Deep-dive content maintains quality standards (2-3 paragraphs, no hallucinated facts)
+  5. Content generation follows batch review process (10-20 at a time)
+**Plans**: TBD
+
+## Progress (v1.1)
+
+**Execution Order:**
+Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 8. Dev Tooling & Documentation | 0/0 | Not Started | — |
+| 9. Redis Session Migration | 0/0 | Not Started | — |
+| 10. Game UX Improvements | 0/0 | Not Started | — |
+| 11. Plausibility Enhancement | 0/0 | Not Started | — |
+| 12. Learning Content Expansion | 0/0 | Not Started | — |
+
+## Requirement Coverage (v1.1)
+
+All v1.1 requirements mapped: 12/12 (100%)
+
+**By Phase:**
+- Phase 8: 2 requirements (LCONT-01, DOCS-01)
+- Phase 9: 3 requirements (REDIS-01, REDIS-02, REDIS-03)
+- Phase 10: 3 requirements (GUX-01, GUX-02, GUX-03)
+- Phase 11: 3 requirements (PLAUS-01, PLAUS-02, PLAUS-03)
+- Phase 12: 1 requirement (LCONT-02)
+
+---
+
+## v1.0 History (Phases 1-7)
+
+Reference for completed phases from initial MVP release.
 
 ### Phase 1: Foundation & Auth
 **Goal**: Users can create accounts, log in, and maintain authenticated sessions across browser refreshes
-**Depends on**: Nothing (first phase)
+**Status**: Complete (2026-02-04)
 **Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, PERF-01, PERF-02, PERF-03, PERF-05
-**Success Criteria** (what must be TRUE):
-  1. User can sign up with email and password
-  2. User can log in with email and password
-  3. User can log out from any screen
-  4. User session persists across browser refresh
-  5. User receives clear error messages for auth failures
-  6. Frontend loads in under 1.5 seconds (FCP)
-  7. App is interactive in under 3 seconds (TTI)
-  8. App works on mobile and tablet screens
 **Plans**: 4 plans in 3 waves
-
-Plans:
 - [x] 01-01-PLAN.md — Project foundation (Vite React + Express TypeScript setup)
 - [x] 01-02-PLAN.md — Backend auth infrastructure (PostgreSQL, Redis, JWT endpoints)
 - [x] 01-03-PLAN.md — Frontend auth (Zustand store, API service, Login/Signup pages)
@@ -45,20 +123,9 @@ Plans:
 
 ### Phase 2: Game Core
 **Goal**: Users can play a full 10-question trivia game with visual timer, answer selection, and explanations
-**Depends on**: Phase 1
+**Status**: Complete (2026-02-10)
 **Requirements**: GAME-01, GAME-02, GAME-03, GAME-04, GAME-05, GAME-06, GAME-07, GAME-08, GAME-09, GAME-14, CONT-01, CONT-02, CONT-03, CONT-04, CONT-05
-**Success Criteria** (what must be TRUE):
-  1. User can start a solo quick play session
-  2. Game presents 10 randomized multiple-choice questions with 4 options each
-  3. Visual countdown timer shows time remaining with color transitions (teal to yellow to orange to red)
-  4. User can select one answer per question with lock-in confirmation
-  5. Answer reveal shows correct/incorrect using "Not quite" language (never "Wrong")
-  6. Answer reveal includes 1-3 sentence explanation
-  7. Questions progress automatically after reveal
-  8. Results screen shows final score and accuracy breakdown
 **Plans**: 4 plans in 4 waves
-
-Plans:
 - [x] 02-01-PLAN.md — Game types, question bank (100+ questions), API endpoint, dependencies
 - [x] 02-02-PLAN.md — Game state machine (reducer, useGameState hook, keyboard shortcuts)
 - [x] 02-03-PLAN.md — Game screen UI (timer, answer grid, animations, Millionaire aesthetic)
@@ -66,53 +133,27 @@ Plans:
 
 ### Phase 3: Scoring System
 **Goal**: Scores are calculated server-side with base points and speed bonuses, displayed throughout game
-**Depends on**: Phase 2
+**Status**: Complete (2026-02-10)
 **Requirements**: SCORE-01, SCORE-02, SCORE-04, SCORE-05
-**Success Criteria** (what must be TRUE):
-  1. Correct answers award base points (+100)
-  2. Speed bonus calculated from time remaining (up to +50)
-  3. Running score displayed throughout game
-  4. Score calculated server-side to prevent manipulation
-  5. Results screen shows accurate final score breakdown
 **Plans**: 3 plans in 3 waves
-
-Plans:
 - [x] 03-01-PLAN.md — Backend session service, score calculation, and API endpoints
 - [x] 03-02-PLAN.md — Frontend types, reducer, hook, and API service wiring for server scoring
 - [x] 03-03-PLAN.md — Score display UI, animations, popups, and enhanced results screen
 
 ### Phase 4: Learning & Content
 **Goal**: Users can access deeper educational content without leaving the game flow
-**Depends on**: Phase 3
+**Status**: Complete (2026-02-12)
 **Requirements**: LEARN-01, LEARN-02, LEARN-03, LEARN-04, LEARN-05, CONT-06
-**Success Criteria** (what must be TRUE):
-  1. Answer reveal includes "Learn more" link for deeper content
-  2. "Learn more" opens modal without leaving game
-  3. Modal shows expanded explanation (2-3 paragraphs)
-  4. User can close modal and continue game
-  5. Results screen lists topics covered during game
-  6. At least 10 topics have "Learn more" content available
 **Plans**: 3 plans in 3 waves
-
-Plans:
 - [x] 04-01-PLAN.md — Data model, types, topic icons, learning content for 15+ questions
 - [x] 04-02-PLAN.md — LearnMore UI components (button, tooltip, modal) and GameScreen integration
 - [x] 04-03-PLAN.md — Results screen topics, Learn More from results, end-to-end verification
 
 ### Phase 5: Progression & Profile
 **Goal**: Users earn XP and gems per game, see progression on profile with stats
-**Depends on**: Phase 4
+**Status**: Complete (2026-02-12)
 **Requirements**: PROG-01, PROG-02, PROG-03, PROG-04, PROF-01, PROF-02, PROF-03, PROF-04, PROF-05
-**Success Criteria** (what must be TRUE):
-  1. XP earned per game completion (50 base + 1 per correct)
-  2. Gems earned per game completion (10 base + 1 per correct)
-  3. Results screen shows rewards earned
-  4. User can view their profile with total XP and gems
-  5. Profile shows games played, best score, and overall accuracy percentage
-  6. Progression updates persist to user profile
 **Plans**: 4 plans in 3 waves
-
-Plans:
 - [x] 05-01-PLAN.md — DB schema, progression service, game route wiring with optional auth
 - [x] 05-02-PLAN.md — Results screen XP/gems display with count-up animations
 - [x] 05-03-PLAN.md — Profile API endpoints and avatar upload with security validation
@@ -120,73 +161,28 @@ Plans:
 
 ### Phase 6: Wager Mechanics
 **Goal**: Users can bet up to half their current score on the final question
-**Depends on**: Phase 5
+**Status**: Complete (2026-02-13)
 **Requirements**: GAME-10, GAME-11, GAME-12, GAME-13, SCORE-03
-**Success Criteria** (what must be TRUE):
-  1. Final question includes wager round option
-  2. User can wager up to half current score
-  3. Wager UI shows potential outcomes before locking in
-  4. User can skip wager and play for standard points
-  5. Wager points added/subtracted based on final answer
-  6. Results screen reflects wager outcome in final score
 **Plans**: 3 plans in 2 waves
-
-Plans:
 - [x] 06-01-PLAN.md — Backend wager validation/scoring, types, state machine, hook, API service
 - [x] 06-02-PLAN.md — FinalQuestionAnnouncement, WagerScreen components, GameScreen integration
 - [x] 06-03-PLAN.md — Results screen wager breakdown section and Q10 answer review
 
 ### Phase 7: Polish & Performance
 **Goal**: App meets WCAG AA accessibility standards, runs smoothly at 60fps, and has game-show aesthetic
-**Depends on**: Phase 6
+**Status**: Complete (2026-02-13)
 **Requirements**: A11Y-01, A11Y-02, A11Y-03, A11Y-04, A11Y-05, A11Y-06, PERF-04
-**Success Criteria** (what must be TRUE):
-  1. All interactive elements are keyboard navigable
-  2. Screen reader announces question, options, timer status, and results
-  3. Color and icons used together (never color alone for meaning)
-  4. All text meets minimum 4.5:1 contrast ratio (WCAG AA)
-  5. Touch targets are minimum 48px
-  6. Timer extension option available (hidden setting)
-  7. Animations run at 60fps on mid-range devices
-  8. Game has polished game-show aesthetic with subtle celebrations
 **Plans**: 5 plans in 3 waves
-
-Plans:
 - [x] 07-01-PLAN.md — A11Y foundation: deps, ARIA live regions, skip-to-content, focus rings, focus-trap modals
 - [x] 07-02-PLAN.md — Timer extension setting: DB column, API endpoint, profile UI, game integration
 - [x] 07-03-PLAN.md — Keyboard navigation: arrow/number keys, Escape pause overlay, screen reader announcements
 - [x] 07-04-PLAN.md — Color & contrast: icon indicators, timer enhancements, WCAG AA audit, touch targets
 - [x] 07-05-PLAN.md — Celebrations & performance: confetti, streak tracking, perfect game effects, Web Vitals
 
-## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Foundation & Auth | 4/4 | Complete | 2026-02-04 |
-| 2. Game Core | 4/4 | Complete | 2026-02-10 |
-| 3. Scoring System | 3/3 | Complete | 2026-02-10 |
-| 4. Learning & Content | 3/3 | Complete | 2026-02-12 |
-| 5. Progression & Profile | 4/4 | Complete | 2026-02-12 |
-| 6. Wager Mechanics | 3/3 | Complete | 2026-02-13 |
-| 7. Polish & Performance | 5/5 | Complete | 2026-02-13 |
-
-## Requirement Coverage
-
-All v1 requirements mapped: 50/50 (100%)
-
-**By Phase:**
-- Phase 1: 9 requirements (AUTH, PERF foundation)
-- Phase 2: 15 requirements (GAME core, CONT)
-- Phase 3: 4 requirements (SCORE)
-- Phase 4: 6 requirements (LEARN, CONT)
-- Phase 5: 9 requirements (PROG, PROF)
-- Phase 6: 5 requirements (GAME wager, SCORE wager)
-- Phase 7: 7 requirements (A11Y, PERF polish)
+**v1.0 Coverage:** 50/50 requirements (100%)
 
 ---
-*Created: 2026-02-03*
-*Milestone: v1.0 (Solo MVP)*
-*Phases: 7*
+*Created: 2026-02-03 (v1.0)*
+*Updated: 2026-02-13 (v1.1 roadmap)*
+*Current Milestone: v1.1 Tech Debt Hardening*
+*Phases: 12 (7 complete, 5 planned)*

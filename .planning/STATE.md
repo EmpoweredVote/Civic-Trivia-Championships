@@ -9,12 +9,16 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-12 — Milestone v1.1 started
+Phase: Phase 8 (Dev Tooling & Documentation)
+Plan: Not started
+Status: v1.1 roadmap created, ready for phase planning
+Last activity: 2026-02-13 — v1.1 roadmap created
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 0% (0/5)
+
+**Milestone progress:**
+- v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
+- v1.1 (Phases 8-12): 0/12 requirements delivered
 
 ## Performance Metrics
 
@@ -36,8 +40,8 @@ Progress: [░░░░░░░░░░] 0%
 | 07-polish-performance | 5/5 | 22 min | 4.4 min |
 
 **Recent Trend:**
-- Last 5 plans: 07-02 (4 min), 07-03 (6 min), 07-04 (4 min), 07-05 (5 min)
-- Trend: Solid 4-6 min velocity, consistent throughout phase 7
+- Last 5 plans: 07-01 (3 min), 07-02 (4 min), 07-03 (6 min), 07-04 (4 min), 07-05 (5 min)
+- Trend: Solid 3-6 min velocity, consistent throughout v1.0
 
 *Updated after each plan completion*
 
@@ -150,7 +154,33 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+Phase 8 (Dev Tooling & Documentation):
+- Install @anthropic-ai/sdk as devDependency
+- Verify generateLearningContent.ts runs without errors
+- Generate Phase 3 VERIFICATION.md
+
+Phase 9 (Redis Session Migration):
+- Make SessionManager methods async
+- Replace in-memory Map with Redis JSON serialization
+- Add graceful fallback to Map if Redis unavailable
+- Test session persistence across server restart
+
+Phase 10 (Game UX Improvements):
+- Reposition question card to 1/3 from top
+- Reposition answer options to 2/3 from top
+- Remove lock-in confirmation step (single-click answer selection)
+
+Phase 11 (Plausibility Enhancement):
+- Implement difficulty-adjusted timing thresholds
+- Add 30% point reduction for flagged answers
+- Adjust thresholds for timer_multiplier users
+- Add pattern counting (3+ suspicious before penalties)
+
+Phase 12 (Learning Content Expansion):
+- Generate 12-18 additional deep-dive learning content pieces
+- Prioritize frequently missed questions and high-interest topics
+- Cross-reference all content with authoritative sources
+- Follow batch review process (10-20 at a time)
 
 ### Blockers/Concerns
 
@@ -158,12 +188,12 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-12
-Stopped at: Starting v1.1 milestone — research phase
+Last session: 2026-02-13
+Stopped at: v1.1 roadmap created, ready to plan Phase 8
 Resume file: None
 
 ---
-*v1.1 Tech Debt Hardening — defining requirements*
+*v1.1 Tech Debt Hardening — roadmap created*
 
 Config:
 {

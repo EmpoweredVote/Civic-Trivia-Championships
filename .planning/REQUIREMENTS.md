@@ -166,6 +166,8 @@ Explicitly excluded. Documented to prevent scope creep.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
+### v1.0 Requirements (Complete)
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | AUTH-01 | Phase 1 | Complete |
@@ -224,6 +226,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERF-04 | Phase 7 | Complete |
 | PERF-05 | Phase 1 | Complete |
 
+### v1.1 Requirements (Planned)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| LCONT-01 | Phase 8 | Pending |
+| DOCS-01 | Phase 8 | Pending |
+| REDIS-01 | Phase 9 | Pending |
+| REDIS-02 | Phase 9 | Pending |
+| REDIS-03 | Phase 9 | Pending |
+| GUX-01 | Phase 10 | Pending |
+| GUX-02 | Phase 10 | Pending |
+| GUX-03 | Phase 10 | Pending |
+| PLAUS-01 | Phase 11 | Pending |
+| PLAUS-02 | Phase 11 | Pending |
+| PLAUS-03 | Phase 11 | Pending |
+| LCONT-02 | Phase 12 | Pending |
+
 **Coverage (v1.0):**
 - v1.0 requirements: 50 total
 - Mapped to phases: 50
@@ -240,9 +259,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 **Coverage (v1.1):**
 - v1.1 requirements: 12 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 12
+- Mapped to phases: 12
+- Unmapped: 0
+
+**By Phase (v1.1):**
+- Phase 8 (Dev Tooling & Documentation): 2 requirements
+- Phase 9 (Redis Session Migration): 3 requirements
+- Phase 10 (Game UX Improvements): 3 requirements
+- Phase 11 (Plausibility Enhancement): 3 requirements
+- Phase 12 (Learning Content Expansion): 1 requirement
 
 ---
 *Requirements defined: 2026-02-03*
-*Last updated: 2026-02-12 after v1.1 requirements definition*
+*Last updated: 2026-02-13 after v1.1 roadmap creation*
