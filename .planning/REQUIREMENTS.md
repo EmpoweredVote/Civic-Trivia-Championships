@@ -26,10 +26,10 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 - [x] **GAME-07**: Answer reveal shows correct/incorrect with explanation (1-3 sentences)
 - [x] **GAME-08**: Incorrect answers use "Not quite" language (never "Wrong")
 - [x] **GAME-09**: Questions progress automatically after reveal
-- [ ] **GAME-10**: Final question includes wager round option
-- [ ] **GAME-11**: Wager allows betting up to half current score
-- [ ] **GAME-12**: Wager shows potential outcomes before locking in
-- [ ] **GAME-13**: User can skip wager and play for standard points
+- [x] **GAME-10**: Final question includes wager round option
+- [x] **GAME-11**: Wager allows betting up to half current score
+- [x] **GAME-12**: Wager shows potential outcomes before locking in
+- [x] **GAME-13**: User can skip wager and play for standard points
 - [x] **GAME-14**: Results screen shows final score, accuracy, breakdown
 
 ### Learning Flow
@@ -44,7 +44,7 @@ Requirements for initial release (Solo MVP). Each maps to roadmap phases.
 
 - [x] **SCORE-01**: Base points awarded for correct answers (+100)
 - [x] **SCORE-02**: Speed bonus calculated from time remaining (up to +50)
-- [ ] **SCORE-03**: Wager points added/subtracted based on final answer
+- [x] **SCORE-03**: Wager points added/subtracted based on final answer
 - [x] **SCORE-04**: Running score displayed throughout game
 - [x] **SCORE-05**: Score calculated server-side (prevents manipulation)
 
@@ -151,10 +151,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GAME-07 | Phase 2 | Complete |
 | GAME-08 | Phase 2 | Complete |
 | GAME-09 | Phase 2 | Complete |
-| GAME-10 | Phase 6 | Pending |
-| GAME-11 | Phase 6 | Pending |
-| GAME-12 | Phase 6 | Pending |
-| GAME-13 | Phase 6 | Pending |
+| GAME-10 | Phase 6 | Complete |
+| GAME-11 | Phase 6 | Complete |
+| GAME-12 | Phase 6 | Complete |
+| GAME-13 | Phase 6 | Complete |
 | GAME-14 | Phase 2 | Complete |
 | LEARN-01 | Phase 4 | Complete |
 | LEARN-02 | Phase 4 | Complete |
@@ -163,7 +163,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEARN-05 | Phase 4 | Complete |
 | SCORE-01 | Phase 3 | Complete |
 | SCORE-02 | Phase 3 | Complete |
-| SCORE-03 | Phase 6 | Pending |
+| SCORE-03 | Phase 6 | Complete |
 | SCORE-04 | Phase 3 | Complete |
 | SCORE-05 | Phase 3 | Complete |
 | PROG-01 | Phase 5 | Complete |
