@@ -192,6 +192,52 @@ export function GameScreen({
     return () => window.removeEventListener('keydown', handleEscapeKey);
   }, [state.phase, state.isPaused, pauseGame]);
 
+  // Timer threshold announcements for screen readers
+  useEffect(() => {
+    if (state.phase !== 'answering' && state.phase !== 'selected') return;
+
+    if (currentTimeRemaining === 10) {
+      announce.polite('10 seconds remaining');
+    } else if (currentTimeRemaining === 5) {
+      announce.polite('5 seconds remaining');
+    }
+  }, [currentTimeRemaining, state.phase]);
+
+  // Question number announcements for screen readers
+  useEffect(() => {
+    if (state.phase === 'answering' && showOptions) {
+      if (state.currentQuestionIndex === 0) {
+        announce.polite('Question 1 of 10');
+      } else if (isFinalQuestion) {
+        announce.assertive('Final Question');
+      }
+    }
+  }, [state.phase, state.currentQuestionIndex, isFinalQuestion, showOptions]);
+
+  // Answer reveal announcements for screen readers
+  useEffect(() => {
+    if (state.phase === 'revealing' && state.answers.length > 0) {
+      const latestAnswer = state.answers[state.answers.length - 1];
+      const question = state.questions[state.currentQuestionIndex];
+      if (!question) return;
+
+      const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
+      const correctLetter = OPTION_LETTERS[latestAnswer.correctAnswer];
+      const correctText = question.options[latestAnswer.correctAnswer];
+
+      let message = '';
+      if (latestAnswer.correct) {
+        message = `Correct! The answer is ${correctLetter}, ${correctText}. You earned ${latestAnswer.totalPoints} points.`;
+      } else if (latestAnswer.selectedOption !== null) {
+        message = `Not quite. The correct answer was ${correctLetter}, ${correctText}.`;
+      } else {
+        message = `Time's up. The correct answer was ${correctLetter}, ${correctText}.`;
+      }
+
+      announce.polite(message);
+    }
+  }, [state.phase, state.answers.length]);
+
   // Keyboard shortcut for Learn More (only during reveal when content exists)
   const canOpenLearnMore = state.phase === 'revealing' && !!learningContent && !isLearnMoreOpen;
   useKeyPress('l', handleOpenLearnMore, canOpenLearnMore);
@@ -199,6 +245,7 @@ export function GameScreen({
   // Handle timeout with flash message
   const onTimeout = () => {
     setShowTimeoutFlash(true);
+    announce.assertive("Time's up");
     setTimeout(() => {
       setShowTimeoutFlash(false);
       handleTimeout();

@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameState } from '../features/game/hooks/useGameState';
 import { GameScreen } from '../features/game/components/GameScreen';
 import { ResultsScreen } from '../features/game/components/ResultsScreen';
+import { announce } from '../utils/announce';
 
 export function Game() {
   const navigate = useNavigate();
@@ -37,6 +39,15 @@ export function Game() {
     quitGame();
     navigate('/dashboard');
   };
+
+  // Announce game completion for screen readers
+  useEffect(() => {
+    if (state.phase === 'complete' && gameResult) {
+      announce.polite(
+        `Game complete. Your score is ${gameResult.totalScore} points with ${gameResult.totalCorrect} out of ${gameResult.totalQuestions} correct.`
+      );
+    }
+  }, [state.phase, gameResult]);
 
   // Show results screen when game is complete
   if (state.phase === 'complete' && gameResult) {
