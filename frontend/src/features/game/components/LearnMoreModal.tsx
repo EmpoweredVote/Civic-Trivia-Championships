@@ -1,5 +1,6 @@
 import { Dialog, DialogPanel } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import FocusTrap from 'focus-trap-react';
 import { TOPIC_ICONS, TOPIC_LABELS } from './TopicIcon';
 import type { LearningContent } from '../../../types/game';
 
@@ -61,14 +62,22 @@ export function LearnMoreModal({
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             >
-              <DialogPanel className="relative bg-slate-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl"
-            >
-              {/* Close button */}
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
-                aria-label="Close"
+              <FocusTrap
+                focusTrapOptions={{
+                  initialFocus: false,
+                  escapeDeactivates: true,
+                  clickOutsideDeactivates: true,
+                  returnFocusOnDeactivate: true,
+                }}
               >
+                <DialogPanel className="relative bg-slate-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl"
+              >
+                {/* Close button */}
+                <button
+                  onClick={onClose}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+                  aria-label="Close modal"
+                >
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -119,7 +128,8 @@ export function LearnMoreModal({
                   </p>
                 </div>
               </div>
-              </DialogPanel>
+                </DialogPanel>
+              </FocusTrap>
             </motion.div>
           </div>
         </Dialog>
