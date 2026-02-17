@@ -5,7 +5,9 @@ const { Pool } = pg;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   // SSL configuration for production
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  // Set search path to civic_trivia schema
+  options: '-c search_path=civic_trivia'
 });
 
 // Test connection on startup
