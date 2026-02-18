@@ -32,3 +32,9 @@ pnpm-lock.yaml
 
 # Docker volumes
 redis-data
+
+# Accidental double-extension files
+*.js.js
+
+# Generated content artifacts
+backend/generated-content-*.json
