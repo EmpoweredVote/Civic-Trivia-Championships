@@ -34,7 +34,7 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
   5. Questions have an optional `expires_at` field available for future use
 **Plans**: 3 plans in 2 waves
 Plans:
-- [ ] 13-01-PLAN.md — Drizzle ORM setup, schema definitions, SQL migration, rollback script
+- [x] 13-01-PLAN.md — Drizzle ORM setup, schema definitions, SQL migration, rollback script
 - [ ] 13-02-PLAN.md — Research authoritative sources for 87 unsourced questions
 - [ ] 13-03-PLAN.md — Seed collections, topics, and migrate 120 questions into PostgreSQL
 
@@ -92,7 +92,7 @@ Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 13. Database Schema & Seed Migration | 0/3 | Planned | - |
+| 13. Database Schema & Seed Migration | 1/3 | In progress | - |
 | 14. Question Service & Route Integration | 0/TBD | Not started | - |
 | 15. Collection Picker UI | 0/TBD | Not started | - |
 | 16. Expiration System | 0/TBD | Not started | - |
