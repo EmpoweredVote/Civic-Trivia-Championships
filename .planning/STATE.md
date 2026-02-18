@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 Phase: Phase 12 (Learning Content Expansion)
 Plan: 2 of 2 (Complete)
 Status: Phase 12 complete — content tooling updated and batch generation executed
-Last activity: 2026-02-18 — Completed quick task 003: Anonymous default play
+Last activity: 2026-02-18 — Completed quick task 004: Fix answer button sizing and mobile viewport fit
 
 Progress: [████████████████████] v1.0: 100% (7/7) | v1.1: 100% (Phase 12 complete)
 
@@ -213,6 +213,8 @@ Recent decisions affecting current work:
 | Prioritized hard-difficulty questions | 12-02 | Targeted largest coverage gap (45 hard questions without content) in batch generation |
 | Anonymous play as default | quick-003 | Lower barrier to entry — visitors can play instantly without login wall |
 | Profile remains protected | quick-003 | Personal data (stats, avatar) requires authentication for security |
+| w-full on motion.div wrapper | quick-004 | Prevents flex shrink-to-content behavior, ensures equal-width buttons |
+| Mobile-first responsive spacing pattern | quick-004 | Tighter mobile spacing (gap-2, p-3, mb-3) with md: breakpoint for desktop (gap-4, p-4, mb-6) |
 
 ### Pending Todos
 
@@ -237,6 +239,7 @@ Deployment Follow-up:
 | 001 | Clean up test files (.js.js and generated JSON files) | 2026-02-18 | fc7c6f2 | [001-clean-up-test-files](./quick/001-clean-up-test-files/) |
 | 002 | Set up UptimeRobot monitoring to prevent Render sleep | 2026-02-18 | N/A (infra config) | [002-set-up-uptimerobot](./quick/002-set-up-uptimerobot/) |
 | 003 | Make platform immediately playable without login | 2026-02-18 | 79be3a8, 776724b | [003-anonymous-default-play](./quick/003-anonymous-default-play/) |
+| 004 | Fix answer button sizing and mobile viewport fit | 2026-02-18 | 007731a | [004-fix-answer-button-sizing-mobile](./quick/004-fix-answer-button-sizing-mobile/) |
 
 ### Blockers/Concerns
 
@@ -273,7 +276,15 @@ Achievements (quick-003):
 - ✅ Sign-in nudge below Quick Play encourages account creation without blocking gameplay
 - ✅ Backend already supports anonymous sessions (userId='anonymous') — no backend changes needed
 
-Stopped at: Completed quick-003-PLAN.md (Anonymous default play)
+Achievements (quick-004):
+- ✅ Fixed button width inconsistency: Added w-full to AnswerGrid motion.div wrapper
+- ✅ All 4 answer buttons now have equal width regardless of text length
+- ✅ Eliminated mobile scrolling: Applied responsive spacing pattern (py-4 md:py-8, gap-2 md:gap-4, p-3 md:p-4)
+- ✅ Mobile viewport (375x667): Timer + question + all 4 buttons visible without scrolling
+- ✅ Preserved desktop 2-column grid layout and all animations (hover glow, suspense pulse, reveal scale)
+- ✅ Maintained min-h-[48px] accessibility requirement
+
+Stopped at: Completed quick-004-PLAN.md (Fix answer button sizing and mobile viewport fit)
 Resume file: None — Quick tasks complete
 
 ---
