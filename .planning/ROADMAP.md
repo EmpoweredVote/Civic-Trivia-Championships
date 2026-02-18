@@ -47,7 +47,10 @@ Plans:
   2. Omitting `collectionId` defaults to the Federal Civics collection (backward compatible)
   3. Existing game flow (timer, scoring, wager, results, progression, plausibility) works identically with database-sourced questions
   4. The `readFileSync` JSON loading pattern is replaced by QuestionService database queries
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+Plans:
+- [ ] 14-01-PLAN.md — QuestionService module with difficulty-balanced selection, recent exclusion, and JSON fallback
+- [ ] 14-02-PLAN.md — Wire QuestionService into game routes, update frontend for collection metadata
 
 ### Phase 15: Collection Picker UI
 **Goal**: Players can browse and select a collection before starting a game
@@ -93,7 +96,7 @@ Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 13. Database Schema & Seed Migration | 3/3 | Complete | 2026-02-18 |
-| 14. Question Service & Route Integration | 0/TBD | Not started | - |
+| 14. Question Service & Route Integration | 0/2 | Not started | - |
 | 15. Collection Picker UI | 0/TBD | Not started | - |
 | 16. Expiration System | 0/TBD | Not started | - |
 | 17. Community Content Generation | 0/TBD | Not started | - |
@@ -268,6 +271,6 @@ Plans:
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-18 (Phase 13 complete)*
+*Updated: 2026-02-18 (Phase 14 planned)*
 *Current Milestone: v1.2 Community Collections*
 *Phases: 17 (13 complete, 0 in progress, 4 planned)*
