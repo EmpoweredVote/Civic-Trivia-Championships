@@ -5,20 +5,29 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Make civic learning fun through game show mechanics — play, not study
-**Current focus:** v1.1 Tech Debt Hardening
+**Current focus:** v1.1 Tech Debt Hardening - DEPLOYED ✅
 
 ## Current Position
 
 Phase: Phase 9 (Redis Session Migration)
-Plan: 2 of 3 (In progress)
-Status: Plan 09-02 complete - Core session migration to async storage
-Last activity: 2026-02-13 — Completed 09-02-PLAN.md (Async SessionManager migration)
+Plan: 3 of 3 (Complete)
+Status: ✅ DEPLOYED TO PRODUCTION
+Last activity: 2026-02-17 — Deployed frontend and backend to Render, fully operational
 
-Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 30% (1.7/5 phases)
+Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 50% (2.5/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): 4/12 requirements delivered (LCONT-01, DOCS-01, STOR-01, STOR-02)
+- v1.1 (Phases 8-12): 6/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03)
+
+**Deployment Status:**
+- ✅ Frontend LIVE: https://civic-trivia-frontend.onrender.com
+- ✅ Backend LIVE: https://civic-trivia-backend.onrender.com
+- ✅ Database: Supabase EV-Backend-Dev (civic_trivia schema)
+- ✅ Redis: Upstash (stirred-pika-7510)
+- ✅ GitHub: EmpoweredVote/Civic-Trivia-Championships
+- ✅ Full game flow tested and working
+- 📋 See DEPLOYMENT.md for complete infrastructure details
 
 ## Performance Metrics
 
@@ -45,6 +54,11 @@ Progress: [████████░░░░░░░░░░░░] v1.0: 1
 - Last 5 plans: 07-05 (5 min), 08-01 (2 min), 08-02 (2 min), 09-01 (3 min), 09-02 (4 min)
 - Trend: Strong 2-5 min velocity maintained
 
+**Deployment Session:**
+- Session duration: ~4 hours (2026-02-17)
+- Activities: GitHub org setup, Render deployment, Supabase configuration, troubleshooting
+- Outcome: Fully operational production deployment
+
 *Updated after each plan completion*
 
 ## Accumulated Context
@@ -54,8 +68,14 @@ Progress: [████████░░░░░░░░░░░░] v1.0: 1
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-| Decision | Plan | Rationale |
-|----------|------|-----------|
+| Decision | Context | Rationale |
+|----------|---------|-----------|
+| GitHub org: EmpoweredVote | Deployment | Centralized repo management for all volunteers |
+| Render for hosting | Deployment | Free tier, auto-deploy from GitHub, supports both backend/frontend |
+| Supabase civic_trivia schema | Deployment | Isolated schema avoids conflicts with other EV features in shared DB |
+| Upstash for Redis | Deployment | Free tier (10K commands/day), easy setup, reliable |
+| Frontend .env.production | Deployment | Direct API calls to backend URL (no proxy needed) |
+| Backend search_path option | Deployment | Forces PostgreSQL to use civic_trivia schema |
 | Monorepo with separate package.json | 01-01 | Simpler than npm workspaces for this project size |
 | tsx for backend dev | 01-01 | Faster than ts-node, good watch mode |
 | ESM modules throughout | 01-01 | Modern JavaScript standards |
@@ -170,11 +190,6 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-Phase 9 (Redis Session Migration) - Plan 09-03:
-- Test session persistence across server restarts
-- Verify graceful degradation when Redis goes down mid-operation
-- Document Redis deployment requirements
-
 Phase 10 (Game UX Improvements):
 - Reposition question card to 1/3 from top
 - Reposition answer options to 2/3 from top
@@ -192,18 +207,40 @@ Phase 12 (Learning Content Expansion):
 - Cross-reference all content with authoritative sources
 - Follow batch review process (10-20 at a time)
 
+Deployment Follow-up:
+- [ ] Invite volunteers to GitHub org
+- [ ] Share live URLs with team
+- [ ] Add to ev-prototypes.netlify.app (optional)
+- [ ] Set up UptimeRobot to prevent sleep (optional)
+- [ ] Clean up test files (.js.js files committed by accident)
+
 ### Blockers/Concerns
 
-None.
+None currently. Deployment successful and tested.
+
+**Free tier limitations to monitor:**
+- Render backend sleeps after 15 min inactivity (20-30s wake time)
+- Upstash 10K commands/day limit
+- Supabase 500MB database storage
 
 ## Session Continuity
 
-Last session: 2026-02-13 20:04:10 UTC
-Stopped at: Completed 09-02-PLAN.md (Async SessionManager migration)
-Resume file: None
+Last session: 2026-02-17
+Topic: Full production deployment to Render + Supabase
+Achievements:
+- ✅ GitHub organization setup (EmpoweredVote)
+- ✅ Repo transferred and renamed (Civic-Trivia-Championships)
+- ✅ Supabase schema created (civic_trivia)
+- ✅ Backend deployed to Render (Web Service)
+- ✅ Frontend deployed to Render (Static Site)
+- ✅ Upstash Redis configured
+- ✅ Full signup/login/play tested successfully
+- ✅ Deployment documentation created
+
+Resume file: See DEPLOYMENT.md for infrastructure details
 
 ---
-*v1.1 Tech Debt Hardening — roadmap created*
+*v1.1 Tech Debt Hardening — PRODUCTION DEPLOYED*
 
 Config:
 {
