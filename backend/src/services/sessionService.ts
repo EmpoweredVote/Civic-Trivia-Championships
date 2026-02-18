@@ -51,6 +51,7 @@ export interface GameSession {
   createdAt: Date;
   lastActivityTime: Date;
   progressionAwarded: boolean; // Prevents double-awarding progression
+  plausibilityFlags: number; // Count of suspicious answer patterns in this session
 }
 
 // Results returned to client
@@ -76,10 +77,9 @@ export interface GameSessionResult {
 // Constants
 const SESSION_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-const QUESTION_DURATION = 25; // seconds
+const QUESTION_DURATION = 20; // seconds (matches frontend GameScreen.tsx)
 const FINAL_QUESTION_DURATION = 50; // seconds (for Q10)
-const MIN_PLAUSIBLE_RESPONSE_TIME = 0.5; // seconds
-const MAX_PLAUSIBLE_TIME_REMAINING = 25; // seconds
+const MAX_PLAUSIBLE_TIME_REMAINING = 20; // seconds (matches QUESTION_DURATION)
 
 /**
  * SessionManager - Handles game session lifecycle
@@ -119,7 +119,8 @@ export class SessionManager {
       answers: [],
       createdAt: now,
       lastActivityTime: now,
-      progressionAwarded: false
+      progressionAwarded: false,
+      plausibilityFlags: 0
     };
 
     await this.storage.set(sessionId, session, 3600); // 1 hour TTL
@@ -209,13 +210,10 @@ export class SessionManager {
     const duration = isFinalQuestion ? FINAL_QUESTION_DURATION : QUESTION_DURATION;
     const responseTime = calculateResponseTime(duration, timeRemaining);
 
-    // Plausibility checks (use appropriate max time for final question)
-    const maxPlausibleTime = isFinalQuestion ? FINAL_QUESTION_DURATION : MAX_PLAUSIBLE_TIME_REMAINING;
+    // Plausibility checks - TODO: Will be rewritten in Task 2 with difficulty-adjusted thresholds
     let flagged = false;
-    if (responseTime < MIN_PLAUSIBLE_RESPONSE_TIME) {
-      console.warn(`⚠️  Suspicious answer: responseTime ${responseTime}s < ${MIN_PLAUSIBLE_RESPONSE_TIME}s (sessionId: ${sessionId}, questionId: ${questionId})`);
-      flagged = true;
-    }
+    // Temporary: Keep clock manipulation check only
+    const maxPlausibleTime = isFinalQuestion ? FINAL_QUESTION_DURATION : MAX_PLAUSIBLE_TIME_REMAINING;
     if (timeRemaining > maxPlausibleTime) {
       console.warn(`⚠️  Suspicious answer: timeRemaining ${timeRemaining}s > ${maxPlausibleTime}s (sessionId: ${sessionId}, questionId: ${questionId})`);
       flagged = true;
