@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { authService } from '../../services/authService';
@@ -53,8 +53,8 @@ export function Header() {
             <h1 className="text-xl font-bold text-teal-600">Civic Trivia</h1>
           </div>
 
-          {/* User info and hamburger menu */}
-          {isAuthenticated && user && (
+          {/* User info and hamburger menu / Sign in links */}
+          {isAuthenticated && user ? (
             <div className="flex items-center space-x-4">
               <span className="hidden sm:block text-sm text-gray-700">
                 {user.name || user.email}
@@ -96,6 +96,15 @@ export function Header() {
                   </div>
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-4">
+              <Link to="/login" className="text-sm font-medium text-teal-600 hover:text-teal-500">
+                Sign in
+              </Link>
+              <Link to="/signup" className="text-sm font-medium text-teal-600 hover:text-teal-500">
+                Sign up
+              </Link>
             </div>
           )}
         </div>
