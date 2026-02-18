@@ -4,6 +4,40 @@ import FocusTrap from 'focus-trap-react';
 import { TOPIC_ICONS, TOPIC_LABELS } from './TopicIcon';
 import type { LearningContent } from '../../../types/game';
 
+function renderParagraphWithLinks(text: string): (string | JSX.Element)[] {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts: (string | JSX.Element)[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    // Add text before the link
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    // Add the link element
+    parts.push(
+      <a
+        key={match.index}
+        href={match[2]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-teal-400 hover:text-teal-300 underline transition-colors"
+      >
+        {match[1]}
+      </a>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text after last link
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
+}
+
 interface LearnMoreModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -103,13 +137,13 @@ export function LearnMoreModal({
 
                 {/* Answer-aware opener paragraph */}
                 <p className="text-white text-base leading-relaxed">
-                  {getOpener()}
+                  {renderParagraphWithLinks(getOpener())}
                 </p>
 
                 {/* Remaining paragraphs (2nd and 3rd if they exist) */}
                 {content.paragraphs.slice(1).map((paragraph, index) => (
                   <p key={index} className="text-slate-300 text-base leading-relaxed">
-                    {paragraph}
+                    {renderParagraphWithLinks(paragraph)}
                   </p>
                 ))}
 
