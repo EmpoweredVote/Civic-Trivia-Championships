@@ -101,9 +101,9 @@ Requirements for tech debt hardening. Continues from v1.0 phases.
 
 ### Plausibility Enhancement
 
-- [ ] **PLAUS-01**: Difficulty-adjusted timing thresholds for plausibility checks
-- [ ] **PLAUS-02**: Flagged answers receive 30% point reduction (not just logging)
-- [ ] **PLAUS-03**: Timer multiplier users get adjusted thresholds (no false positives)
+- [x] **PLAUS-01**: Difficulty-adjusted timing thresholds for plausibility checks
+- [x] **PLAUS-02**: Flagged answers receive zero speed bonus (not just logging)
+- [x] **PLAUS-03**: Timer multiplier users get adjusted thresholds (no false positives)
 
 ### Learning Content
 
@@ -238,9 +238,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUX-01 | Phase 10 | Complete |
 | GUX-02 | Phase 10 | Complete |
 | GUX-03 | Phase 10 | Complete |
-| PLAUS-01 | Phase 11 | Pending |
-| PLAUS-02 | Phase 11 | Pending |
-| PLAUS-03 | Phase 11 | Pending |
+| PLAUS-01 | Phase 11 | Complete |
+| PLAUS-02 | Phase 11 | Complete |
+| PLAUS-03 | Phase 11 | Complete |
 | LCONT-02 | Phase 12 | Pending |
 
 **Coverage (v1.0):**
