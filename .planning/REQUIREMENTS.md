@@ -95,9 +95,9 @@ Requirements for tech debt hardening. Continues from v1.0 phases.
 
 ### Redis Sessions
 
-- [ ] **REDIS-01**: Game sessions stored in Redis with automatic TTL expiry
-- [ ] **REDIS-02**: Sessions persist across server restarts
-- [ ] **REDIS-03**: Graceful fallback to in-memory storage if Redis unavailable
+- [x] **REDIS-01**: Game sessions stored in Redis with automatic TTL expiry
+- [x] **REDIS-02**: Sessions persist across server restarts
+- [x] **REDIS-03**: Graceful fallback to in-memory storage if Redis unavailable
 
 ### Plausibility Enhancement
 
@@ -232,9 +232,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | LCONT-01 | Phase 8 | Complete |
 | DOCS-01 | Phase 8 | Complete |
-| REDIS-01 | Phase 9 | Pending |
-| REDIS-02 | Phase 9 | Pending |
-| REDIS-03 | Phase 9 | Pending |
+| REDIS-01 | Phase 9 | Complete |
+| REDIS-02 | Phase 9 | Complete |
+| REDIS-03 | Phase 9 | Complete |
 | GUX-01 | Phase 10 | Pending |
 | GUX-02 | Phase 10 | Pending |
 | GUX-03 | Phase 10 | Pending |
