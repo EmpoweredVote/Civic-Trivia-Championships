@@ -9,16 +9,16 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: Phase 9 (Redis Session Migration)
-Plan: 3 of 3 (Complete)
-Status: ✅ DEPLOYED TO PRODUCTION
-Last activity: 2026-02-17 — Deployed frontend and backend to Render, fully operational
+Phase: Phase 10 (Game UX Improvements)
+Plan: 1 of 2 (In Progress)
+Status: ⏳ Executing
+Last activity: 2026-02-17 — Completed 10-01-PLAN.md (state machine single-click refactor)
 
-Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 50% (2.5/5 phases)
+Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 58% (2.9/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): 6/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03)
+- v1.1 (Phases 8-12): 7/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02 partial)
 
 **Deployment Status:**
 - ✅ Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -32,9 +32,9 @@ Progress: [████████░░░░░░░░░░░░] v1.0: 1
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30
-- Average duration: 3.8 min
-- Total execution time: 115 min
+- Total plans completed: 31
+- Average duration: 3.7 min
+- Total execution time: 117 min
 
 **By Phase:**
 
@@ -48,11 +48,12 @@ Progress: [████████░░░░░░░░░░░░] v1.0: 1
 | 06-wager-mechanics | 3/3 | 9 min | 3 min |
 | 07-polish-performance | 5/5 | 22 min | 4.4 min |
 | 08-dev-tooling-documentation | 2/2 | 4 min | 2 min |
+| 10-game-ux-improvements | 1/2 | 2 min | 2 min |
 | 09-redis-session-migration | 2/3 | 7 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 07-05 (5 min), 08-01 (2 min), 08-02 (2 min), 09-01 (3 min), 09-02 (4 min)
-- Trend: Strong 2-5 min velocity maintained
+- Last 5 plans: 08-01 (2 min), 08-02 (2 min), 09-01 (3 min), 09-02 (4 min), 10-01 (2 min)
+- Trend: Exceptional 2-4 min velocity maintained
 
 **Deployment Session:**
 - Session duration: ~4 hours (2026-02-17)
@@ -187,13 +188,17 @@ Recent decisions affecting current work:
 | Proxy-based singleton export | 09-02 | Backward compatibility while enforcing initialization |
 | Degraded flag in API responses | 09-02 | Frontend detects fallback mode without polling health endpoint |
 | Health endpoint 503 for degraded mode | 09-02 | Load balancers can detect Redis failure and route traffic |
+| Single-click Q1-Q9, two-step Q10 | 10-01 | Q1-Q9 immediate lock-in for speed, Q10 preserves confirmation for high stakes |
+| Question timer 20s (Q10: 50s) | 10-01 | Reduced from 25s to match snappier overall pace, final question unchanged |
+| Timing coordination: 750ms/4s/1.5s | 10-01 | Suspense/auto-advance/popup reduced cohesively for game-show pacing |
+| Shared submitAndReveal helper | 10-01 | Eliminates duplication between selectAnswer and lockAnswer paths |
 
 ### Pending Todos
 
 Phase 10 (Game UX Improvements):
+- ✅ Remove lock-in confirmation step (single-click answer selection) — COMPLETE
 - Reposition question card to 1/3 from top
 - Reposition answer options to 2/3 from top
-- Remove lock-in confirmation step (single-click answer selection)
 
 Phase 11 (Plausibility Enhancement):
 - Implement difficulty-adjusted timing thresholds
@@ -226,18 +231,14 @@ None currently. Deployment successful and tested.
 ## Session Continuity
 
 Last session: 2026-02-17
-Topic: Full production deployment to Render + Supabase
+Stopped at: Completed 10-01-PLAN.md (state machine single-click refactor)
 Achievements:
-- ✅ GitHub organization setup (EmpoweredVote)
-- ✅ Repo transferred and renamed (Civic-Trivia-Championships)
-- ✅ Supabase schema created (civic_trivia)
-- ✅ Backend deployed to Render (Web Service)
-- ✅ Frontend deployed to Render (Static Site)
-- ✅ Upstash Redis configured
-- ✅ Full signup/login/play tested successfully
-- ✅ Deployment documentation created
+- ✅ Single-click answer selection for Q1-Q9 with Q10 exception
+- ✅ Timing optimization: 750ms suspense, 4s auto-advance, 20s questions
+- ✅ Refactored selectAnswer flow with shared submitAndReveal helper
+- ✅ TypeScript compilation and build verification passed
 
-Resume file: See DEPLOYMENT.md for infrastructure details
+Resume file: Next plan 10-02-PLAN.md (layout positioning and visual hierarchy)
 
 ---
 *v1.1 Tech Debt Hardening — PRODUCTION DEPLOYED*
