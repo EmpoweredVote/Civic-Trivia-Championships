@@ -265,7 +265,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERF-04 | Phase 7 | Complete |
 | PERF-05 | Phase 1 | Complete |
 
-### v1.1 Requirements (Planned)
+### v1.1 Requirements (Complete)
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -281,6 +281,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAUS-02 | Phase 11 | Complete |
 | PLAUS-03 | Phase 11 | Complete |
 | LCONT-02 | Phase 12 | Complete |
+
+### v1.2 Requirements (Planned)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| COLL-01 | Phase 13 | Pending |
+| COLL-02 | Phase 13 | Pending |
+| COLL-03 | Phase 13 | Pending |
+| COLL-04 | Phase 13 | Pending |
+| COLL-05 | Phase 13 | Pending |
+| CCONT-01 | Phase 13 | Pending |
+| CGFLOW-03 | Phase 14 | Pending |
+| CGFLOW-04 | Phase 14 | Pending |
+| CGFLOW-05 | Phase 14 | Pending |
+| CGFLOW-01 | Phase 15 | Pending |
+| CGFLOW-02 | Phase 15 | Pending |
+| EXP-01 | Phase 16 | Pending |
+| EXP-02 | Phase 16 | Pending |
+| EXP-03 | Phase 16 | Pending |
+| EXP-04 | Phase 16 | Pending |
+| ADM-01 | Phase 16 | Pending |
+| CCONT-02 | Phase 17 | Pending |
+| CCONT-03 | Phase 17 | Pending |
+| CCONT-04 | Phase 17 | Pending |
+| CCONT-05 | Phase 17 | Pending |
 
 **Coverage (v1.0):**
 - v1.0 requirements: 50 total
@@ -309,10 +334,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Phase 12 (Learning Content Expansion): 1 requirement
 
 **Coverage (v1.2):**
-- v1.2 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17 (awaiting roadmap)
+- v1.2 requirements: 20 total
+- Mapped to phases: 20
+- Unmapped: 0
+
+**By Phase (v1.2):**
+- Phase 13 (Database Schema & Seed Migration): 6 requirements
+- Phase 14 (Question Service & Route Integration): 3 requirements
+- Phase 15 (Collection Picker UI): 2 requirements
+- Phase 16 (Expiration System): 5 requirements
+- Phase 17 (Community Content Generation): 4 requirements
 
 ---
 *Requirements defined: 2026-02-03*
-*Last updated: 2026-02-18 after v1.2 requirements definition*
+*Last updated: 2026-02-18 after v1.2 roadmap creation*

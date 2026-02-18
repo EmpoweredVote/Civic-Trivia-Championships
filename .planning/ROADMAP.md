@@ -2,25 +2,113 @@
 
 ## Overview
 
-This roadmap delivers a polished, educational trivia game across two milestones. v1.0 (Phases 1-7) built the solo MVP with authentication, game flow, scoring, learning content, progression, wager mechanics, and accessibility. v1.1 (Phases 8-12) hardens for production readiness by addressing tech debt: dev tooling fixes, Redis session migration, game UX improvements, plausibility enhancement, and strategic learning content expansion.
+This roadmap delivers a polished, educational trivia game across three milestones. v1.0 (Phases 1-7) built the solo MVP with authentication, game flow, scoring, learning content, progression, wager mechanics, and accessibility. v1.1 (Phases 8-12) hardened for production readiness by addressing tech debt: dev tooling fixes, Redis session migration, game UX improvements, plausibility enhancement, and strategic learning content expansion. v1.2 (Phases 13-17) adds community-specific trivia collections, migrating questions from JSON to PostgreSQL, introducing a collection picker, expiration system, and locale-specific content for Bloomington IN and Los Angeles CA.
 
-## Current Milestone: v1.1 Tech Debt Hardening
+## Current Milestone: v1.2 Community Collections
 
-**Phases 8-12** address critical gaps from v1.0 audit: Redis session storage (prevent data loss on restart), enhanced plausibility detection, learning content expansion (15% to 25-30%), game UX refinements, and dev tooling fixes.
+**Phases 13-17** transform the single federal question bank into a multi-collection system where players choose community-specific trivia. The critical path is the JSON-to-PostgreSQL migration (Phase 13), which unblocks every downstream feature.
 
-- [x] **Phase 8: Dev Tooling & Documentation** - Fix content generation script, complete missing docs
-- [x] **Phase 9: Redis Session Migration** - Persistent session storage with graceful degradation
-- [x] **Phase 10: Game UX Improvements** - Visual positioning and interaction refinements
-- [x] **Phase 11: Plausibility Enhancement** - Difficulty-adjusted anti-cheat with point penalties
-- [x] **Phase 12: Learning Content Expansion** - Strategic deep-dive content for 25-30% coverage
+- [ ] **Phase 13: Database Schema & Seed Migration** - Questions and collections into PostgreSQL with federal seed data
+- [ ] **Phase 14: Question Service & Route Integration** - Swap data layer from JSON to database queries
+- [ ] **Phase 15: Collection Picker UI** - Card-based collection selection before game start
+- [ ] **Phase 16: Expiration System** - Hourly cron sweep with soft-delete and health monitoring
+- [ ] **Phase 17: Community Content Generation** - Bloomington IN and Los Angeles CA question banks
 
-## Phase Details (v1.1)
+## Phase Details (v1.2)
 
 **Phase Numbering:**
-- Integer phases (8, 9, 10): Planned milestone work
-- Decimal phases (8.1, 8.2): Urgent insertions (marked with INSERTED)
+- Integer phases (13, 14, 15): Planned milestone work
+- Decimal phases (13.1, 13.2): Urgent insertions (marked with INSERTED)
 
-Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
+Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
+
+### Phase 13: Database Schema & Seed Migration
+**Goal**: Questions and collections live in PostgreSQL, with the existing 120-question federal bank migrated and tagged
+**Depends on**: Nothing (v1.2 starting point)
+**Requirements**: COLL-01, COLL-02, COLL-03, COLL-04, COLL-05, CCONT-01
+**Success Criteria** (what must be TRUE):
+  1. PostgreSQL contains `questions`, `collections`, and `collection_questions` tables with correct schema
+  2. All 120 existing federal questions are in the database with their full content (options, explanations, learning content)
+  3. A "Federal Civics" collection exists with name, slug, description, and locale metadata
+  4. Each collection can define its own topic categories (not a hardcoded global enum)
+  5. Questions have an optional `expires_at` field available for future use
+**Plans**: TBD
+
+### Phase 14: Question Service & Route Integration
+**Goal**: The game queries PostgreSQL instead of JSON, with collection-scoped question loading and zero regression
+**Depends on**: Phase 13
+**Requirements**: CGFLOW-03, CGFLOW-04, CGFLOW-05
+**Success Criteria** (what must be TRUE):
+  1. Game session creation accepts an optional `collectionId` parameter and returns 10 questions from that collection
+  2. Omitting `collectionId` defaults to the Federal Civics collection (backward compatible)
+  3. Existing game flow (timer, scoring, wager, results, progression, plausibility) works identically with database-sourced questions
+  4. The `readFileSync` JSON loading pattern is replaced by QuestionService database queries
+**Plans**: TBD
+
+### Phase 15: Collection Picker UI
+**Goal**: Players can browse and select a collection before starting a game
+**Depends on**: Phase 14
+**Requirements**: CGFLOW-01, CGFLOW-02
+**Success Criteria** (what must be TRUE):
+  1. Player sees a card-based collection picker on the dashboard before starting a game
+  2. Each collection card displays name, description, and active question count
+  3. Federal Civics is preselected as the default collection
+  4. Selecting a collection and starting a game loads questions from that collection
+**Plans**: TBD
+
+### Phase 16: Expiration System
+**Goal**: Time-sensitive questions automatically drop from rotation without disrupting active games
+**Depends on**: Phase 14
+**Requirements**: EXP-01, EXP-02, EXP-03, EXP-04, ADM-01
+**Success Criteria** (what must be TRUE):
+  1. Questions past their `expires_at` date no longer appear in new game sessions
+  2. An hourly cron job runs the expiration sweep automatically
+  3. Expired questions are logged with structured output and flagged for content review
+  4. A player mid-game is not affected if a question expires during their session
+  5. A health endpoint reports per-collection question counts, expiring-soon counts, and expired counts
+**Plans**: TBD
+
+### Phase 17: Community Content Generation
+**Goal**: Players can choose Bloomington IN or Los Angeles CA collections with locally relevant civic trivia
+**Depends on**: Phase 13 (database ready), Phase 15 (picker available)
+**Requirements**: CCONT-02, CCONT-03, CCONT-04, CCONT-05
+**Success Criteria** (what must be TRUE):
+  1. Bloomington IN collection contains 50-120 questions covering local government and Indiana state civics
+  2. Los Angeles CA collection contains 50-120 questions covering local government and California state civics
+  3. Content generation tooling supports locale-specific prompts with source-first RAG approach
+  4. All locale questions are cross-referenced with authoritative local government sources (no unverifiable claims)
+  5. Both collections appear in the collection picker and are playable end-to-end
+**Plans**: TBD
+
+## Progress (v1.2)
+
+**Execution Order:**
+Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
+Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 13. Database Schema & Seed Migration | 0/TBD | Not started | - |
+| 14. Question Service & Route Integration | 0/TBD | Not started | - |
+| 15. Collection Picker UI | 0/TBD | Not started | - |
+| 16. Expiration System | 0/TBD | Not started | - |
+| 17. Community Content Generation | 0/TBD | Not started | - |
+
+## Requirement Coverage (v1.2)
+
+All v1.2 requirements mapped: 20/20 (100%)
+
+**By Phase:**
+- Phase 13: 6 requirements (COLL-01, COLL-02, COLL-03, COLL-04, COLL-05, CCONT-01)
+- Phase 14: 3 requirements (CGFLOW-03, CGFLOW-04, CGFLOW-05)
+- Phase 15: 2 requirements (CGFLOW-01, CGFLOW-02)
+- Phase 16: 5 requirements (EXP-01, EXP-02, EXP-03, EXP-04, ADM-01)
+- Phase 17: 4 requirements (CCONT-02, CCONT-03, CCONT-04, CCONT-05)
+
+---
+
+<details>
+<summary>v1.1 History (Phases 8-12) - COMPLETE 2026-02-18</summary>
 
 ### Phase 8: Dev Tooling & Documentation
 **Goal**: Content generation tooling works and documentation is complete
@@ -97,35 +185,10 @@ Plans:
 - [x] 12-01-PLAN.md — Script tooling update (CLI flags, prompt update, applyContent.ts, frontend inline links)
 - [x] 12-02-PLAN.md — Content generation batch, human review, and application to questions.json
 
-## Progress (v1.1)
+</details>
 
-**Execution Order:**
-Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 8. Dev Tooling & Documentation | 2/2 | Complete | 2026-02-13 |
-| 9. Redis Session Migration | 3/3 | Complete | 2026-02-17 |
-| 10. Game UX Improvements | 2/2 | Complete | 2026-02-17 |
-| 11. Plausibility Enhancement | 2/2 | Complete | 2026-02-17 |
-| 12. Learning Content Expansion | 2/2 | Complete | 2026-02-18 |
-
-## Requirement Coverage (v1.1)
-
-All v1.1 requirements mapped: 12/12 (100%)
-
-**By Phase:**
-- Phase 8: 2 requirements (LCONT-01, DOCS-01)
-- Phase 9: 3 requirements (REDIS-01, REDIS-02, REDIS-03)
-- Phase 10: 3 requirements (GUX-01, GUX-02, GUX-03)
-- Phase 11: 3 requirements (PLAUS-01, PLAUS-02, PLAUS-03)
-- Phase 12: 1 requirement (LCONT-02)
-
----
-
-## v1.0 History (Phases 1-7)
-
-Reference for completed phases from initial MVP release.
+<details>
+<summary>v1.0 History (Phases 1-7) - COMPLETE 2026-02-13</summary>
 
 ### Phase 1: Foundation & Auth
 **Goal**: Users can create accounts, log in, and maintain authenticated sessions across browser refreshes
@@ -197,8 +260,10 @@ Reference for completed phases from initial MVP release.
 
 **v1.0 Coverage:** 50/50 requirements (100%)
 
+</details>
+
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-18 (Phase 12 complete)*
-*Current Milestone: v1.1 Tech Debt Hardening*
-*Phases: 12 (12 complete, 0 in progress)*
+*Updated: 2026-02-18 (v1.2 roadmap created)*
+*Current Milestone: v1.2 Community Collections*
+*Phases: 17 (12 complete, 0 in progress, 5 planned)*
