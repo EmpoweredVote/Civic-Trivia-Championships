@@ -9,16 +9,16 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: Phase 11 (Plausibility Enhancement)
-Plan: 2 of 2 (Complete)
-Status: ✅ Phase complete
-Last activity: 2026-02-18 — Completed 11-02-PLAN.md (client invisibility via response stripping)
+Phase: Phase 12 (Learning Content Expansion)
+Plan: 1 of 1 (In progress)
+Status: Plan 01 complete
+Last activity: 2026-02-18 — Completed 12-01-PLAN.md (content tooling: CLI flags, new prompt, applyContent.ts, inline link rendering)
 
-Progress: [████████████████░░░░] v1.0: 100% (7/7) | v1.1: 80% (4/5 phases)
+Progress: [████████████████░░░░] v1.0: 100% (7/7) | v1.1: ~87% (Phase 12 plan 01 done)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): 11/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02, GUX-03, PLAUS-01, PLAUS-02, PLAUS-03)
+- v1.1 (Phases 8-12): 12/12 tooling requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02, GUX-03, PLAUS-01, PLAUS-02, PLAUS-03, LCONT-02 tooling)
 
 **Deployment Status:**
 - ✅ Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -50,10 +50,11 @@ Progress: [████████████████░░░░] v1.0: 1
 | 08-dev-tooling-documentation | 2/2 | 4 min | 2 min |
 | 09-redis-session-migration | 3/3 | 7 min | 2.3 min |
 | 10-game-ux-improvements | 2/2 | 7 min | 3.5 min |
-| 11-plausibility-enhancement | 1/2 | 3 min | 3 min |
+| 11-plausibility-enhancement | 2/2 | 6 min | 3 min |
+| 12-learning-content-expansion | 1/1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 08-02 (2 min), 09-01 (3 min), 09-02 (4 min), 10-01 (2 min), 11-01 (3 min)
+- Last 5 plans: 09-02 (4 min), 10-01 (2 min), 11-01 (3 min), 11-02 (3 min), 12-01 (3 min)
 - Trend: Exceptional 2-4 min velocity maintained
 
 **Deployment Session:**
@@ -203,17 +204,20 @@ Recent decisions affecting current work:
 | Hard difficulty runtime fallback | 11-01 | Invalid difficulties use strictest threshold (fail-safe approach) |
 | Forward-only penalty application | 11-01 | First 2 flags normal scoring, 3rd+ zeroes speed bonus (no retroactive changes) |
 | INVARIANT guarantee via detection order | 11-01 | Calculate isCorrect first, skip flagging if true - penalties only affect wrong answers by design |
+| Safety guard on generateLearningContent.ts | 12-01 | Requires at least one filter flag; exits(1) with usage help if none provided - no accidental bulk generation |
+| --ids flag priority in content generation | 12-01 | --ids overrides --difficulty/--topic; --limit applied last across all filter paths |
+| renderParagraphWithLinks uses regex exec loop | 12-01 | Returns (string | JSX.Element)[] with no new dependencies; existing plain text renders identically |
+| Expanded source allowlist in generation prompt | 12-01 | Added khanacademy.org, icivics.org, en.wikipedia.org, major news archives for historical events |
+| Anti-partisan prompt constraint | 12-01 | Prompt prohibits liberal/conservative/activist/progressive characterization of any policy, party, or court decision |
 
 ### Pending Todos
 
-Phase 11 (Plausibility Enhancement):
-- Strip flagged field from API responses (11-02)
-- Frontend type cleanup to remove unused flagged field (11-02)
-
 Phase 12 (Learning Content Expansion):
+- Run batch content generation using updated script and prompt
 - Generate 12-18 additional deep-dive learning content pieces
+- Use: npx tsx src/scripts/generateLearningContent.ts --difficulty hard --limit 15
 - Prioritize frequently missed questions and high-interest topics
-- Cross-reference all content with authoritative sources
+- Apply via: npx tsx src/scripts/applyContent.ts <preview-file>.json
 - Follow batch review process (10-20 at a time)
 
 Deployment Follow-up:
@@ -234,19 +238,17 @@ None currently. Deployment successful and tested.
 
 ## Session Continuity
 
-Last session: 2026-02-17
-Topic: Phase 11 Plausibility Enhancement — plan 11-01 complete
+Last session: 2026-02-18
+Topic: Phase 12 Learning Content Expansion — plan 12-01 complete
 Achievements:
-- ✅ Difficulty-adjusted plausibility thresholds (easy 1.0s, medium 0.75s, hard 0.5s)
-- ✅ Pattern counting with plausibilityFlags (session-scoped)
-- ✅ Zero speed bonus penalty after 3+ flags (forward-only)
-- ✅ Timer multiplier threshold scaling for accessibility users
-- ✅ INVARIANT guarantee: penalties only affect wrong answers by design
-- ✅ Backend QUESTION_DURATION synced to 20s (matches frontend)
-- ✅ ROADMAP updated: "zero speed bonus" instead of "30% point reduction"
+- ✅ generateLearningContent.ts: --ids, --difficulty, --topic, --limit CLI flags with safety guard
+- ✅ Updated prompt: plain language (8th grade), anti-partisan framing, inline [text](url) hyperlinks
+- ✅ Expanded source allowlist: .gov, khanacademy.org, icivics.org, en.wikipedia.org, major news archives
+- ✅ applyContent.ts: cherry-pick merge script with --ids support and skip-on-existing protection
+- ✅ LearnMoreModal: renderParagraphWithLinks() renders inline markdown links as teal anchors
 
-Stopped at: Completed 11-01-PLAN.md (core detection and penalty logic)
-Resume file: None — ready for 11-02 (response stripping and frontend cleanup)
+Stopped at: Completed 12-01-PLAN.md (content tooling update)
+Resume file: None — ready for content generation runs using updated tooling
 
 ---
 *v1.1 Tech Debt Hardening — PRODUCTION DEPLOYED*
