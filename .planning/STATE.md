@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 Phase: Phase 12 (Learning Content Expansion)
 Plan: 2 of 2 (Complete)
 Status: Phase 12 complete — content tooling updated and batch generation executed
-Last activity: 2026-02-18 — Completed quick task 001: Clean up test files (.js.js and generated JSON files)
+Last activity: 2026-02-18 — Completed quick task 002: Set up UptimeRobot monitoring
 
 Progress: [████████████████████] v1.0: 100% (7/7) | v1.1: 100% (Phase 12 complete)
 
@@ -225,7 +225,7 @@ Deployment Follow-up:
 - [ ] Invite volunteers to GitHub org
 - [ ] Share live URLs with team
 - [ ] Add to ev-prototypes.netlify.app (optional)
-- [ ] Set up UptimeRobot to prevent sleep (optional)
+- [x] Set up UptimeRobot to prevent sleep — quick-002
 - [x] Clean up test files (.js.js files committed by accident) — quick-001
 
 ### Quick Tasks Completed
@@ -233,20 +233,21 @@ Deployment Follow-up:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 001 | Clean up test files (.js.js and generated JSON files) | 2026-02-18 | fc7c6f2 | [001-clean-up-test-files](./quick/001-clean-up-test-files/) |
+| 002 | Set up UptimeRobot monitoring to prevent Render sleep | 2026-02-18 | N/A (infra config) | [002-set-up-uptimerobot](./quick/002-set-up-uptimerobot/) |
 
 ### Blockers/Concerns
 
 None currently. Deployment successful and tested.
 
 **Free tier limitations to monitor:**
-- Render backend sleeps after 15 min inactivity (20-30s wake time)
+- Render 750 hours/month limit (UptimeRobot monitoring uses hours continuously)
 - Upstash 10K commands/day limit
 - Supabase 500MB database storage
 
 ## Session Continuity
 
 Last session: 2026-02-18
-Topic: Phase 12 Learning Content Expansion — COMPLETE
+Topic: Quick task 002 — UptimeRobot monitoring setup — COMPLETE
 Achievements (12-01):
 - ✅ generateLearningContent.ts: --ids, --difficulty, --topic, --limit CLI flags with safety guard
 - ✅ Updated prompt: plain language (8th grade), anti-partisan framing, inline [text](url) hyperlinks
@@ -261,8 +262,8 @@ Achievements (12-02):
 - ✅ Verified data integrity: valid JSON, correct structure, no modification to existing content
 - ✅ Met phase objective: 25-30% coverage target achieved (27.5%)
 
-Stopped at: Completed 12-02-PLAN.md (content generation batch)
-Resume file: None — Phase 12 complete, all v1.1 requirements delivered
+Stopped at: Completed quick-002-PLAN.md (UptimeRobot monitoring setup)
+Resume file: None — All quick tasks complete
 
 ---
 *v1.1 Tech Debt Hardening — PRODUCTION DEPLOYED*
