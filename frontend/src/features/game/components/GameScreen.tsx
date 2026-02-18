@@ -354,9 +354,9 @@ export function GameScreen({
       <CelebrationEffects streak={state.currentStreak} />
 
       {/* Main content container */}
-      <div className="relative min-h-screen flex flex-col py-8 px-4">
+      <div className="relative min-h-screen flex flex-col py-4 md:py-8 px-4">
         {/* Top HUD - Quit button, Question number, Progress dots */}
-        <div className="flex items-center justify-between mb-8 max-w-5xl mx-auto w-full">
+        <div className="flex items-center justify-between mb-4 md:mb-8 max-w-5xl mx-auto w-full">
           {/* Quit button */}
           <button
             onClick={handleQuitClick}
@@ -392,7 +392,7 @@ export function GameScreen({
 
         {/* Score display - conditionally rendered based on phase */}
         {(state.phase === 'revealing' || state.phase === 'locked' || state.phase === 'complete' || !showOptions) && (
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-2 md:mb-4">
             <ScoreDisplay
               score={state.totalScore}
               shouldShake={shouldShake}
@@ -442,7 +442,7 @@ export function GameScreen({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: reducedMotion ? 0 : 0.2 }}
-            className="flex-1 flex flex-col items-center pt-2 md:pt-6 gap-6 md:gap-8 max-w-[700px] mx-auto w-full px-4"
+            className="flex-1 flex flex-col items-center pt-2 md:pt-6 gap-3 md:gap-8 max-w-[700px] mx-auto w-full px-4"
           >
             {/* Timer - positioned above question */}
             {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === 9)) && (
@@ -481,6 +481,7 @@ export function GameScreen({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
+                  className="w-full"
                 >
                   <AnswerGrid
                     options={currentQuestion.options}
