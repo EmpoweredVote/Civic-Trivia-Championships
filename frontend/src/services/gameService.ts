@@ -43,7 +43,6 @@ export async function submitAnswer(
   totalPoints: number;
   correct: boolean;
   correctAnswer: number;
-  flagged: boolean;
   wager?: number;
 }> {
   const body: {
@@ -70,7 +69,6 @@ export async function submitAnswer(
     totalPoints: number;
     correct: boolean;
     correctAnswer: number;
-    flagged: boolean;
     wager?: number;
   }>('/api/game/answer', {
     method: 'POST',
