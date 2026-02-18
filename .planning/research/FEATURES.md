@@ -1,584 +1,394 @@
-# Features Research: v1.1 Tech Debt Hardening
+# Feature Landscape: Community Question Collections
 
-**Project:** Civic Trivia Championship
-**Domain:** Educational trivia game
-**Researched:** 2026-02-12
-**Milestone:** v1.1 Tech Debt Hardening (subsequent milestone)
-**Overall Confidence:** MEDIUM
+**Domain:** Civic education trivia with locale-specific content collections
+**Researched:** 2026-02-18
+**Overall Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-This research examines production best practices for three tech debt areas in the Civic Trivia Championship app:
-1. **Learning content coverage** — How much is "enough" vs over-engineering
-2. **Plausibility/anti-cheat systems** — Industry patterns for detecting cheating without false positives
-3. **Redis session management** — Standard patterns for game state persistence
+Adding community-specific trivia collections (Bloomington IN, Los Angeles CA) to an existing federal civics trivia game. This research maps the feature landscape for collection management, selection UX, content tagging, and time-sensitive question handling. The existing codebase loads questions from a single `questions.json` file, selects 10 randomly, and has no concept of collections or locale. The transition from "one pool of questions" to "multiple curated collections" is the core architectural shift.
 
-**Key Finding:** Current implementation (15% learning content coverage, passive plausibility logging, 1-hour in-memory sessions) is appropriate for MVP scale. Production hardening should focus on Redis migration (table stakes) and strategic content expansion (not comprehensive coverage). Plausibility systems should remain passive with improved detection, avoiding aggressive anti-cheat that punishes legitimate players.
+Key insight: The civic education domain has a unique content lifecycle problem. Unlike general trivia where questions are evergreen ("What year was the Declaration of Independence signed?"), local civic questions are inherently time-sensitive ("Who is the current mayor of Bloomington?"). This is the hardest design problem in this milestone and must be solved correctly in the data model from day one.
 
-**Philosophy alignment:** Research findings consistently support the project's "no dark patterns" principle — educational platforms emphasize explanations for learning value (not coverage metrics), and fairness-focused anti-cheat prioritizes false positive prevention over aggressive detection.
+---
 
-## Learning Content Coverage
+## Table Stakes
 
-### Current State
-- 120 total questions
-- 18/120 (15%) have deep-dive `learningContent`
-- Exceeds 10-topic minimum requirement
-- All questions have basic explanations
+Features users expect in any collection-based trivia experience. Missing these makes the product feel broken.
 
-### Industry Standards
+### TS-1: Collection Picker Screen
 
-**Explanation Coverage (HIGH confidence)**
+**What:** A screen where players choose which question collection to play before starting a game.
+**Why expected:** Every trivia platform with multiple categories (Kahoot, Open Trivia DB, Quizizz, Trivial Pursuit) presents a selection interface. Current Dashboard has only a "Quick Play" button -- adding collections without a picker would force a default that confuses users.
+**Complexity:** MEDIUM
+**Dependencies:** New route/component, backend collection registry
+**Notes:** This replaces or augments the current Dashboard "Quick Play" button. Players must understand what they are choosing and why. Card-based selection (not dropdowns) is the standard pattern in game UX -- each collection gets a visual card showing name, description, question count, and a play button.
 
-Modern quiz platforms in 2026 emphasize that **every question should have an explanation**, but distinguish between basic feedback and deep-dive content:
+**Collection card metadata (minimum):**
+| Field | Purpose | Example |
+|-------|---------|---------|
+| Name | Identity | "Bloomington, IN" |
+| Subtitle/scope | What's covered | "Local + Indiana State Government" |
+| Question count | Set expectations | "120 questions" |
+| Icon/image | Visual identity | City seal or state outline |
+| Play button | Primary action | "Play" |
 
-- **Basic explanations:** Required for all questions. Short (1-3 sentences) explaining why the answer is correct/incorrect
-- **Deep-dive content:** Optional enrichment for strategic topics
+**UX pattern recommendation:** Grid of cards (2-3 columns on desktop, single column on mobile). Federal collection should be visually distinct as the "original" but not hierarchically above community collections. Avoid tree/hierarchy navigation -- keep it flat. Players pick a collection and play. That is it.
 
-Leading educational platforms like Quizizz, QuizGecko, and Quizbot now auto-generate answer explanations for every question, treating it as table stakes rather than a premium feature. Research shows students score **10-20% higher** on final tests when practice quizzes include immediate feedback explaining correct/incorrect answers.
+### TS-2: Collection-Scoped Question Loading
 
-**Content Sufficiency Thresholds (MEDIUM confidence)**
+**What:** Backend loads and serves questions from the selected collection, not the global pool.
+**Why expected:** If a player picks "Bloomington" they expect Bloomington questions, not a mix with federal.
+**Complexity:** LOW-MEDIUM
+**Dependencies:** Collection ID passed in session creation API, question storage refactor
+**Notes:** Currently `POST /session` takes no collection parameter and draws from a single `allQuestions` array loaded from one JSON file. Must accept a `collectionId` parameter and load from the correct source. The simplest implementation: one JSON file per collection in a `data/collections/` directory, loaded at startup into a `Map<collectionId, Question[]>`.
 
-WebSearch results don't specify exact percentages for "sufficient" deep-dive coverage. Instead, the emphasis is on **strategic selection** rather than comprehensive coverage:
+### TS-3: Collection Metadata Registry
 
-- Focus on **complex or counterintuitive topics** that benefit from deeper exploration
-- Prioritize **high-interest areas** that drive engagement
-- Use analytics to identify **frequently missed questions** as candidates for enrichment
+**What:** A structured registry of available collections with their metadata (name, description, question count, status, region).
+**Why expected:** The picker screen needs data to render. The backend needs to know which collections exist. Content authors need to know what is available.
+**Complexity:** LOW
+**Dependencies:** None (foundational)
+**Notes:** This can be a simple JSON file (`collections.json`) or a TypeScript config. Does NOT need to be a database table at this scale. Keep it simple: an array of collection objects with id, name, description, region, questionCount, status (active/draft/retired). The backend serves this via `GET /collections` endpoint.
 
-**Content Generation Strategies (MEDIUM confidence)**
+### TS-4: Question Tagging with Collection Membership
 
-2026 platforms emphasize AI-assisted content generation with human review:
-- Tools like Quizbot automatically provide detailed explanations for generated questions
-- Quizizz Pro tier includes answer explanations as a key feature
-- Modern workflows: AI draft → human review → quality check
+**What:** Each question belongs to exactly one collection. Questions also retain their existing `topicCategory` tag for within-collection topic variety.
+**Why expected:** The fundamental data model for multi-collection support. Without this, questions cannot be filtered or grouped.
+**Complexity:** LOW
+**Dependencies:** Question data model extension
+**Notes:** The existing Question type has `topic` (free text like "Constitution") and `topicCategory` (enum like "bill-of-rights"). For community collections, add a `collectionId` field to each question. A question belongs to one collection -- no cross-listing. If the same concept appears in federal and state contexts, they are different questions with different framing. Topic categories will need to expand beyond the current federal-only enum (e.g., add "local-government", "state-legislature", "city-council", "budget", "public-safety").
 
-### Table Stakes
+### TS-5: Backward-Compatible Default Collection
 
-| Feature | Current Status | Production Standard | Gap |
-|---------|---------------|---------------------|-----|
-| Basic explanations (all questions) | ✓ 120/120 | ✓ Required | NONE |
-| Deep-dive content (strategic) | ✓ 18/120 (15%) | 20-30% recommended | Small |
+**What:** The existing 120 federal questions become the "Federal" collection. Existing gameplay is unaffected.
+**Why expected:** Users who return after the update should not be confused. The game they know still works.
+**Complexity:** LOW
+**Dependencies:** TS-3 (collection registry)
+**Notes:** The current `questions.json` becomes `collections/federal.json` (or stays in place with a `collectionId: "federal"` field added to each question). Anonymous users who hit "Quick Play" should either see the collection picker or default to Federal. Recommendation: show the picker -- it introduces the concept of collections and makes community content discoverable.
 
-### Differentiators
+### TS-6: Minimum Collection Size Enforcement
 
-| Feature | Value Proposition | Complexity | Priority |
-|---------|------------------|------------|----------|
-| **Analytics-driven content expansion** | Target difficult/popular questions for deep-dives | Medium | MEDIUM |
-| **User-requested explanations** | Let players flag questions they want more detail on | Low-Medium | LOW |
-| **External resource links** | Connect to authoritative sources for deeper learning | Low | MEDIUM |
-| **Progressive disclosure** | Show basic explanation, expand to deep-dive on request | Low | HIGH |
+**What:** Collections must have enough questions to avoid excessive repetition across play sessions.
+**Why expected:** A 10-question game drawn from a 15-question pool means players see 67% of questions every session. This kills replayability fast.
+**Complexity:** LOW
+**Dependencies:** Collection registry validation
+**Notes:**
 
-### Anti-Features
+**Repetition math for a 10-question game:**
+| Pool size | % seen per game | Expected games before full coverage | Repetition feel |
+|-----------|-----------------|-------------------------------------|-----------------|
+| 30 | 33% | ~5 games | Heavy repetition by game 3 |
+| 50 | 20% | ~9 games | Noticeable by game 4-5 |
+| 80 | 12.5% | ~15 games | Comfortable for weekly play |
+| 120 | 8.3% | ~25 games | Low repetition, good for daily |
 
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| **100% deep-dive coverage** | Over-engineering; most answers adequately explained in 1-3 sentences | Strategic expansion to 25-30% based on analytics |
-| **Long-form essays** | Players want quick learning moments, not textbook chapters | Keep deep-dives focused (3-5 paragraphs max) |
-| **Mandatory reading** | Forcing players to read explanations breaks flow | Optional "Learn more" links, skippable content |
-| **Coverage quotas** | Arbitrary percentage goals vs quality-driven selection | Let analytics guide which questions need enrichment |
+**Recommendation:** Minimum 50 questions per collection for launch. Target 80-120 for good replayability. The project context says "50 compelling questions > 100 mediocre" which aligns. 50 is the floor, 80 is the target, 120 is the existing federal benchmark.
 
-### Recommendation for v1.1
+**Enforcement:** Backend should refuse to serve a collection with fewer than a configured minimum (default: 30). Display collections below target count as "Coming Soon" in the picker rather than offering a degraded experience.
 
-**Strategic expansion, not comprehensive coverage:**
+---
 
-| Coverage Level | Questions | Status | Action |
-|----------------|-----------|--------|--------|
-| Basic explanations | 120/120 | ✓ COMPLETE | No action needed |
-| Deep-dive content | 18/120 (15%) | ✓ SUFFICIENT | Strategic expansion to 25-30% |
-| Target: 30-36 questions | | | Focus on frequently missed or complex topics |
+## Differentiators
 
-**Rationale:**
-- 15% exceeds minimum requirement and is production-ready
-- 25-30% provides adequate coverage without over-engineering
-- Prioritize quality and strategic selection over hitting arbitrary percentages
-- Use game analytics to guide expansion (which questions do players struggle with?)
+Features that set this product apart from generic trivia apps. Not expected, but create real value for civic education.
 
-**Implementation approach:**
-1. **Defer to ongoing work** — Don't block v1.1 milestone completion
-2. **Analytics-driven** — Identify top 10-15 questions that need deep-dives based on:
-   - High incorrect answer rate
-   - High engagement (players spend time on explanation)
-   - Topic complexity (civic concepts that benefit from deeper explanation)
-3. **Incremental expansion** — Add 2-3 deep-dive pieces per week over 6-8 weeks
-4. **Quality over quantity** — Better to have 25 excellent deep-dives than 60 mediocre ones
+### D-1: Time-Sensitive Question Expiration
 
-**Complexity:** LOW-MEDIUM (content creation, not technical implementation)
-**Priority:** MEDIUM (nice-to-have, not blocking)
+**What:** Questions that reference current officeholders, recent events, or time-bound facts have an `expiresAt` date. Expired questions are automatically excluded from the active pool.
+**Why valuable:** This is THE differentiator for local civic trivia. "Who is the current mayor of Bloomington?" is compelling today but actively harmful if the answer is wrong after the next election. Generic trivia platforms do not solve this because their content is evergreen. Civic education platforms MUST solve this.
+**Complexity:** MEDIUM
+**Dependencies:** Question data model extension, scheduled validation
+**Notes:**
 
-## Plausibility / Anti-Cheat Systems
-
-### Current State
-- Server-side scoring prevents client manipulation
-- Timing checks log suspicious patterns (too fast/too slow)
-- No penalties applied to flagged behavior
-- Speed bonus encourages fast answers
-
-### Table Stakes (Production Quiz Apps)
-
-**1. Server-Side Authority (HIGH confidence)**
-- ✓ Already implemented
-- All scoring calculations server-side
-- Answers validated against stored correct responses
-- Prevents client-side manipulation
-
-**2. Timing Analysis (HIGH confidence)**
-
-Production systems track multiple timing signals:
-- **Minimum answer time:** Flags answers submitted faster than humanly possible (typically <500ms for reading + selection)
-- **Maximum answer time:** Detects timeout or AFK behavior
-- **Pattern analysis:** Identifies suspiciously consistent timing across questions
-- **Tab switching detection:** Logs when users leave quiz tab (indicates potential lookup)
-
-**Implementation approaches:**
-```
-Passive (current): Log + analyze, no immediate penalties
-Active: Show warnings, extend review time, or flag for human review
-Aggressive: Auto-fail or reduce scores (HIGH false positive risk)
-```
-
-**3. Response Pattern Detection (MEDIUM confidence)**
-
-Advanced systems analyze behavioral patterns:
-- Contradictory responses on related questions
-- Extreme accuracy spikes mid-session (suggests outside help)
-- Uniform answer selection patterns (A-A-A-A suggests random clicking)
-- Perfect accuracy with minimal time (impossible combination)
-
-**4. Browser Monitoring (MEDIUM confidence)**
-
-Common in high-stakes assessments:
-- Lockdown browser mode (prevents tab switching)
-- Webcam snapshots or continuous recording
-- Screen recording
-- AI behavior analysis (typing speed, mouse movements)
-
-**For educational trivia:** These are **OVERKILL** and conflict with "no dark patterns" philosophy.
-
-### Differentiators (Competitive Advantages)
-
-**Fairness-First Anti-Cheat (HIGH confidence with project philosophy)**
-
-The project's "no dark patterns" principle aligns perfectly with 2026 best practices emphasizing **integrity over surveillance**:
-
-> "The best approach emphasizes integrity rather than security. Prevention is much more effective than surveillance policies."
-
-**Differentiation strategies:**
-1. **Transparent plausibility checks** — Show players their timing/pattern analysis (educational feedback, not punishment)
-2. **Adaptive difficulty** — Instead of penalizing fast answers, match players with appropriately challenging questions
-3. **Learning-focused scoring** — De-emphasize competitive metrics, emphasize knowledge growth
-4. **Grace periods** — Allow occasional anomalies (network lag, legitimate speed) before flagging
-
-**Speed Bonus Fairness (LOW confidence — limited specific research)**
-
-WebSearch found limited discussion of speed bonus fairness in 2026. Key findings:
-- Time limits prevent external lookup cheating (typical: "few seconds" per question)
-- Some apps removed milliseconds from timers for fairness
-- Skill-based matching reduces unfairness from speed differences
-
-**Accessibility consideration:** Speed bonuses may disadvantage players with motor impairments or slower processing speeds. WCAG guidelines require timing accommodations.
-
-### Anti-Features (What NOT to Build)
-
-**1. Aggressive Auto-Penalties**
-**What:** Automatic score reduction or auto-fail for flagged timing
-**Why avoid:** High false positive rate. Legitimate players penalized for:
-- Network lag causing delayed submission
-- Re-reading complex questions carefully
-- Disabilities affecting response time
-- Slow devices causing UI lag
-
-**What to do instead:** Log patterns, flag for review, show warnings on suspicious behavior. Human review or AI-assisted pattern analysis for persistent issues.
-
-**2. Webcam/Screen Recording**
-**What:** Continuous monitoring via camera or screen capture
-**Why avoid:**
-- Privacy concerns
-- Overkill for low-stakes educational trivia
-- Creates anxiety and surveillance feeling
-- Conflicts with "no dark patterns" principle
-- High technical complexity
-
-**What to do instead:** Focus on test design (question randomization, time limits) and behavioral analysis (patterns over time).
-
-**3. Aggressive Browser Lockdown**
-**What:** Preventing all tab switching, blocking DevTools, requiring lockdown browser
-**Why avoid:**
-- Accessibility issues (screen readers, assistive tech)
-- User experience friction
-- False sense of security (sophisticated cheaters bypass anyway)
-- Inappropriate for learning-focused, low-stakes environment
-
-**What to do instead:** Light touch monitoring (log tab switches) with warning messages. Trust users, verify patterns.
-
-**4. Perfect Accuracy Requirements**
-**What:** Assuming 100% accuracy = cheating
-**Why avoid:** Some players are genuinely knowledgeable. Creates false positives and discourages legitimate high performers.
-
-**What to do instead:** Combine accuracy with timing, consistency, and behavioral patterns. High accuracy + reasonable timing = legitimate skill.
-
-### Recommendation for v1.1
-
-**Enhance detection, remain passive on enforcement:**
-
-| Enhancement | Complexity | Priority | Rationale |
-|-------------|-----------|----------|-----------|
-| Improved timing thresholds | Low | HIGH | Better signal quality for future analysis |
-| Tab switching detection | Low-Med | MEDIUM | Non-invasive, logs for pattern review |
-| Response pattern analysis | Medium | LOW | Useful for future improvements, not urgent |
-| Warning messages | Low | MEDIUM | Educational feedback without penalties |
-
-**Recommended approach:**
-1. **Improve signal quality:** Better timing thresholds (account for question complexity, reading time)
-2. **Pattern analysis:** Track behavior over multiple sessions (one anomaly ≠ cheating)
-3. **Transparent feedback:** Show players their stats ("You answered 3x faster than average — impressive!")
-4. **Human review path:** Flag persistent suspicious patterns for manual review
-5. **No auto-penalties:** Maintain passive logging approach
-
-**Key principle:** Optimize for **false positive prevention** over detection rate. Better to miss some cheaters than punish legitimate players.
-
-**Accessibility integration:** Respect `timer_multiplier` settings in plausibility checks. Players with 2x time shouldn't be flagged for "too slow" responses.
-
-**Complexity:** LOW-MEDIUM (mostly configuration tuning)
-**Priority:** MEDIUM (quality improvement, not blocking)
-
-## Redis Session Management
-
-### Current State
-- In-memory session storage (JavaScript Map)
-- 1-hour TTL with automatic expiry
-- Data lost on server restart
-- Simple, works for MVP scale
-
-### Table Stakes (Production Game Applications)
-
-**1. Redis as Session Store (HIGH confidence)**
-
-Redis is the industry-standard choice for session management in production applications:
-
-**Why Redis:**
-- **Speed:** Sub-millisecond latency for session reads/writes
-- **Built-in TTL:** Automatic expiration without manual cleanup
-- **Persistence options:** Prevent data loss on restart
-- **Horizontal scaling:** Works across multiple app servers
-- **No sticky sessions:** Load balancers can route to any server
-
-**Standard implementation pattern:**
+**Data model addition:**
 ```typescript
-// Session structure
-Key: `session:{sessionId}`
-Value: JSON-serialized game state
-TTL: 1 hour (3600 seconds)
-
-// Data structure choice: String (key-value)
-// Simple session data fits in single key
-// Hash structure only needed for frequent partial updates
+type Question = {
+  // ... existing fields
+  collectionId: string;
+  expiresAt?: string;        // ISO date, optional (null = evergreen)
+  effectiveAt?: string;       // ISO date, optional (null = always active)
+  temporalNote?: string;      // "As of January 2026 election"
+};
 ```
 
-**2. TTL Management Patterns (HIGH confidence)**
+**Expiration patterns observed in content platforms (MEDIUM confidence):**
+- **Hard expiration:** Question removed from pool entirely after date. Simple, safe. Recommended for MVP.
+- **Soft expiration:** Question flagged for review but stays in pool. Risky -- stale content is worse than missing content.
+- **Scheduled replacement:** New version of question auto-activates when old expires. Elegant but complex.
 
-Two primary expiration strategies:
+**Recommendation:** Hard expiration for MVP. Backend filters `expiresAt < now()` questions at load time. Content authors set expiration when creating time-sensitive questions. A weekly content health check (even manual) flags collections dropping below minimum size due to expirations.
 
-| Strategy | Behavior | Use Case |
-|----------|----------|----------|
-| **Absolute expiry** | Fixed duration regardless of activity | Session security, exam time limits |
-| **Sliding expiry** | TTL refreshes on each access | Consumer apps, ongoing gameplay |
+**Content guidance for authors:**
+| Content type | Expiration | Example |
+|-------------|------------|---------|
+| Historical facts | Never expires | "When was Indiana admitted to the Union?" |
+| Structural facts | Rare expiration | "How many city council districts?" (changes with redistricting) |
+| Current officeholders | Next election + buffer | "Who is the current mayor?" (set to 1 month after election) |
+| Recent events | 6-12 months | "What was the 2025 city budget?" |
+| Policy questions | Review annually | "What is the current sales tax rate?" |
 
-**For trivia game:** **Absolute expiry** is correct choice. Game has fixed 10-question duration, natural endpoint. Sliding expiry would allow indefinite paused games.
+### D-2: Collection Health Dashboard (Admin)
 
-**Implementation:**
-```typescript
-// Set session with TTL on creation
-await redis.setex(`session:${sessionId}`, 3600, JSON.stringify(gameState));
+**What:** A simple view showing each collection's health: total questions, active questions, expiring-soon questions, below-minimum warnings.
+**Why valuable:** Community collections maintained by volunteers need visibility into content health. Without this, collections silently degrade as questions expire.
+**Complexity:** LOW-MEDIUM
+**Dependencies:** D-1 (expiration), TS-3 (collection registry)
+**Notes:** This does not need to be a full admin panel. A JSON endpoint (`GET /admin/collections/health`) that returns counts is sufficient for MVP. A simple page can render it later. The key insight: content health monitoring is not optional for time-sensitive content -- it is infrastructure.
 
-// No TTL refresh on access — absolute 1-hour expiry
-// Game completes long before expiry in normal play
-```
+**Health metrics per collection:**
+- Total questions (all states)
+- Active questions (not expired, within effective date)
+- Expiring within 30/60/90 days
+- Below minimum threshold warning
+- Last content update date
 
-**3. Persistence Strategy (HIGH confidence)**
+### D-3: Locale-Aware Collection Suggestions
 
-Redis offers three persistence modes:
+**What:** If the app can detect a user's approximate location (via IP geolocation or browser API), suggest their local collection first in the picker.
+**Why valuable:** A Bloomington resident opening the app should see "Bloomington, IN" prominently. This removes friction between "I want to learn about my city" and "I found the right collection."
+**Complexity:** MEDIUM
+**Dependencies:** TS-1 (collection picker), geolocation mechanism
+**Notes:** This is a suggestion, not a restriction. All collections remain visible. IP-based geolocation is lightweight and does not require permission prompts (unlike browser Geolocation API). Accuracy to city level is sufficient. Many free/cheap IP geolocation APIs exist. For alpha with only 2 communities, even a simple prompt ("Are you in Bloomington or LA?") could work as a low-tech alternative.
 
-| Mode | Durability | Performance | Use Case |
-|------|-----------|-------------|----------|
-| **No persistence** | Lost on restart | Fastest | Pure cache (not sessions) |
-| **RDB (snapshots)** | Point-in-time | Fast writes | Acceptable data loss window |
-| **AOF (append-only)** | Every write | Slight overhead | Critical data |
-| **RDB + AOF** | Best durability | Most overhead | Maximum safety |
+**Recommendation:** Defer to post-MVP. For alpha with 2 communities, manual selection is trivially easy. Invest in this when there are 10+ collections and discovery becomes a real problem.
 
-**For game sessions:**
-- **RDB snapshots** (every 5-15 minutes) are sufficient
-- Games complete in 5-10 minutes typically
-- Acceptable to lose in-progress games on crash (rare event)
-- AOF overhead not justified for ephemeral game state
+### D-4: Mixed Collection Mode ("Surprise Me")
 
-**4. Memory Optimization (MEDIUM confidence)**
+**What:** A play mode that draws questions from multiple collections, giving players exposure to civics beyond their own locale.
+**Why valuable:** Cross-community civic literacy. A Bloomington player learns something about LA governance and vice versa. Builds empathy across communities.
+**Complexity:** LOW-MEDIUM
+**Dependencies:** TS-2 (collection-scoped loading)
+**Notes:** Implementation: draw N questions from each of M collections (e.g., 4 federal + 3 local + 3 other locale). Requires at least 3 active collections to be meaningful. Label questions with their collection origin during gameplay so players know the context.
 
-Production patterns for efficient session storage:
+**Recommendation:** Defer to post-alpha. Focus on getting individual collections right first. This is a nice engagement feature once there is enough content diversity.
 
-**Key naming:**
-- Short, consistent prefixes save memory at scale
-- `s:{id}` vs `session:{sessionId}` saves 42-44 bytes per key
-- For 120-char IDs: 6 bytes vs 50 bytes
+### D-5: Community Contributor Attribution
 
-**Data structure choice:**
-- Use **String** for simple JSON blobs (session data)
-- Use **Hash** only if frequently updating specific fields
-- Hash with ziplist encoding is more memory-efficient at scale
-- For game sessions: String is simpler, performance is comparable
+**What:** Questions can optionally credit the community member who contributed or reviewed them.
+**Why valuable:** Volunteer motivation. People contribute more when they get credit. Builds community ownership of the content.
+**Complexity:** LOW
+**Dependencies:** Question data model extension
+**Notes:** Add optional `contributor` field to question: `{ name: string, role: "author" | "reviewer" }`. Display on learn-more modal, not during active gameplay (would be distracting). Low effort, high community value.
 
-**Eviction policies:**
-- `volatile-lru` — Evict least-recently-used keys with TTL
-- Appropriate for session store (all keys have TTL)
-- Prevents memory overflow if TTLs don't clean up fast enough
+### D-6: Per-Collection Topic Categories
 
-**Memory monitoring thresholds:**
-- Memory usage > 80%: Investigate growth
-- Fragmentation ratio > 1.5: Consider rebalance
-- TTL key ratio < 50%: Add expirations
+**What:** Each collection defines its own set of topic categories relevant to its scope, rather than using a single global enum.
+**Why valuable:** Federal categories (congress, judiciary, amendments) do not apply to local collections. Bloomington needs categories like "city-council", "county-government", "public-safety", "parks-and-rec", "budget". LA needs "city-departments", "county-supervisors", "transportation", "water-and-power".
+**Complexity:** MEDIUM
+**Dependencies:** TS-4 (question tagging), TopicIcon component refactor
+**Notes:** The current `TopicCategory` is a hardcoded TypeScript enum with 9 federal-specific values and matching SVG icons. This needs to become collection-scoped.
 
-**5. Cleanup and Expiration (HIGH confidence)**
+**Two approaches:**
+1. **Global expanded enum:** Add all categories from all collections to one big enum. Simple but does not scale -- every new community adds to the global type.
+2. **Collection-defined categories:** Each collection metadata includes its valid topic categories and labels. Questions reference their collection's categories. More flexible, scales to N communities.
 
-Redis uses dual expiration mechanism:
+**Recommendation:** Approach 2 (collection-defined categories). The TopicCategory type becomes a string (not enum), and each collection's metadata defines the valid values, display labels, and icon mappings. This scales cleanly as communities are added.
 
-**Passive expiration:**
-- Key checked on access
-- If expired, deleted immediately
-- Returns null to application
+---
 
-**Active expiration:**
-- Background process samples random keys with TTL
-- Default: 10 checks per second (`hz` parameter)
-- `active-expire-effort` tunable 1-10 (low to aggressive)
+## Anti-Features
 
-**Lazy deletion:**
-- Enable `lazyfree-lazy-eviction` for background cleanup
-- Offloads memory reclamation to background threads
-- Prevents blocking on large value deletion
+Features to explicitly NOT build. Common in this domain but wrong for this project.
 
-**For game sessions:** Default settings are sufficient. 1-hour TTL + automatic cleanup handles session lifecycle without manual intervention.
+### AF-1: User-Generated Questions (Open Submission)
 
-### Anti-Features (Over-Engineering Warnings)
+**What:** Letting any user submit questions directly through the app.
+**Why avoid:** Quality control nightmare. The project context emphasizes "AI-generated starting batches, human-reviewed, volunteers refine over time." Open submission without review creates a moderation burden that volunteer-run communities cannot sustain. Bad questions (factually wrong, politically biased, poorly worded) damage trust in an educational product.
+**What to do instead:** Controlled content pipeline: AI generates draft -> designated reviewers approve -> questions enter pool. A "Suggest a question" form (text only, not direct-to-pool) is fine for gathering ideas.
 
-**1. Complex Session Partitioning**
-**What:** Storing session data across multiple Redis keys/structures
-**Why avoid:**
-- Adds complexity for minimal benefit
-- Single JSON blob per session is simpler
-- Network round-trips for multiple keys
-- Game session size is small (<10KB typically)
+### AF-2: Real-Time Collaborative Editing
 
-**What to do instead:** Single key per session with JSON-serialized state. Simple, fast, easy to reason about.
+**What:** Google Docs-style simultaneous editing of question content by multiple contributors.
+**Why avoid:** Massive engineering complexity for minimal benefit. Question editing is low-frequency, low-concurrency work. Two volunteers will not be editing the same question at the same time.
+**What to do instead:** Simple review workflow. One person edits, another reviews. Version the question files in git. Use pull request workflow for content changes.
 
-**2. Session Replication Across Regions**
-**What:** Active-Active Redis with geographic replication
-**Why avoid:**
-- Overkill for v1.1 single-region deployment
-- Adds significant complexity and cost
-- Game sessions are short-lived (10 minutes)
-- Loss of in-progress game on regional failure is acceptable
+### AF-3: Dynamic Difficulty Adjustment Per Collection
 
-**What to do instead:** RDB snapshots for local persistence. Consider replication when scaling to multiple regions.
+**What:** Automatically adjusting question difficulty based on player performance within a specific collection.
+**Why avoid:** Premature optimization. With approximately 120 questions per collection and 3 difficulty levels, the existing random-10-from-pool approach provides natural variety. Adaptive difficulty requires significant analytics infrastructure and can feel patronizing in an educational context.
+**What to do instead:** Maintain the existing easy/medium/hard distribution in question authoring. Ensure each collection has a healthy mix (roughly 30% easy, 50% medium, 20% hard).
 
-**3. Redis Cluster for Sessions**
-**What:** Sharding sessions across Redis cluster
-**Why avoid:**
-- Not needed at current scale (<10K concurrent users)
-- Single Redis instance handles 100K+ ops/sec
-- Adds operational complexity
-- Session data is small and ephemeral
+### AF-4: Collection Subscriptions / Notifications
 
-**What to do instead:** Single Redis instance with adequate memory. Vertical scaling before horizontal.
+**What:** Push notifications when new questions are added to a collection or when content is updated.
+**Why avoid:** Over-engineering engagement mechanics for a civic education tool. The "no dark patterns" philosophy applies here -- notification-driven engagement is a dark pattern in educational contexts.
+**What to do instead:** Show "New questions added!" badges on collection cards when content has been updated since the player's last session. Pull, not push.
 
-**4. Custom TTL Refresh Logic**
-**What:** Sliding window TTL with manual refresh on every access
-**Why avoid:**
-- Not appropriate for fixed-duration trivia games
-- Adds write load (every read becomes read+write)
-- Absolute expiry is simpler and correct
+### AF-5: Nested Collection Hierarchies
 
-**What to do instead:** Set TTL once on session creation. Games complete before expiry.
+**What:** Collections within collections (e.g., Bloomington -> City Council -> Districts -> District 1).
+**Why avoid:** Adds navigation complexity without proportional value. At the current scale (3 collections), hierarchy is nonsensical. Even at 20 collections, a flat list with search/filter is simpler and more effective than tree navigation.
+**What to do instead:** Flat collection list. Use tags/filters if the list grows beyond approximately 10 (e.g., filter by state, filter by city size). Topic categories within a collection already provide internal structure.
 
-### Recommendation for v1.1
+### AF-6: Cross-Collection Leaderboards
 
-**Migrate to Redis with production-ready patterns:**
+**What:** Global leaderboards comparing scores across different collections.
+**Why avoid:** Collections have different difficulty levels and question pools. Comparing a federal score to a Bloomington score is meaningless and creates perverse incentives (players avoid harder collections to protect rankings).
+**What to do instead:** Per-collection statistics on the player's profile. "You've played Federal 12 times, Bloomington 5 times." Encourage breadth without competitive comparison.
 
-| Component | Implementation | Priority | Complexity |
-|-----------|---------------|----------|-----------|
-| Redis setup | Local instance or managed service | HIGH | Low |
-| Session structure | String key with JSON value | HIGH | Low |
-| TTL strategy | Absolute 1-hour expiry | HIGH | Low |
-| Persistence | RDB snapshots (5-15min) | HIGH | Low |
-| Memory optimization | Short key names, volatile-lru | MEDIUM | Low |
-| Monitoring | Memory usage alerts | LOW | Medium |
+### AF-7: Content Versioning / Question History
 
-**Migration approach:**
+**What:** Full version history for every question edit with diff viewing and rollback.
+**Why avoid:** Git already provides this. Questions live in JSON files in the repository. Git history IS the version history. Building a custom versioning system duplicates what git does better.
+**What to do instead:** Use git for content versioning. Document the content workflow: edit JSON -> commit -> deploy.
 
-1. **Setup Redis instance**
-   - Development: Local Redis or Docker container
-   - Production: Managed service (AWS ElastiCache, Azure Cache, Railway)
+---
 
-2. **Update session storage code**
-   ```typescript
-   // Replace in-memory Map with Redis
-   import Redis from 'ioredis';
-
-   const redis = new Redis(process.env.REDIS_URL);
-
-   // Create session
-   await redis.setex(
-     `s:${sessionId}`,
-     3600, // 1 hour TTL
-     JSON.stringify(gameState)
-   );
-
-   // Get session
-   const data = await redis.get(`s:${sessionId}`);
-   const gameState = data ? JSON.parse(data) : null;
-
-   // Delete session (on completion)
-   await redis.del(`s:${sessionId}`);
-   ```
-
-3. **Configure persistence**
-   ```redis
-   # redis.conf
-   save 900 1      # Snapshot after 15 min if 1+ keys changed
-   save 300 10     # Snapshot after 5 min if 10+ keys changed
-   save 60 10000   # Snapshot after 1 min if 10000+ keys changed
-
-   maxmemory-policy volatile-lru
-   ```
-
-4. **Environment configuration**
-   ```env
-   REDIS_URL=redis://localhost:6379  # Development
-   # Production: Use managed service URL
-   ```
-
-**No complex features needed:** Basic Redis with absolute TTL and RDB persistence covers all requirements.
-
-**Complexity:** LOW (straightforward migration, well-documented pattern)
-**Priority:** HIGH (blocks v1.1 milestone — prevents data loss on restart)
-
-## Feature Dependency Matrix
+## Feature Dependencies
 
 ```
-Redis Migration → Enhanced Plausibility Checks
-  (Redis enables session history for pattern analysis)
+TS-3 (Collection Registry)
+  |
+  +-- TS-5 (Default Federal Collection)
+  |
+  +-- TS-1 (Collection Picker Screen)
+  |     |
+  |     +-- D-3 (Locale-Aware Suggestions) [DEFERRED]
+  |     +-- D-4 (Mixed Mode) [DEFERRED]
+  |
+  +-- TS-6 (Minimum Size Enforcement)
 
-Learning Content Expansion → Analytics Integration
-  (Identify which questions need deeper content)
+TS-4 (Question Tagging)
+  |
+  +-- TS-2 (Collection-Scoped Loading)
+  |     |
+  |     +-- D-1 (Expiration Dates)
+  |           |
+  |           +-- D-2 (Health Dashboard)
+  |
+  +-- D-6 (Per-Collection Topic Categories)
 
-Plausibility System → Accessibility Features
-  (Timer multiplier must affect plausibility thresholds)
+Independent:
+  D-5 (Contributor Attribution) -- can be added to data model at any time
 ```
 
-## MVP Recommendation for v1.1
+---
 
-**MUST HAVE (Table Stakes):**
-1. ✓ Redis migration with absolute TTL and RDB persistence
-2. ✓ Maintain current learning content coverage (15% is sufficient)
-3. ✓ Enhance plausibility detection quality without adding penalties
+## MVP Recommendation
 
-**SHOULD HAVE (Quick Wins):**
-4. ○ Strategic learning content expansion to 25-30% (6-month roadmap)
-5. ○ Tab switching detection (low complexity, useful signal)
-6. ○ Plausibility warning messages (transparent feedback)
+### Must Have for Alpha Launch
 
-**DEFER (Over-Engineering):**
-- Comprehensive learning content (100% coverage)
-- Aggressive anti-cheat with auto-penalties
-- Redis clustering or replication
-- Webcam/screen monitoring
-- Browser lockdown
+1. **TS-3** Collection metadata registry (JSON config)
+2. **TS-5** Federal questions become "Federal" collection (migration)
+3. **TS-4** Add `collectionId` to question data model
+4. **TS-2** Backend accepts collection parameter in session creation
+5. **TS-1** Collection picker screen replacing bare "Quick Play"
+6. **TS-6** Minimum collection size enforcement (floor: 30)
+7. **D-1** Expiration dates on time-sensitive questions
+8. **D-6** Per-collection topic categories (replacing hardcoded enum)
 
-## Production Readiness Checklist
+### Should Have (Alpha Quality of Life)
 
-| Area | Current State | Production Ready | Gap |
-|------|---------------|------------------|-----|
-| **Session Persistence** | In-memory | Redis with RDB | MUST MIGRATE |
-| **Session TTL** | 1-hour absolute | 1-hour absolute | ✓ CORRECT |
-| **Basic Explanations** | 120/120 | 120/120 | ✓ SUFFICIENT |
-| **Deep-dive Content** | 18/120 (15%) | 30+/120 (25%+) | EXPAND STRATEGICALLY |
-| **Server-Side Scoring** | ✓ Implemented | ✓ Implemented | ✓ DONE |
-| **Timing Detection** | Passive logging | Improved thresholds | ENHANCE |
-| **Pattern Analysis** | None | Session history | DEFER to v1.2+ |
-| **Anti-Cheat Philosophy** | Passive, fair | Passive, fair | ✓ CORRECT |
+9. **D-5** Contributor attribution field in data model (low cost to add now)
+10. **D-2** Collection health endpoint (needed for content maintenance)
 
-## Complexity Assessment
+### Defer to Post-Alpha
 
-| Feature | Effort | Risk | Value |
-|---------|--------|------|-------|
-| Redis migration | 2-3 days | Low | HIGH — prevents data loss |
-| Learning content (→30%) | 2-4 weeks | Low | MEDIUM — incremental improvement |
-| Enhanced plausibility | 1-2 days | Low | MEDIUM — better analytics |
-| Tab switching detection | 1 day | Low | LOW — marginal signal |
-| Pattern analysis | 1 week | Medium | LOW — defer to v1.2+ |
+- **D-3** Locale-aware suggestions (only 2-3 communities, manual selection is fine)
+- **D-4** Mixed collection mode (need more collections first)
+- All anti-features
 
-**Recommendation:** Focus v1.1 on Redis migration (highest value, low complexity). Treat learning content expansion as ongoing work over 3-6 months rather than blocking milestone completion.
+### Estimated Scope
+
+| Feature | Effort | Risk |
+|---------|--------|------|
+| TS-3 + TS-5 (registry + migration) | 1 day | Low |
+| TS-4 (data model extension) | 0.5 days | Low |
+| TS-2 (backend collection routing) | 1 day | Low |
+| TS-1 (picker UI) | 1-2 days | Low |
+| TS-6 (minimum enforcement) | 0.5 days | Low |
+| D-1 (expiration system) | 1-2 days | Medium -- content authoring guidance needed |
+| D-6 (per-collection categories) | 1-2 days | Medium -- TopicIcon refactor |
+| D-5 (attribution field) | 0.5 days | Low |
+| D-2 (health endpoint) | 0.5 days | Low |
+| **Content creation (2 collections)** | **5-10 days** | **HIGH -- this is the real bottleneck** |
+
+**Total technical work:** approximately 7-10 days
+**Content creation:** approximately 5-10 days (100-240 questions across 2 collections)
+**Content is the bottleneck, not code.**
+
+---
+
+## Civic Education Specific Patterns
+
+### What Makes Civic Trivia Different from General Trivia
+
+| Aspect | General Trivia | Civic Education Trivia |
+|--------|---------------|----------------------|
+| Content lifecycle | Evergreen (facts don't change) | Time-sensitive (officials change, budgets update) |
+| Source authority | Multiple valid sources | Official government sources required |
+| Political sensitivity | Low (entertainment) | High (perceived bias can destroy trust) |
+| Community ownership | Platform-owned content | Community-contributed, community-validated |
+| Engagement model | Competitive/entertainment | Learning-first, engagement second |
+| Locale relevance | Universal | Hyper-local (my city, my state) |
+
+### iCivics Content Organization (MEDIUM confidence)
+
+iCivics, the largest civic education game platform, organizes content by:
+- **Curricular units** (e.g., "State and Local Governments", "Constitution and Bill of Rights")
+- **Game type** (simulation games, not trivia per se)
+- **Grade level** (elementary, middle, high school)
+- **Standards alignment** (Common Core, state standards)
+
+Relevance: iCivics separates federal from state/local content into distinct curricular units, validating the collection-per-locale approach. They do NOT mix federal and local in the same game.
+
+### Political Neutrality in Question Authoring
+
+**Critical for civic education:** Questions must be factual, not partisan. "Who is the current mayor?" is factual. "Is the mayor doing a good job?" is partisan. Content review must explicitly check for bias. This is especially important for AI-generated content -- LLMs can embed subtle framing biases.
+
+**Content review checklist for civic questions:**
+- Is the answer verifiable from official government sources?
+- Does the question framing favor any political party or ideology?
+- Are all answer options plausible and respectful?
+- Is the explanation factual and neutral in tone?
+- For time-sensitive questions: is the expiration date set correctly?
+
+---
 
 ## Sources
 
-### Learning Content Coverage
-- [Best Quiz and Game Show Apps for Classrooms | Common Sense Education](https://www.commonsense.org/education/best-in-class/the-best-quiz-and-game-show-apps-for-classrooms) — MEDIUM confidence
-- [Trivia Games – Using Game-Based Learning Online](https://ecampusontario.pressbooks.pub/gamebasedlearning/chapter/trivia-games/) — MEDIUM confidence
-- [10 Best free & paid Quizlet alternatives for 2026](https://forms.app/en/blog/best-quizlet-alternatives) — LOW confidence
-- [Answer explanations – Kahoot! Help & Resource Center](https://support.kahoot.com/hc/en-us/community/posts/41766775322515-Answer-explanations) — MEDIUM confidence
-- [Kahoot vs Quizziz: The Ultimate Teacher's guide (2026)](https://triviamaker.com/kahoot-vs-quizziz/) — MEDIUM confidence
+### Trivia Platform Patterns
+- [Open Trivia Database API](https://opentdb.com/api_config.php) -- Category-based question filtering, 23 categories with numeric IDs (HIGH confidence, official docs)
+- [Kahoot Question Bank](https://support.kahoot.com/hc/en-us/articles/16130620877971-How-to-use-Kahoot-question-bank) -- Keyword search across community questions, folder-based organization (MEDIUM confidence, official help docs)
+- [Trivia Game UX Case Study](https://medium.com/design-bootcamp/trivia-dive-intern-challenge-9bcefc186517) -- Category voting patterns in multiplayer trivia (LOW confidence, single blog)
+- [Open Trivia Database GitHub](https://github.com/el-cms/Open-trivia-database) -- JSON storage with category_id, tags array, language field (MEDIUM confidence)
 
-### Anti-Cheat / Plausibility Systems
-- [Best 8 Anti-Cheating Software for Hiring in 2026](https://www.testtrick.com/blogs/top-anti-cheating-software-for-fair-hiring) — MEDIUM confidence
-- [TestGorilla Cheating Detection: 8 Behaviors That Get Flagged in 2026](https://www.shadecoder.com/blogs/testgorilla-cheating-detection-8-behaviors-that-get-flagged-in-2026) — MEDIUM confidence
-- [Stop Online Exam Cheating in 2026: 15 AI-Powered Methods](https://www.eklavvya.com/blog/prevent-cheating-online-exams/) — LOW confidence
-- [How to Enable Cheating Prevention Features in a Quiz](https://quiz.proprofs.com/how-do-i-prevent-cheating-on-my-quiz) — MEDIUM confidence
-- [13 Ways to Stop Students From Cheating on Online Exams](https://honorlock.com/blog/4-ways-to-prevent-cheating-on-online-exams/) — MEDIUM confidence
+### Civic Education Platforms
+- [iCivics Platform](https://ed.icivics.org/) -- 20+ games organized by curricular unit, federal/state/local separation (HIGH confidence, official site)
+- [iCivics State and Local Governments](https://ed.icivics.org/curriculum/state-and-local-governments?page=1,1) -- Dedicated state/local curriculum track (HIGH confidence, official site)
+- [Education Commission of the States - Gamification and Civic Learning](https://www.ecs.org/using-gamification-to-enhance-civic-learning/) -- iCivics as leading example (MEDIUM confidence)
+- [Georgetown CERL - Gaming Civics](https://cerl.georgetown.edu/gaming-civics/) -- Academic research on civic education games (MEDIUM confidence)
 
-### Redis Session Management
-- [Session Management | Redis](https://redis.io/solutions/session-management/) — HIGH confidence (official docs)
-- [Gaming | Redis](https://redis.io/industries/gaming/) — HIGH confidence (official docs)
-- [How to Build a Session Management System with Redis](https://oneuptime.com/blog/post/2026-01-21-redis-session-management/view) — HIGH confidence
-- [How to Implement Sliding TTL in Redis](https://oneuptime.com/blog/post/2026-01-26-redis-sliding-ttl/view) — HIGH confidence
-- [Redis Memory Optimization Techniques & Best Practices](https://medium.com/platform-engineer/redis-memory-optimization-techniques-best-practices-3cad22a5a986) — MEDIUM confidence
-- [The 6 Most Impactful Ways Redis is Used in Production Systems](https://blog.bytebytego.com/p/the-6-most-impactful-ways-redis-is) — MEDIUM confidence
-- [Cache vs. Session Store | Redis](https://redis.io/blog/cache-vs-session-store/) — HIGH confidence (official blog)
-- [Redis persistence | Docs](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/) — HIGH confidence (official docs)
+### Content Lifecycle and Expiration
+- [Sensei LMS - Course Access Period](https://senseilms.com/documentation/course-access-expiration/) -- Hard/soft expiration patterns, notification timing (MEDIUM confidence, official docs)
+- [Frontify - Asset Lifecycle](https://help.frontify.com/en/articles/2224883-asset-lifecycle-and-notifications) -- "Available until" date pattern for time-sensitive content (MEDIUM confidence)
+- [Gameful Civic Engagement Literature Review](https://www.sciencedirect.com/science/article/pii/S0740624X19302606) -- Gamification linked to increased civic learning and engagement (HIGH confidence, peer-reviewed)
 
-### Accessibility & Timing
-- [Time limits – Accessible Technology](https://www.washington.edu/accesstech/checklist/time-limits/) — MEDIUM confidence
-- [Accessibility Tips - Quizzes - Instructor Help](https://help.intech.arizona.edu/article/625-accessibility-tips-quizzes) — MEDIUM confidence
-- [New Digital Accessibility Requirements in 2026](https://bbklaw.com/resources/new-digital-accessibility-requirements-in-2026) — MEDIUM confidence
+### Gamification for Government
+- [Harvard Data-Smart City Solutions](https://datasmart.hks.harvard.edu/news/article/boosting-engagement-by-gamifying-government-1122) -- Government gamification case studies (MEDIUM confidence)
+- [Swagsoft - Gamification for Government](https://www.swagsoft.com/post/gamification-for-government-enhancing-public-engagement) -- Gamified civic education apps teach about voting, government structures (LOW confidence)
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|-----------|-------|
-| Redis patterns | HIGH | Official Redis docs + multiple authoritative sources agree |
-| Session management | HIGH | Clear industry consensus, well-documented patterns |
-| Learning content coverage | MEDIUM | General best practices found, but no specific percentage thresholds |
-| Anti-cheat strategies | MEDIUM | Multiple sources, but trivia-specific guidance limited |
-| Speed bonus fairness | LOW | Very limited research available on this specific topic |
+| Collection picker UX patterns | HIGH | Consistent across all trivia platforms reviewed |
+| Collection data model | HIGH | Standard pattern (category ID on questions + metadata registry) |
+| Expiration system design | MEDIUM | Patterns borrowed from CMS/LMS platforms, not trivia-specific |
+| Minimum collection size | MEDIUM | Mathematical reasoning sound, but no trivia-specific benchmarks found |
+| Civic education patterns | MEDIUM | iCivics structure validated, but iCivics uses simulation games not trivia |
+| Content authoring workflow | LOW | No established patterns for volunteer-maintained civic trivia specifically |
 
 ## Research Gaps
 
-- **Speed bonus accessibility:** Limited research on how speed bonuses interact with timing accommodations. Recommend consulting WCAG timing guidelines and user testing with accommodations enabled.
-- **Trivia-specific anti-cheat:** Most research focuses on high-stakes assessments. Educational trivia context is different, requiring lighter touch.
-- **Optimal learning content percentage:** No industry-standard threshold found. Recommendation based on general principles rather than specific benchmarks.
-
-## Next Steps for v1.1
-
-1. **Immediate (block milestone):**
-   - Migrate to Redis with absolute TTL and RDB persistence
-   - Verify existing plausibility checks respect timer_multiplier
-
-2. **Near-term (within milestone):**
-   - Improve plausibility threshold quality (account for question complexity)
-   - Add transparent warning messages for suspicious patterns
-
-3. **Ongoing (3-6 month roadmap):**
-   - Strategic learning content expansion guided by analytics
-   - Pattern analysis across sessions (requires Redis history)
-   - User testing for speed bonus fairness with accommodations
+- **Content generation pipeline specifics:** How to efficiently generate and validate 100+ locale-specific civic questions using AI. The existing `generateLearningContent.ts` script provides a starting pattern but has not been tested for locale-specific content at scale.
+- **Volunteer contributor workflow:** No established patterns found for managing volunteer civic content contributors. This needs to be designed from scratch, informed by open-source project contribution models.
+- **Expiration notification timing:** When to alert content maintainers about expiring questions (30 days? 60 days?) -- no civic-specific guidance found. Recommendation: start with 60 days and adjust based on content maintenance velocity.
 
 ---
-*Research completed: 2026-02-12*
-*Researcher: GSD Project Researcher*
-*Confidence: MEDIUM overall (HIGH for Redis, MEDIUM for content/anti-cheat)*
+*Research completed: 2026-02-18*
+*Researcher: GSD Project Researcher (Features dimension)*
+*Confidence: MEDIUM-HIGH overall*

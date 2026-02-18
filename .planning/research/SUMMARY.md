@@ -1,303 +1,183 @@
-# v1.1 Tech Debt Hardening Research Summary
+# Project Research Summary
 
-**Project:** Civic Trivia Championship - Tech Debt Hardening Milestone
-**Domain:** Educational trivia game - production hardening
-**Researched:** 2026-02-12
-**Confidence:** HIGH
+**Project:** Civic Trivia Championship v1.2 -- Community Collections
+**Domain:** Civic education trivia with locale-specific content collections
+**Researched:** 2026-02-18
+**Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-v1.1 Tech Debt Hardening addresses five critical gaps identified in the v1.0 audit: Redis session migration, learning content expansion, plausibility check enhancement, dev script fixes, and missing documentation. Research reveals that current implementation (15% learning content coverage, passive plausibility logging, in-memory sessions) is appropriate for MVP scale, but production hardening requires strategic improvements focused on reliability and quality over comprehensive coverage.
+Civic Trivia Championship v1.2 adds community-specific question collections (Bloomington IN, Los Angeles CA) to an existing deployed federal civics trivia game. The core architectural shift is migrating questions from a single JSON file loaded at server startup to PostgreSQL (already in the stack via Supabase), introducing a `collections` table, a `questions` table, and a junction table for tag-based membership. This migration is the critical path -- every other v1.2 feature (collection picker, expiration, content generation) depends on questions living in the database. The existing stack handles all requirements with only one new runtime dependency (`node-cron` for expiration scheduling). Zero frontend dependencies need to be added.
 
-The recommended approach prioritizes **Redis migration as the highest-value, lowest-complexity change** (prevents session loss on restart, enables multi-instance scaling), followed by **strategic content expansion to 25-30% coverage** (guided by analytics, not arbitrary quotas), and **enhanced plausibility detection without penalties** (optimize for false positive prevention over detection rate). The dev tooling fix is straightforward: install `@anthropic-ai/sdk` as devDependency for the content generation script.
+The recommended approach is a phased build starting with the database schema and seed migration, then swapping the question loading layer (with backward compatibility so the existing game never breaks), then adding the collection picker UI and expiration system in parallel. Content generation for Bloomington and LA runs as a parallel workstream but is gated by the database layer being ready. The most important insight from research: content creation is the bottleneck, not code. Technical work is estimated at 7-10 days; content creation for two communities is 5-10 days and carries the highest risk.
 
-**Key risks:** Session data loss during Redis transition (mitigated with dual-write period), false positives in plausibility checks (mitigated with difficulty-adjusted thresholds and pattern counting), and AI-generated content factual errors (mitigated with cross-referencing authoritative sources). All three areas have well-documented production failure modes: 58% of organizations struggle with quality degradation when scaling AI content beyond 100 pieces (McKinsey, 2026), false positive rates in anti-cheat systems average 12-19% industry-wide, and session migration without dual-write periods leads to data loss during transition windows.
+The two most dangerous risks are (1) AI hallucination on local government facts, especially for small cities like Bloomington where LLM training data is sparse, and (2) breaking the existing federal game during the JSON-to-database migration. Both are preventable: hallucination requires a RAG-from-authoritative-sources approach with mandatory local reviewer sign-off; migration safety requires keeping the JSON file as a fallback and making the `collectionId` parameter optional so omitting it produces identical v1.1 behavior.
 
 ## Key Findings
 
-### Stack Additions (No Major Changes)
+### Recommended Stack
 
-The validated stack (React 18+, TypeScript, Express, PostgreSQL, JWT) remains unchanged. Three focused additions are needed:
+The existing stack (React 18, TypeScript, Express, PostgreSQL via Supabase, Redis) handles all v1.2 requirements. One new runtime dependency is needed.
 
-**Required additions:**
-- **Redis client (already installed):** `redis@4.6.12` is already configured for JWT token blacklist, just needs session storage implementation via JSON serialization
-- **@anthropic-ai/sdk (devDependency):** Missing package for `generateLearningContent.ts` script — install as devDependency since it's dev-time tooling
+**Core technologies (all existing, no changes):**
+- **PostgreSQL (Supabase):** Questions migrate from JSON to PostgreSQL using relational tables for collections/tags and JSONB for nested content (options, learningContent)
+- **`pg` client (`^8.11.3`):** Already installed for user data; now also handles question queries
+- **`@headlessui/react` (`^2.2.9`):** Collection picker UI via RadioGroup/Listbox -- no new frontend packages
+- **`@anthropic-ai/sdk` (`^0.74.0`):** Enhanced content generation scripts for locale-aware question creation
 
-**No new libraries needed:**
-- Plausibility enhancement is architectural pattern change (progressive penalties), not technical capability gap
-- Redis session storage uses JSON serialization with existing client, no session middleware needed
-- Content expansion uses existing script infrastructure
+**New dependency:**
+- **`node-cron` (`^3.0.3`):** Hourly expiration sweep -- lighter than Render cron jobs, simpler than `setInterval`
 
-**What NOT to add:**
-- `ioredis` (project already standardized on `redis`)
-- `connect-redis` (wrong abstraction for game sessions)
-- `express-rate-limit` (wrong tool for plausibility checks)
-- ML/AI cheat detection libraries (premature complexity)
+**Explicitly not adding:** ORM (Prisma/Drizzle), migration tool (Knex), full-text search, i18n library, Redis caching for questions, admin dashboard framework, job queue (BullMQ). Each was evaluated and rejected with rationale in STACK.md.
 
 ### Expected Features
 
-Research examined production best practices for three tech debt areas: learning content coverage, plausibility/anti-cheat systems, and Redis session management.
-
 **Must have (table stakes):**
-- **Redis session storage:** Industry-standard choice for production applications — prevents data loss on restart, enables horizontal scaling, sub-millisecond latency
-- **Basic explanations for all questions:** Already complete (120/120) — modern quiz platforms treat this as table stakes
-- **Server-side scoring:** Already implemented — prevents client manipulation
+- TS-1: Collection picker screen (card-based grid, not dropdown)
+- TS-2: Collection-scoped question loading (backend accepts `collectionId`)
+- TS-3: Collection metadata registry (name, locale, description, question count)
+- TS-4: Question tagging with collection membership (junction table)
+- TS-5: Backward-compatible default collection (Federal becomes "Federal Civics")
+- TS-6: Minimum collection size enforcement (floor of 30, target 50-80)
 
 **Should have (differentiators):**
-- **Strategic learning content expansion:** From 15% to 25-30% coverage, guided by analytics (frequently missed questions, high-interest topics) — NOT comprehensive coverage
-- **Enhanced plausibility detection:** Improved timing thresholds accounting for question difficulty, network latency, and accessibility settings — remain passive on enforcement
-- **Transparent plausibility feedback:** Show players their timing/pattern analysis (educational feedback, not punishment)
+- D-1: Time-sensitive question expiration (hard expiration with `expiresAt` date)
+- D-2: Collection health endpoint (admin JSON endpoint showing active/expiring counts)
+- D-5: Community contributor attribution (optional `contributor` field)
+- D-6: Per-collection topic categories (replacing hardcoded federal-only enum with collection-defined categories)
 
-**Defer (v2+):**
-- Comprehensive learning content (100% coverage) — over-engineering, most answers adequately explained in 1-3 sentences
-- Aggressive anti-cheat with auto-penalties — high false positive risk, conflicts with "no dark patterns" philosophy
-- Redis clustering or replication — not needed at current scale (<10K concurrent users)
-- Pattern analysis across sessions — requires Redis history, defer until migration proven
+**Defer to post-alpha:**
+- D-3: Locale-aware collection suggestions (only 2-3 communities -- manual selection is fine)
+- D-4: Mixed collection mode / "Surprise Me" (need more collections first)
+- All anti-features: user-generated questions, real-time editing, dynamic difficulty, push notifications, nested hierarchies, cross-collection leaderboards
 
 ### Architecture Approach
 
-The migration path is straightforward since Redis is already installed and configured for JWT token blacklist. Replace in-memory Map with Redis using JSON serialization, maintaining the current SessionManager API to minimize breaking changes.
-
-**Migration strategy:**
-1. **Phase 1:** Make SessionManager methods async (prepare for network I/O)
-2. **Phase 2:** Replace Map with Redis operations (direct cutover or dual-write period)
-3. **Phase 3:** Add graceful degradation (fallback to Map if Redis unavailable)
-
-**Key design decisions:**
-- **JSON serialization:** Simple, debuggable, matches existing token storage pattern — hash structure only needed for frequent partial updates
-- **Absolute TTL (1-hour):** Fixed duration regardless of activity — correct for fixed-duration trivia games, simpler than sliding expiration
-- **Dual-write period:** Optional for zero-downtime migration, but sessions are ephemeral (1-hour lifetime), acceptable to lose in-flight sessions during deployment
+The architecture change is surgical: only the session creation step needs to know about collections. Once questions are selected and stored in the Redis session, everything downstream (answering, scoring, plausibility detection, results) is unchanged. Three new backend services (`QuestionService`, `CollectionService`, `ExpirationService`) replace the single `readFileSync` + in-memory array pattern. The frontend adds a `CollectionPicker` component on the Dashboard that passes `collectionId` to the existing game start flow.
 
 **Major components:**
+1. **QuestionService** -- Replaces in-memory `allQuestions[]` with PostgreSQL queries filtered by collection and expiration
+2. **CollectionService** -- CRUD and listing for collection metadata with active question counts
+3. **ExpirationService** -- Hourly cron that sets `is_active = false` on expired questions and logs results
+4. **CollectionPicker (frontend)** -- Card grid on Dashboard using Headless UI; passes selection to `POST /session`
+5. **Seed migration script** -- One-time idempotent migration of 120 federal questions from JSON to PostgreSQL
 
-1. **SessionManager (sessionService.ts)** — Convert from sync to async operations, replace Map with Redis client calls, maintain existing interface
-2. **Redis client (config/redis.ts)** — Already configured, no changes needed, supports namespace strategy (`session:{sessionId}`)
-3. **Game routes (game.ts)** — Add await to all sessionManager calls, handle async responses
-
-**Data flow changes:**
-- Before: Synchronous Map operations (<1ms latency), manual cleanup via setInterval, lost on server restart
-- After: Asynchronous Redis operations (1-3ms latency for local Redis), automatic TTL expiration, survives server restart, shareable across instances
+**Database schema:** 3 new tables (`questions`, `collections`, `collection_questions` junction), using string IDs for human-readability, JSONB for nested content, and relational joins for the tag/collection dimension that is actually queried.
 
 ### Critical Pitfalls
 
-Research identified 20 specific pitfalls across four areas: Redis migration (session loss, serialization issues, connection failures), plausibility enhancement (false positives, network latency), content generation (quality degradation, factual errors), and dev tooling (production breakage).
+1. **AI hallucination on local government content** -- LLMs have sparse training data for small cities like Bloomington. Prevention: source-first RAG approach (scrape bloomington.in.gov first, then generate), mandatory local reviewer sign-off, reject any question not traceable to an authoritative source.
 
-**Top 5 critical pitfalls to avoid:**
+2. **Breaking existing game during migration** -- The current `readFileSync` + module-scope array is deeply embedded. Prevention: keep JSON as fallback, make `collectionId` optional (null = v1.1 behavior), feature flag `USE_COLLECTIONS`, integration test the full game flow after every migration step.
 
-1. **Session data loss during Redis transition window** — All active sessions vanish on server restart if cutover is binary. Prevention: Dual-write period (write to both Map and Redis for 1+ hour), or accept temporary session loss during deployment (simpler for ephemeral sessions).
+3. **Content expiration removing questions mid-game** -- Sessions already snapshot full Question objects in Redis, so active games are safe. But expiration must be soft-delete only, with a 24-hour grace period before removal from new game selection.
 
-2. **False positives on legitimate fast correct answers** — Player knows answer instantly, responds in 0.8s, plausibility check flags as "suspiciously fast" (<0.5s threshold too strict). Prevention: Difficulty-adjusted thresholds (easy questions allow <1s, medium <0.75s, hard <0.5s), pattern counting (3+ suspicious answers before action), grace period for network latency (100-200ms).
+4. **Collection size imbalance killing replayability** -- A 10-question game from a 15-question pool means 67% repetition. Prevention: minimum 40 questions before a collection goes live; display smaller collections as "Coming Soon."
 
-3. **Quality degradation at bulk scale (>50 questions)** — First 20 AI-generated content pieces are high quality, by generation 80 content becomes repetitive/generic/shallow. Prevention: Generate in batches of 10-20 with quality review between batches, vary prompts, set minimum word count, manual spot-checks every 10th item.
-
-4. **Factual errors in AI-generated educational content** — LLM generates plausible-sounding but incorrect civic facts (dates, legal terms, amendment numbers). Prevention: Cross-reference all generated facts with authoritative sources (constitution.congress.gov, archives.gov), human reviewer verifies key facts, use retrieval-augmented generation (RAG) with official source text.
-
-5. **Redis connection failures without graceful degradation** — Redis goes down (network issue, memory limit, misconfiguration), all game sessions fail with 500 errors instead of degrading gracefully. Prevention: Keep Map-based sessionService as fallback, wrap Redis calls in try-catch with degradation logic, circuit breaker after 5 consecutive failures, health check endpoint for monitoring.
-
-**Additional key pitfalls:**
-
-- **Serialization format mismatch:** JSON.stringify loses Date objects (becomes ISO string) and undefined values — handle Date objects explicitly, add roundtrip tests
-- **Network latency causing timing anomalies:** Geographic patterns in flagged responses, use client-reported `timeRemaining` as source of truth, accept range validation only
-- **Hallucinated or broken source URLs:** LLM constructs URLs from patterns but doesn't verify they exist — validate URLs with HTTP HEAD requests, manual verification
-- **Content expansion breaks existing questions:** Script overwrites entire questions.json, changes formatting/order — commit before running, script should only ADD fields, preserve existing structure
+5. **Tag taxonomy rot** -- Without governance, tags proliferate into synonyms and case variants. Prevention: controlled vocabulary from day one, canonical lowercase-hyphenated format, hierarchical prefixes (`locale:`, `topic:`).
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure prioritizes independent, low-complexity, high-value changes:
+Based on research, suggested phase structure:
 
-### Phase 1: Redis Session Migration
-**Rationale:** Highest-value change for production readiness — prevents data loss on restart, enables multi-instance scaling, blocks future deployment. Low technical risk since Redis already installed and configured. All other improvements can proceed independently.
+### Phase 1: Database Schema + Seed Migration
 
-**Delivers:** Persistent session storage surviving server restarts, foundation for multi-instance deployment, reduced memory pressure on Node.js heap
+**Rationale:** Everything depends on questions being in PostgreSQL. This is the critical path with zero parallel alternatives.
+**Delivers:** `questions`, `collections`, and `collection_questions` tables populated with 120 federal questions tagged as "Federal Civics" collection. Seed migration script that is idempotent and preserves existing `q001`-`q120` IDs.
+**Addresses:** TS-3 (collection registry), TS-4 (question tagging), TS-5 (default federal collection)
+**Avoids:** Pitfall #2 (migration breakage) by keeping JSON as fallback, Pitfall #8 (data loss) by using JSONB for nested content and running validation script post-migration
 
-**Addresses:** v1.0 audit item #1 (migrate in-memory sessions to Redis)
+### Phase 2: Question Service + Route Integration
 
-**Stack elements:** Redis client (already installed), JSON serialization pattern
+**Rationale:** Must swap the data access layer before any collection-aware features can work. This phase makes the game query PostgreSQL instead of JSON.
+**Delivers:** `QuestionService` class, modified `POST /api/game/session` accepting optional `collectionId`, removal of `readFileSync` pattern. Existing "Quick Play" works identically (backward compatible).
+**Addresses:** TS-2 (collection-scoped loading)
+**Avoids:** Pitfall #2 (breaking existing game) by making `collectionId` optional with null defaulting to Federal collection
 
-**Avoids pitfalls:**
-- Session data loss during transition (dual-write period or accept temporary loss)
-- Serialization format mismatch (JSON with explicit Date handling, roundtrip tests)
-- Connection failures (graceful degradation, fallback to Map, circuit breaker)
-- Missing production configuration (environment variables, startup healthcheck)
+### Phase 3: Collection Picker UI
 
-**Estimated effort:** 6-10 hours (async migration 1-2h, Redis implementation 2-3h, error handling 2-3h, validation 1-2h)
+**Rationale:** With the backend ready to serve collections and filter questions, the frontend can present the selection UI. This is the user-facing milestone.
+**Delivers:** `CollectionPicker` component on Dashboard, `GET /api/collections` endpoint, collection cards with name/description/question count. "Quick Play" preserved as default path.
+**Addresses:** TS-1 (collection picker screen), TS-6 (minimum size enforcement -- collections below threshold shown as "Coming Soon")
+**Avoids:** Pitfall #9 (anonymous play friction) by keeping a prominent "Play Now" default path
 
-### Phase 2: Dev Tooling Fix
-**Rationale:** Quick win, unblocks content generation script execution. Independent of other changes. Straightforward dependency installation.
+### Phase 4: Question Expiration System
 
-**Delivers:** Working `generateLearningContent.ts` script for future content expansion
+**Rationale:** Independent of the collection picker but requires questions in the database (Phase 1-2 complete). Can be built in parallel with Phase 3 or after it.
+**Delivers:** `ExpirationService` with hourly `node-cron` schedule, soft-delete of expired questions, structured logging of deactivations, collection health check for below-minimum warnings.
+**Addresses:** D-1 (time-sensitive expiration), D-2 (collection health endpoint)
+**Avoids:** Pitfall #3 (mid-game removal) via session snapshot isolation and soft-delete only, Pitfall #6 (notification fatigue) by starting with structured logs only (no email)
 
-**Addresses:** v1.0 audit item #4 (fix dev script TypeScript error)
+### Phase 5: Content Generation + Community Questions
 
-**Stack elements:** @anthropic-ai/sdk as devDependency
-
-**Avoids pitfalls:**
-- Missing dependency in production build (install as devDependency, run script locally, commit results)
-- TypeScript compilation errors (include scripts folder in tsconfig.json, run tsc --noEmit before commit)
-
-**Estimated effort:** 1 hour (install dependency, verify script runs, commit)
-
-### Phase 3: Plausibility Check Enhancement
-**Rationale:** After Redis migration, can consider session history for pattern analysis. Low-complexity business logic change without new libraries. Maintains philosophy of false positive prevention over detection rate.
-
-**Delivers:** Improved plausibility detection quality without aggressive penalties, better analytics for future improvements, transparent player feedback
-
-**Addresses:** v1.0 audit item #3 (enhance plausibility checks from passive to active)
-
-**Avoids pitfalls:**
-- False positives on legitimate players (difficulty-adjusted thresholds, pattern counting, grace period)
-- Network latency causing timing anomalies (use client timeRemaining, validate bounds only)
-- Timeout handling conflicts (special case for selectedOption: null)
-- No review workflow (admin dashboard or logging query for flagged sessions, weekly review)
-
-**Estimated effort:** 4-6 hours (threshold tuning 1-2h, pattern counting logic 1-2h, edge case handling 1h, testing 1-2h)
-
-### Phase 4: Strategic Learning Content Expansion
-**Rationale:** After dev tooling fixed, can generate content incrementally. Not blocking — current 15% coverage is production-ready. Strategic expansion to 25-30% guided by analytics (frequently missed questions, high-interest topics).
-
-**Delivers:** 12-18 additional deep-dive learning content pieces (from 18/120 to 30-36/120), improved educational value for complex/counterintuitive topics
-
-**Addresses:** v1.0 audit item #2 (expand learningContent coverage from 18/120)
-
-**Avoids pitfalls:**
-- Quality degradation at bulk scale (generate in batches of 10-20, quality review between batches, vary prompts)
-- Factual errors in generated content (cross-reference with authoritative sources, human fact-check verification)
-- Hallucinated source URLs (validate URLs with HEAD requests, manual verification, curated list)
-- Generic wrong-answer corrections (prompt engineering for answer-specific corrections)
-- Content expansion breaks existing questions (commit before running, script only adds fields, validation)
-
-**Estimated effort:** 2-4 weeks (batch generation + review cycles, 2-3 deep-dives per week over 6-8 weeks, can run in parallel with other work)
-
-### Phase 5: Documentation Completion
-**Rationale:** Administrative cleanup, doesn't block deployment. Can be done anytime.
-
-**Delivers:** Phase 3 VERIFICATION.md documenting test results and acceptance criteria
-
-**Addresses:** v1.0 audit item #5 (generate missing Phase 3 VERIFICATION.md)
-
-**Estimated effort:** 1-2 hours (template-driven documentation, review test results)
+**Rationale:** Requires database layer (Phase 1-2) to store generated questions. This is the highest-risk and longest phase due to content quality concerns.
+**Delivers:** Enhanced `generateCollectionQuestions.ts` script with locale-aware prompts, RAG-from-source approach, review JSON workflow, actual Bloomington IN and Los Angeles CA question content (target 50-80 questions each), per-collection topic categories (D-6).
+**Addresses:** D-6 (per-collection topic categories), D-5 (contributor attribution), locale-specific content for both communities
+**Avoids:** Pitfall #1 (AI hallucination) via source-first generation and local reviewer requirement, Pitfall #7 (quality disparity) via source audit before generation and quality parity standard, Pitfall #11 (cost overruns) via batch checkpointing and cost estimation
 
 ### Phase Ordering Rationale
 
-**Why this order:**
-- **Redis first:** Blocks production hardening, highest value, all other phases independent
-- **Dev tooling second:** Quick win, unblocks content generation for Phase 4
-- **Plausibility third:** Leverages Redis session history (optional), low-complexity enhancement
-- **Content fourth:** Incremental ongoing work, not blocking, can run in parallel
-- **Documentation last:** Administrative, lowest priority
-
-**Dependencies:**
-- Phase 2 (dev tooling) unblocks Phase 4 (content expansion) — must complete first
-- Phase 1 (Redis) optionally enables Phase 3 (plausibility) session history — but plausibility can proceed without Redis history
-- Phase 3 and 4 can run in parallel (no dependencies)
-- Phase 5 (documentation) is fully independent
-
-**Grouping rationale:**
-- Phase 1 is isolated infrastructure change (backend session storage)
-- Phase 2 is isolated tooling fix (dev scripts)
-- Phase 3 is isolated business logic change (scoring/validation)
-- Phase 4 is isolated content work (data generation)
-- Phase 5 is isolated documentation
-
-**How this avoids pitfalls:**
-- Incremental changes reduce integration risk
-- Independent phases allow rollback without cascading failures
-- Early Redis migration prevents compounding session management complexity
-- Strategic content expansion prevents quality degradation from bulk generation
+- **Phase 1 before everything:** All researchers independently identified the JSON-to-PostgreSQL migration as the foundational dependency. No collection feature works without it.
+- **Phase 2 immediately after Phase 1:** Swapping the data access layer validates the migration and unblocks all downstream phases.
+- **Phases 3, 4, and 5 are parallelizable** after Phase 2. The architecture research explicitly notes Steps 3, 4, and 5 in the dependency graph are independent of each other.
+- **Content generation (Phase 5) is the bottleneck.** Technical work across Phases 1-4 is estimated at 5-7 days. Content creation for two communities is 5-10 days. Starting content work as soon as the database layer is ready is essential.
+- **Expiration (Phase 4) before content generation completes** ensures the expiration infrastructure exists before time-sensitive local questions are added.
 
 ### Research Flags
 
-**Phases with standard patterns (skip research-phase):**
-- **Phase 1 (Redis migration):** Well-documented pattern, official Redis docs + multiple production case studies, clear migration path
-- **Phase 2 (dev tooling):** Standard dependency installation, no research needed
-- **Phase 3 (plausibility):** Industry anti-cheat patterns documented, thresholds based on existing code + best practices
-- **Phase 4 (content expansion):** AI content generation patterns well-researched, factual accuracy strategies documented
-- **Phase 5 (documentation):** Template-driven, no research needed
+Phases likely needing deeper research during planning:
+- **Phase 5 (Content Generation):** Highest risk phase. AI hallucination on local facts is the top pitfall. Needs phase-level research into Bloomington IN and LA source material availability, RAG pipeline design, and content review workflow. No established patterns exist for volunteer-maintained civic trivia content.
+- **Phase 4 (Expiration):** Moderate uncertainty around grace period timing, expiration priority tiers, and how to handle collections dropping below minimum size. Start with the simplest implementation (hourly sweep, soft delete, structured logging) and iterate.
 
-**All phases can proceed with existing research.** No deeper research required during planning.
+Phases with standard patterns (skip deep research):
+- **Phase 1 (Schema + Migration):** Well-documented PostgreSQL patterns. The schema design is validated across all research files. Idempotent seed migration is a standard pattern.
+- **Phase 2 (Service Layer):** Straightforward refactor from in-memory array to database queries. The QuestionService pattern is fully specified in ARCHITECTURE.md with working code sketches.
+- **Phase 3 (Collection Picker):** Standard UI pattern using existing Headless UI components. Every trivia platform reviewed uses card-based category selection.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Redis client already installed (verified in package.json), Anthropic SDK is standard package, no new complexity |
-| Features | HIGH | Redis session management patterns are industry-standard (official docs), content coverage thresholds validated across multiple sources, anti-cheat best practices documented |
-| Architecture | HIGH | Migration path straightforward (Redis already configured), dual-write pattern well-documented, graceful degradation standard practice |
-| Pitfalls | HIGH | Production failure modes well-documented (McKinsey research on AI content quality, industry anti-cheat false positive rates, Redis migration case studies) |
+| Stack | HIGH | Existing stack verified by codebase analysis. One new dependency (`node-cron`). All "what NOT to add" decisions well-reasoned. |
+| Features | MEDIUM-HIGH | Table stakes well-established from trivia platform patterns. Expiration design borrowed from CMS/LMS platforms. Content authoring workflow has no established patterns for this specific domain. |
+| Architecture | HIGH | Based entirely on direct codebase analysis. Schema design follows standard PostgreSQL tagging patterns. Service layer and route changes are fully specified with code sketches. |
+| Pitfalls | HIGH | Critical pitfalls identified from codebase analysis (migration risk) and domain research (AI hallucination). Integration risks mapped to specific files and line numbers. |
 
-**Overall confidence:** HIGH
+**Overall confidence:** MEDIUM-HIGH
 
-All four research areas have authoritative sources (official Redis documentation, McKinsey research on AI content quality, industry anti-cheat system documentation, TypeScript build best practices). Research findings consistently align with project's "no dark patterns" philosophy — educational platforms emphasize explanations for learning value (not coverage metrics), fairness-focused anti-cheat prioritizes false positive prevention over aggressive detection.
+The technical implementation path is HIGH confidence -- the stack, schema, architecture, and integration points are well-understood. The MEDIUM areas are all content-related: AI hallucination rates on small-city civic facts, content review workflow design, and volunteer contributor management. These are domain risks, not engineering risks.
 
 ### Gaps to Address
 
-**Minor gaps that need validation during implementation:**
-
-- **Speed bonus accessibility:** Limited research on how speed bonuses interact with timing accommodations. Recommendation: Verify plausibility checks respect `timer_multiplier` settings, consult WCAG timing guidelines, user testing with accommodations enabled during Phase 3.
-
-- **Optimal learning content percentage:** No industry-standard threshold found for "sufficient" deep-dive coverage. Research emphasizes strategic selection over arbitrary quotas. Recommendation: Let analytics guide expansion (frequently missed questions, high-interest topics) during Phase 4, target 25-30% as reasonable quality-driven coverage.
-
-- **Redis upgrade timing:** Current version is 4.6.12, latest is 5.10.0. Recommendation: Non-blocking upgrade, defer to post-v1.1, 4.6.12 → 5.10.0 is non-breaking API change.
-
-**How to handle:**
-- Speed bonus + accessibility: Add task to Phase 3 validation testing
-- Content percentage: Trust analytics over quotas, monitor engagement metrics during Phase 4
-- Redis upgrade: Document as future improvement, not blocking v1.1
-
-**No critical gaps identified.** All recommendations are actionable with current research.
+- **Content generation pipeline for local civic facts:** No validated approach exists for generating accurate locale-specific civic trivia via AI. The RAG-from-authoritative-sources recommendation is sound in principle but untested at this scale. Address during Phase 5 planning with a proof-of-concept for one locale before committing to both.
+- **Volunteer contributor workflow:** No established patterns found for managing volunteer civic content contributors. Needs to be designed from scratch during Phase 5, informed by open-source project contribution models (PR-based review).
+- **Expiration notification timing:** When to alert about expiring questions (30 days? 60 days?) has no civic-specific guidance. Start with 60 days and adjust based on observed content maintenance velocity.
+- **Per-collection topic categories implementation:** The recommendation is collection-defined categories (not a global enum), but the TopicIcon component refactor and how to handle icons for arbitrary categories needs design work during Phase 3/5.
+- **Session display of collection name:** Open question whether the results screen should show which collection was played. Low-stakes decision but should be made explicitly during Phase 3.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-
-**Redis Migration:**
-- [Redis Node.js Client (node-redis) — redis.io](https://redis.io/docs/latest/develop/clients/nodejs/) — Connection management, async patterns
-- [Redis Session Storage — redis.io](https://redis.io/learn/develop/node/nodecrashcourse/sessionstorage) — Express + Redis integration
-- [Redis TTL Documentation](https://redis.io/commands/ttl/) — Expiration mechanisms
-- [We Replaced PostgreSQL Sessions with Redis](https://blog.devgenius.io/we-replaced-postgresql-sessions-with-redis-api-response-time-went-from-800ms-to-12ms-bf119fdae8db) — Production case study, failover testing
-- [Redis Cloud Migration](https://redis.io/tutorials/migration/) — Migration strategies, dual-write patterns
-
-**Stack Additions:**
-- [@anthropic-ai/sdk — npm](https://www.npmjs.com/package/@anthropic-ai/sdk) — Official SDK documentation
-- [redis — npm](https://www.npmjs.com/package/redis) — Package details, version info
-- [GitHub: redis/node-redis releases](https://github.com/redis/node-redis/releases) — Release notes, API changes
-
-**Content Quality:**
-- [AI Content Quality Control: Complete Guide for 2026](https://koanthic.com/en/ai-content-quality-control-complete-guide-for-2026-2/) — McKinsey findings on quality degradation (58% at 100+ pieces)
-- [Improving factual accuracy in AI-generated content](https://scalebytech.com/improving-factual-accuracy-in-ai-generated-content) — Cross-referencing, RAG, verification strategies
-- [AI Content in Educational Settings](https://www.frontiersin.org/journals/computer-science/articles/10.3389/fcomp.2026.1729059/full) — Fact-checking challenges for students/teachers
-
-**Anti-Cheat Patterns:**
-- [How can you prevent anti-cheat measures from disrupting legitimate players?](https://www.linkedin.com/advice/0/how-can-you-prevent-anti-cheat-measures-from-disrupting-ylmmf) — False positive prevention strategies
-- [How Game Developers Detect and Stop Cheating in Real-Time](https://medium.com/@amol346bhalerao/how-game-developers-detect-and-stop-cheating-in-real-time-0aa4f1f52e0c) — Pattern detection, graduated responses, SARD standards
-- [AI Cheat Detection: Is It Fair or Falsely Flagging Latency](https://www.alibaba.com/product-insights/ai-cheat-detection-in-multiplayer-games-is-it-fair-or-falsely-flagging-latency.html) — Network latency false positives
+- Direct codebase analysis: `backend/src/routes/game.ts`, `backend/src/services/sessionService.ts`, `backend/src/data/questions.json`, `backend/schema.sql`, `backend/package.json`
+- [PostgreSQL JSON Types Documentation](https://www.postgresql.org/docs/current/datatype-json.html)
+- [Render Cron Jobs Documentation](https://render.com/docs/cronjobs)
+- [iCivics Platform](https://ed.icivics.org/) -- civic education game organization patterns
+- Gameful civic engagement peer-reviewed research (ScienceDirect)
 
 ### Secondary (MEDIUM confidence)
+- [node-cron npm](https://www.npmjs.com/package/node-cron) -- scheduling library selection
+- [When to Avoid JSONB in PostgreSQL (Heap)](https://www.heap.io/blog/when-to-avoid-jsonb-in-a-postgresql-schema) -- relational vs JSONB decision
+- [AI Hallucination Report 2026](https://www.allaboutai.com/resources/ai-statistics/ai-hallucinations/) -- 10-20% domain-specific hallucination rates
+- [CDT: AI in Local Government](https://cdt.org/insights/ai-in-local-government-how-counties-cities-are-advancing-ai-governance/) -- verification requirements
+- [CITE Journal: Civic Education in the Age of AI](https://citejournal.org/proofing/civic-education-in-the-age-of-ai-should-we-trust-ai-generated-lesson-plans/) -- AI poor at regional civic facts
+- [Open Trivia Database API](https://opentdb.com/api_config.php) -- category-based trivia patterns
+- Content expiration patterns from Kontent.ai, Liferay, Sensei LMS
+- Taxonomy management from Alpha Solutions, Parse.ly
 
-**Learning Content Coverage:**
-- [Best Quiz and Game Show Apps for Classrooms | Common Sense Education](https://www.commonsense.org/education/best-in-class/the-best-quiz-and-game-show-apps-for-classrooms)
-- [Kahoot vs Quizziz: The Ultimate Teacher's guide (2026)](https://triviamaker.com/kahoot-vs-quizziz/)
-- [Answer explanations – Kahoot! Help & Resource Center](https://support.kahoot.com/hc/en-us/community/posts/41766775322515-Answer-explanations)
-
-**Redis Performance:**
-- [How to Use Redis Key Expiration Effectively](https://oneuptime.com/blog/post/2026-01-25-redis-key-expiration-effectively/view) — TTL best practices
-- [How to Implement Sliding TTL in Redis](https://oneuptime.com/blog/post/2026-01-26-redis-sliding-ttl/view) — Sliding expiration pattern
-- [How to Build Session Storage with Redis](https://oneuptime.com/blog/post/2026-01-28-session-storage-redis/view) — Session management patterns
-
-**Dev Tooling:**
-- [TypeScript: dependency or dev-dependency?](https://medium.com/@jjmayank98/typescript-dependency-or-dev-dependency-cad623dff6d5) — Build-time vs runtime dependencies
-- [TypeScript Build Process (AdonisJS)](https://docs.adonisjs.com/guides/concepts/typescript-build-process) — Standalone builds, production compilation
-
-### Tertiary (LOW confidence - informational only)
-
-**Anti-Cheat Context:**
-- [Best 8 Anti-Cheating Software for Hiring in 2026](https://www.testtrick.com/blogs/top-anti-cheating-software-for-fair-hiring) — Industry context
-- [Stop Online Exam Cheating in 2026: 15 AI-Powered Methods](https://www.eklavvya.com/blog/prevent-cheating-online-exams/) — Industry trends
-
-**Redis Performance Optimization:**
-- [Redis Memory Optimization Techniques & Best Practices](https://medium.com/platform-engineer/redis-memory-optimization-techniques-best-practices-3cad22a5a986)
-- [The 6 Most Impactful Ways Redis is Used in Production Systems](https://blog.bytebytego.com/p/the-6-most-impactful-ways-redis-is)
+### Tertiary (LOW confidence)
+- [Bloomberg Cities: Small City Data Capacity](https://bloombergcities.jhu.edu/news/how-small-cities-can-make-big-leaps-data) -- data availability disparity
+- Individual UX case studies and blog posts on trivia game design
 
 ---
-*Research completed: 2026-02-12*
-*Ready for roadmap: Yes*
+*Research completed: 2026-02-18*
+*Ready for roadmap: yes*
