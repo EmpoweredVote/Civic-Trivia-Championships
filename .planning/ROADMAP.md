@@ -92,7 +92,10 @@ Plans:
   3. All generated content cross-referenced with authoritative sources
   4. Deep-dive content maintains quality standards (2-3 paragraphs, no hallucinated facts)
   5. Content generation follows batch review process (10-20 at a time)
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+Plans:
+- [ ] 12-01-PLAN.md — Script tooling update (CLI flags, prompt update, applyContent.ts, frontend inline links)
+- [ ] 12-02-PLAN.md — Content generation batch, human review, and application to questions.json
 
 ## Progress (v1.1)
 
@@ -105,7 +108,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
 | 9. Redis Session Migration | 3/3 | Complete | 2026-02-17 |
 | 10. Game UX Improvements | 2/2 | Complete | 2026-02-17 |
 | 11. Plausibility Enhancement | 2/2 | Complete | 2026-02-17 |
-| 12. Learning Content Expansion | 0/0 | Not Started | — |
+| 12. Learning Content Expansion | 0/2 | In Progress | — |
 
 ## Requirement Coverage (v1.1)
 
@@ -196,6 +199,6 @@ Reference for completed phases from initial MVP release.
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-17 (Phase 11 planned)*
+*Updated: 2026-02-17 (Phase 12 planned)*
 *Current Milestone: v1.1 Tech Debt Hardening*
-*Phases: 12 (9 complete, 3 planned)*
+*Phases: 12 (11 complete, 1 in progress)*
