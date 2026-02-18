@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: Phase 12 (Learning Content Expansion)
-Plan: 1 of 1 (In progress)
-Status: Plan 01 complete
-Last activity: 2026-02-18 — Completed 12-01-PLAN.md (content tooling: CLI flags, new prompt, applyContent.ts, inline link rendering)
+Plan: 2 of 2 (Complete)
+Status: Phase 12 complete — content tooling updated and batch generation executed
+Last activity: 2026-02-18 — Completed 12-02-PLAN.md (generated and applied 15 hard-difficulty learning content pieces, coverage now 27.5%)
 
-Progress: [████████████████░░░░] v1.0: 100% (7/7) | v1.1: ~87% (Phase 12 plan 01 done)
+Progress: [████████████████████] v1.0: 100% (7/7) | v1.1: 100% (Phase 12 complete)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -32,9 +32,9 @@ Progress: [████████████████░░░░] v1.0: 1
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 33
-- Average duration: 3.8 min
-- Total execution time: 125 min
+- Total plans completed: 34
+- Average duration: 3.9 min
+- Total execution time: 132 min
 
 **By Phase:**
 
@@ -51,11 +51,11 @@ Progress: [████████████████░░░░] v1.0: 1
 | 09-redis-session-migration | 3/3 | 7 min | 2.3 min |
 | 10-game-ux-improvements | 2/2 | 7 min | 3.5 min |
 | 11-plausibility-enhancement | 2/2 | 6 min | 3 min |
-| 12-learning-content-expansion | 1/1 | 3 min | 3 min |
+| 12-learning-content-expansion | 2/2 | 10 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 09-02 (4 min), 10-01 (2 min), 11-01 (3 min), 11-02 (3 min), 12-01 (3 min)
-- Trend: Exceptional 2-4 min velocity maintained
+- Last 5 plans: 10-01 (2 min), 11-01 (3 min), 11-02 (3 min), 12-01 (3 min), 12-02 (7 min)
+- Trend: Consistent 2-7 min velocity maintained
 
 **Deployment Session:**
 - Session duration: ~4 hours (2026-02-17)
@@ -209,16 +209,17 @@ Recent decisions affecting current work:
 | renderParagraphWithLinks uses regex exec loop | 12-01 | Returns (string | JSX.Element)[] with no new dependencies; existing plain text renders identically |
 | Expanded source allowlist in generation prompt | 12-01 | Added khanacademy.org, icivics.org, en.wikipedia.org, major news archives for historical events |
 | Anti-partisan prompt constraint | 12-01 | Prompt prohibits liberal/conservative/activist/progressive characterization of any policy, party, or court decision |
+| Applied all 15 generated content pieces | 12-02 | User reviewed and approved all content after generation (no rejections) |
+| Prioritized hard-difficulty questions | 12-02 | Targeted largest coverage gap (45 hard questions without content) in batch generation |
 
 ### Pending Todos
 
-Phase 12 (Learning Content Expansion):
-- Run batch content generation using updated script and prompt
-- Generate 12-18 additional deep-dive learning content pieces
-- Use: npx tsx src/scripts/generateLearningContent.ts --difficulty hard --limit 15
-- Prioritize frequently missed questions and high-interest topics
-- Apply via: npx tsx src/scripts/applyContent.ts <preview-file>.json
-- Follow batch review process (10-20 at a time)
+Phase 12 (Learning Content Expansion): ✅ Complete
+- ✅ Updated content generation tooling (CLI flags, new prompt, applyContent.ts) — 12-01
+- ✅ Generated and applied 15 hard-difficulty learning content pieces — 12-02
+- ✅ Coverage increased from 18/120 (15%) to 33/120 (27.5%) — target met
+- ✅ Coverage by difficulty: easy: 13, medium: 5, hard: 15
+- Future content expansion can follow same workflow: generate with filters -> review -> apply
 
 Deployment Follow-up:
 - [ ] Invite volunteers to GitHub org
@@ -239,16 +240,23 @@ None currently. Deployment successful and tested.
 ## Session Continuity
 
 Last session: 2026-02-18
-Topic: Phase 12 Learning Content Expansion — plan 12-01 complete
-Achievements:
+Topic: Phase 12 Learning Content Expansion — COMPLETE
+Achievements (12-01):
 - ✅ generateLearningContent.ts: --ids, --difficulty, --topic, --limit CLI flags with safety guard
 - ✅ Updated prompt: plain language (8th grade), anti-partisan framing, inline [text](url) hyperlinks
 - ✅ Expanded source allowlist: .gov, khanacademy.org, icivics.org, en.wikipedia.org, major news archives
 - ✅ applyContent.ts: cherry-pick merge script with --ids support and skip-on-existing protection
 - ✅ LearnMoreModal: renderParagraphWithLinks() renders inline markdown links as teal anchors
 
-Stopped at: Completed 12-01-PLAN.md (content tooling update)
-Resume file: None — ready for content generation runs using updated tooling
+Achievements (12-02):
+- ✅ Generated 15 hard-difficulty learning content pieces via Claude API (q076-q090)
+- ✅ Human-reviewed and approved all content ("apply all" - no rejections)
+- ✅ Applied content to questions.json (coverage: 18→33, 15%→27.5%)
+- ✅ Verified data integrity: valid JSON, correct structure, no modification to existing content
+- ✅ Met phase objective: 25-30% coverage target achieved (27.5%)
+
+Stopped at: Completed 12-02-PLAN.md (content generation batch)
+Resume file: None — Phase 12 complete, all v1.1 requirements delivered
 
 ---
 *v1.1 Tech Debt Hardening — PRODUCTION DEPLOYED*
