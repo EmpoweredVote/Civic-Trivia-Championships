@@ -1443,7 +1443,23 @@
     "explanation": "The Three-Fifths Compromise counted each enslaved person as three-fifths of a person for representation and taxation purposes. It was nullified by the 13th and 14th Amendments.",
     "difficulty": "hard",
     "topic": "U.S. History",
-    "topicCategory": "civic-participation"
+    "topicCategory": "civic-participation",
+    "learningContent": {
+      "topic": "civic-participation",
+      "paragraphs": [
+        "The [Three-Fifths Compromise](https://constitution.congress.gov/browse/essay/artI-S2-C3-1/ALDE_00001007/) counted enslaved people as three-fifths of a person for representation in Congress. This agreement was made at the Constitutional Convention in 1787. Southern states wanted enslaved people counted fully to gain more seats in the House of Representatives, even though enslaved people could not vote. Northern states argued that enslaved people should not be counted at all since they had no rights. The compromise allowed states to count each enslaved person as three-fifths of a free person when determining how many representatives the state would get in Congress.",
+        "This compromise gave Southern states more political power in the federal government. More representation meant more votes in Congress and more influence in choosing the president through the Electoral College. The Three-Fifths Compromise treated enslaved people as property rather than full human beings under the law. It remained part of the [Constitution](https://www.archives.gov/founding-docs/constitution-transcript) until after the Civil War. The [13th Amendment](https://constitution.congress.gov/constitution/amendment-13/) abolished slavery in 1865, and the 14th Amendment in 1868 changed how representation was counted, ensuring all people were counted equally."
+      ],
+      "corrections": {
+        "0": "Senate representation was not affected by the Three-Fifths Compromise. Every state gets two senators regardless of population, so the way enslaved people were counted did not change Senate representation.",
+        "1": "While the Three-Fifths Compromise did affect some federal tax calculations, its main purpose and significance was determining representation in the House of Representatives, not setting tax rates.",
+        "3": "The Three-Fifths Compromise had nothing to do with tariff policy. Tariffs are taxes on imported goods, which were a separate issue debated at the Constitutional Convention."
+      },
+      "source": {
+        "name": "Constitution Annotated - Three-Fifths Compromise",
+        "url": "https://constitution.congress.gov/browse/essay/artI-S2-C3-1/ALDE_00001007/"
+      }
+    }
   },
   {
     "id": "q077",
@@ -1458,7 +1474,24 @@
     "explanation": "Article I, Section 10 explicitly prohibits states from entering into treaties, alliances, or confederations, reserving foreign policy to the federal government.",
     "difficulty": "hard",
     "topic": "Constitution",
-    "topicCategory": "federalism"
+    "topicCategory": "federalism",
+    "learningContent": {
+      "topic": "federalism",
+      "paragraphs": [
+        "[Article I, Section 10](https://constitution.congress.gov/browse/article-1/section-10/) of the U.S. Constitution prevents states from making treaties with foreign nations. This section lists specific powers that states cannot have. It clearly states that no state shall enter into any treaty, alliance, or confederation. The Founders included this rule to make sure the United States speaks with one voice in foreign affairs. If each state could make its own deals with other countries, it would create chaos and weaken the entire nation.",
+        "Before the Constitution was written, the country operated under the Articles of Confederation. During that time, states had more independence and sometimes acted like separate countries. This caused serious problems for the young nation. Foreign governments did not know who really spoke for America. When the Founders created the Constitution in 1787, they gave the [federal government](https://www.usa.gov/branches-of-government) sole power over foreign relations. Article I, Section 10 took away the states' ability to conduct their own foreign policy, ensuring that only the national government could negotiate with other nations.",
+        "Today, this constitutional rule remains important for [federalism](https://www.usa.gov/federalism), which is the division of power between national and state governments. States still have many powers, including running elections, managing education, and regulating businesses within their borders. However, foreign policy must remain unified under federal control. This prevents conflicts and confusion that would arise if fifty different states each tried to make their own international agreements."
+      ],
+      "corrections": {
+        "0": "The Commerce Clause gives Congress the power to regulate trade between states and with foreign nations, but it does not specifically prevent states from making treaties. Article I, Section 10 is the provision that explicitly forbids states from entering into treaties.",
+        "1": "The Supremacy Clause establishes that federal law is the highest law of the land when it conflicts with state law, but it does not specifically address whether states can make treaties. The direct ban on state treaties comes from Article I, Section 10.",
+        "2": "The Treaty Clause grants the President the power to make treaties with the advice and consent of the Senate, but it does not explicitly prohibit states from making treaties. Article I, Section 10 contains the specific restriction on state treaty-making power."
+      },
+      "source": {
+        "name": "U.S. Constitution - Article I, Section 10",
+        "url": "https://constitution.congress.gov/browse/article-1/section-10/"
+      }
+    }
   },
   {
     "id": "q078",
@@ -1473,7 +1506,24 @@
     "explanation": "Gibbons v. Ogden (1824) broadly interpreted Congress's power to regulate interstate commerce, establishing federal authority over economic activities crossing state lines.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "judiciary"
+    "topicCategory": "judiciary",
+    "learningContent": {
+      "topic": "judiciary",
+      "paragraphs": [
+        "The Supreme Court case [Gibbons v. Ogden](https://www.oyez.org/cases/1789-1850/22og1824) in 1824 defined the federal government's power to regulate interstate commerce. The case involved a dispute over steamboat navigation rights between New York and New Jersey. Aaron Ogden had a state license from New York to operate steamboats, while Thomas Gibbons had a federal license. When both tried to run boats on the same waters, they ended up in court. The Supreme Court had to decide whether states or the federal government controlled trade and transportation that crossed state lines.",
+        "Chief Justice John Marshall ruled that the [Commerce Clause](https://constitution.congress.gov/browse/article-1/section-8/) of the U.S. Constitution gave Congress broad power over interstate commerce. Commerce meant more than just buying and selling goods—it included navigation and transportation too. This decision meant that when business activities crossed state borders, federal law was supreme over state law. The ruling prevented states from creating a patchwork of conflicting rules that would make trade difficult between states.",
+        "This case became one of the most important decisions in American history. It gave the federal government clear authority to regulate activities that affect multiple states, from railroads to airlines to the internet. Without this broad interpretation of commerce power, the United States might have struggled to develop as a unified national economy."
+      ],
+      "corrections": {
+        "0": "Judicial review was established in the 1803 case Marbury v. Madison, not Gibbons v. Ogden. Judicial review is the power of courts to declare laws unconstitutional.",
+        "2": "Segregation was addressed in the 1954 case Brown v. Board of Education, which ruled that separate schools for Black and white students were unconstitutional. Gibbons v. Ogden dealt with commerce between states, not civil rights or segregation.",
+        "3": "Protection of free speech has been addressed in many Supreme Court cases over the years, but Gibbons v. Ogden was about the power to regulate commerce between states, not about First Amendment speech rights."
+      },
+      "source": {
+        "name": "U.S. Constitution - Commerce Clause",
+        "url": "https://constitution.congress.gov/browse/article-1/section-8/"
+      }
+    }
   },
   {
     "id": "q079",
@@ -1488,7 +1538,24 @@
     "explanation": "Incorporation doctrine is the process by which the Supreme Court has applied most Bill of Rights protections to states through the 14th Amendment's Due Process Clause.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "judiciary"
+    "topicCategory": "judiciary",
+    "learningContent": {
+      "topic": "judiciary",
+      "paragraphs": [
+        "The incorporation doctrine is the legal principle that applies most protections in the [Bill of Rights](https://constitution.congress.gov/constitution/bill-of-rights/) to state governments through the [Fourteenth Amendment](https://constitution.congress.gov/constitution/amendment-14/). When the Bill of Rights was first added to the Constitution in 1791, it only limited the federal government's power. State governments could pass laws that violated free speech, freedom of religion, or other rights without breaking the Constitution. This changed after the Civil War with the Fourteenth Amendment in 1868.",
+        "The Fourteenth Amendment says states cannot deprive any person of life, liberty, or property without due process of law. Starting in the 1920s, the [Supreme Court](https://www.supremecourt.gov/) began using this language to incorporate, or apply, specific Bill of Rights protections to the states one at a time. For example, the Court ruled that freedom of speech applies to states in 1925 and that the right to a lawyer in criminal cases applies to states in 1963. Through dozens of cases over many decades, almost all Bill of Rights protections now limit both federal and state governments.",
+        "This doctrine matters because it protects individual rights from state and local government actions, not just federal ones. Without incorporation, states could establish official religions, censor newspapers, or conduct unreasonable searches. The doctrine ensures that fundamental constitutional protections apply equally across all fifty states."
+      ],
+      "corrections": {
+        "0": "Business formation refers to creating a company or corporation under state law, which is completely unrelated to constitutional law. The incorporation doctrine is about constitutional rights, not business structures.",
+        "2": "Federal agencies are government departments and bureaus that carry out federal laws and programs. The incorporation doctrine deals with how constitutional rights apply to states, not with the creation or function of federal agencies.",
+        "3": "Territory admission is the process by which a U.S. territory becomes a state. The incorporation doctrine concerns how the Bill of Rights applies to existing state governments through the Fourteenth Amendment, not how new states join the Union."
+      },
+      "source": {
+        "name": "Constitution Annotated: Fourteenth Amendment",
+        "url": "https://constitution.congress.gov/constitution/amendment-14/"
+      }
+    }
   },
   {
     "id": "q080",
@@ -1503,7 +1570,24 @@
     "explanation": "A writ of certiorari is an order by which the Supreme Court agrees to review a lower court decision. The Court receives thousands but grants cert to fewer than 100 cases yearly.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "judiciary"
+    "topicCategory": "judiciary",
+    "learningContent": {
+      "topic": "judiciary",
+      "paragraphs": [
+        "A writ of certiorari is an order for the [Supreme Court](https://www.supremecourt.gov/) to review a case from a lower court. When someone loses a case in a lower court, they can ask the Supreme Court to take another look at it. The Supreme Court receives thousands of these requests every year, but it only agrees to hear a small number of cases. When at least four of the nine justices vote to hear a case, the Court issues a writ of certiorari, which is a formal command telling the lower court to send up the case records.",
+        "This process matters because it gives the Supreme Court control over its workload and lets the justices choose which cases are most important to decide. The Court typically selects cases that involve major questions about the [Constitution](https://constitution.congress.gov/), conflicts between different courts, or issues that affect many Americans. The term 'certiorari' comes from a Latin word meaning 'to be informed.' This power helps the Supreme Court focus on cases that will shape American law for years to come, rather than reviewing every single case that loses in lower courts.",
+        "Most petitions for certiorari are denied, which means the lower court's decision stands as the final word in that case. Getting the Supreme Court to grant certiorari is difficult and rare. Lawyers must file a petition explaining why their case deserves the Court's attention. The justices review these petitions in private conferences and decide together which cases merit full review with oral arguments and written opinions."
+      ],
+      "corrections": {
+        "0": "An arrest warrant is a court order that allows police to arrest a specific person suspected of committing a crime. This is completely different from certiorari, which is about reviewing cases that have already been decided in lower courts.",
+        "2": "A subpoena is a court order that requires someone to testify as a witness or produce documents as evidence in a legal proceeding. Unlike certiorari, a subpoena does not involve the Supreme Court deciding whether to review a case.",
+        "3": "Habeas corpus is a court order that requires the government to bring a prisoner before a judge and explain why the person is being held. While habeas corpus petitions can reach the Supreme Court, the writ itself serves a different purpose than certiorari, which is specifically about case review."
+      },
+      "source": {
+        "name": "United States Courts - Supreme Court Procedures",
+        "url": "https://www.supremecourt.gov/"
+      }
+    }
   },
   {
     "id": "q081",
@@ -1518,7 +1602,24 @@
     "explanation": "National Federation of Independent Business v. Sebelius (2012) upheld the ACA's individual mandate as a valid exercise of Congress's taxing power.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "judiciary"
+    "topicCategory": "judiciary",
+    "learningContent": {
+      "topic": "judiciary",
+      "paragraphs": [
+        "The [Supreme Court](https://www.supremecourt.gov/) case NFIB v. Sebelius upheld the Affordable Care Act's individual mandate as a tax in 2012. The individual mandate required most Americans to have health insurance or pay a penalty. The National Federation of Independent Business (NFIB) and several states challenged this requirement, arguing that Congress did not have the power to force people to buy a product. The case reached the highest court in the land, where Chief Justice John Roberts wrote the majority opinion.",
+        "The Court ruled that while Congress could not force people to buy insurance under the Commerce Clause (the part of the Constitution that gives Congress power to regulate business between states), it could impose the penalty as a [tax](https://constitution.congress.gov/browse/essay/artI-S8-C1-1/ALDE_00001164/). This was important because the Constitution gives Congress broad power to collect taxes. The decision allowed the Affordable Care Act to remain in effect, though Congress later reduced the penalty to zero dollars in 2017. This case shows how the Supreme Court interprets the Constitution to determine what powers the federal government has.",
+        "The ruling demonstrated the Court's role in checking the power of Congress while also finding constitutional ways to allow federal programs to continue. By viewing the mandate penalty as a tax rather than a command to purchase insurance, the Court balanced different interpretations of federal authority. This decision affected millions of Americans and shaped how the government could structure health care policy."
+      ],
+      "corrections": {
+        "0": "United States v. Lopez (1995) was about gun possession near schools, not health care. The Supreme Court ruled that Congress exceeded its power under the Commerce Clause when it passed a law banning guns in school zones.",
+        "2": "Wickard v. Filburn (1942) dealt with wheat farming and the Commerce Clause during the Great Depression. The Court ruled that Congress could regulate a farmer's wheat production even if he grew it for personal use, because it affected interstate commerce.",
+        "3": "United States v. Morrison (2000) concerned violence against women, not health insurance. The Supreme Court struck down part of a federal law, ruling that Congress exceeded its Commerce Clause power when creating a federal remedy for gender-motivated violence."
+      },
+      "source": {
+        "name": "Supreme Court of the United States - About the Court",
+        "url": "https://www.supremecourt.gov/about/about.aspx"
+      }
+    }
   },
   {
     "id": "q082",
@@ -1533,7 +1634,23 @@
     "explanation": "Enumerated powers are explicitly listed in the Constitution. Implied powers, derived from the Necessary and Proper Clause, are needed to execute enumerated powers.",
     "difficulty": "hard",
     "topic": "Constitution",
-    "topicCategory": "federalism"
+    "topicCategory": "federalism",
+    "learningContent": {
+      "topic": "federalism",
+      "paragraphs": [
+        "Enumerated powers are written directly in the Constitution, while implied powers are necessary to carry out those enumerated powers. [Enumerated powers](https://constitution.congress.gov/browse/article-1/) are listed clearly in the Constitution, such as Congress's power to collect taxes, coin money, and declare war. These powers are also called expressed powers because they are stated word-for-word in the text. Implied powers are not written in the Constitution, but they flow from the enumerated powers through the [Necessary and Proper Clause](https://constitution.congress.gov/browse/article-1/section-8/clause-18/), which gives Congress the authority to make all laws needed to execute its listed powers.",
+        "This distinction matters because it shapes what the federal government can do. The Necessary and Proper Clause, found in Article I, Section 8 of the Constitution, has been the basis for expanding federal authority over time. For example, the Constitution does not explicitly give Congress the power to create a national bank, but in the 1819 case [McCulloch v. Maryland](https://en.wikipedia.org/wiki/McCulloch_v._Maryland), the Supreme Court ruled that establishing a bank was an implied power necessary to carry out enumerated powers like collecting taxes and regulating commerce. This decision established that Congress has flexibility to choose the means for executing its constitutional responsibilities, as long as those means are appropriate and not prohibited by the Constitution."
+      ],
+      "corrections": {
+        "0": "The difference between enumerated and implied powers is not about state versus federal authority. Both enumerated and implied powers belong to the federal government and help define what Congress and other federal branches can do under the Constitution.",
+        "2": "The difference between enumerated and implied powers is not about legislative versus executive branches. Both types of powers can apply to different branches of government, though most enumerated powers listed in the Constitution belong to Congress in Article I.",
+        "3": "The difference between enumerated and implied powers is not about original versus amended provisions. Both types of powers existed from the start of the Constitution, with implied powers flowing from the Necessary and Proper Clause that was part of the original 1787 document."
+      },
+      "source": {
+        "name": "U.S. Constitution - Article I, Section 8",
+        "url": "https://constitution.congress.gov/browse/article-1/section-8/"
+      }
+    }
   },
   {
     "id": "q083",
@@ -1548,7 +1665,24 @@
     "explanation": "United States v. Nixon (1974) ruled that executive privilege is not absolute and that President Nixon had to turn over Watergate tapes, leading to his resignation.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "executive"
+    "topicCategory": "executive",
+    "learningContent": {
+      "topic": "executive",
+      "paragraphs": [
+        "The main issue in [United States v. Nixon](https://www.oyez.org/cases/1973/73-1766) was executive privilege versus judicial oversight. This 1974 [Supreme Court](https://www.supremecourt.gov/) case happened during the Watergate scandal. President Richard Nixon refused to give special prosecutors audio tapes of White House conversations. He claimed executive privilege, which is the president's right to keep some communications private. The question was whether a president could refuse to provide evidence in a criminal investigation.",
+        "The Supreme Court ruled unanimously that Nixon had to turn over the tapes. The justices said that while executive privilege does exist, it is not unlimited. The need for evidence in criminal cases is more important than keeping presidential conversations secret. This decision established an important principle: no person, not even the president, is above the law. The ruling strengthened the system of checks and balances by confirming that federal courts have the power to review executive branch actions.",
+        "The case had immediate effects. Nixon released the tapes, which showed he had tried to cover up the Watergate break-in. He resigned from office shortly after. The decision remains important today because it clarifies the limits of presidential power and confirms that the [judicial branch](https://www.usa.gov/branches-of-government) can hold the executive branch accountable."
+      ],
+      "corrections": {
+        "0": "War powers were not the main issue in United States v. Nixon. The case focused on whether President Nixon had to provide evidence to prosecutors, not on the president's military or war-making authority.",
+        "2": "Impeachment was not the main issue in this case, though it was happening at the same time. The case dealt with whether Nixon had to turn over evidence, not with the impeachment process itself.",
+        "3": "Election fraud was not the main issue in United States v. Nixon. The case involved the Watergate scandal, which was about a break-in at Democratic Party headquarters and the following cover-up, not about fraud in how votes were counted."
+      },
+      "source": {
+        "name": "Supreme Court - United States v. Nixon",
+        "url": "https://www.supremecourt.gov/"
+      }
+    }
   },
   {
     "id": "q084",
@@ -1563,7 +1697,24 @@
     "explanation": "The Lemon test (from Lemon v. Kurtzman, 1971) evaluates if government action violates the Establishment Clause: secular purpose, neither advances nor inhibits religion, no excessive entanglement.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "judiciary"
+    "topicCategory": "judiciary",
+    "learningContent": {
+      "topic": "judiciary",
+      "paragraphs": [
+        "The Lemon test is a three-part test that courts use to decide [Establishment Clause](https://constitution.congress.gov/constitution/amendment-1/) cases. The Establishment Clause is part of the First Amendment to the U.S. Constitution. It says the government cannot establish an official religion or favor one religion over others. The [Supreme Court](https://www.supremecourt.gov/) created the Lemon test in 1971 in a case called Lemon v. Kurtzman. The case involved whether states could pay salary supplements to teachers at religious schools.",
+        "The test has three parts that a government action must pass to be constitutional. First, the law must have a secular purpose, meaning a non-religious reason. Second, its primary effect must neither advance nor inhibit religion. Third, it must not create excessive entanglement between government and religion. If a law fails any one of these three parts, courts may rule it violates the Establishment Clause. This test has been used in cases involving school prayer, religious displays on public property, and government funding for religious organizations.",
+        "The Lemon test remains an important tool for understanding the separation of church and state, though courts have applied it differently over time. Some justices have criticized the test or used alternative approaches in recent decisions. Still, it continues to influence how courts examine whether government actions inappropriately involve religion. The test helps protect both religious freedom and government neutrality on religious matters."
+      ],
+      "corrections": {
+        "0": "The Lemon test does not involve interstate commerce. Interstate commerce cases use different standards, such as whether an activity substantially affects commerce between states, as established in cases interpreting the Commerce Clause.",
+        "2": "The Lemon test is not a standard for due process. Due process cases examine whether government has deprived someone of life, liberty, or property without fair procedures or justification, using standards from the Fifth and Fourteenth Amendments.",
+        "3": "The Lemon test is not a criminal procedure standard. Criminal procedure cases involve different rules about searches, arrests, confessions, and trials, based on amendments like the Fourth, Fifth, and Sixth Amendments."
+      },
+      "source": {
+        "name": "Constitution Annotated - First Amendment Establishment Clause",
+        "url": "https://constitution.congress.gov/constitution/amendment-1/"
+      }
+    }
   },
   {
     "id": "q085",
@@ -1578,7 +1729,24 @@
     "explanation": "The 20th Amendment (1933) moved presidential inauguration from March 4 to January 20 and congressional sessions to January 3, reducing the lame duck period.",
     "difficulty": "hard",
     "topic": "Amendments",
-    "topicCategory": "amendments"
+    "topicCategory": "amendments",
+    "learningContent": {
+      "topic": "amendments",
+      "paragraphs": [
+        "The [20th Amendment](https://constitution.congress.gov/constitution/amendment-20/) changed the start date for presidential and congressional terms. Before this amendment was ratified in 1933, newly elected presidents waited until March 4 to take office. That meant nearly four months passed between Election Day in November and when the new president started work. Congress faced the same long delay. This waiting period was called the \"lame duck\" period because outgoing officials who lost their elections still held power for months.",
+        "The long delay made sense in the 1780s when the [Constitution](https://constitution.congress.gov/constitution/) was written. Travel was slow, and it took time to count votes and for officials to reach Washington, D.C. But by the 1930s, modern transportation and communication made the four-month wait unnecessary. During the [Great Depression](https://en.wikipedia.org/wiki/Great_Depression), Americans saw the real danger of this delay. President Herbert Hoover lost the 1932 election to Franklin Roosevelt, but Hoover remained in office until March 1933 while the economic crisis worsened. The country needed faster action.",
+        "The 20th Amendment moved presidential inaugurations to January 20 and the start of the new Congress to January 3. This shortened the lame duck period to about two and a half months. The change allowed newly elected leaders to respond more quickly to national problems. It also reduced the time that defeated officials continued making important decisions after voters chose someone new."
+      ],
+      "corrections": {
+        "0": "The [18th Amendment](https://constitution.congress.gov/constitution/amendment-18/) established Prohibition, which banned the manufacture and sale of alcohol in 1919. It did not change when officials took office.",
+        "1": "The [19th Amendment](https://constitution.congress.gov/constitution/amendment-19/) gave women the right to vote in 1920. It did not address the start dates for presidential or congressional terms.",
+        "3": "The [21st Amendment](https://constitution.congress.gov/constitution/amendment-21/) repealed Prohibition in 1933, ending the ban on alcohol. It did not change when elected officials began their terms."
+      },
+      "source": {
+        "name": "Constitution Annotated: 20th Amendment",
+        "url": "https://constitution.congress.gov/constitution/amendment-20/"
+      }
+    }
   },
   {
     "id": "q086",
@@ -1593,7 +1761,23 @@
     "explanation": "The Slaughterhouse Cases (1873) narrowly interpreted the 14th Amendment's Privileges or Immunities Clause, limiting federal protection of civil rights for decades.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "judiciary"
+    "topicCategory": "judiciary",
+    "learningContent": {
+      "topic": "judiciary",
+      "paragraphs": [
+        "The [Slaughterhouse Cases](https://en.wikipedia.org/wiki/Slaughterhouse_Cases) of 1873 narrowly interpreted the Privileges or Immunities Clause of the [14th Amendment](https://constitution.congress.gov/constitution/amendment-14/). In these cases, the Supreme Court ruled that this clause only protected a very limited set of rights related to national citizenship, not the broader rights of state citizenship. This decision made it much harder for people to use the 14th Amendment to protect their basic rights from state governments. The ruling came just five years after the amendment was ratified in 1868.",
+        "The case began when Louisiana butchers challenged a state law that created a monopoly for one slaughterhouse company in New Orleans. The butchers argued that the law violated their right to work in their profession, which they claimed was protected by the new 14th Amendment. However, the Court disagreed and said the Privileges or Immunities Clause only covered a narrow list of federal rights, such as the right to travel between states. This interpretation left most individual rights under state control rather than federal protection. The decision weakened one of the main tools the 14th Amendment could have provided for protecting civil rights, and its effects lasted for many decades."
+      ],
+      "corrections": {
+        "0": "The Slaughterhouse Cases were not about food safety regulations. While the case involved butchers and slaughterhouses, it was actually about whether a state monopoly law violated the constitutional rights of workers under the 14th Amendment.",
+        "2": "The Slaughterhouse Cases did not focus on interstate commerce. The case centered on interpreting the Privileges or Immunities Clause of the 14th Amendment and whether it protected the right to practice a profession within a single state.",
+        "3": "Although the case involved workers in the butchering trade, the Slaughterhouse Cases were not primarily about labor rights. The Supreme Court's decision focused specifically on defining the scope of the 14th Amendment's Privileges or Immunities Clause."
+      },
+      "source": {
+        "name": "Wikipedia - Slaughterhouse Cases",
+        "url": "https://en.wikipedia.org/wiki/Slaughterhouse_Cases"
+      }
+    }
   },
   {
     "id": "q087",
@@ -1608,7 +1792,24 @@
     "explanation": "The exclusionary rule, established in Mapp v. Ohio (1961), prohibits using evidence obtained through illegal searches and seizures in criminal trials.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "judiciary"
+    "topicCategory": "judiciary",
+    "learningContent": {
+      "topic": "judiciary",
+      "paragraphs": [
+        "The exclusionary rule means that evidence obtained illegally by police cannot be used in court against a defendant. This rule protects the rights guaranteed by the [Fourth Amendment](https://constitution.congress.gov/constitution/amendment-4/), which guards against unreasonable searches and seizures. If police violate your constitutional rights while gathering evidence, that evidence gets excluded or thrown out of the trial. For example, if police search your home without a warrant or probable cause and find something illegal, a judge will not allow prosecutors to use that evidence against you.",
+        "The [Supreme Court](https://www.supremecourt.gov/) established this rule in the 1961 case Mapp v. Ohio. Before this decision, some states allowed illegally obtained evidence in court, which gave police little reason to follow constitutional rules. The Court decided that without the exclusionary rule, Fourth Amendment protections would be meaningless. The rule aims to discourage police misconduct and protect individual liberty. Critics argue it sometimes lets guilty people go free, while supporters say it holds law enforcement accountable and preserves everyone's constitutional rights.",
+        "The exclusionary rule has exceptions. Courts allow evidence if police acted in good faith, believing they followed the law. Evidence discovered through an independent legal source can also be used, even if police made an earlier mistake. The rule only applies in criminal trials, not in other proceedings like deportation hearings or parole revocations."
+      ],
+      "corrections": {
+        "0": "Immigration policy refers to laws about who can enter, stay in, or become a citizen of the United States. The exclusionary rule is not related to immigration—it is a legal principle about criminal trials and constitutional rights.",
+        "2": "Senate rules are the procedures that govern how the U.S. Senate conducts its business, such as how to debate bills or confirm nominees. The exclusionary rule is a court principle about criminal evidence, not a rule about how Congress operates.",
+        "3": "Executive privilege is the power of the president to withhold certain information from Congress, the courts, or the public, usually to protect confidential communications. The exclusionary rule deals with illegally obtained evidence in criminal cases, not presidential powers."
+      },
+      "source": {
+        "name": "U.S. Constitution - Fourth Amendment",
+        "url": "https://constitution.congress.gov/constitution/amendment-4/"
+      }
+    }
   },
   {
     "id": "q088",
@@ -1623,7 +1824,23 @@
     "explanation": "Wickard v. Filburn (1942) held that even purely local activity (growing wheat for personal use) could be regulated if it substantially affects interstate commerce.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "judiciary"
+    "topicCategory": "judiciary",
+    "learningContent": {
+      "topic": "judiciary",
+      "paragraphs": [
+        "The case [Wickard v. Filburn](https://en.wikipedia.org/wiki/Wickard_v._Filburn) addressed whether the federal government could regulate local activities affecting interstate commerce. In 1942, the Supreme Court ruled that the government could limit how much wheat a farmer grew even if he only used it on his own farm. Roscoe Filburn, an Ohio farmer, had grown more wheat than federal law allowed. He argued that his extra wheat was just for his own animals and family, so it never crossed state lines. The government should not be able to control it, he said.",
+        "The [Supreme Court](https://www.supremecourt.gov/) disagreed with Filburn. The justices said that even small, local activities can affect interstate commerce when you add them all together. If many farmers grew extra wheat for themselves, they would buy less wheat from other states. This would change prices and supply across state lines. The ruling greatly expanded Congress's power under the [Commerce Clause](https://constitution.congress.gov/browse/essay/artI-S8-C3-1/ALDE_00001136/) of the Constitution. This case became a key example of how far federal regulatory power can reach into local matters that seem purely private or local at first glance."
+      ],
+      "corrections": {
+        "0": "Gibbons v. Ogden (1824) addressed whether states could regulate steamboat travel between states, not whether federal power could reach purely local activities. The case established that Congress had broad power over interstate commerce, but it involved commerce that actually crossed state lines.",
+        "2": "McCulloch v. Maryland (1819) addressed whether Congress could create a national bank and whether states could tax federal institutions, not the regulation of local activities affecting interstate commerce. This case dealt with the Necessary and Proper Clause and federal supremacy over states.",
+        "3": "Heart of Atlanta Motel v. United States (1964) addressed whether the Civil Rights Act could prohibit racial discrimination by businesses serving interstate travelers. While it did involve the Commerce Clause, the case focused on businesses directly serving interstate commerce, not purely local activities like growing wheat for personal use."
+      },
+      "source": {
+        "name": "Wikipedia - Wickard v. Filburn",
+        "url": "https://en.wikipedia.org/wiki/Wickard_v._Filburn"
+      }
+    }
   },
   {
     "id": "q089",
@@ -1638,7 +1855,24 @@
     "explanation": "A continuing resolution temporarily funds government operations when Congress hasn't passed regular appropriation bills, preventing a shutdown.",
     "difficulty": "hard",
     "topic": "Branches of Government",
-    "topicCategory": "congress"
+    "topicCategory": "congress",
+    "learningContent": {
+      "topic": "congress",
+      "paragraphs": [
+        "A continuing resolution is temporary funding passed by Congress to avoid a government shutdown. When Congress cannot agree on a full budget by the start of the fiscal year on October 1, it can pass a continuing resolution (often called a CR) to keep the government running. This short-term measure usually funds government agencies at the same levels as the previous year for weeks or months while lawmakers continue budget negotiations.",
+        "Congress is required by the [Constitution](https://constitution.congress.gov/browse/article-1/section-9/) to pass appropriations bills to fund government operations. When these bills are delayed, a continuing resolution allows federal workers to get paid and government services to continue without interruption. Without either a full budget or a CR, non-essential government functions must shut down. The federal government has experienced multiple shutdowns throughout history when Congress failed to pass either regular appropriations or a continuing resolution before funding expired.",
+        "Continuing resolutions have become more common in recent decades as budget disagreements make it harder for [Congress](https://www.senate.gov/about/powers-procedures/appropriations.htm) to pass spending bills on time. While CRs prevent shutdowns, they can create problems for federal agencies that cannot plan long-term or start new programs. Many budget experts believe relying too heavily on continuing resolutions rather than passing regular appropriations bills makes it harder for the government to operate efficiently."
+      ],
+      "corrections": {
+        "0": "A continuing resolution is not permanent law. It is temporary legislation that expires after a set period, usually weeks or months, and must be renewed or replaced by full appropriations bills.",
+        "2": "A continuing resolution is not related to the constitutional amendment process. Amending the Constitution requires approval by two-thirds of both houses of Congress and ratification by three-fourths of state legislatures.",
+        "3": "A continuing resolution is not part of impeachment procedures. Impeachment is the process by which Congress can remove federal officials from office for wrongdoing, while a continuing resolution deals only with government funding."
+      },
+      "source": {
+        "name": "U.S. Senate - Appropriations Process",
+        "url": "https://www.senate.gov/about/powers-procedures/appropriations.htm"
+      }
+    }
   },
   {
     "id": "q090",
@@ -1653,7 +1887,24 @@
     "explanation": "New York Times Co. v. United States (1971) rejected prior restraint and allowed publication of the Pentagon Papers, strongly protecting press freedom.",
     "difficulty": "hard",
     "topic": "Supreme Court",
-    "topicCategory": "judiciary"
+    "topicCategory": "judiciary",
+    "learningContent": {
+      "topic": "judiciary",
+      "paragraphs": [
+        "The [Supreme Court](https://www.supremecourt.gov/) case New York Times Co. v. United States allowed the publication of the Pentagon Papers in 1971. The Pentagon Papers were secret government documents that showed the history of U.S. involvement in Vietnam. When the New York Times and Washington Post began publishing these leaked documents, the government tried to stop them. The Nixon administration argued that publishing the papers would harm national security and asked courts to block their release.",
+        "The Supreme Court ruled 6-3 that the newspapers could publish the Pentagon Papers. The justices said the government did not prove that publishing would cause direct and immediate harm to the nation. This decision reinforced that the government cannot use [prior restraint](https://constitution.congress.gov/browse/essay/amdt1-3-3-3/ALDE_00013140/) (stopping publication before it happens) except in very rare situations. The case became one of the most important tests of press freedom in American history. It showed that newspapers have strong protection to publish information about government actions, even when that information embarrasses officials or reveals policy failures.",
+        "The Pentagon Papers revealed that government officials had misled the public about the Vietnam War for years. Daniel Ellsberg, a military analyst, leaked the documents because he believed Americans deserved to know the truth. While the case protected the newspapers' right to publish, it did not directly address protections for the person who leaked the documents. The decision remains a key precedent when courts consider conflicts between government secrecy and the public's right to know."
+      ],
+      "corrections": {
+        "0": "Freedom of the press was established by the [First Amendment](https://constitution.congress.gov/constitution/amendment-1/) in 1791, not by this 1971 case. New York Times Co. v. United States strengthened press protections but did not create them originally.",
+        "2": "Libel standards for public figures were created in New York Times Co. v. Sullivan (1964), a different case. That earlier decision made it harder for public officials to win defamation lawsuits against newspapers.",
+        "3": "This case protected newspapers' right to publish leaked information, but it did not create legal protections for whistleblowers who leak documents. Daniel Ellsberg, who leaked the Pentagon Papers, was actually prosecuted, though charges were eventually dismissed due to government misconduct."
+      },
+      "source": {
+        "name": "Supreme Court - New York Times Co. v. United States",
+        "url": "https://www.supremecourt.gov/"
+      }
+    }
   },
   {
     "id": "q091",
