@@ -26,12 +26,12 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/play" element={<Game />} />
 
-            {/* Protected routes */}
+            {/* Protected routes — require auth */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/play" element={<Game />} />
               <Route path="/profile" element={<Profile />} />
             </Route>
           </Routes>
