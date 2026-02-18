@@ -73,7 +73,7 @@ Plans:
 **Requirements**: PLAUS-01, PLAUS-02, PLAUS-03
 **Success Criteria** (what must be TRUE):
   1. Timing thresholds adjust based on question difficulty (easy allows <1s, medium <0.75s, hard <0.5s)
-  2. Flagged answers receive 30% point reduction (not just passive logging)
+  2. Flagged answers receive zero speed bonus (not just passive logging)
   3. Users with timer multiplier settings get adjusted thresholds (no false positives)
   4. Legitimate fast correct answers are not penalized
   5. Pattern-based detection requires 3+ suspicious answers before penalties apply

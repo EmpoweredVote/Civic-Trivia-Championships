@@ -4,9 +4,11 @@
  */
 
 import { randomUUID } from 'crypto';
-import { calculateScore, calculateResponseTime } from './scoreService.js';
+import { calculateScore, calculateScoreWithPenalty, calculateResponseTime } from './scoreService.js';
 import { SessionStorage } from './storage/SessionStorage.js';
 import { MemoryStorage } from './storage/MemoryStorage.js';
+import { PLAUSIBILITY_THRESHOLDS, getAdjustedThreshold, type PlausibilityDifficulty } from '../config/plausibilityThresholds.js';
+import { User } from '../models/User.js';
 
 // Question type matching backend data structure
 export interface Question {
@@ -210,17 +212,55 @@ export class SessionManager {
     const duration = isFinalQuestion ? FINAL_QUESTION_DURATION : QUESTION_DURATION;
     const responseTime = calculateResponseTime(duration, timeRemaining);
 
-    // Plausibility checks - TODO: Will be rewritten in Task 2 with difficulty-adjusted thresholds
+    // Determine if answer is correct FIRST (needed for plausibility detection)
+    const isCorrect = selectedOption === question.correctAnswer;
+
+    // INVARIANT: flagged=true implies isCorrect=false (detection skips correct answers)
+    // This means penalties inherently only apply to wrong answers — by design, not by filter.
     let flagged = false;
-    // Temporary: Keep clock manipulation check only
-    const maxPlausibleTime = isFinalQuestion ? FINAL_QUESTION_DURATION : MAX_PLAUSIBLE_TIME_REMAINING;
-    if (timeRemaining > maxPlausibleTime) {
-      console.warn(`⚠️  Suspicious answer: timeRemaining ${timeRemaining}s > ${maxPlausibleTime}s (sessionId: ${sessionId}, questionId: ${questionId})`);
-      flagged = true;
+
+    // Plausibility detection: Skip if final question OR anonymous user
+    if (!isFinalQuestion && session.userId !== 'anonymous') {
+      // Skip flagging if correct (fast correct answers are legitimate knowledge)
+      if (!isCorrect) {
+        // Fetch user's timer multiplier for threshold adjustment
+        const user = await User.findById(session.userId as number);
+        const timerMultiplier = user?.timerMultiplier ?? 1.0;
+
+        // Get difficulty-adjusted threshold
+        // Runtime guard: if difficulty is not a valid key, fall back to 'hard' (strictest)
+        const validDifficulties: PlausibilityDifficulty[] = ['easy', 'medium', 'hard'];
+        const difficulty = validDifficulties.includes(question.difficulty as PlausibilityDifficulty)
+          ? (question.difficulty as PlausibilityDifficulty)
+          : 'hard';
+
+        const threshold = getAdjustedThreshold(difficulty, timerMultiplier);
+
+        // Flag if response time is suspiciously fast
+        if (responseTime < threshold) {
+          flagged = true;
+          session.plausibilityFlags += 1;
+          console.warn(
+            `⚠️  Plausibility flag: sessionId=${sessionId}, questionIndex=${questionIndex}, ` +
+            `difficulty=${difficulty}, timerMultiplier=${timerMultiplier}, ` +
+            `threshold=${threshold}s, responseTime=${responseTime}s`
+          );
+        }
+      }
     }
 
-    // Determine if answer is correct
-    const isCorrect = selectedOption === question.correctAnswer;
+    // Clock manipulation check (orthogonal to difficulty-based detection)
+    const maxPlausibleTime = isFinalQuestion ? FINAL_QUESTION_DURATION : MAX_PLAUSIBLE_TIME_REMAINING;
+    if (timeRemaining > maxPlausibleTime) {
+      console.warn(`⚠️  Clock manipulation detected: timeRemaining ${timeRemaining}s > ${maxPlausibleTime}s (sessionId: ${sessionId}, questionId: ${questionId})`);
+      if (!isFinalQuestion && session.userId !== 'anonymous') {
+        flagged = true;
+        session.plausibilityFlags += 1;
+      }
+    }
+
+    // Determine if penalty is active (3+ total flags in session)
+    const penaltyActive = session.plausibilityFlags >= PLAUSIBILITY_THRESHOLDS.patternThreshold;
 
     // Calculate score
     let score: { basePoints: number; speedBonus: number; totalPoints: number };
@@ -240,8 +280,8 @@ export class SessionManager {
         totalPoints: 0,
       };
     } else {
-      // Normal question: use standard scoring
-      score = calculateScore(isCorrect, timeRemaining);
+      // Normal question: use penalty-aware scoring
+      score = calculateScoreWithPenalty(isCorrect, timeRemaining, flagged, penaltyActive);
     }
 
     // Create answer record

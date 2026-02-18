@@ -31,6 +31,39 @@ export function calculateResponseTime(questionDuration: number, timeRemaining: n
 }
 
 /**
+ * Calculate total score for an answer with plausibility penalty support
+ * @param isCorrect - Whether the answer was correct
+ * @param timeRemaining - Time remaining when answered
+ * @param flagged - Whether this answer was flagged as suspicious
+ * @param penaltyActive - Whether penalties are active (3+ flags in session)
+ * @returns Score breakdown with base points, speed bonus, and total
+ */
+export function calculateScoreWithPenalty(
+  isCorrect: boolean,
+  timeRemaining: number,
+  flagged: boolean,
+  penaltyActive: boolean
+): {
+  basePoints: number;
+  speedBonus: number;
+  totalPoints: number;
+} {
+  const basePoints = isCorrect ? 100 : 0;
+
+  // If flagged AND penalty is active (3+ total flags in session), zero the speed bonus
+  // Otherwise use normal speed bonus calculation
+  const speedBonus = (flagged && penaltyActive) ? 0 : (isCorrect ? calculateSpeedBonus(timeRemaining) : 0);
+
+  const totalPoints = basePoints + speedBonus;
+
+  return {
+    basePoints,
+    speedBonus,
+    totalPoints
+  };
+}
+
+/**
  * Calculate total score for an answer
  * @param isCorrect - Whether the answer was correct
  * @param timeRemaining - Time remaining when answered
