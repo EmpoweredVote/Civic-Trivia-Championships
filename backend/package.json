@@ -6,13 +6,17 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit push",
+    "db:seed": "tsx src/db/seed/seed.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "drizzle-orm": "^0.45.1",
     "express": "^4.18.2",
     "express-validator": "^7.3.1",
     "file-type": "^21.3.0",
@@ -31,6 +35,7 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^20.10.6",
     "@types/pg": "^8.10.9",
+    "drizzle-kit": "^0.31.9",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
