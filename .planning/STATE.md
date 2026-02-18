@@ -9,16 +9,16 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: Phase 10 (Game UX Improvements)
-Plan: 2 of 2 (Complete)
-Status: ✅ Phase Complete
-Last activity: 2026-02-17 — Completed 10-02-PLAN.md (layout & visual polish, user-approved)
+Phase: Phase 11 (Plausibility Enhancement)
+Plan: 1 of 2 (In progress)
+Status: 🔄 In progress
+Last activity: 2026-02-17 — Completed 11-01-PLAN.md (core detection and penalty logic)
 
-Progress: [██████████░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 60% (3/5 phases)
+Progress: [███████████░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 68% (3.5/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): 9/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02, GUX-03)
+- v1.1 (Phases 8-12): 10/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02, GUX-03, PLAUS-01)
 
 **Deployment Status:**
 - ✅ Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -32,9 +32,9 @@ Progress: [██████████░░░░░░░░░░] v1.0: 1
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 32
+- Total plans completed: 33
 - Average duration: 3.8 min
-- Total execution time: 122 min
+- Total execution time: 125 min
 
 **By Phase:**
 
@@ -48,12 +48,12 @@ Progress: [██████████░░░░░░░░░░] v1.0: 1
 | 06-wager-mechanics | 3/3 | 9 min | 3 min |
 | 07-polish-performance | 5/5 | 22 min | 4.4 min |
 | 08-dev-tooling-documentation | 2/2 | 4 min | 2 min |
-| 10-game-ux-improvements | 1/2 | 2 min | 2 min |
-| 09-redis-session-migration | 2/3 | 7 min | 3.5 min |
+| 09-redis-session-migration | 3/3 | 7 min | 2.3 min |
 | 10-game-ux-improvements | 2/2 | 7 min | 3.5 min |
+| 11-plausibility-enhancement | 1/2 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 08-01 (2 min), 08-02 (2 min), 09-01 (3 min), 09-02 (4 min), 10-01 (2 min)
+- Last 5 plans: 08-02 (2 min), 09-01 (3 min), 09-02 (4 min), 10-01 (2 min), 11-01 (3 min)
 - Trend: Exceptional 2-4 min velocity maintained
 
 **Deployment Session:**
@@ -199,14 +199,16 @@ Recent decisions affecting current work:
 | Learn More centered below answers | 10-02 | Centered alignment cleaner than right-aligned |
 | Hover glow signals finality | 10-02 | Teal shadow on hover makes click feel decisive |
 | Pulsing glow during suspense | 10-02 | Selected answer pulses teal, reduced motion gets static glow |
+| Zero speed bonus penalty | 11-01 | User-approved deviation from PLAUS-02 "30% reduction" - cleaner design |
+| Hard difficulty runtime fallback | 11-01 | Invalid difficulties use strictest threshold (fail-safe approach) |
+| Forward-only penalty application | 11-01 | First 2 flags normal scoring, 3rd+ zeroes speed bonus (no retroactive changes) |
+| INVARIANT guarantee via detection order | 11-01 | Calculate isCorrect first, skip flagging if true - penalties only affect wrong answers by design |
 
 ### Pending Todos
 
 Phase 11 (Plausibility Enhancement):
-- Implement difficulty-adjusted timing thresholds
-- Add 30% point reduction for flagged answers
-- Adjust thresholds for timer_multiplier users
-- Add pattern counting (3+ suspicious before penalties)
+- Strip flagged field from API responses (11-02)
+- Frontend type cleanup to remove unused flagged field (11-02)
 
 Phase 12 (Learning Content Expansion):
 - Generate 12-18 additional deep-dive learning content pieces
@@ -233,16 +235,18 @@ None currently. Deployment successful and tested.
 ## Session Continuity
 
 Last session: 2026-02-17
-Topic: Phase 10 Game UX Improvements — complete
+Topic: Phase 11 Plausibility Enhancement — plan 11-01 complete
 Achievements:
-- ✅ Single-click answer selection for Q1-Q9 with Q10 two-step preserved
-- ✅ Timing optimization: 750ms suspense, 4s auto-advance, 20s questions
-- ✅ Layout repositioned: timer above question, content high on screen
-- ✅ Answer polish: hover glow, press animation, pulsing suspense, dimming
-- ✅ User-approved via checkpoint with 3 iteration rounds
-- ✅ Pushed to production and tested live
+- ✅ Difficulty-adjusted plausibility thresholds (easy 1.0s, medium 0.75s, hard 0.5s)
+- ✅ Pattern counting with plausibilityFlags (session-scoped)
+- ✅ Zero speed bonus penalty after 3+ flags (forward-only)
+- ✅ Timer multiplier threshold scaling for accessibility users
+- ✅ INVARIANT guarantee: penalties only affect wrong answers by design
+- ✅ Backend QUESTION_DURATION synced to 20s (matches frontend)
+- ✅ ROADMAP updated: "zero speed bonus" instead of "30% point reduction"
 
-Resume file: None — phase complete, ready for Phase 11
+Stopped at: Completed 11-01-PLAN.md (core detection and penalty logic)
+Resume file: None — ready for 11-02 (response stripping and frontend cleanup)
 
 ---
 *v1.1 Tech Debt Hardening — PRODUCTION DEPLOYED*
