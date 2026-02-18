@@ -496,9 +496,9 @@ export function GameScreen({
                     explanation={currentQuestion.explanation}
                   />
 
-                  {/* Learn More button and tooltip - shown during reveal when content exists */}
+                  {/* Learn More button and tooltip - shown during reveal below answers */}
                   {state.phase === 'revealing' && learningContent && (
-                    <div className="relative flex justify-end mt-6">
+                    <div className="relative flex justify-center mt-4">
                       <div className="relative">
                         <LearnMoreButton
                           onOpenModal={handleOpenLearnMore}
