@@ -20,19 +20,26 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - WCAG AA accessibility, keyboard nav, screen reader support — v1.0
 - 120 question bank with mixed difficulty — v1.0
 - Mobile responsive, FCP <1.5s, TTI <3s, bundle <300KB — v1.0
+- Redis session storage with graceful degradation — v1.1
+- Plausibility detection with difficulty-adjusted thresholds — v1.1
+- Learning content expanded to 27.5% coverage (33/120) — v1.1
+- Single-click answer selection, improved game UX — v1.1
+- Anonymous play (no login required to play) — v1.1
 
 ### Active
 
-## Current Milestone: v1.1 Tech Debt Hardening
+## Current Milestone: v1.2 Community Collections
 
-**Goal:** Address tech debt from v1.0 audit — harden for production readiness
+**Goal:** Let players choose community-specific trivia collections — making civic learning local and relevant
 
-**Target items:**
-- [ ] Migrate in-memory game sessions to Redis (prevent data loss on restart)
-- [ ] Expand learningContent coverage beyond 18/120 questions (15%)
-- [ ] Enhance plausibility checks from passive logging to active response
-- [ ] Fix dev script TypeScript error (generateLearningContent.ts)
-- [ ] Generate missing Phase 3 VERIFICATION.md
+**Target features:**
+- [ ] Tag-based question collection system (questions can belong to multiple collections)
+- [ ] Collection picker UI at game start (select which set to play)
+- [ ] Federal collection (rebrand existing 120-question bank)
+- [ ] Bloomington, IN collection (~50-120 local + Indiana state questions)
+- [ ] Los Angeles, CA collection (~50-120 local + California state questions)
+- [ ] Question expiration system (time-sensitive questions auto-remove + notify)
+- [ ] Content generation tooling for locale-specific question creation
 
 ### Out of Scope
 
@@ -45,6 +52,9 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Mobile native app — web-first approach
 - Video/image questions — text-only for MVP
 - Classroom dashboard — future consideration
+- Location-based auto-assignment of collections — need more collections first
+- Collection search/browse — not enough collections yet to need search
+- Volunteer question authoring portal — AI generation + manual review sufficient for now
 
 ## Context
 
@@ -88,6 +98,10 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 | No leaderboards initially | Could discourage low-performers, needs research | — Pending |
 | Visual timer (no digits) | Reduces anxiety while maintaining urgency | — Pending |
 | "Not quite" instead of "Wrong" | Maintains encouraging tone | — Pending |
+| Tag-based collections over rigid categories | Questions can belong to multiple collections (e.g., Indiana + Bloomington) | — Pending |
+| Quality over quantity for local sets | 50 compelling questions beats 100 half-compelling; target ~120 but don't force it | — Pending |
+| AI-generated + human-reviewed content | AI kickstarts local question banks, volunteers refine over time | — Pending |
+| Auto-remove + notify on expiration | Time-sensitive questions drop from rotation and flag for review | — Pending |
 
 ---
-*Last updated: 2026-02-12 after v1.1 milestone start*
+*Last updated: 2026-02-18 after v1.2 milestone start*

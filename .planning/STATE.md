@@ -2,23 +2,24 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-12)
+See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Make civic learning fun through game show mechanics — play, not study
-**Current focus:** v1.1 Tech Debt Hardening - DEPLOYED ✅
+**Current focus:** v1.2 Community Collections
 
 ## Current Position
 
-Phase: Phase 12 (Learning Content Expansion)
-Plan: 2 of 2 (Complete)
-Status: Phase 12 complete — content tooling updated and batch generation executed
-Last activity: 2026-02-18 — Completed quick task 004: Fix answer button sizing and mobile viewport fit
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.2
+Last activity: 2026-02-18 — Milestone v1.2 Community Collections started
 
-Progress: [████████████████████] v1.0: 100% (7/7) | v1.1: 100% (Phase 12 complete)
+Progress: [░░░░░░░░░░░░░░░░░░░░] v1.2: 0% (defining requirements)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): Complete - 12/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02, GUX-03, PLAUS-01, PLAUS-02, PLAUS-03, LCONT-02)
+- v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
+- v1.2 (Phases TBD): Defining requirements
 
 **Deployment Status:**
 - ✅ Frontend LIVE: https://civic-trivia-frontend.onrender.com
