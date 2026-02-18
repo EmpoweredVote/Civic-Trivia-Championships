@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import type { GamePhase } from '../../../types/game';
 
 interface AnswerGridProps {
@@ -26,6 +27,7 @@ export function AnswerGrid({
   const isAnswering = phase === 'answering' || phase === 'selected';
   const isRevealing = phase === 'revealing';
   const isLocked = phase === 'locked';
+  const reducedMotion = useReducedMotion();
 
   // Keyboard navigation state
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
@@ -50,8 +52,8 @@ export function AnswerGrid({
       return 'bg-teal-600/40 border-teal-500 border-2 shadow-lg shadow-teal-500/30';
     }
 
-    // Default state
-    return 'bg-slate-800 border-slate-500 hover:border-teal-500 hover:bg-slate-700';
+    // Default state - bold hover effect
+    return 'bg-slate-800 border-slate-500 hover:border-teal-400 hover:bg-slate-700 hover:shadow-lg hover:shadow-teal-400/20 transition-all duration-200';
   };
 
   const getOptionScale = (index: number) => {
@@ -128,14 +130,36 @@ export function AnswerGrid({
             disabled={!canSelect}
             tabIndex={focusedIndex === index ? 0 : index === 0 && focusedIndex === null ? 0 : -1}
             aria-label={`Option ${OPTION_LETTERS[index]}: ${option}`}
+            whileTap={canSelect && !reducedMotion ? { scale: 0.95 } : undefined}
             animate={{
               scale: getOptionScale(index),
-              opacity: isRevealing && index !== correctAnswer && index !== selectedOption ? 0.3 : 1,
+              opacity: (() => {
+                // During locked phase (suspense): dim non-selected
+                if (phase === 'locked' && selectedOption !== null && index !== selectedOption) return 0.3;
+                // During reveal: dim non-selected, non-correct
+                if (isRevealing && index !== correctAnswer && index !== selectedOption) return 0.3;
+                return 1;
+              })(),
+              ...(phase === 'locked' && selectedOption === index
+                ? reducedMotion
+                  ? { boxShadow: '0 0 16px rgba(20, 184, 166, 0.6)' }  // Static glow
+                  : {
+                      boxShadow: [
+                        '0 0 8px rgba(20, 184, 166, 0.4)',
+                        '0 0 24px rgba(20, 184, 166, 0.8)',
+                        '0 0 8px rgba(20, 184, 166, 0.4)',
+                      ],
+                    }
+                : { boxShadow: '0 0 0px rgba(0,0,0,0)' }),
             }}
-            transition={{ duration: 0.5 }}
+            transition={{
+              scale: { type: 'spring', stiffness: 400, damping: 17 },
+              opacity: { duration: 0.3 },
+              boxShadow: reducedMotion ? { duration: 0 } : { duration: 0.75, repeat: Infinity, ease: 'easeInOut' },
+            }}
             className={`
               relative p-4 rounded-lg border-2 transition-all duration-300
-              flex items-center gap-4 text-left
+              flex items-center gap-4 text-left min-h-[48px]
               disabled:cursor-not-allowed
               ${canSelect ? 'cursor-pointer' : 'cursor-default'}
               ${getOptionStyle(index)}
