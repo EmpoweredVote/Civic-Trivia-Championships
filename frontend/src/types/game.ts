@@ -39,7 +39,7 @@ export type GamePhase =
   | 'idle' // No game in progress
   | 'starting' // Brief countdown before first question
   | 'answering' // Timer running, player can select
-  | 'selected' // Player has highlighted an answer but not locked in
+  | 'selected' // Player highlighted answer, awaiting lock-in (Q10 only for standard questions)
   | 'locked' // Player confirmed answer, suspense pause
   | 'revealing' // Showing correct/incorrect + explanation
   | 'final-announcement' // "FINAL QUESTION" screen before wagering

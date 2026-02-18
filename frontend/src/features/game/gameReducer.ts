@@ -64,18 +64,31 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     case 'SELECT_ANSWER': {
-      // Only valid during answering or selected phase
-      if (state.phase !== 'answering' && state.phase !== 'selected') {
+      // Only valid during answering phase, or during selected phase for Q10 (allows re-selection)
+      if (state.phase !== 'answering' && !(state.phase === 'selected' && state.currentQuestionIndex === 9)) {
         return state;
       }
+
+      // Q10 (index 9) keeps two-step confirmation for dramatic stakes
+      if (state.currentQuestionIndex === 9) {
+        return {
+          ...state,
+          phase: 'selected',
+          selectedOption: action.optionIndex,
+        };
+      }
+
+      // All other questions (Q1-Q9): immediate lock-in (single-click)
       return {
         ...state,
-        phase: 'selected',
+        phase: 'locked',
         selectedOption: action.optionIndex,
+        isTimerPaused: true,
       };
     }
 
     case 'LOCK_ANSWER': {
+      // Q10-only: Lock in wager question answer (two-step confirmation preserved for high stakes)
       // Only valid in selected phase with a selected option
       if (state.phase !== 'selected' || state.selectedOption === null) {
         return state;
@@ -107,7 +120,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         basePoints: action.scoreData.basePoints,
         speedBonus: action.scoreData.speedBonus,
         totalPoints: action.scoreData.totalPoints,
-        responseTime: (state.currentQuestionIndex === 9 ? 50 : 25) - action.timeRemaining,
+        responseTime: (state.currentQuestionIndex === 9 ? 50 : 20) - action.timeRemaining,
         ...(state.currentQuestionIndex === 9 && state.wagerAmount > 0 ? { wager: state.wagerAmount } : {}),
       };
 
@@ -140,7 +153,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         basePoints: action.scoreData.basePoints,
         speedBonus: action.scoreData.speedBonus,
         totalPoints: action.scoreData.totalPoints,
-        responseTime: (state.currentQuestionIndex === 9 ? 50 : 25) - action.timeRemaining,
+        responseTime: (state.currentQuestionIndex === 9 ? 50 : 20) - action.timeRemaining,
         ...(state.currentQuestionIndex === 9 && state.wagerAmount > 0 ? { wager: state.wagerAmount } : {}),
       };
 
