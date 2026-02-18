@@ -126,11 +126,11 @@ Requirements for Community Collections milestone. Continues from v1.1 phases.
 
 ### Collections Data Model
 
-- [ ] **COLL-01**: Questions stored in PostgreSQL with collection associations (migrated from JSON)
-- [ ] **COLL-02**: Collections registry with name, slug, description, and locale metadata
-- [ ] **COLL-03**: Questions can belong to multiple collections via tag-based mapping
-- [ ] **COLL-04**: Each collection defines its own topic categories (not a hardcoded global enum)
-- [ ] **COLL-05**: Questions can have an optional expiration date (expiresAt field)
+- [x] **COLL-01**: Questions stored in PostgreSQL with collection associations (migrated from JSON)
+- [x] **COLL-02**: Collections registry with name, slug, description, and locale metadata
+- [x] **COLL-03**: Questions can belong to multiple collections via tag-based mapping
+- [x] **COLL-04**: Each collection defines its own topic categories (not a hardcoded global enum)
+- [x] **COLL-05**: Questions can have an optional expiration date (expiresAt field)
 
 ### Collection Game Flow
 
@@ -149,7 +149,7 @@ Requirements for Community Collections milestone. Continues from v1.1 phases.
 
 ### Content Creation
 
-- [ ] **CCONT-01**: Federal collection populated with existing 120-question bank
+- [x] **CCONT-01**: Federal collection populated with existing 120-question bank
 - [ ] **CCONT-02**: Bloomington IN collection with 50-120 local + Indiana state questions
 - [ ] **CCONT-03**: Los Angeles CA collection with 50-120 local + California state questions
 - [ ] **CCONT-04**: Content generation tooling supports locale-specific question generation
@@ -286,12 +286,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COLL-01 | Phase 13 | Pending |
-| COLL-02 | Phase 13 | Pending |
-| COLL-03 | Phase 13 | Pending |
-| COLL-04 | Phase 13 | Pending |
-| COLL-05 | Phase 13 | Pending |
-| CCONT-01 | Phase 13 | Pending |
+| COLL-01 | Phase 13 | Complete |
+| COLL-02 | Phase 13 | Complete |
+| COLL-03 | Phase 13 | Complete |
+| COLL-04 | Phase 13 | Complete |
+| COLL-05 | Phase 13 | Complete |
+| CCONT-01 | Phase 13 | Complete |
 | CGFLOW-03 | Phase 14 | Pending |
 | CGFLOW-04 | Phase 14 | Pending |
 | CGFLOW-05 | Phase 14 | Pending |
@@ -347,4 +347,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-03*
-*Last updated: 2026-02-18 after v1.2 roadmap creation*
+*Last updated: 2026-02-18 after Phase 13 complete*

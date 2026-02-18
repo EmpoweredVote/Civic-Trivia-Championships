@@ -8,7 +8,7 @@ This roadmap delivers a polished, educational trivia game across three milestone
 
 **Phases 13-17** transform the single federal question bank into a multi-collection system where players choose community-specific trivia. The critical path is the JSON-to-PostgreSQL migration (Phase 13), which unblocks every downstream feature.
 
-- [ ] **Phase 13: Database Schema & Seed Migration** - Questions and collections into PostgreSQL with federal seed data
+- [x] **Phase 13: Database Schema & Seed Migration** - Questions and collections into PostgreSQL with federal seed data
 - [ ] **Phase 14: Question Service & Route Integration** - Swap data layer from JSON to database queries
 - [ ] **Phase 15: Collection Picker UI** - Card-based collection selection before game start
 - [ ] **Phase 16: Expiration System** - Hourly cron sweep with soft-delete and health monitoring
@@ -35,8 +35,8 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
 **Plans**: 3 plans in 2 waves
 Plans:
 - [x] 13-01-PLAN.md — Drizzle ORM setup, schema definitions, SQL migration, rollback script
-- [ ] 13-02-PLAN.md — Research authoritative sources for 87 unsourced questions
-- [ ] 13-03-PLAN.md — Seed collections, topics, and migrate 120 questions into PostgreSQL
+- [x] 13-02-PLAN.md — Research authoritative sources for 87 unsourced questions
+- [x] 13-03-PLAN.md — Seed collections, topics, and migrate 120 questions into PostgreSQL
 
 ### Phase 14: Question Service & Route Integration
 **Goal**: The game queries PostgreSQL instead of JSON, with collection-scoped question loading and zero regression
@@ -92,7 +92,7 @@ Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 13. Database Schema & Seed Migration | 1/3 | In progress | - |
+| 13. Database Schema & Seed Migration | 3/3 | Complete | 2026-02-18 |
 | 14. Question Service & Route Integration | 0/TBD | Not started | - |
 | 15. Collection Picker UI | 0/TBD | Not started | - |
 | 16. Expiration System | 0/TBD | Not started | - |
@@ -268,6 +268,6 @@ Plans:
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-18 (v1.2 Phase 13 planned)*
+*Updated: 2026-02-18 (Phase 13 complete)*
 *Current Milestone: v1.2 Community Collections*
-*Phases: 17 (12 complete, 0 in progress, 5 planned)*
+*Phases: 17 (13 complete, 0 in progress, 4 planned)*
