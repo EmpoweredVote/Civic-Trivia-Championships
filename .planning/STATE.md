@@ -10,15 +10,15 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: Phase 10 (Game UX Improvements)
-Plan: 1 of 2 (In Progress)
-Status: ⏳ Executing
-Last activity: 2026-02-17 — Completed 10-01-PLAN.md (state machine single-click refactor)
+Plan: 2 of 2 (Complete)
+Status: ✅ Phase Complete
+Last activity: 2026-02-17 — Completed 10-02-PLAN.md (layout & visual polish, user-approved)
 
-Progress: [████████░░░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 58% (2.9/5 phases)
+Progress: [██████████░░░░░░░░░░] v1.0: 100% (7/7) | v1.1: 60% (3/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): 7/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02 partial)
+- v1.1 (Phases 8-12): 9/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02, GUX-03)
 
 **Deployment Status:**
 - ✅ Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -32,9 +32,9 @@ Progress: [████████░░░░░░░░░░░░] v1.0: 1
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 31
-- Average duration: 3.7 min
-- Total execution time: 117 min
+- Total plans completed: 32
+- Average duration: 3.8 min
+- Total execution time: 122 min
 
 **By Phase:**
 
@@ -50,6 +50,7 @@ Progress: [████████░░░░░░░░░░░░] v1.0: 1
 | 08-dev-tooling-documentation | 2/2 | 4 min | 2 min |
 | 10-game-ux-improvements | 1/2 | 2 min | 2 min |
 | 09-redis-session-migration | 2/3 | 7 min | 3.5 min |
+| 10-game-ux-improvements | 2/2 | 7 min | 3.5 min |
 
 **Recent Trend:**
 - Last 5 plans: 08-01 (2 min), 08-02 (2 min), 09-01 (3 min), 09-02 (4 min), 10-01 (2 min)
@@ -192,13 +193,14 @@ Recent decisions affecting current work:
 | Question timer 20s (Q10: 50s) | 10-01 | Reduced from 25s to match snappier overall pace, final question unchanged |
 | Timing coordination: 750ms/4s/1.5s | 10-01 | Suspense/auto-advance/popup reduced cohesively for game-show pacing |
 | Shared submitAndReveal helper | 10-01 | Eliminates duplication between selectAnswer and lockAnswer paths |
+| Timer above question | 10-02 | User preferred timer → question → answers visual flow |
+| Content high on screen (pt-2/pt-6) | 10-02 | Answers start in top half of screen per user feedback |
+| Circle ring kept, inner oval removed | 10-02 | Clean timer: countdown ring + number, no extra border |
+| Learn More centered below answers | 10-02 | Centered alignment cleaner than right-aligned |
+| Hover glow signals finality | 10-02 | Teal shadow on hover makes click feel decisive |
+| Pulsing glow during suspense | 10-02 | Selected answer pulses teal, reduced motion gets static glow |
 
 ### Pending Todos
-
-Phase 10 (Game UX Improvements):
-- ✅ Remove lock-in confirmation step (single-click answer selection) — COMPLETE
-- Reposition question card to 1/3 from top
-- Reposition answer options to 2/3 from top
 
 Phase 11 (Plausibility Enhancement):
 - Implement difficulty-adjusted timing thresholds
@@ -231,14 +233,16 @@ None currently. Deployment successful and tested.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 10-01-PLAN.md (state machine single-click refactor)
+Topic: Phase 10 Game UX Improvements — complete
 Achievements:
-- ✅ Single-click answer selection for Q1-Q9 with Q10 exception
+- ✅ Single-click answer selection for Q1-Q9 with Q10 two-step preserved
 - ✅ Timing optimization: 750ms suspense, 4s auto-advance, 20s questions
-- ✅ Refactored selectAnswer flow with shared submitAndReveal helper
-- ✅ TypeScript compilation and build verification passed
+- ✅ Layout repositioned: timer above question, content high on screen
+- ✅ Answer polish: hover glow, press animation, pulsing suspense, dimming
+- ✅ User-approved via checkpoint with 3 iteration rounds
+- ✅ Pushed to production and tested live
 
-Resume file: Next plan 10-02-PLAN.md (layout positioning and visual hierarchy)
+Resume file: None — phase complete, ready for Phase 11
 
 ---
 *v1.1 Tech Debt Hardening — PRODUCTION DEPLOYED*

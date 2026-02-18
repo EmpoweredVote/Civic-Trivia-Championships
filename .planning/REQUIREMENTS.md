@@ -112,9 +112,9 @@ Requirements for tech debt hardening. Continues from v1.0 phases.
 
 ### Game UX
 
-- [ ] **GUX-01**: Question card positioned at 1/3 from top of screen (not centered)
-- [ ] **GUX-02**: Answer options positioned at 2/3 from top of screen
-- [ ] **GUX-03**: Single-click answer selection (remove lock-in confirmation step)
+- [x] **GUX-01**: Question card positioned at 1/3 from top of screen (not centered)
+- [x] **GUX-02**: Answer options positioned at 2/3 from top of screen
+- [x] **GUX-03**: Single-click answer selection (remove lock-in confirmation step)
 
 ### Documentation
 
@@ -235,9 +235,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REDIS-01 | Phase 9 | Complete |
 | REDIS-02 | Phase 9 | Complete |
 | REDIS-03 | Phase 9 | Complete |
-| GUX-01 | Phase 10 | Pending |
-| GUX-02 | Phase 10 | Pending |
-| GUX-03 | Phase 10 | Pending |
+| GUX-01 | Phase 10 | Complete |
+| GUX-02 | Phase 10 | Complete |
+| GUX-03 | Phase 10 | Complete |
 | PLAUS-01 | Phase 11 | Pending |
 | PLAUS-02 | Phase 11 | Pending |
 | PLAUS-03 | Phase 11 | Pending |

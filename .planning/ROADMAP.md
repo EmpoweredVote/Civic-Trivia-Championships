@@ -10,7 +10,7 @@ This roadmap delivers a polished, educational trivia game across two milestones.
 
 - [x] **Phase 8: Dev Tooling & Documentation** - Fix content generation script, complete missing docs
 - [x] **Phase 9: Redis Session Migration** - Persistent session storage with graceful degradation
-- [ ] **Phase 10: Game UX Improvements** - Visual positioning and interaction refinements
+- [x] **Phase 10: Game UX Improvements** - Visual positioning and interaction refinements
 - [ ] **Phase 11: Plausibility Enhancement** - Difficulty-adjusted anti-cheat with point penalties
 - [ ] **Phase 12: Learning Content Expansion** - Strategic deep-dive content for 25-30% coverage
 
@@ -57,15 +57,15 @@ Plans:
 **Depends on**: Phase 9
 **Requirements**: GUX-01, GUX-02, GUX-03
 **Success Criteria** (what must be TRUE):
-  1. Question card positioned at 1/3 from top of screen (not vertically centered)
-  2. Answer options positioned at 2/3 from top of screen (below question)
+  1. Question and answers positioned high on screen (top half), not vertically centered
+  2. Timer positioned above question for immediate visibility
   3. User can select answer with single click (no lock-in confirmation step)
-  4. Visual hierarchy guides eye flow: question -> options -> timer
+  4. Visual hierarchy guides eye flow: timer -> question -> options
   5. Answer selection feels more responsive and game-show-like
 **Plans**: 2 plans in 2 waves
 Plans:
-- [ ] 10-01-PLAN.md — State machine single-click refactor and timing constants update
-- [ ] 10-02-PLAN.md — Layout repositioning, visual hierarchy, and answer interaction polish
+- [x] 10-01-PLAN.md — State machine single-click refactor and timing constants update
+- [x] 10-02-PLAN.md — Layout repositioning, visual hierarchy, and answer interaction polish
 
 ### Phase 11: Plausibility Enhancement
 **Goal**: Plausibility detection is more accurate and actively penalizes suspicious behavior
@@ -100,7 +100,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
 |-------|----------------|--------|-----------|
 | 8. Dev Tooling & Documentation | 2/2 | Complete | 2026-02-13 |
 | 9. Redis Session Migration | 3/3 | Complete | 2026-02-17 |
-| 10. Game UX Improvements | 0/2 | In Progress | — |
+| 10. Game UX Improvements | 2/2 | Complete | 2026-02-17 |
 | 11. Plausibility Enhancement | 0/0 | Not Started | — |
 | 12. Learning Content Expansion | 0/0 | Not Started | — |
 
