@@ -120,6 +120,45 @@ Requirements for tech debt hardening. Continues from v1.0 phases.
 
 - [x] **DOCS-01**: Generate missing Phase 3 VERIFICATION.md
 
+## v1.2 Requirements
+
+Requirements for Community Collections milestone. Continues from v1.1 phases.
+
+### Collections Data Model
+
+- [ ] **COLL-01**: Questions stored in PostgreSQL with collection associations (migrated from JSON)
+- [ ] **COLL-02**: Collections registry with name, slug, description, and locale metadata
+- [ ] **COLL-03**: Questions can belong to multiple collections via tag-based mapping
+- [ ] **COLL-04**: Each collection defines its own topic categories (not a hardcoded global enum)
+- [ ] **COLL-05**: Questions can have an optional expiration date (expiresAt field)
+
+### Collection Game Flow
+
+- [ ] **CGFLOW-01**: Player sees card-based collection picker before starting a game
+- [ ] **CGFLOW-02**: Each collection card shows name, description, and question count
+- [ ] **CGFLOW-03**: All 10 questions in a game come from the selected collection
+- [ ] **CGFLOW-04**: Federal collection is the default/preselected option
+- [ ] **CGFLOW-05**: Existing game flow (timer, scoring, wager, results, progression) works unchanged with any collection
+
+### Expiration System
+
+- [ ] **EXP-01**: Expired questions automatically removed from game rotation
+- [ ] **EXP-02**: Expiration check runs on an hourly schedule (cron job)
+- [ ] **EXP-03**: Expired questions logged and flagged for content review
+- [ ] **EXP-04**: Active game sessions not affected by mid-session expiration (session isolation)
+
+### Content Creation
+
+- [ ] **CCONT-01**: Federal collection populated with existing 120-question bank
+- [ ] **CCONT-02**: Bloomington IN collection with 50-120 local + Indiana state questions
+- [ ] **CCONT-03**: Los Angeles CA collection with 50-120 local + California state questions
+- [ ] **CCONT-04**: Content generation tooling supports locale-specific question generation
+- [ ] **CCONT-05**: All locale content cross-referenced with authoritative local government sources
+
+### Admin & Health
+
+- [ ] **ADM-01**: Collection health dashboard showing per-collection question counts, expiring-soon counts, and expired counts
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -269,6 +308,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Phase 11 (Plausibility Enhancement): 3 requirements
 - Phase 12 (Learning Content Expansion): 1 requirement
 
+**Coverage (v1.2):**
+- v1.2 requirements: 17 total
+- Mapped to phases: 0
+- Unmapped: 17 (awaiting roadmap)
+
 ---
 *Requirements defined: 2026-02-03*
-*Last updated: 2026-02-13 after v1.1 roadmap creation*
+*Last updated: 2026-02-18 after v1.2 requirements definition*
