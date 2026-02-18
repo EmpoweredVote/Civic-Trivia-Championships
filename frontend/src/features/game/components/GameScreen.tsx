@@ -22,15 +22,15 @@ import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { announce } from '../../../utils/announce';
 import type { GameState, Question, LearningContent } from '../../../types/game';
 
-const QUESTION_DURATION = 25; // seconds
+const QUESTION_DURATION = 20; // seconds
 const FINAL_QUESTION_DURATION = 50; // seconds for Q10
-const QUESTION_PREVIEW_MS = 2000; // show question before revealing options
+const QUESTION_PREVIEW_MS = 1000; // show question before revealing options
 
 interface GameScreenProps {
   state: GameState;
   currentQuestion: Question | null;
   startGame: () => Promise<void>;
-  selectAnswer: (optionIndex: number) => void;
+  selectAnswer: (optionIndex: number, timeRemaining?: number) => void;
   lockAnswer: (timeRemaining: number) => void;
   handleTimeout: () => void;
   quitGame: () => void;
@@ -171,25 +171,25 @@ export function GameScreen({
   // Global number key handler for answer selection (when AnswerGrid doesn't have focus)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      const canUseKeyboard = (state.phase === 'answering' || state.phase === 'selected') && showOptions;
+      const canUseKeyboard = state.phase === 'answering' && showOptions;
       if (!canUseKeyboard) return;
 
       if (e.key >= '1' && e.key <= '4') {
         const index = parseInt(e.key) - 1;
-        selectAnswer(index);
+        selectAnswer(index, currentTimeRemaining);
       }
     };
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [state.phase, showOptions, selectAnswer]);
+  }, [state.phase, showOptions, selectAnswer, currentTimeRemaining]);
 
   // Escape key handler for pause overlay
   useEffect(() => {
     const handleEscapeKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         // Only pause during answering or selected phases (not during reveal, wager, or already paused)
-        if ((state.phase === 'answering' || state.phase === 'selected') && !state.isPaused) {
+        if ((state.phase === 'answering' || (state.phase === 'selected' && state.currentQuestionIndex === 9)) && !state.isPaused) {
           pauseGame();
           announce.polite('Game paused');
         }
@@ -202,7 +202,7 @@ export function GameScreen({
 
   // Timer threshold announcements for screen readers
   useEffect(() => {
-    if (state.phase !== 'answering' && state.phase !== 'selected') return;
+    if (state.phase !== 'answering' && !(state.phase === 'selected' && state.currentQuestionIndex === 9)) return;
 
     if (currentTimeRemaining === 10) {
       announce.polite('10 seconds remaining');
@@ -355,7 +355,7 @@ export function GameScreen({
 
       {/* Main content container */}
       <div className="relative min-h-screen flex flex-col py-8 px-4">
-        {/* Top HUD - Quit button, Progress, Timer */}
+        {/* Top HUD - Quit button, Question number, Progress dots */}
         <div className="flex items-center justify-between mb-8 max-w-5xl mx-auto w-full">
           {/* Quit button */}
           <button
@@ -378,28 +378,28 @@ export function GameScreen({
             </svg>
           </button>
 
+          {/* Question number indicator (center) */}
+          <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">
+            Q{state.currentQuestionIndex + 1} of 10
+          </span>
+
           {/* Progress dots */}
           <ProgressDots
             currentIndex={state.currentQuestionIndex}
             total={state.questions.length}
           />
-
-          {/* Score display */}
-          <ScoreDisplay
-            score={state.totalScore}
-            shouldShake={shouldShake}
-            showRedFlash={showRedFlash}
-          />
-
-          {/* Timer - paused during question preview, extended for final question */}
-          <GameTimer
-            key={timerKey}
-            duration={isFinalQuestion ? finalQuestionDuration : questionDuration}
-            onTimeout={onTimeout}
-            onTimeUpdate={setCurrentTimeRemaining}
-            isPaused={state.isTimerPaused || !showOptions}
-          />
         </div>
+
+        {/* Score display - conditionally rendered based on phase */}
+        {(state.phase === 'revealing' || state.phase === 'locked' || state.phase === 'complete' || !showOptions) && (
+          <div className="flex justify-center mb-4">
+            <ScoreDisplay
+              score={state.totalScore}
+              shouldShake={shouldShake}
+              showRedFlash={showRedFlash}
+            />
+          </div>
+        )}
 
         {/* Timeout flash message */}
         <AnimatePresence>
@@ -441,8 +441,8 @@ export function GameScreen({
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }}
-            transition={{ duration: reducedMotion ? 0 : 0.3 }}
-            className="flex-1 flex flex-col justify-start pt-[10vh] gap-12"
+            transition={{ duration: reducedMotion ? 0 : 0.2 }}
+            className="flex-1 flex flex-col items-center pt-24 md:pt-[33vh] gap-8 md:gap-12 max-w-[700px] mx-auto w-full px-4"
           >
             {/* Final question badge */}
             {isFinalQuestion && (
@@ -463,7 +463,7 @@ export function GameScreen({
 
             {/* Answer grid - revealed after question preview */}
             <AnimatePresence>
-              {(showOptions || state.phase === 'selected' || state.phase === 'locked' || state.phase === 'revealing') && (
+              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === 9)) && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -478,14 +478,25 @@ export function GameScreen({
                         : 0
                     }
                     phase={state.phase}
-                    onSelect={selectAnswer}
+                    onSelect={(index) => selectAnswer(index, currentTimeRemaining)}
                     onLockIn={onLockIn}
                     explanation={currentQuestion.explanation}
                   />
 
+                  {/* Timer - positioned below answer grid */}
+                  <div className="flex justify-center mt-6">
+                    <GameTimer
+                      key={timerKey}
+                      duration={isFinalQuestion ? finalQuestionDuration : questionDuration}
+                      onTimeout={onTimeout}
+                      onTimeUpdate={setCurrentTimeRemaining}
+                      isPaused={state.isTimerPaused || !showOptions}
+                    />
+                  </div>
+
                   {/* Learn More button and tooltip - shown during reveal when content exists */}
                   {state.phase === 'revealing' && learningContent && (
-                    <div className="relative flex justify-end mt-6 max-w-5xl mx-auto">
+                    <div className="relative flex justify-end mt-6">
                       <div className="relative">
                         <LearnMoreButton
                           onOpenModal={handleOpenLearnMore}
