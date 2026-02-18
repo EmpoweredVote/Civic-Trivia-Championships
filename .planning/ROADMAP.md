@@ -12,7 +12,7 @@ This roadmap delivers a polished, educational trivia game across two milestones.
 - [x] **Phase 9: Redis Session Migration** - Persistent session storage with graceful degradation
 - [x] **Phase 10: Game UX Improvements** - Visual positioning and interaction refinements
 - [x] **Phase 11: Plausibility Enhancement** - Difficulty-adjusted anti-cheat with point penalties
-- [ ] **Phase 12: Learning Content Expansion** - Strategic deep-dive content for 25-30% coverage
+- [x] **Phase 12: Learning Content Expansion** - Strategic deep-dive content for 25-30% coverage
 
 ## Phase Details (v1.1)
 
@@ -94,8 +94,8 @@ Plans:
   5. Content generation follows batch review process (10-20 at a time)
 **Plans**: 2 plans in 2 waves
 Plans:
-- [ ] 12-01-PLAN.md — Script tooling update (CLI flags, prompt update, applyContent.ts, frontend inline links)
-- [ ] 12-02-PLAN.md — Content generation batch, human review, and application to questions.json
+- [x] 12-01-PLAN.md — Script tooling update (CLI flags, prompt update, applyContent.ts, frontend inline links)
+- [x] 12-02-PLAN.md — Content generation batch, human review, and application to questions.json
 
 ## Progress (v1.1)
 
@@ -108,7 +108,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
 | 9. Redis Session Migration | 3/3 | Complete | 2026-02-17 |
 | 10. Game UX Improvements | 2/2 | Complete | 2026-02-17 |
 | 11. Plausibility Enhancement | 2/2 | Complete | 2026-02-17 |
-| 12. Learning Content Expansion | 0/2 | In Progress | — |
+| 12. Learning Content Expansion | 2/2 | Complete | 2026-02-18 |
 
 ## Requirement Coverage (v1.1)
 
@@ -199,6 +199,6 @@ Reference for completed phases from initial MVP release.
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-17 (Phase 12 planned)*
+*Updated: 2026-02-18 (Phase 12 complete)*
 *Current Milestone: v1.1 Tech Debt Hardening*
-*Phases: 12 (11 complete, 1 in progress)*
+*Phases: 12 (12 complete, 0 in progress)*

@@ -18,7 +18,7 @@ Progress: [████████████████████] v1.0: 1
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
-- v1.1 (Phases 8-12): 12/12 tooling requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02, GUX-03, PLAUS-01, PLAUS-02, PLAUS-03, LCONT-02 tooling)
+- v1.1 (Phases 8-12): Complete - 12/12 requirements delivered (LCONT-01, DOCS-01, REDIS-01, REDIS-02, REDIS-03, GUX-01, GUX-02, GUX-03, PLAUS-01, PLAUS-02, PLAUS-03, LCONT-02)
 
 **Deployment Status:**
 - ✅ Frontend LIVE: https://civic-trivia-frontend.onrender.com

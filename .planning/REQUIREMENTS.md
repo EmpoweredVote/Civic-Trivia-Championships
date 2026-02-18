@@ -108,7 +108,7 @@ Requirements for tech debt hardening. Continues from v1.0 phases.
 ### Learning Content
 
 - [x] **LCONT-01**: Fix generateLearningContent.ts TypeScript error (install @anthropic-ai/sdk)
-- [ ] **LCONT-02**: Expand learningContent coverage to 25-30% of questions (~15 new deep-dives)
+- [x] **LCONT-02**: Expand learningContent coverage to 25-30% of questions (~15 new deep-dives)
 
 ### Game UX
 
@@ -241,7 +241,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAUS-01 | Phase 11 | Complete |
 | PLAUS-02 | Phase 11 | Complete |
 | PLAUS-03 | Phase 11 | Complete |
-| LCONT-02 | Phase 12 | Pending |
+| LCONT-02 | Phase 12 | Complete |
 
 **Coverage (v1.0):**
 - v1.0 requirements: 50 total
