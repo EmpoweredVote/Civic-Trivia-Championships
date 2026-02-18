@@ -442,8 +442,21 @@ export function GameScreen({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: reducedMotion ? 0 : 0.2 }}
-            className="flex-1 flex flex-col items-center pt-24 md:pt-[33vh] gap-8 md:gap-12 max-w-[700px] mx-auto w-full px-4"
+            className="flex-1 flex flex-col items-center pt-2 md:pt-6 gap-6 md:gap-8 max-w-[700px] mx-auto w-full px-4"
           >
+            {/* Timer - positioned above question */}
+            {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === 9)) && (
+              <div className="flex justify-center">
+                <GameTimer
+                  key={timerKey}
+                  duration={isFinalQuestion ? finalQuestionDuration : questionDuration}
+                  onTimeout={onTimeout}
+                  onTimeUpdate={setCurrentTimeRemaining}
+                  isPaused={state.isTimerPaused || !showOptions}
+                />
+              </div>
+            )}
+
             {/* Final question badge */}
             {isFinalQuestion && (
               <div className="flex justify-center">
@@ -482,17 +495,6 @@ export function GameScreen({
                     onLockIn={onLockIn}
                     explanation={currentQuestion.explanation}
                   />
-
-                  {/* Timer - positioned below answer grid */}
-                  <div className="flex justify-center mt-6">
-                    <GameTimer
-                      key={timerKey}
-                      duration={isFinalQuestion ? finalQuestionDuration : questionDuration}
-                      onTimeout={onTimeout}
-                      onTimeUpdate={setCurrentTimeRemaining}
-                      isPaused={state.isTimerPaused || !showOptions}
-                    />
-                  </div>
 
                   {/* Learn More button and tooltip - shown during reveal when content exists */}
                   {state.phase === 'revealing' && learningContent && (
