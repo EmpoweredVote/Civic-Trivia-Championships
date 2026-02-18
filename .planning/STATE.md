@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 Phase: Phase 12 (Learning Content Expansion)
 Plan: 2 of 2 (Complete)
 Status: Phase 12 complete — content tooling updated and batch generation executed
-Last activity: 2026-02-18 — Completed 12-02-PLAN.md (generated and applied 15 hard-difficulty learning content pieces, coverage now 27.5%)
+Last activity: 2026-02-18 — Completed quick task 001: Clean up test files (.js.js and generated JSON files)
 
 Progress: [████████████████████] v1.0: 100% (7/7) | v1.1: 100% (Phase 12 complete)
 
@@ -226,7 +226,13 @@ Deployment Follow-up:
 - [ ] Share live URLs with team
 - [ ] Add to ev-prototypes.netlify.app (optional)
 - [ ] Set up UptimeRobot to prevent sleep (optional)
-- [ ] Clean up test files (.js.js files committed by accident)
+- [x] Clean up test files (.js.js files committed by accident) — quick-001
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 001 | Clean up test files (.js.js and generated JSON files) | 2026-02-18 | fc7c6f2 | [001-clean-up-test-files](./quick/001-clean-up-test-files/) |
 
 ### Blockers/Concerns
 
