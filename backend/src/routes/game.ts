@@ -128,15 +128,17 @@ router.post('/answer', async (req: Request, res: Response) => {
       });
     }
 
+    // Strip flagged field from response (keep server-side only for analytics)
+    const { flagged, ...clientAnswer } = answer;
+
     // Return score with correct answer for client reveal
     res.status(200).json({
-      basePoints: answer.basePoints,
-      speedBonus: answer.speedBonus,
-      totalPoints: answer.totalPoints,
-      correct: answer.basePoints > 0 || (answer.wager !== undefined && answer.totalPoints > 0),
+      basePoints: clientAnswer.basePoints,
+      speedBonus: clientAnswer.speedBonus,
+      totalPoints: clientAnswer.totalPoints,
+      correct: clientAnswer.basePoints > 0 || (clientAnswer.wager !== undefined && clientAnswer.totalPoints > 0),
       correctAnswer: question.correctAnswer,
-      flagged: answer.flagged,
-      ...(answer.wager !== undefined ? { wager: answer.wager } : {}),
+      ...(clientAnswer.wager !== undefined ? { wager: clientAnswer.wager } : {}),
     });
   } catch (error) {
     console.error('Error submitting answer:', error);
@@ -186,8 +188,12 @@ router.get('/results/:sessionId', async (req: Request, res: Response) => {
       session.progressionAwarded = true;
     }
 
+    // Strip flagged field from all answer records (keep server-internal only)
+    const cleanedAnswers = results.answers.map(({ flagged, ...rest }) => rest);
+
     res.status(200).json({
       ...results,
+      answers: cleanedAnswers,
       progression,
       degraded: storageFactory.isDegradedMode()
     });
