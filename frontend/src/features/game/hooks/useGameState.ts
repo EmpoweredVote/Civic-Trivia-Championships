@@ -6,8 +6,8 @@ import { apiRequest } from '../../../services/api';
 import { useAuthStore } from '../../../store/authStore';
 
 // Timing constants
-const SUSPENSE_PAUSE_MS = 1500; // Pause after lock-in before reveal
-const AUTO_ADVANCE_MS = 6000; // Auto-advance after reveal
+const SUSPENSE_PAUSE_MS = 750; // Pause after lock-in before reveal (reduced for snappier pacing)
+const AUTO_ADVANCE_MS = 4000; // Auto-advance after reveal (reduced for faster flow)
 const ANNOUNCEMENT_DURATION_MS = 2500; // 2.5s for "FINAL QUESTION" screen
 const WAGER_SUSPENSE_MS = 1500; // Suspense pause after locking wager
 
@@ -15,7 +15,7 @@ interface UseGameStateReturn {
   state: GameState;
   currentQuestion: Question | null;
   startGame: () => Promise<void>;
-  selectAnswer: (optionIndex: number) => void;
+  selectAnswer: (optionIndex: number, timeRemaining?: number) => void;
   lockAnswer: (timeRemaining: number) => void;
   handleTimeout: () => void;
   nextQuestion: () => void;
@@ -101,23 +101,15 @@ export function useGameState(): UseGameStateReturn {
     }
   };
 
-  // Select an answer option
-  const selectAnswer = (optionIndex: number) => {
-    dispatch({ type: 'SELECT_ANSWER', optionIndex });
-  };
-
-  // Lock in the selected answer with suspense pause and server submission
-  const lockAnswer = async (timeRemaining: number) => {
-    if (state.phase !== 'selected' || !sessionIdRef.current) return;
-
-    dispatch({ type: 'LOCK_ANSWER' });
+  // Shared helper: Submit answer to server and reveal after suspense pause
+  const submitAndReveal = async (optionIndex: number, timeRemaining: number) => {
+    if (!sessionIdRef.current) return;
 
     // Clear any existing suspense timeout
     if (suspenseTimeoutRef.current) {
       clearTimeout(suspenseTimeoutRef.current);
     }
 
-    // Submit to server and wait for both suspense pause and server response
     const currentQuestion = state.questions[state.currentQuestionIndex];
     if (!currentQuestion) return;
 
@@ -129,7 +121,7 @@ export function useGameState(): UseGameStateReturn {
         submitAnswer(
           sessionIdRef.current,
           currentQuestion.id,
-          state.selectedOption,
+          optionIndex,
           timeRemaining,
           wager
         ),
@@ -161,6 +153,29 @@ export function useGameState(): UseGameStateReturn {
           correctAnswer: currentQuestion.correctAnswer || 0,
         },
       });
+    }
+  };
+
+  // Select an answer option (Q1-Q9: immediate submission, Q10: two-step with lock-in)
+  const selectAnswer = (optionIndex: number, timeRemaining?: number) => {
+    dispatch({ type: 'SELECT_ANSWER', optionIndex });
+
+    // For Q1-Q9, immediately submit (reducer already set phase to 'locked')
+    if (state.currentQuestionIndex !== 9 && timeRemaining !== undefined) {
+      submitAndReveal(optionIndex, timeRemaining);
+    }
+    // For Q10, just dispatch (lockAnswer handles submission)
+  };
+
+  // Lock in the selected answer (Q10-only: two-step confirmation preserved for high stakes)
+  const lockAnswer = async (timeRemaining: number) => {
+    if (state.phase !== 'selected' || !sessionIdRef.current) return;
+
+    dispatch({ type: 'LOCK_ANSWER' });
+
+    // Submit to server with suspense pause
+    if (state.selectedOption !== null) {
+      await submitAndReveal(state.selectedOption, timeRemaining);
     }
   };
 

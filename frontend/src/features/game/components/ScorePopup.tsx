@@ -20,7 +20,7 @@ export function ScorePopup({
   useEffect(() => {
     const timeout = setTimeout(() => {
       onComplete();
-    }, 2000); // Total animation duration
+    }, 1500); // Total animation duration (reduced for snappier pacing)
 
     return () => clearTimeout(timeout);
   }, [onComplete]);
