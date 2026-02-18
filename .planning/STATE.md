@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 13 of 17 (Database Schema & Seed Migration)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-18 — v1.2 roadmap created (Phases 13-17)
+Plan: 2 of TBD in current phase
+Status: In progress
+Last activity: 2026-02-18 — Completed 13-02-PLAN.md (Source research)
 
 Progress: [████████████████░░░░] v1.2: 0% (0/5 phases)
 
@@ -31,12 +31,12 @@ Progress: [████████████████░░░░] v1.2: 0
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 34
+- Total plans completed: 35
 - Average duration: 3.9 min
-- Total execution time: 132 min
+- Total execution time: 134 min
 
 **Recent Trend:**
-- Last 5 plans: 10-01 (2 min), 11-01 (3 min), 11-02 (3 min), 12-01 (3 min), 12-02 (7 min)
+- Last 5 plans: 11-01 (3 min), 11-02 (3 min), 12-01 (3 min), 12-02 (7 min), 13-02 (2 min)
 - Trend: Consistent 2-7 min velocity maintained
 
 *Updated after each plan completion*
@@ -54,6 +54,8 @@ Recent decisions affecting current work:
 | AI-generated + human-reviewed content | v1.2 | AI kickstarts local question banks, volunteers refine over time |
 | Auto-remove + notify on expiration | v1.2 | Time-sensitive questions drop from rotation and flag for review |
 | Quality over quantity for local sets | v1.2 | 50 compelling questions beats 100 half-compelling |
+| Preserve existing sources exactly | 13-02 | Original 33 sources kept as-is (including 2 Wikipedia) for continuity |
+| Topic-based source assignment | 13-02 | Reuse stable .gov/.edu URLs across questions on same topic |
 
 ### Pending Todos
 
@@ -73,8 +75,8 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-18
-Topic: v1.2 roadmap creation
-Stopped at: Roadmap created, ready to plan Phase 13
+Topic: Phase 13 execution
+Stopped at: Completed 13-02-PLAN.md (Source research)
 Resume file: None
 
 ---
