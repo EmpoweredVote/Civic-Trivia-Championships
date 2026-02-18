@@ -77,7 +77,10 @@ Plans:
   3. Users with timer multiplier settings get adjusted thresholds (no false positives)
   4. Legitimate fast correct answers are not penalized
   5. Pattern-based detection requires 3+ suspicious answers before penalties apply
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+Plans:
+- [ ] 11-01-PLAN.md — Core detection and penalty logic (thresholds, pattern counting, penalty-aware scoring)
+- [ ] 11-02-PLAN.md — Response stripping and frontend type cleanup (silent system)
 
 ### Phase 12: Learning Content Expansion
 **Goal**: Learning content coverage increases from 15% to 25-30% with strategic deep-dives
@@ -101,7 +104,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
 | 8. Dev Tooling & Documentation | 2/2 | Complete | 2026-02-13 |
 | 9. Redis Session Migration | 3/3 | Complete | 2026-02-17 |
 | 10. Game UX Improvements | 2/2 | Complete | 2026-02-17 |
-| 11. Plausibility Enhancement | 0/0 | Not Started | — |
+| 11. Plausibility Enhancement | 0/2 | Planned | — |
 | 12. Learning Content Expansion | 0/0 | Not Started | — |
 
 ## Requirement Coverage (v1.1)
@@ -193,6 +196,6 @@ Reference for completed phases from initial MVP release.
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-17 (Phase 10 planned)*
+*Updated: 2026-02-17 (Phase 11 planned)*
 *Current Milestone: v1.1 Tech Debt Hardening*
 *Phases: 12 (9 complete, 3 planned)*
