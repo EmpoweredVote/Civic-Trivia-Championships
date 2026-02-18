@@ -32,7 +32,11 @@ Phases execute in numeric order: 13 -> 14 -> 15 -> 16 -> 17
   3. A "Federal Civics" collection exists with name, slug, description, and locale metadata
   4. Each collection can define its own topic categories (not a hardcoded global enum)
   5. Questions have an optional `expires_at` field available for future use
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
+Plans:
+- [ ] 13-01-PLAN.md — Drizzle ORM setup, schema definitions, SQL migration, rollback script
+- [ ] 13-02-PLAN.md — Research authoritative sources for 87 unsourced questions
+- [ ] 13-03-PLAN.md — Seed collections, topics, and migrate 120 questions into PostgreSQL
 
 ### Phase 14: Question Service & Route Integration
 **Goal**: The game queries PostgreSQL instead of JSON, with collection-scoped question loading and zero regression
@@ -88,7 +92,7 @@ Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 13. Database Schema & Seed Migration | 0/TBD | Not started | - |
+| 13. Database Schema & Seed Migration | 0/3 | Planned | - |
 | 14. Question Service & Route Integration | 0/TBD | Not started | - |
 | 15. Collection Picker UI | 0/TBD | Not started | - |
 | 16. Expiration System | 0/TBD | Not started | - |
@@ -264,6 +268,6 @@ Plans:
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-18 (v1.2 roadmap created)*
+*Updated: 2026-02-18 (v1.2 Phase 13 planned)*
 *Current Milestone: v1.2 Community Collections*
 *Phases: 17 (12 complete, 0 in progress, 5 planned)*
