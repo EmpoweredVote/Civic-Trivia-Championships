@@ -62,7 +62,10 @@ Plans:
   3. User can select answer with single click (no lock-in confirmation step)
   4. Visual hierarchy guides eye flow: question -> options -> timer
   5. Answer selection feels more responsive and game-show-like
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+Plans:
+- [ ] 10-01-PLAN.md — State machine single-click refactor and timing constants update
+- [ ] 10-02-PLAN.md — Layout repositioning, visual hierarchy, and answer interaction polish
 
 ### Phase 11: Plausibility Enhancement
 **Goal**: Plausibility detection is more accurate and actively penalizes suspicious behavior
@@ -97,7 +100,7 @@ Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
 |-------|----------------|--------|-----------|
 | 8. Dev Tooling & Documentation | 2/2 | Complete | 2026-02-13 |
 | 9. Redis Session Migration | 3/3 | Complete | 2026-02-17 |
-| 10. Game UX Improvements | 0/0 | Not Started | — |
+| 10. Game UX Improvements | 0/2 | In Progress | — |
 | 11. Plausibility Enhancement | 0/0 | Not Started | — |
 | 12. Learning Content Expansion | 0/0 | Not Started | — |
 
@@ -190,6 +193,6 @@ Reference for completed phases from initial MVP release.
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-13 (v1.1 roadmap)*
+*Updated: 2026-02-17 (Phase 10 planned)*
 *Current Milestone: v1.1 Tech Debt Hardening*
 *Phases: 12 (9 complete, 3 planned)*
