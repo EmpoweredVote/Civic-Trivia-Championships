@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 Phase: Phase 12 (Learning Content Expansion)
 Plan: 2 of 2 (Complete)
 Status: Phase 12 complete — content tooling updated and batch generation executed
-Last activity: 2026-02-18 — Completed quick task 002: Set up UptimeRobot monitoring
+Last activity: 2026-02-18 — Completed quick task 003: Anonymous default play
 
 Progress: [████████████████████] v1.0: 100% (7/7) | v1.1: 100% (Phase 12 complete)
 
@@ -211,6 +211,8 @@ Recent decisions affecting current work:
 | Anti-partisan prompt constraint | 12-01 | Prompt prohibits liberal/conservative/activist/progressive characterization of any policy, party, or court decision |
 | Applied all 15 generated content pieces | 12-02 | User reviewed and approved all content after generation (no rejections) |
 | Prioritized hard-difficulty questions | 12-02 | Targeted largest coverage gap (45 hard questions without content) in batch generation |
+| Anonymous play as default | quick-003 | Lower barrier to entry — visitors can play instantly without login wall |
+| Profile remains protected | quick-003 | Personal data (stats, avatar) requires authentication for security |
 
 ### Pending Todos
 
@@ -234,6 +236,7 @@ Deployment Follow-up:
 |---|-------------|------|--------|-----------|
 | 001 | Clean up test files (.js.js and generated JSON files) | 2026-02-18 | fc7c6f2 | [001-clean-up-test-files](./quick/001-clean-up-test-files/) |
 | 002 | Set up UptimeRobot monitoring to prevent Render sleep | 2026-02-18 | N/A (infra config) | [002-set-up-uptimerobot](./quick/002-set-up-uptimerobot/) |
+| 003 | Make platform immediately playable without login | 2026-02-18 | 79be3a8, 776724b | [003-anonymous-default-play](./quick/003-anonymous-default-play/) |
 
 ### Blockers/Concerns
 
@@ -247,7 +250,7 @@ None currently. Deployment successful and tested.
 ## Session Continuity
 
 Last session: 2026-02-18
-Topic: Quick task 002 — UptimeRobot monitoring setup — COMPLETE
+Topic: Quick task 003 — Anonymous default play — COMPLETE
 Achievements (12-01):
 - ✅ generateLearningContent.ts: --ids, --difficulty, --topic, --limit CLI flags with safety guard
 - ✅ Updated prompt: plain language (8th grade), anti-partisan framing, inline [text](url) hyperlinks
@@ -262,8 +265,16 @@ Achievements (12-02):
 - ✅ Verified data integrity: valid JSON, correct structure, no modification to existing content
 - ✅ Met phase objective: 25-30% coverage target achieved (27.5%)
 
-Stopped at: Completed quick-002-PLAN.md (UptimeRobot monitoring setup)
-Resume file: None — All quick tasks complete
+Achievements (quick-003):
+- ✅ Opened up routing: Dashboard (/) and Game (/play) now public without auth gate
+- ✅ Profile page remains protected (redirects to /login for anonymous users)
+- ✅ Dashboard adapts: neutral "Civic Trivia Championship" for anonymous, personalized welcome for authenticated
+- ✅ Header adapts: Sign in / Sign up links for anonymous, hamburger menu for authenticated
+- ✅ Sign-in nudge below Quick Play encourages account creation without blocking gameplay
+- ✅ Backend already supports anonymous sessions (userId='anonymous') — no backend changes needed
+
+Stopped at: Completed quick-003-PLAN.md (Anonymous default play)
+Resume file: None — Quick tasks complete
 
 ---
 *v1.1 Tech Debt Hardening — PRODUCTION DEPLOYED*
