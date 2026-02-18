@@ -80,10 +80,7 @@ export const questions = civicTriviaSchema.table('questions', {
     .using('gin', sql`${table.learningContent} jsonb_path_ops`),
   expiresAtIdx: index('idx_questions_expires_at')
     .on(table.expiresAt)
-    .where(sql`${table.expiresAt} IS NOT NULL`),
-  // CHECK constraints for difficulty and correctAnswer
-  difficultyCheck: sql`CONSTRAINT check_difficulty CHECK (difficulty IN ('easy', 'medium', 'hard'))`,
-  correctAnswerCheck: sql`CONSTRAINT check_correct_answer CHECK (correct_answer >= 0 AND correct_answer <= 3)`
+    .where(sql`${table.expiresAt} IS NOT NULL`)
 }));
 
 // Collection-Questions junction table
