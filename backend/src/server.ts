@@ -12,7 +12,6 @@ import { router as adminRouter } from './routes/admin.js';
 import { storageFactory } from './config/redis.js';
 import { initializeSessionManager } from './services/sessionService.js';
 import { startExpirationCron } from './cron/startCron.js';
-import { runMigrations } from './db/migrate.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,9 +22,6 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
  * Ensures storage is initialized before accepting requests
  */
 async function startServer() {
-  // Run database migrations
-  await runMigrations();
-
   // Initialize storage (Redis or Memory fallback)
   await storageFactory.initialize();
 
