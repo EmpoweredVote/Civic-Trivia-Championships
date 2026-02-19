@@ -116,4 +116,46 @@ router.get('/collections', async (_req: Request, res: Response) => {
   }
 });
 
+// Diagnostic endpoint to check database schema/table existence
+router.get('/db-check', async (_req: Request, res: Response) => {
+  try {
+    // Check which schemas exist
+    const schemas = await pool.query(
+      `SELECT schema_name FROM information_schema.schemata ORDER BY schema_name`
+    );
+
+    // Check for tables in civic_trivia schema
+    const civicTables = await pool.query(
+      `SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema = 'civic_trivia' ORDER BY table_name`
+    );
+
+    // Check for tables in public schema
+    const publicTables = await pool.query(
+      `SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`
+    );
+
+    // Check current search_path
+    const searchPath = await pool.query(`SHOW search_path`);
+
+    // Check current database name
+    const dbName = await pool.query(`SELECT current_database(), current_schema()`);
+
+    res.json({
+      database: dbName.rows[0],
+      searchPath: searchPath.rows[0],
+      schemas: schemas.rows.map((r: any) => r.schema_name),
+      civicTriviaSchema: {
+        tables: civicTables.rows.map((r: any) => r.table_name),
+        count: civicTables.rows.length
+      },
+      publicSchema: {
+        tables: publicTables.rows.map((r: any) => r.table_name),
+        count: publicTables.rows.length
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message || String(error) });
+  }
+});
+
 export { router };
