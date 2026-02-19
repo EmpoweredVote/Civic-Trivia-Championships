@@ -75,10 +75,11 @@ router.get('/collections', async (_req: Request, res: Response) => {
     const filtered = rows.filter(r => r.questionCount >= MIN_QUESTION_THRESHOLD);
 
     res.status(200).json({ collections: filtered });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching collections:', error);
     res.status(500).json({
-      error: 'Failed to fetch collections'
+      error: 'Failed to fetch collections',
+      detail: error?.message || String(error)
     });
   }
 });

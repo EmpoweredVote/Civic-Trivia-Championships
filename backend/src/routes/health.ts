@@ -129,9 +129,9 @@ router.get('/collections', async (_req: Request, res: Response) => {
       },
       collections: collectionsWithTier
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching collection health:', error);
-    res.status(500).json({ error: 'Failed to fetch collection health' });
+    res.status(500).json({ error: 'Failed to fetch collection health', detail: error?.message || String(error) });
   }
 });
 
