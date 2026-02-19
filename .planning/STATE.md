@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 
 ## Current Position
 
-Phase: 15 of 17 (Collection Picker UI) — IN PROGRESS
-Plan: 2 of 3 in phase 15
-Status: Phase 15 in progress — Plan 02 complete (picker UI components)
-Last activity: 2026-02-19 — Completed 15-02-PLAN.md
+Phase: 15 of 17 (Collection Picker UI) — COMPLETE
+Plan: 3 of 3 in phase 15 (all complete)
+Status: Phase 15 complete — Ready for Phase 16 (Community Collections API)
+Last activity: 2026-02-19 — Completed 15-03-PLAN.md
 
-Progress: [█████████░░░░░░░░░░░] v1.2: 47% (2.67/5 phases)
+Progress: [██████████░░░░░░░░░░] v1.2: 52% (3/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
-- v1.2 (Phases 13-17): In progress - 10/20 requirements delivered
+- v1.2 (Phases 13-17): In progress - 12/20 requirements delivered
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -31,13 +31,13 @@ Progress: [█████████░░░░░░░░░░░] v1.2: 4
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 41
-- Average duration: 3.5 min
-- Total execution time: 149.8 min
+- Total plans completed: 42
+- Average duration: 3.4 min
+- Total execution time: 152.6 min
 
 **Recent Trend:**
-- Last 5 plans: 14-01 (2 min), 14-02 (2 min), 15-01 (1.2 min), 15-02 (1.6 min)
-- Trend: Strong velocity — consistently under 2 minutes
+- Last 5 plans: 14-02 (2 min), 15-01 (1.2 min), 15-02 (1.6 min), 15-03 (2.8 min)
+- Trend: Strong velocity — consistently under 3 minutes
 
 *Updated after each plan completion*
 
@@ -67,6 +67,9 @@ Recent decisions affecting current work:
 | Inline style for themeColor (not dynamic Tailwind) | 15-02 | Tailwind JIT purges dynamic class strings — inline style required for runtime colors |
 | CollectionPicker as pure component (props, not hook) | 15-02 | Makes component testable and reusable — Dashboard owns useCollections hook |
 | localStorage persistence for last-played collection | 15-02 | Better UX — remembers user preference across sessions with 'lastCollectionId' key |
+| Router state for collectionId (not URL params or global state) | 15-03 | Clean separation - Dashboard owns selection, Game receives as navigation context |
+| Auto-start game when navigating from Dashboard with collectionId | 15-03 | Seamless UX - one-click flow from "Play Federal Civics" to gameplay |
+| Display collection name in both game header and results | 15-03 | Reinforces context throughout game experience |
 
 ### Pending Todos
 
@@ -86,8 +89,8 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-19
-Topic: Phase 15 Plan 02 execution complete
-Stopped at: Completed 15-02-PLAN.md — collection picker UI components ready
+Topic: Phase 15 complete — collection picker fully integrated
+Stopped at: Completed 15-03-PLAN.md — end-to-end collection flow working
 Resume file: None
 
 ---
