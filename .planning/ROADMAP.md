@@ -93,7 +93,12 @@ Plans:
   3. Content generation tooling supports locale-specific prompts with source-first RAG approach
   4. All locale questions are cross-referenced with authoritative local government sources (no unverifiable claims)
   5. Both collections appear in the collection picker and are playable end-to-end
-**Plans**: TBD
+**Plans**: 4 plans in 4 waves
+Plans:
+- [ ] 17-01-PLAN.md — Content generation tooling infrastructure (Anthropic client, Zod schema, locale configs, RAG fetcher, seeder)
+- [ ] 17-02-PLAN.md — Bloomington IN source curation and ~100 question generation with human review
+- [ ] 17-03-PLAN.md — Los Angeles CA source curation and ~100 question generation with human review
+- [ ] 17-04-PLAN.md — Activate both collections and end-to-end playability verification
 
 ## Progress (v1.2)
 
@@ -107,7 +112,7 @@ Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
 | 14. Question Service & Route Integration | 2/2 | Complete | 2026-02-18 |
 | 15. Collection Picker UI | 3/3 | Complete | 2026-02-18 |
 | 16. Expiration System | 3/3 | Complete | 2026-02-19 |
-| 17. Community Content Generation | 0/TBD | Not started | - |
+| 17. Community Content Generation | 0/4 | Not started | - |
 
 ## Requirement Coverage (v1.2)
 
@@ -279,6 +284,6 @@ Plans:
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-18 (Phase 16 planned)*
+*Updated: 2026-02-19 (Phase 17 planned)*
 *Current Milestone: v1.2 Community Collections*
 *Phases: 17 (16 complete, 0 in progress, 1 planned)*
