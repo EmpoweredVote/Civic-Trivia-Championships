@@ -66,8 +66,13 @@ router.get('/collections', async (_req: Request, res: Response) => {
           eq(collections.isActive, true),
           or(
             isNull(questions.id),
-            isNull(questions.expiresAt),
-            gt(questions.expiresAt, now)
+            and(
+              eq(questions.status, 'active'),
+              or(
+                isNull(questions.expiresAt),
+                gt(questions.expiresAt, now)
+              )
+            )
           )
         )
       )
