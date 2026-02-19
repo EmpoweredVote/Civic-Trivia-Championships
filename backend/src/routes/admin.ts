@@ -115,9 +115,9 @@ router.get('/questions', async (req: Request, res: Response) => {
     }
 
     res.json({ questions: questions_list });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching admin questions:', error);
-    res.status(500).json({ error: 'Failed to fetch questions' });
+    res.status(500).json({ error: 'Failed to fetch questions', detail: error?.message || String(error) });
   }
 });
 

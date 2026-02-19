@@ -6,7 +6,7 @@ import { storageFactory } from '../config/redis.js';
 import { selectQuestionsForGame, getCollectionMetadata, getFederalCollectionId } from '../services/questionService.js';
 import { db } from '../db/index.js';
 import { collections, collectionQuestions, questions } from '../db/schema.js';
-import { eq, sql, isNull, or, gt } from 'drizzle-orm';
+import { and, eq, sql, isNull, or, gt } from 'drizzle-orm';
 
 const router = Router();
 
@@ -62,10 +62,14 @@ router.get('/collections', async (_req: Request, res: Response) => {
       .leftJoin(collectionQuestions, eq(collections.id, collectionQuestions.collectionId))
       .leftJoin(questions, eq(collectionQuestions.questionId, questions.id))
       .where(
-        sql`${collections.isActive} = true
-        AND (${questions.id} IS NULL
-          OR (${questions.expiresAt} IS NULL
-            OR ${questions.expiresAt} > ${now}))`
+        and(
+          eq(collections.isActive, true),
+          or(
+            isNull(questions.id),
+            isNull(questions.expiresAt),
+            gt(questions.expiresAt, now)
+          )
+        )
       )
       .groupBy(collections.id)
       .orderBy(collections.sortOrder);

@@ -59,9 +59,9 @@ router.get('/collections', async (_req: Request, res: Response) => {
           WHEN q.status = 'archived'
           THEN 1
         END)::int AS "archivedCount"
-      FROM collections c
-      LEFT JOIN collection_questions cq ON c.id = cq.collection_id
-      LEFT JOIN questions q ON cq.question_id = q.id
+      FROM civic_trivia.collections c
+      LEFT JOIN civic_trivia.collection_questions cq ON c.id = cq.collection_id
+      LEFT JOIN civic_trivia.questions q ON cq.question_id = q.id
       WHERE c.is_active = true
       GROUP BY c.id, c.name, c.slug
     `, [soonThreshold, now]);
