@@ -25,21 +25,15 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Learning content expanded to 27.5% coverage (33/120) — v1.1
 - Single-click answer selection, improved game UX — v1.1
 - Anonymous play (no login required to play) — v1.1
+- PostgreSQL-backed question collections with tag-based associations — v1.2
+- Card-based collection picker at game start — v1.2
+- Federal, Bloomington IN, and Los Angeles CA collections (320 total questions) — v1.2
+- Question expiration system with hourly cron sweep and admin review — v1.2
+- AI-powered locale-specific content generation tooling — v1.2
 
 ### Active
 
-## Current Milestone: v1.2 Community Collections
-
-**Goal:** Let players choose community-specific trivia collections — making civic learning local and relevant
-
-**Target features:**
-- [ ] Tag-based question collection system (questions can belong to multiple collections)
-- [ ] Collection picker UI at game start (select which set to play)
-- [ ] Federal collection (rebrand existing 120-question bank)
-- [ ] Bloomington, IN collection (~50-120 local + Indiana state questions)
-- [ ] Los Angeles, CA collection (~50-120 local + California state questions)
-- [ ] Question expiration system (time-sensitive questions auto-remove + notify)
-- [ ] Content generation tooling for locale-specific question creation
+(No active milestone — start next with `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -57,6 +51,13 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Volunteer question authoring portal — AI generation + manual review sufficient for now
 
 ## Context
+
+**Current state (v1.2 shipped 2026-02-19):**
+- 320 playable questions across 3 collections (Federal 120, Bloomington IN 100, Los Angeles CA 100)
+- Tech stack: React 18, TypeScript, Vite, Tailwind, Framer Motion, Node.js, Express, PostgreSQL (Supabase), Redis (Upstash), JWT
+- Frontend: ~8,000 LOC TypeScript/React
+- Backend: ~4,000 LOC TypeScript/Express
+- Live: civic-trivia-frontend.onrender.com / civic-trivia-backend.onrender.com
 
 **Design principles (from design doc):**
 1. Play, Not Study — Game show aesthetics, exciting pacing, friendly competition
@@ -94,14 +95,14 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Email/password auth only for MVP | Reduces complexity, OAuth can be added later | — Pending |
-| No leaderboards initially | Could discourage low-performers, needs research | — Pending |
-| Visual timer (no digits) | Reduces anxiety while maintaining urgency | — Pending |
-| "Not quite" instead of "Wrong" | Maintains encouraging tone | — Pending |
-| Tag-based collections over rigid categories | Questions can belong to multiple collections (e.g., Indiana + Bloomington) | — Pending |
-| Quality over quantity for local sets | 50 compelling questions beats 100 half-compelling; target ~120 but don't force it | — Pending |
-| AI-generated + human-reviewed content | AI kickstarts local question banks, volunteers refine over time | — Pending |
-| Auto-remove + notify on expiration | Time-sensitive questions drop from rotation and flag for review | — Pending |
+| Email/password auth only for MVP | Reduces complexity, OAuth can be added later | Good — sufficient for current usage |
+| No leaderboards initially | Could discourage low-performers, needs research | Good — revisit if user demand |
+| Visual timer (no digits) | Reduces anxiety while maintaining urgency | Good — positive feedback |
+| "Not quite" instead of "Wrong" | Maintains encouraging tone | Good — matches brand tone |
+| Tag-based collections over rigid categories | Questions can belong to multiple collections (e.g., Indiana + Bloomington) | Good — enabled clean multi-collection system |
+| Quality over quantity for local sets | 50 compelling questions beats 100 half-compelling; target ~120 but don't force it | Good — 100 per locale with strong quality |
+| AI-generated + human-reviewed content | AI kickstarts local question banks, volunteers refine over time | Good — efficient pipeline |
+| Auto-remove + notify on expiration | Time-sensitive questions drop from rotation and flag for review | Good — admin review UI in place |
 
 ---
-*Last updated: 2026-02-18 after v1.2 milestone start*
+*Last updated: 2026-02-19 after v1.2 milestone complete*
