@@ -64,7 +64,7 @@ router.get('/collections', async (_req: Request, res: Response) => {
       .where(
         sql`${collections.isActive} = true
         AND (${questions.id} IS NULL
-          OR (${questions.status} = 'active'
+          OR ((${questions.status} IS NULL OR ${questions.status} = 'active')
             AND (${questions.expiresAt} IS NULL
               OR ${questions.expiresAt} > ${now})))`
       )
