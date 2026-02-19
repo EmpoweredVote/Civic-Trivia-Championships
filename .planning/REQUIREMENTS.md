@@ -134,8 +134,8 @@ Requirements for Community Collections milestone. Continues from v1.1 phases.
 
 ### Collection Game Flow
 
-- [ ] **CGFLOW-01**: Player sees card-based collection picker before starting a game
-- [ ] **CGFLOW-02**: Each collection card shows name, description, and question count
+- [x] **CGFLOW-01**: Player sees card-based collection picker before starting a game
+- [x] **CGFLOW-02**: Each collection card shows name, description, and question count
 - [x] **CGFLOW-03**: All 10 questions in a game come from the selected collection
 - [x] **CGFLOW-04**: Federal collection is the default/preselected option
 - [x] **CGFLOW-05**: Existing game flow (timer, scoring, wager, results, progression) works unchanged with any collection
@@ -295,8 +295,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CGFLOW-03 | Phase 14 | Complete |
 | CGFLOW-04 | Phase 14 | Complete |
 | CGFLOW-05 | Phase 14 | Complete |
-| CGFLOW-01 | Phase 15 | Pending |
-| CGFLOW-02 | Phase 15 | Pending |
+| CGFLOW-01 | Phase 15 | Complete |
+| CGFLOW-02 | Phase 15 | Complete |
 | EXP-01 | Phase 16 | Pending |
 | EXP-02 | Phase 16 | Pending |
 | EXP-03 | Phase 16 | Pending |
@@ -347,4 +347,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-03*
-*Last updated: 2026-02-18 after Phase 13 complete*
+*Last updated: 2026-02-18 after Phase 15 complete*

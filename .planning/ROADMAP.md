@@ -10,7 +10,7 @@ This roadmap delivers a polished, educational trivia game across three milestone
 
 - [x] **Phase 13: Database Schema & Seed Migration** - Questions and collections into PostgreSQL with federal seed data
 - [x] **Phase 14: Question Service & Route Integration** - Swap data layer from JSON to database queries
-- [ ] **Phase 15: Collection Picker UI** - Card-based collection selection before game start
+- [x] **Phase 15: Collection Picker UI** - Card-based collection selection before game start
 - [ ] **Phase 16: Expiration System** - Hourly cron sweep with soft-delete and health monitoring
 - [ ] **Phase 17: Community Content Generation** - Bloomington IN and Los Angeles CA question banks
 
@@ -64,8 +64,8 @@ Plans:
 **Plans**: 3 plans in 2 waves
 Plans:
 - [x] 15-01-PLAN.md — Backend GET /api/game/collections endpoint with question counts
-- [ ] 15-02-PLAN.md — Collection picker components (types, hook, card, skeleton, picker)
-- [ ] 15-03-PLAN.md — Dashboard integration, game flow wiring, collection name display
+- [x] 15-02-PLAN.md — Collection picker components (types, hook, card, skeleton, picker)
+- [x] 15-03-PLAN.md — Dashboard integration, game flow wiring, collection name display
 
 ### Phase 16: Expiration System
 **Goal**: Time-sensitive questions automatically drop from rotation without disrupting active games
@@ -101,7 +101,7 @@ Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
 |-------|----------------|--------|-----------|
 | 13. Database Schema & Seed Migration | 3/3 | Complete | 2026-02-18 |
 | 14. Question Service & Route Integration | 2/2 | Complete | 2026-02-18 |
-| 15. Collection Picker UI | 1/3 | In progress | - |
+| 15. Collection Picker UI | 3/3 | Complete | 2026-02-18 |
 | 16. Expiration System | 0/TBD | Not started | - |
 | 17. Community Content Generation | 0/TBD | Not started | - |
 
@@ -275,6 +275,6 @@ Plans:
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-18 (Phase 14 planned)*
+*Updated: 2026-02-18 (Phase 15 complete)*
 *Current Milestone: v1.2 Community Collections*
-*Phases: 17 (14 complete, 0 in progress, 3 planned)*
+*Phases: 17 (15 complete, 0 in progress, 2 planned)*
