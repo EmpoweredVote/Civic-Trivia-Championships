@@ -136,9 +136,9 @@ Requirements for Community Collections milestone. Continues from v1.1 phases.
 
 - [ ] **CGFLOW-01**: Player sees card-based collection picker before starting a game
 - [ ] **CGFLOW-02**: Each collection card shows name, description, and question count
-- [ ] **CGFLOW-03**: All 10 questions in a game come from the selected collection
-- [ ] **CGFLOW-04**: Federal collection is the default/preselected option
-- [ ] **CGFLOW-05**: Existing game flow (timer, scoring, wager, results, progression) works unchanged with any collection
+- [x] **CGFLOW-03**: All 10 questions in a game come from the selected collection
+- [x] **CGFLOW-04**: Federal collection is the default/preselected option
+- [x] **CGFLOW-05**: Existing game flow (timer, scoring, wager, results, progression) works unchanged with any collection
 
 ### Expiration System
 
@@ -292,9 +292,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COLL-04 | Phase 13 | Complete |
 | COLL-05 | Phase 13 | Complete |
 | CCONT-01 | Phase 13 | Complete |
-| CGFLOW-03 | Phase 14 | Pending |
-| CGFLOW-04 | Phase 14 | Pending |
-| CGFLOW-05 | Phase 14 | Pending |
+| CGFLOW-03 | Phase 14 | Complete |
+| CGFLOW-04 | Phase 14 | Complete |
+| CGFLOW-05 | Phase 14 | Complete |
 | CGFLOW-01 | Phase 15 | Pending |
 | CGFLOW-02 | Phase 15 | Pending |
 | EXP-01 | Phase 16 | Pending |
