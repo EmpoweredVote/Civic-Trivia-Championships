@@ -77,7 +77,11 @@ Plans:
   3. Expired questions are logged with structured output and flagged for content review
   4. A player mid-game is not affected if a question expires during their session
   5. A health endpoint reports per-collection question counts, expiring-soon counts, and expired counts
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
+Plans:
+- [ ] 16-01-PLAN.md — Schema migration (status + audit history fields), node-cron install, hourly expiration sweep
+- [ ] 16-02-PLAN.md — Collection health endpoint and admin API routes (renew, archive)
+- [ ] 16-03-PLAN.md — Admin review page with filter tabs, question list, and action buttons
 
 ### Phase 17: Community Content Generation
 **Goal**: Players can choose Bloomington IN or Los Angeles CA collections with locally relevant civic trivia
@@ -102,7 +106,7 @@ Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
 | 13. Database Schema & Seed Migration | 3/3 | Complete | 2026-02-18 |
 | 14. Question Service & Route Integration | 2/2 | Complete | 2026-02-18 |
 | 15. Collection Picker UI | 3/3 | Complete | 2026-02-18 |
-| 16. Expiration System | 0/TBD | Not started | - |
+| 16. Expiration System | 0/3 | Not started | - |
 | 17. Community Content Generation | 0/TBD | Not started | - |
 
 ## Requirement Coverage (v1.2)
@@ -275,6 +279,6 @@ Plans:
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-18 (Phase 15 complete)*
+*Updated: 2026-02-18 (Phase 16 planned)*
 *Current Milestone: v1.2 Community Collections*
 *Phases: 17 (15 complete, 0 in progress, 2 planned)*
