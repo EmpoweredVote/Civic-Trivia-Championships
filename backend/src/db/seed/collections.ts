@@ -20,7 +20,7 @@ export const collectionsData: NewCollection[] = [
     localeName: 'Bloomington, Indiana',
     iconIdentifier: 'flag-in',
     themeColor: '#991B1B', // deep red - Indiana
-    isActive: false,
+    isActive: true,
     sortOrder: 2
   },
   {
@@ -31,7 +31,7 @@ export const collectionsData: NewCollection[] = [
     localeName: 'Los Angeles, California',
     iconIdentifier: 'flag-ca',
     themeColor: '#0369A1', // ocean blue - California
-    isActive: false,
+    isActive: true,
     sortOrder: 3
   }
 ];
