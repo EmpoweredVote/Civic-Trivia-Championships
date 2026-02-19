@@ -13,7 +13,7 @@
 
 **Milestone Goal:** Build the quality framework and tooling needed to scale question collections -- codify what makes great civic trivia, audit and improve existing content, create admin tools for exploration and review, enhance the AI pipeline, and add Indiana and California state collections.
 
-- [ ] **Phase 18: Foundation (Admin Auth + Telemetry)** - Secure admin access and start collecting gameplay data
+- [x] **Phase 18: Foundation (Admin Auth + Telemetry)** - Secure admin access and start collecting gameplay data
 - [ ] **Phase 19: Quality Rules Engine** - Codify quality rules, audit existing content, remove bad questions
 - [ ] **Phase 20: Admin Exploration UI** - Question explorer, detail view, collection health dashboard
 - [ ] **Phase 21: Generation Pipeline + New Collections** - Quality-gated AI pipeline, state templates, Indiana and California collections
@@ -33,9 +33,9 @@
 **Plans**: 3 plans
 
 Plans:
-- [ ] 18-01-PLAN.md -- Admin role migration, JWT pipeline update, and requireAdmin middleware
-- [ ] 18-02-PLAN.md -- Frontend admin route guard, 403 page, and admin shell layout
-- [ ] 18-03-PLAN.md -- Telemetry columns and fire-and-forget recording
+- [x] 18-01-PLAN.md -- Admin role migration, JWT pipeline update, and requireAdmin middleware
+- [x] 18-02-PLAN.md -- Frontend admin route guard, 403 page, and admin shell layout
+- [x] 18-03-PLAN.md -- Telemetry columns and fire-and-forget recording
 
 ### Phase 19: Quality Rules Engine
 **Goal**: Question quality is codified as executable rules, all 320 existing questions are audited, and questions that fail blocking rules are archived
@@ -96,7 +96,7 @@ Phases execute in numeric order: 18 -> 19 -> 20 -> 21
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 18. Foundation (Admin Auth + Telemetry) | 0/3 | Not started | - |
+| 18. Foundation (Admin Auth + Telemetry) | 3/3 | Complete | 2026-02-19 |
 | 19. Quality Rules Engine | 0/3 | Not started | - |
 | 20. Admin Exploration UI | 0/4 | Not started | - |
 | 21. Generation Pipeline + New Collections | 0/5 | Not started | - |

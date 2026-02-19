@@ -80,11 +80,11 @@ Deferred to later milestones. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ADMN-01 | Phase 18 | Pending |
-| ADMN-02 | Phase 18 | Pending |
-| ADMN-03 | Phase 18 | Pending |
-| TELE-01 | Phase 18 | Pending |
-| TELE-02 | Phase 18 | Pending |
+| ADMN-01 | Phase 18 | Complete |
+| ADMN-02 | Phase 18 | Complete |
+| ADMN-03 | Phase 18 | Complete |
+| TELE-01 | Phase 18 | Complete |
+| TELE-02 | Phase 18 | Complete |
 | QUAL-01 | Phase 19 | Pending |
 | QUAL-02 | Phase 19 | Pending |
 | QUAL-03 | Phase 19 | Pending |
