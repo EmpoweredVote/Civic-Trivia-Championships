@@ -31,9 +31,19 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Question expiration system with hourly cron sweep and admin review — v1.2
 - AI-powered locale-specific content generation tooling — v1.2
 
-### Active
+### Active — v1.3 Question Quality & Admin Tools
 
-(No active milestone — start next with `/gsd:new-milestone`)
+**Goal:** Build the quality framework and tooling needed to scale question collections — codify what makes great civic trivia, audit and improve existing content, create admin tools for exploration and review, and add Indiana and California collections.
+
+- [ ] Codified question quality rules (dinner party test, civic utility, no pure lookup facts)
+- [ ] Audit existing 320 questions against quality rules, flag and remove bad ones
+- [ ] Generate replacement questions for any removed to maintain collection sizes
+- [ ] Refined AI generation pipeline with quality rules baked in
+- [ ] Admin web UI for exploring collections, questions, and Learn More content
+- [ ] Question telemetry — track encounter/correct counts during gameplay
+- [ ] Telemetry display in admin UI — difficulty rates, filtering, sorting
+- [ ] Indiana (state) question collection
+- [ ] California (state) question collection
 
 ### Out of Scope
 
@@ -49,11 +59,22 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Location-based auto-assignment of collections — need more collections first
 - Collection search/browse — not enough collections yet to need search
 - Volunteer question authoring portal — AI generation + manual review sufficient for now
+- Numeric/date answer questions (Wits & Wagers style) — requires multiplayer first
+- Auto-difficulty calibration — collect telemetry data first, calibrate later
 
 ## Context
 
 **Current state (v1.2 shipped 2026-02-19):**
 - 320 playable questions across 3 collections (Federal 120, Bloomington IN 100, Los Angeles CA 100)
+
+**Question quality philosophy (v1.3):**
+- "Dinner party test" — would knowing this answer be worth sharing at dinner?
+- Civic utility — the knowledge should make you a more informed citizen
+- Recall satisfaction — pulling up something you didn't think you knew feels great
+- Reasoning possible — you can work toward the answer, not just know it or not
+- Anti-patterns: phone numbers, addresses, obscure dates, pure lookup facts with no civic value
+- Easy questions are welcome — "Who is your mayor?" feels fair and memorable
+- This lens is evolving — the rules will be refined as we review more content
 - Tech stack: React 18, TypeScript, Vite, Tailwind, Framer Motion, Node.js, Express, PostgreSQL (Supabase), Redis (Upstash), JWT
 - Frontend: ~8,000 LOC TypeScript/React
 - Backend: ~4,000 LOC TypeScript/Express
@@ -103,6 +124,8 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 | Quality over quantity for local sets | 50 compelling questions beats 100 half-compelling; target ~120 but don't force it | Good — 100 per locale with strong quality |
 | AI-generated + human-reviewed content | AI kickstarts local question banks, volunteers refine over time | Good — efficient pipeline |
 | Auto-remove + notify on expiration | Time-sensitive questions drop from rotation and flag for review | Good — admin review UI in place |
+| Codify quality rules before scaling content | Phone number questions revealed need for explicit quality criteria | — Pending |
+| Lightweight telemetry over complex analytics | Two columns (encounter_count, correct_count) give 80% of value | — Pending |
 
 ---
-*Last updated: 2026-02-19 after v1.2 milestone complete*
+*Last updated: 2026-02-19 after v1.3 milestone started*
