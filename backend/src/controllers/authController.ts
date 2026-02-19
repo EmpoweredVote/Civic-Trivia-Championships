@@ -59,7 +59,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await User.findByEmail(email);
+    let user = await User.findByEmail(email);
     if (!user) {
       res.status(401).json({ error: 'Invalid email or password' });
       return;
@@ -72,8 +72,17 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    // Check if this user should be promoted to admin (first admin designation)
+    if (process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL && !user.isAdmin) {
+      // Promote user to admin
+      const { pool } = await import('../config/database.js');
+      await pool.query('UPDATE users SET is_admin = true WHERE id = $1', [user.id]);
+      user.isAdmin = true;
+      console.log('Admin role granted to:', user.email);
+    }
+
     // Generate tokens
-    const accessToken = generateAccessToken({ id: user.id, email: user.email });
+    const accessToken = generateAccessToken({ id: user.id, email: user.email, isAdmin: user.isAdmin });
     const refreshToken = generateRefreshToken(user.id);
 
     // Store refresh token in Redis
@@ -93,7 +102,8 @@ export async function login(req: Request, res: Response): Promise<void> {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        isAdmin: user.isAdmin || false
       }
     });
   } catch (error) {
@@ -201,14 +211,15 @@ export async function refresh(req: Request, res: Response): Promise<void> {
     }
 
     // Generate new access token
-    const accessToken = generateAccessToken({ id: user.id, email: user.email });
+    const accessToken = generateAccessToken({ id: user.id, email: user.email, isAdmin: user.isAdmin });
 
     res.json({
       accessToken,
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        isAdmin: user.isAdmin || false
       }
     });
   } catch (error) {

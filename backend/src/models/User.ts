@@ -15,6 +15,7 @@ export interface User {
   totalQuestions: number;
   avatarUrl: string | null;
   timerMultiplier: number;
+  isAdmin: boolean;
 }
 
 export interface UserProfileStats {
@@ -26,6 +27,7 @@ export interface UserProfileStats {
   totalQuestions: number;
   avatarUrl: string | null;
   timerMultiplier: number;
+  isAdmin: boolean;
 }
 
 export interface CreateUserData {
@@ -45,7 +47,8 @@ export const User = {
               total_xp as "totalXp", total_gems as "totalGems",
               games_played as "gamesPlayed", best_score as "bestScore",
               total_correct as "totalCorrect", total_questions as "totalQuestions",
-              avatar_url as "avatarUrl", timer_multiplier as "timerMultiplier"
+              avatar_url as "avatarUrl", timer_multiplier as "timerMultiplier",
+              is_admin as "isAdmin"
        FROM users
        WHERE email = $1`,
       [email]
@@ -63,7 +66,8 @@ export const User = {
               total_xp as "totalXp", total_gems as "totalGems",
               games_played as "gamesPlayed", best_score as "bestScore",
               total_correct as "totalCorrect", total_questions as "totalQuestions",
-              avatar_url as "avatarUrl", timer_multiplier as "timerMultiplier"
+              avatar_url as "avatarUrl", timer_multiplier as "timerMultiplier",
+              is_admin as "isAdmin"
        FROM users
        WHERE id = $1`,
       [id]
@@ -97,7 +101,8 @@ export const User = {
       `SELECT total_xp as "totalXp", total_gems as "totalGems",
               games_played as "gamesPlayed", best_score as "bestScore",
               total_correct as "totalCorrect", total_questions as "totalQuestions",
-              avatar_url as "avatarUrl", timer_multiplier as "timerMultiplier"
+              avatar_url as "avatarUrl", timer_multiplier as "timerMultiplier",
+              is_admin as "isAdmin"
        FROM users
        WHERE id = $1`,
       [id]

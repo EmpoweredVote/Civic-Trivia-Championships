@@ -18,14 +18,15 @@ export { TokenExpiredError, JsonWebTokenError };
 export interface TokenPayload extends JwtPayload {
   userId: number;
   email?: string;
+  isAdmin?: boolean;
 }
 
 /**
  * Generate access token for a user
  */
-export function generateAccessToken(user: { id: number; email: string }): string {
+export function generateAccessToken(user: { id: number; email: string; isAdmin?: boolean }): string {
   return jwt.sign(
-    { userId: user.id, email: user.email },
+    { userId: user.id, email: user.email, isAdmin: user.isAdmin || false },
     JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
   );
