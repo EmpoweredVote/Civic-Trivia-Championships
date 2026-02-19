@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 
 ## Current Position
 
-Phase: 14 of 17 (Question Service & Route Integration) — In progress
-Plan: 1 of 2 in phase 14
-Status: 14-01 complete, ready for 14-02
-Last activity: 2026-02-18 — Completed 14-01-PLAN.md (QuestionService module)
+Phase: 14 of 17 (Question Service & Route Integration) — Complete
+Plan: 2 of 2 in phase 14
+Status: Phase 14 complete, ready for Phase 15
+Last activity: 2026-02-19 — Completed 14-02-PLAN.md (game route integration)
 
-Progress: [████░░░░░░░░░░░░░░░░] v1.2: 25% (1.25/5 phases, 38/40 total plans)
+Progress: [████░░░░░░░░░░░░░░░░] v1.2: 30% (1.5/5 phases, 39/40 total plans)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -36,8 +36,8 @@ Progress: [████░░░░░░░░░░░░░░░░] v1.2: 2
 - Total execution time: 143 min
 
 **Recent Trend:**
-- Last 5 plans: 12-02 (7 min), 13-01 (4 min), 13-02 (2 min), 13-03 (3 min), 14-01 (2 min)
-- Trend: Consistent 2-7 min velocity maintained
+- Last 5 plans: 13-01 (4 min), 13-02 (2 min), 13-03 (3 min), 14-01 (2 min), 14-02 (2 min)
+- Trend: Consistent 2-4 min velocity maintained
 
 *Updated after each plan completion*
 
@@ -60,6 +60,8 @@ Recent decisions affecting current work:
 | Link all topics to Federal collection | 13-03 | Enables flexible question selection in Phase 14 without additional seed operations |
 | externalId as Question.id (not DB serial) | 14-01 | Backward compat with existing session/answer logic using string IDs like q001 |
 | Module-level caching for topicMap and federalCollectionId | 14-01 | Both immutable at runtime — avoids repeated DB round-trips |
+| Legacy questionIds path fetches from DB and filters | 14-02 | Backward compat without maintaining removed allQuestions variable |
+| In-memory recent question tracking (not persisted) | 14-02 | Sufficient for per-deployment variety; Redis persistence deferred |
 
 ### Pending Todos
 
@@ -78,9 +80,9 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Topic: Phase 14 plan 01 execution — QuestionService created
-Stopped at: Completed 14-01-PLAN.md — ready for 14-02 (game route integration)
+Last session: 2026-02-19
+Topic: Phase 14 plan 02 execution — game route integration complete
+Stopped at: Completed 14-02-PLAN.md — Phase 14 complete, ready for Phase 15 (Collection Picker UI)
 Resume file: None
 
 ---
