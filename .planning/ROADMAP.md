@@ -61,7 +61,11 @@ Plans:
   2. Each collection card displays name, description, and active question count
   3. Federal Civics is preselected as the default collection
   4. Selecting a collection and starting a game loads questions from that collection
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
+Plans:
+- [ ] 15-01-PLAN.md — Backend GET /api/game/collections endpoint with question counts
+- [ ] 15-02-PLAN.md — Collection picker components (types, hook, card, skeleton, picker)
+- [ ] 15-03-PLAN.md — Dashboard integration, game flow wiring, collection name display
 
 ### Phase 16: Expiration System
 **Goal**: Time-sensitive questions automatically drop from rotation without disrupting active games
@@ -97,7 +101,7 @@ Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
 |-------|----------------|--------|-----------|
 | 13. Database Schema & Seed Migration | 3/3 | Complete | 2026-02-18 |
 | 14. Question Service & Route Integration | 2/2 | Complete | 2026-02-18 |
-| 15. Collection Picker UI | 0/TBD | Not started | - |
+| 15. Collection Picker UI | 0/3 | Not started | - |
 | 16. Expiration System | 0/TBD | Not started | - |
 | 17. Community Content Generation | 0/TBD | Not started | - |
 
