@@ -30,12 +30,12 @@
   3. An admin user can access `/admin` pages and API endpoints normally
   4. After a player answers a question in gameplay, that question's encounter_count and correct_count reflect the interaction (verified in database)
   5. Telemetry writes do not block or slow down the answer submission response to the player
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 18-01: Admin role migration and backend middleware
-- [ ] 18-02: Frontend admin route guard
-- [ ] 18-03: Telemetry columns and fire-and-forget recording
+- [ ] 18-01-PLAN.md -- Admin role migration, JWT pipeline update, and requireAdmin middleware
+- [ ] 18-02-PLAN.md -- Frontend admin route guard, 403 page, and admin shell layout
+- [ ] 18-03-PLAN.md -- Telemetry columns and fire-and-forget recording
 
 ### Phase 19: Quality Rules Engine
 **Goal**: Question quality is codified as executable rules, all 320 existing questions are audited, and questions that fail blocking rules are archived
