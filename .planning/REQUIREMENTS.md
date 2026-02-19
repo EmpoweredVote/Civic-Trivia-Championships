@@ -80,32 +80,32 @@ Deferred to later milestones. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ADMN-01 | TBD | Pending |
-| ADMN-02 | TBD | Pending |
-| ADMN-03 | TBD | Pending |
-| QUAL-01 | TBD | Pending |
-| QUAL-02 | TBD | Pending |
-| QUAL-03 | TBD | Pending |
-| QUAL-04 | TBD | Pending |
-| QUAL-05 | TBD | Pending |
-| EXPL-01 | TBD | Pending |
-| EXPL-02 | TBD | Pending |
-| EXPL-03 | TBD | Pending |
-| EXPL-04 | TBD | Pending |
-| TELE-01 | TBD | Pending |
-| TELE-02 | TBD | Pending |
-| TELE-03 | TBD | Pending |
-| GENR-01 | TBD | Pending |
-| GENR-02 | TBD | Pending |
-| GENR-03 | TBD | Pending |
-| COLL-01 | TBD | Pending |
-| COLL-02 | TBD | Pending |
+| ADMN-01 | Phase 18 | Pending |
+| ADMN-02 | Phase 18 | Pending |
+| ADMN-03 | Phase 18 | Pending |
+| TELE-01 | Phase 18 | Pending |
+| TELE-02 | Phase 18 | Pending |
+| QUAL-01 | Phase 19 | Pending |
+| QUAL-02 | Phase 19 | Pending |
+| QUAL-03 | Phase 19 | Pending |
+| QUAL-04 | Phase 19 | Pending |
+| EXPL-01 | Phase 20 | Pending |
+| EXPL-02 | Phase 20 | Pending |
+| EXPL-03 | Phase 20 | Pending |
+| EXPL-04 | Phase 20 | Pending |
+| TELE-03 | Phase 20 | Pending |
+| GENR-01 | Phase 21 | Pending |
+| GENR-02 | Phase 21 | Pending |
+| GENR-03 | Phase 21 | Pending |
+| QUAL-05 | Phase 21 | Pending |
+| COLL-01 | Phase 21 | Pending |
+| COLL-02 | Phase 21 | Pending |
 
 **Coverage:**
-- v1.3 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22 (pending roadmap)
+- v1.3 requirements: 20 total
+- Mapped to phases: 20
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after initial definition*
+*Last updated: 2026-02-19 after roadmap creation*

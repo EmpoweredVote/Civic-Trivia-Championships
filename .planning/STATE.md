@@ -4,23 +4,23 @@
 
 See: .planning/PROJECT.md (updated 2026-02-19)
 
-**Core value:** Make civic learning fun through game show mechanics — play, not study
-**Current focus:** v1.3 Question Quality & Admin Tools
+**Core value:** Make civic learning fun through game show mechanics -- play, not study
+**Current focus:** v1.3 Phase 18 - Foundation (Admin Auth + Telemetry)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-19 — Milestone v1.3 started
+Phase: 18 (first of 4 in v1.3: Phases 18-21)
+Plan: --
+Status: Ready to plan
+Last activity: 2026-02-19 -- Roadmap created for v1.3
 
-Progress: ░░░░░░░░░░░░░░░░░░░░ v1.3: 0%
+Progress: ░░░░░░░░░░░░░░░░░░░░ v1.3: 0% (0/15 plans)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
-- v1.2 (Phases 13-17): Complete - 20/20 requirements delivered, 320 questions across 3 collections
-- v1.3 (Phases TBD): Starting — Question Quality & Admin Tools
+- v1.2 (Phases 13-17): Complete - 20/20 requirements delivered
+- v1.3 (Phases 18-21): In progress - 0/20 requirements, 0/15 plans
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -39,6 +39,11 @@ Progress: ░░░░░░░░░░░░░░░░░░░░ v1.3: 0%
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [v1.3]: Admin auth is security prerequisite -- must ship before any new admin features
+- [v1.3]: Telemetry schema early so gameplay data accumulates while building other features
+- [v1.3]: Quality rules before admin UI -- UI needs scores to display
 
 ### Pending Todos
 
@@ -48,28 +53,14 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Blockers/Concerns
 
-None currently.
+- REQUIREMENTS.md lists 22 requirements but only 20 are defined in the traceability table. Coverage validated against the 20 actual requirements.
 
 ## Session Continuity
 
 Last session: 2026-02-19
-Topic: v1.3 milestone initialization
-Stopped at: Defining requirements
+Topic: v1.3 roadmap creation
+Stopped at: Roadmap created, ready to plan Phase 18
 Resume file: None
 
 ---
-*v1.3 Question Quality & Admin Tools — STARTED 2026-02-19*
-
-Config:
-{
-  "mode": "yolo",
-  "depth": "standard",
-  "parallelization": true,
-  "commit_docs": true,
-  "model_profile": "balanced",
-  "workflow": {
-    "research": true,
-    "plan_check": true,
-    "verifier": true
-  }
-}
+*v1.3 Question Quality & Admin Tools -- Roadmap created 2026-02-19*
