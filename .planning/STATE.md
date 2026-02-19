@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Make civic learning fun through game show mechanics — play, not study
-**Current focus:** v1.2 Community Collections — Phase 16 complete, ready for Phase 17
+**Current focus:** v1.2 Community Collections — Phase 17 in progress (Plan 1 of 3 complete)
 
 ## Current Position
 
-Phase: 16 of 17 (Expiration System) — COMPLETE
-Plan: 3 of 3 in phase 16
-Status: Complete
-Last activity: 2026-02-19 — Completed Phase 16 (Expiration System)
+Phase: 17 of 17 (Community Content Generation) — In progress
+Plan: 1 of 3 in phase 17
+Status: In progress
+Last activity: 2026-02-19 — Completed 17-01 (Content Generation Infrastructure)
 
-Progress: [████████████████░░░░] v1.2: 80% (4/5 phases)
+Progress: [████████████████░░░░] v1.2: 83% (content generation tooling built, questions not yet generated)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
-- v1.2 (Phases 13-17): In progress - 19/20 requirements delivered
+- v1.2 (Phases 13-17): In progress — tooling built, Plans 02+03 generate actual questions
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -31,13 +31,13 @@ Progress: [████████████████░░░░] v1.2: 8
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 44
-- Average duration: 3.3 min
-- Total execution time: 158.2 min
+- Total plans completed: 45
+- Average duration: 3.4 min
+- Total execution time: 164.2 min
 
 **Recent Trend:**
-- Last 5 plans: 15-03 (2.8 min), 16-01 (3.7 min), 16-02 (1.9 min), 16-03 (6.2 min)
-- Trend: Strong velocity — 16-03 longer due to production database debugging
+- Last 5 plans: 16-01 (3.7 min), 16-02 (1.9 min), 16-03 (6.2 min), 17-01 (6 min)
+- Trend: Strong velocity — infrastructure plans taking 6min, well within budget
 
 *Updated after each plan completion*
 
@@ -78,6 +78,11 @@ Recent decisions affecting current work:
 | Admin uses database serial IDs | 16-02 | Admin route params use questions.id (integer) not externalId (string) for simpler UPDATE queries |
 | Tier labels computed in JavaScript | 16-02 | Health tiers (Healthy/At Risk/Critical) computed in JS for flexible threshold tuning |
 | Renewal immediately reactivates questions | 16-02 | POST /renew sets status='active' atomically so question returns to game rotation instantly |
+| Zod parse over tool_use for AI response validation | 17-01 | BatchSchema.parse() on response text simpler than tool_use; no zod-to-json-schema needed |
+| status='draft' for all AI-generated questions | 17-01 | Admin reviews and activates before questions appear in gameplay |
+| ON CONFLICT DO NOTHING for question seeding | 17-01 | Idempotent — safe to re-run batches without duplicate entries |
+| cache_control: ephemeral on last RAG source block | 17-01 | Caches entire source document prefix across batches, reducing API cost |
+| LocaleConfig interface in bloomington-in.ts | 17-01 | Shared type imported by all locale configs and main script |
 
 ### Pending Todos
 
@@ -86,19 +91,23 @@ Deployment Follow-up:
 - [ ] Share live URLs with team
 - [ ] Add to ev-prototypes.netlify.app (optional)
 
+Content Generation:
+- [ ] Run Plan 02: Generate Bloomington questions (--fetch-sources first run)
+- [ ] Run Plan 03: Generate LA questions
+- [ ] Admin review: Activate generated questions from 'draft' status
+
 ### Blockers/Concerns
 
 None currently.
 
 **Research flags for v1.2:**
-- Phase 17 (Content Generation): Highest risk — AI hallucination on local facts, RAG pipeline untested
-- Phase 16 (Expiration): Moderate uncertainty on grace periods and minimum-size handling
+- Phase 17 Plans 02+03: AI hallucination risk on local civic facts — RAG sources mitigate but human review essential before activation
 
 ## Session Continuity
 
 Last session: 2026-02-19
-Topic: Phase 16 execution complete
-Stopped at: Phase 16 verified and complete
+Topic: Phase 17 Plan 01 — Content generation tooling built
+Stopped at: Completed 17-01-PLAN.md
 Resume file: None
 
 ---
