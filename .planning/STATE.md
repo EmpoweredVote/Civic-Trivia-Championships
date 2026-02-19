@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 17 of 17 (Community Content Generation) — Complete
-Plan: 3 of 3 in phase 17
+Plan: 4 of 4 in phase 17
 Status: Phase complete
-Last activity: 2026-02-19 — Completed 17-03 (Los Angeles Content Generation)
+Last activity: 2026-02-19 — Completed 17-04 (Collection Activation)
 
-Progress: [████████████████████] v1.2: 100% (200 community questions generated: 100 Bloomington + 100 Los Angeles)
+Progress: [████████████████████] v1.2: 100% (All 3 collections active and playable: Federal 120q, Bloomington 100q, LA 100q)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
-- v1.2 (Phases 13-17): In progress — tooling built, Plans 02+03 generate actual questions
+- v1.2 (Phases 13-17): Complete - 320 total questions across 3 collections (Federal, Bloomington IN, Los Angeles CA) all active and playable
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -31,13 +31,13 @@ Progress: [████████████████████] v1.2: 1
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 46
-- Average duration: 3.6 min
-- Total execution time: 184.2 min
+- Total plans completed: 47
+- Average duration: 3.8 min
+- Total execution time: 189.2 min
 
 **Recent Trend:**
-- Last 5 plans: 16-03 (6.2 min), 17-01 (6 min), 17-02 (~20 min), 17-03 (~20 min)
-- Trend: Strong velocity — content generation plans longer due to AI API calls + human verify checkpoint
+- Last 5 plans: 17-01 (6 min), 17-02 (~20 min), 17-03 (~20 min), 17-04 (5 min)
+- Trend: Strong velocity — Phase 17 complete with 4 plans delivering full v1.2 milestone
 
 *Updated after each plan completion*
 
@@ -87,10 +87,14 @@ Recent decisions affecting current work:
 | Human verify checkpoint as blocking gate | 17-02 | AI-generated content always gated by human review before plan completes |
 | Difficulty distribution 19/48/33 for LA accepted | 17-03 | Similar to Bloomington, local civic content produces fewer easy questions; distribution acceptable |
 | Proceed with partial RAG sources on fetch failures | 17-03 | 7 of 14 LA sources fetched successfully; sufficient authoritative coverage for generation |
+| Activated collections in both seed file and live database | 17-04 | Ensures future re-seeds maintain active state while immediate effect in production |
+| All 200 community questions activated at once | 17-04 | Batch activation safe after human review in Plans 02+03; no gradual rollout needed |
+| Icon fallback pattern for topic categories | 17-04 | TOPIC_ICONS[topicKey] ?? BarChart2 handles community topics gracefully, prevents crashes |
 
 ### Pending Todos
 
 Deployment Follow-up:
+- [ ] Announce v1.2 Community Collections launch (320 total questions live)
 - [ ] Invite volunteers to GitHub org
 - [ ] Share live URLs with team
 - [ ] Add to ev-prototypes.netlify.app (optional)
@@ -98,21 +102,20 @@ Deployment Follow-up:
 Content Generation:
 - [x] Run Plan 02: Generate Bloomington questions — 100 questions seeded (bli-001 to bli-100)
 - [x] Run Plan 03: Generate LA questions — 100 questions seeded (lac-001 to lac-100)
-- [ ] Admin review: Activate generated questions from 'draft' status (200 questions ready: Bloomington + LA)
+- [x] Activate community collections — Both collections active with all 200 questions playable
 
 ### Blockers/Concerns
 
 None currently.
 
 **Research flags for v1.2:**
-- Phase 17 Plan 03 (Los Angeles): Human review completed, questions approved — hallucination risk managed via RAG + human checkpoint
-- Phase 17 Plan 02 (Bloomington): Human review completed, questions approved — hallucination risk managed
+- Phase 17 complete: Both Bloomington and LA collections activated and playable — hallucination risk managed via RAG + human checkpoints
 
 ## Session Continuity
 
 Last session: 2026-02-19
-Topic: Phase 17 Plan 03 — Los Angeles CA content generation (100 questions seeded, human-approved)
-Stopped at: Completed 17-03-PLAN.md (Phase 17 complete)
+Topic: Phase 17 Plan 04 — Collection activation (both community collections active, 320 total questions playable)
+Stopped at: Completed 17-04-PLAN.md (Phase 17 complete, v1.2 milestone delivered)
 Resume file: None
 
 ---
