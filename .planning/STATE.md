@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 
 ## Current Position
 
-Phase: 15 of 17 (Collection Picker UI) — COMPLETE & VERIFIED
-Plan: 3 of 3 in phase 15
-Status: Phase 15 verified (6/6 must-haves), ready for Phase 16
-Last activity: 2026-02-18 — Phase 15 complete (3 plans, 2 waves, verified)
+Phase: 16 of 17 (Expiration System)
+Plan: 1 of 3 in phase 16
+Status: In progress
+Last activity: 2026-02-18 — Completed 16-01-PLAN.md
 
-Progress: [████████████░░░░░░░░] v1.2: 60% (3/5 phases)
+Progress: [█████████████░░░░░░░] v1.2: 65% (3.33/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
-- v1.2 (Phases 13-17): In progress - 12/20 requirements delivered
+- v1.2 (Phases 13-17): In progress - 14/20 requirements delivered
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -31,13 +31,13 @@ Progress: [████████████░░░░░░░░] v1.2: 6
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 42
+- Total plans completed: 43
 - Average duration: 3.4 min
-- Total execution time: 152.6 min
+- Total execution time: 156.3 min
 
 **Recent Trend:**
-- Last 5 plans: 14-02 (2 min), 15-01 (1.2 min), 15-02 (1.6 min), 15-03 (2.8 min)
-- Trend: Strong velocity — consistently under 3 minutes
+- Last 5 plans: 15-01 (1.2 min), 15-02 (1.6 min), 15-03 (2.8 min), 16-01 (3.7 min)
+- Trend: Strong velocity — consistently under 4 minutes
 
 *Updated after each plan completion*
 
@@ -70,6 +70,10 @@ Recent decisions affecting current work:
 | Router state for collectionId (not URL params or global state) | 15-03 | Clean separation - Dashboard owns selection, Game receives as navigation context |
 | Auto-start game when navigating from Dashboard with collectionId | 15-03 | Seamless UX - one-click flow from "Play Federal Civics" to gameplay |
 | Display collection name in both game header and results | 15-03 | Reinforces context throughout game experience |
+| JSONB array for expiration audit history | 16-01 | Enables efficient SQL append (||), keeps audit trail co-located with question data, avoids JOIN overhead |
+| Default status='active' for new questions | 16-01 | All existing questions automatically get correct status without data migration |
+| Cron runs after session manager init | 16-01 | Guarantees DB connection ready when cron fires, doesn't block server startup |
+| Structured JSON logging for cron jobs | 16-01 | {level, job, message, metadata} format enables log aggregation and alerting |
 
 ### Pending Todos
 
@@ -89,8 +93,8 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-18
-Topic: Phase 15 execution complete and verified
-Stopped at: Phase 15 verified — ready for Phase 16 planning
+Topic: Phase 16 plan 01 execution
+Stopped at: Completed 16-01-PLAN.md
 Resume file: None
 
 ---
