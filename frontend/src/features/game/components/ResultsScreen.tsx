@@ -457,7 +457,7 @@ export function ResultsScreen({ result, questions, collectionName, onPlayAgain, 
                           <span className="text-teal-400 font-bold text-sm">
                             Question {index + 1}
                           </span>
-                          {question.topicCategory && (() => {
+                          {question.topicCategory && TOPIC_ICONS[question.topicCategory] && (() => {
                             const TopicIconComponent = TOPIC_ICONS[question.topicCategory];
                             return (
                               <span className="inline-flex items-center gap-1 text-xs text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full">
