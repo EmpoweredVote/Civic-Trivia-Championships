@@ -158,4 +158,116 @@ router.get('/db-check', async (_req: Request, res: Response) => {
   }
 });
 
+// One-time setup endpoint to create missing tables on production
+router.post('/db-setup', async (_req: Request, res: Response) => {
+  try {
+    const results: string[] = [];
+
+    // Create collections table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "civic_trivia"."collections" (
+        "id" serial PRIMARY KEY,
+        "name" text NOT NULL,
+        "slug" text NOT NULL UNIQUE,
+        "description" text NOT NULL,
+        "locale_code" text NOT NULL,
+        "locale_name" text NOT NULL,
+        "icon_identifier" text NOT NULL,
+        "theme_color" text NOT NULL,
+        "is_active" boolean NOT NULL DEFAULT false,
+        "sort_order" integer NOT NULL,
+        "created_at" timestamptz NOT NULL DEFAULT now(),
+        "updated_at" timestamptz NOT NULL DEFAULT now()
+      )
+    `);
+    results.push('collections table created/verified');
+
+    // Create topics table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "civic_trivia"."topics" (
+        "id" serial PRIMARY KEY,
+        "name" text NOT NULL,
+        "slug" text NOT NULL UNIQUE,
+        "description" text,
+        "created_at" timestamptz NOT NULL DEFAULT now()
+      )
+    `);
+    results.push('topics table created/verified');
+
+    // Create collection_topics junction table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "civic_trivia"."collection_topics" (
+        "collection_id" integer NOT NULL REFERENCES "civic_trivia"."collections"("id") ON DELETE CASCADE,
+        "topic_id" integer NOT NULL REFERENCES "civic_trivia"."topics"("id") ON DELETE CASCADE,
+        "created_at" timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY ("collection_id", "topic_id")
+      )
+    `);
+    results.push('collection_topics table created/verified');
+
+    // Create questions table (includes Phase 16 columns: status, expiration_history)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "civic_trivia"."questions" (
+        "id" serial PRIMARY KEY,
+        "external_id" text NOT NULL UNIQUE,
+        "text" text NOT NULL,
+        "options" jsonb NOT NULL,
+        "correct_answer" integer NOT NULL,
+        "explanation" text NOT NULL,
+        "difficulty" text NOT NULL,
+        "topic_id" integer NOT NULL REFERENCES "civic_trivia"."topics"("id"),
+        "subcategory" text,
+        "source" jsonb NOT NULL,
+        "learning_content" jsonb,
+        "expires_at" timestamptz,
+        "status" text NOT NULL DEFAULT 'active',
+        "expiration_history" jsonb DEFAULT '[]'::jsonb,
+        "created_at" timestamptz NOT NULL DEFAULT now(),
+        "updated_at" timestamptz NOT NULL DEFAULT now()
+      )
+    `);
+    results.push('questions table created/verified');
+
+    // Create collection_questions junction table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "civic_trivia"."collection_questions" (
+        "collection_id" integer NOT NULL REFERENCES "civic_trivia"."collections"("id") ON DELETE CASCADE,
+        "question_id" integer NOT NULL REFERENCES "civic_trivia"."questions"("id") ON DELETE CASCADE,
+        "created_at" timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY ("collection_id", "question_id")
+      )
+    `);
+    results.push('collection_questions table created/verified');
+
+    // Create indexes
+    await pool.query(`CREATE INDEX IF NOT EXISTS "idx_collections_active_sort" ON "civic_trivia"."collections" ("is_active", "sort_order") WHERE "is_active" = true`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "idx_topics_slug" ON "civic_trivia"."topics" ("slug")`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "idx_collection_topics_collection" ON "civic_trivia"."collection_topics" ("collection_id")`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "idx_collection_topics_topic" ON "civic_trivia"."collection_topics" ("topic_id")`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "idx_questions_topic_id" ON "civic_trivia"."questions" ("topic_id")`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "idx_questions_expires_at" ON "civic_trivia"."questions" ("expires_at") WHERE "expires_at" IS NOT NULL`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "idx_questions_status" ON "civic_trivia"."questions" ("status")`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "idx_collection_questions_collection" ON "civic_trivia"."collection_questions" ("collection_id")`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "idx_collection_questions_question" ON "civic_trivia"."collection_questions" ("question_id")`);
+    results.push('indexes created/verified');
+
+    // Verify tables now exist
+    const tables = await pool.query(
+      `SELECT table_name FROM information_schema.tables WHERE table_schema = 'civic_trivia' ORDER BY table_name`
+    );
+
+    res.json({
+      success: true,
+      steps: results,
+      tablesNow: tables.rows.map((r: any) => r.table_name)
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error?.message || String(error),
+      detail: error?.detail || undefined
+    });
+  }
+});
+
 export { router };
