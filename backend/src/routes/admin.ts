@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { db } from '../db/index.js';
 import { questions, collections, collectionQuestions } from '../db/schema.js';
 import { eq, and, or, lte, gt, isNotNull, sql, inArray } from 'drizzle-orm';
 
 const router = Router();
 
-// Apply authentication middleware to all admin routes
-router.use(authenticateToken);
+// Apply authentication and admin middleware to all admin routes
+router.use(authenticateToken, requireAdmin);
 
 /**
  * GET /questions - List expired and expiring-soon questions

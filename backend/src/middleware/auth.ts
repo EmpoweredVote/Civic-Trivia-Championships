@@ -98,3 +98,23 @@ export async function optionalAuth(
     next();
   }
 }
+
+/**
+ * Middleware to require admin role
+ * Must be used after authenticateToken middleware
+ */
+export function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  if (!req.user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  if (!req.user.isAdmin) {
+    res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+  next();
+}
