@@ -10,6 +10,7 @@ import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { Game } from './pages/Game';
 import { Profile } from './pages/Profile';
+import { Admin } from './pages/Admin';
 
 function App() {
   // Monitor Web Vitals in production
@@ -33,6 +34,7 @@ function App() {
             {/* Protected routes — require auth */}
             <Route element={<ProtectedRoute />}>
               <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<Admin />} />
             </Route>
           </Routes>
         </main>

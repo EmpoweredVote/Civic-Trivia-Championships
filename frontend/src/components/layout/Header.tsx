@@ -88,6 +88,12 @@ export function Header() {
                       Profile
                     </button>
                     <button
+                      onClick={() => handleMenuItemClick(() => navigate('/admin'))}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      Review
+                    </button>
+                    <button
                       onClick={() => handleMenuItemClick(handleLogout)}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                     >
