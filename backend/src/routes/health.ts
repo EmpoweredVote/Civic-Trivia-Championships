@@ -1,6 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { storageFactory } from '../config/redis.js';
 import { pool } from '../config/database.js';
+import { db } from '../db/index.js';
+import { collections, topics, collectionTopics, questions, collectionQuestions } from '../db/schema.js';
+import { collectionsData } from '../db/seed/collections.js';
+import { topicsData } from '../db/seed/topics.js';
+import { getQuestionInserts } from '../db/seed/questions.js';
 
 const router = Router();
 
@@ -260,6 +265,96 @@ router.post('/db-setup', async (_req: Request, res: Response) => {
       success: true,
       steps: results,
       tablesNow: tables.rows.map((r: any) => r.table_name)
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error?.message || String(error),
+      detail: error?.detail || undefined
+    });
+  }
+});
+
+// One-time seed endpoint to populate tables on production
+router.post('/db-seed', async (_req: Request, res: Response) => {
+  try {
+    const results: string[] = [];
+
+    await db.transaction(async (tx) => {
+      // 1. Insert collections
+      const insertedCollections = await tx
+        .insert(collections)
+        .values(collectionsData)
+        .onConflictDoNothing({ target: collections.slug })
+        .returning();
+      results.push(`Inserted ${insertedCollections.length} collections`);
+
+      // Get all collections
+      const allCollections = await tx.select().from(collections);
+      const federalCollection = allCollections.find((c) => c.slug === 'federal');
+      if (!federalCollection) throw new Error('Federal collection not found');
+
+      // 2. Insert topics
+      const insertedTopics = await tx
+        .insert(topics)
+        .values(topicsData)
+        .onConflictDoNothing({ target: topics.slug })
+        .returning();
+      results.push(`Inserted ${insertedTopics.length} topics`);
+
+      // Build slug -> id mapping
+      const allTopics = await tx.select().from(topics);
+      const topicIdMap: Record<string, number> = {};
+      allTopics.forEach((topic) => { topicIdMap[topic.slug] = topic.id; });
+
+      // 3. Link topics to Federal collection
+      const collectionTopicsData = allTopics.map((topic) => ({
+        collectionId: federalCollection.id,
+        topicId: topic.id
+      }));
+      const insertedCT = await tx
+        .insert(collectionTopics)
+        .values(collectionTopicsData)
+        .onConflictDoNothing()
+        .returning();
+      results.push(`Linked ${insertedCT.length} topics to Federal`);
+
+      // 4. Insert questions
+      const questionInserts = getQuestionInserts(topicIdMap);
+      results.push(`Preparing ${questionInserts.length} questions...`);
+
+      const insertedQuestions = await tx
+        .insert(questions)
+        .values(questionInserts)
+        .onConflictDoNothing({ target: questions.externalId })
+        .returning();
+      results.push(`Inserted ${insertedQuestions.length} questions`);
+
+      // 5. Link all questions to Federal collection
+      const allQuestions = await tx.select().from(questions);
+      const collectionQuestionsData = allQuestions.map((question) => ({
+        collectionId: federalCollection.id,
+        questionId: question.id
+      }));
+      const insertedCQ = await tx
+        .insert(collectionQuestions)
+        .values(collectionQuestionsData)
+        .onConflictDoNothing()
+        .returning();
+      results.push(`Linked ${insertedCQ.length} questions to Federal`);
+    });
+
+    // Counts
+    const collectionCount = await db.select().from(collections);
+    const questionCount = await db.select().from(questions);
+
+    res.json({
+      success: true,
+      steps: results,
+      totals: {
+        collections: collectionCount.length,
+        questions: questionCount.length
+      }
     });
   } catch (error: any) {
     res.status(500).json({
