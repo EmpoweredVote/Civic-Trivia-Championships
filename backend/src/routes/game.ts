@@ -4,6 +4,7 @@ import { optionalAuth } from '../middleware/auth.js';
 import { updateUserProgression } from '../services/progressionService.js';
 import { storageFactory } from '../config/redis.js';
 import { selectQuestionsForGame, getCollectionMetadata, getFederalCollectionId } from '../services/questionService.js';
+import { recordQuestionTelemetry } from '../services/telemetryService.js';
 import { db } from '../db/index.js';
 import { collections, collectionQuestions, questions } from '../db/schema.js';
 import { and, eq, sql, isNull, or, gt } from 'drizzle-orm';
@@ -204,12 +205,18 @@ router.post('/answer', async (req: Request, res: Response) => {
     // Strip flagged field from response (keep server-side only for analytics)
     const { flagged, ...clientAnswer } = answer;
 
+    // Determine correctness for telemetry
+    const wasCorrect = clientAnswer.basePoints > 0 || (clientAnswer.wager !== undefined && clientAnswer.totalPoints > 0);
+
+    // Fire-and-forget telemetry -- do not await, do not block response
+    recordQuestionTelemetry(questionId, wasCorrect).catch(() => {});
+
     // Return score with correct answer for client reveal
     res.status(200).json({
       basePoints: clientAnswer.basePoints,
       speedBonus: clientAnswer.speedBonus,
       totalPoints: clientAnswer.totalPoints,
-      correct: clientAnswer.basePoints > 0 || (clientAnswer.wager !== undefined && clientAnswer.totalPoints > 0),
+      correct: wasCorrect,
       correctAnswer: question.correctAnswer,
       ...(clientAnswer.wager !== undefined ? { wager: clientAnswer.wager } : {}),
     });
