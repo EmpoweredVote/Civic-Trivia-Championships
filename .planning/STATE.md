@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 16 of 17 (Expiration System)
-Plan: 1 of 3 in phase 16
+Plan: 2 of 3 in phase 16
 Status: In progress
-Last activity: 2026-02-18 — Completed 16-01-PLAN.md
+Last activity: 2026-02-19 — Completed 16-02-PLAN.md
 
-Progress: [█████████████░░░░░░░] v1.2: 65% (3.33/5 phases)
+Progress: [█████████████░░░░░░░] v1.2: 68% (3.40/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -31,12 +31,12 @@ Progress: [█████████████░░░░░░░] v1.2: 6
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 43
-- Average duration: 3.4 min
-- Total execution time: 156.3 min
+- Total plans completed: 44
+- Average duration: 3.3 min
+- Total execution time: 158.2 min
 
 **Recent Trend:**
-- Last 5 plans: 15-01 (1.2 min), 15-02 (1.6 min), 15-03 (2.8 min), 16-01 (3.7 min)
+- Last 5 plans: 15-02 (1.6 min), 15-03 (2.8 min), 16-01 (3.7 min), 16-02 (1.9 min)
 - Trend: Strong velocity — consistently under 4 minutes
 
 *Updated after each plan completion*
@@ -74,6 +74,10 @@ Recent decisions affecting current work:
 | Default status='active' for new questions | 16-01 | All existing questions automatically get correct status without data migration |
 | Cron runs after session manager init | 16-01 | Guarantees DB connection ready when cron fires, doesn't block server startup |
 | Structured JSON logging for cron jobs | 16-01 | {level, job, message, metadata} format enables log aggregation and alerting |
+| Health endpoint is public (no auth) | 16-02 | Enables monitoring dashboards and external health checks with aggregated count data |
+| Admin uses database serial IDs | 16-02 | Admin route params use questions.id (integer) not externalId (string) for simpler UPDATE queries |
+| Tier labels computed in JavaScript | 16-02 | Health tiers (Healthy/At Risk/Critical) computed in JS for flexible threshold tuning |
+| Renewal immediately reactivates questions | 16-02 | POST /renew sets status='active' atomically so question returns to game rotation instantly |
 
 ### Pending Todos
 
@@ -92,9 +96,9 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Topic: Phase 16 plan 01 execution
-Stopped at: Completed 16-01-PLAN.md
+Last session: 2026-02-19
+Topic: Phase 16 plan 02 execution
+Stopped at: Completed 16-02-PLAN.md
 Resume file: None
 
 ---
