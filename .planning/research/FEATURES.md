@@ -1,373 +1,507 @@
-# Feature Landscape: Community Question Collections
+# Feature Landscape: Question Quality, Admin Tools, Content Telemetry, and AI Pipelines
 
-**Domain:** Civic education trivia with locale-specific content collections
-**Researched:** 2026-02-18
+**Domain:** Civic education trivia -- content quality management and authoring tools
+**Researched:** 2026-02-19
 **Overall Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-Adding community-specific trivia collections (Bloomington IN, Los Angeles CA) to an existing federal civics trivia game. This research maps the feature landscape for collection management, selection UX, content tagging, and time-sensitive question handling. The existing codebase loads questions from a single `questions.json` file, selects 10 randomly, and has no concept of collections or locale. The transition from "one pool of questions" to "multiple curated collections" is the core architectural shift.
+This milestone adds the internal tooling layer that transforms content management from "scripts and SQL queries" to "structured quality framework with admin visibility." The existing system has 320 questions across 3 collections, AI generation scripts, Zod schema validation, and basic admin routes for expiration management. What it lacks: a codified definition of "good question," a way to browse and assess content without SQL, telemetry on how questions perform in the wild, and quality gates in the AI pipeline beyond structural validation.
 
-Key insight: The civic education domain has a unique content lifecycle problem. Unlike general trivia where questions are evergreen ("What year was the Declaration of Independence signed?"), local civic questions are inherently time-sensitive ("Who is the current mayor of Bloomington?"). This is the hardest design problem in this milestone and must be solved correctly in the data model from day one.
+The key insight from research: **question quality is not one thing.** It has three distinct dimensions that are assessed at different times:
+
+1. **Static quality** (assessed at authoring time) -- Does the question follow item-writing rules? Are distractors plausible? Is the source real?
+2. **Perceived quality** (assessed by human review) -- Does it pass the "dinner party test"? Is it civically useful? Is it fun?
+3. **Empirical quality** (assessed after gameplay) -- Do players get it right at expected rates? Do all distractors attract selections? Is it too easy or too hard?
+
+Most platforms conflate these. The best ones separate them because they require different tools: static quality needs automated rules, perceived quality needs a review UI, and empirical quality needs gameplay telemetry.
 
 ---
 
 ## Table Stakes
 
-Features users expect in any collection-based trivia experience. Missing these makes the product feel broken.
+Features that any content quality management system for a trivia/quiz platform should have. Missing these means operating blind.
 
-### TS-1: Collection Picker Screen
+### TS-1: Question Quality Rules Engine (Static Analysis)
 
-**What:** A screen where players choose which question collection to play before starting a game.
-**Why expected:** Every trivia platform with multiple categories (Kahoot, Open Trivia DB, Quizizz, Trivial Pursuit) presents a selection interface. Current Dashboard has only a "Quick Play" button -- adding collections without a picker would force a default that confuses users.
+**What:** A codified set of rules that can be run against any question to produce a quality score and list of violations. Rules operate on the question data structure without requiring gameplay data.
+**Why expected:** The project already has Zod schema validation (structural correctness). But structural validity is not quality -- a question can pass Zod and still be terrible. Every serious quiz platform has quality rules beyond "is the JSON valid." The existing system prompt encodes quality philosophy in prose but nothing enforces it post-generation.
 **Complexity:** MEDIUM
-**Dependencies:** New route/component, backend collection registry
-**Notes:** This replaces or augments the current Dashboard "Quick Play" button. Players must understand what they are choosing and why. Card-based selection (not dropdowns) is the standard pattern in game UX -- each collection gets a visual card showing name, description, question count, and a play button.
-
-**Collection card metadata (minimum):**
-| Field | Purpose | Example |
-|-------|---------|---------|
-| Name | Identity | "Bloomington, IN" |
-| Subtitle/scope | What's covered | "Local + Indiana State Government" |
-| Question count | Set expectations | "120 questions" |
-| Icon/image | Visual identity | City seal or state outline |
-| Play button | Primary action | "Play" |
-
-**UX pattern recommendation:** Grid of cards (2-3 columns on desktop, single column on mobile). Federal collection should be visually distinct as the "original" but not hierarchically above community collections. Avoid tree/hierarchy navigation -- keep it flat. Players pick a collection and play. That is it.
-
-### TS-2: Collection-Scoped Question Loading
-
-**What:** Backend loads and serves questions from the selected collection, not the global pool.
-**Why expected:** If a player picks "Bloomington" they expect Bloomington questions, not a mix with federal.
-**Complexity:** LOW-MEDIUM
-**Dependencies:** Collection ID passed in session creation API, question storage refactor
-**Notes:** Currently `POST /session` takes no collection parameter and draws from a single `allQuestions` array loaded from one JSON file. Must accept a `collectionId` parameter and load from the correct source. The simplest implementation: one JSON file per collection in a `data/collections/` directory, loaded at startup into a `Map<collectionId, Question[]>`.
-
-### TS-3: Collection Metadata Registry
-
-**What:** A structured registry of available collections with their metadata (name, description, question count, status, region).
-**Why expected:** The picker screen needs data to render. The backend needs to know which collections exist. Content authors need to know what is available.
-**Complexity:** LOW
-**Dependencies:** None (foundational)
-**Notes:** This can be a simple JSON file (`collections.json`) or a TypeScript config. Does NOT need to be a database table at this scale. Keep it simple: an array of collection objects with id, name, description, region, questionCount, status (active/draft/retired). The backend serves this via `GET /collections` endpoint.
-
-### TS-4: Question Tagging with Collection Membership
-
-**What:** Each question belongs to exactly one collection. Questions also retain their existing `topicCategory` tag for within-collection topic variety.
-**Why expected:** The fundamental data model for multi-collection support. Without this, questions cannot be filtered or grouped.
-**Complexity:** LOW
-**Dependencies:** Question data model extension
-**Notes:** The existing Question type has `topic` (free text like "Constitution") and `topicCategory` (enum like "bill-of-rights"). For community collections, add a `collectionId` field to each question. A question belongs to one collection -- no cross-listing. If the same concept appears in federal and state contexts, they are different questions with different framing. Topic categories will need to expand beyond the current federal-only enum (e.g., add "local-government", "state-legislature", "city-council", "budget", "public-safety").
-
-### TS-5: Backward-Compatible Default Collection
-
-**What:** The existing 120 federal questions become the "Federal" collection. Existing gameplay is unaffected.
-**Why expected:** Users who return after the update should not be confused. The game they know still works.
-**Complexity:** LOW
-**Dependencies:** TS-3 (collection registry)
-**Notes:** The current `questions.json` becomes `collections/federal.json` (or stays in place with a `collectionId: "federal"` field added to each question). Anonymous users who hit "Quick Play" should either see the collection picker or default to Federal. Recommendation: show the picker -- it introduces the concept of collections and makes community content discoverable.
-
-### TS-6: Minimum Collection Size Enforcement
-
-**What:** Collections must have enough questions to avoid excessive repetition across play sessions.
-**Why expected:** A 10-question game drawn from a 15-question pool means players see 67% of questions every session. This kills replayability fast.
-**Complexity:** LOW
-**Dependencies:** Collection registry validation
+**Dependencies:** Existing question schema in `backend/src/db/schema.ts`
 **Notes:**
 
-**Repetition math for a 10-question game:**
-| Pool size | % seen per game | Expected games before full coverage | Repetition feel |
-|-----------|-----------------|-------------------------------------|-----------------|
-| 30 | 33% | ~5 games | Heavy repetition by game 3 |
-| 50 | 20% | ~9 games | Noticeable by game 4-5 |
-| 80 | 12.5% | ~15 games | Comfortable for weekly play |
-| 120 | 8.3% | ~25 games | Low repetition, good for daily |
+**Rule categories to codify (derived from item-writing research and project quality philosophy):**
 
-**Recommendation:** Minimum 50 questions per collection for launch. Target 80-120 for good replayability. The project context says "50 compelling questions > 100 mediocre" which aligns. 50 is the floor, 80 is the target, 120 is the existing federal benchmark.
+| Category | Rule | Automated? | Example |
+|----------|------|------------|---------|
+| **Stem clarity** | Question text must end with "?" | YES | Flag "The mayor of Bloomington" (not a question) |
+| **Stem clarity** | Question should be answerable without seeing options | PARTIAL (heuristic) | Flag fill-in-the-blank stems like "_____ is the capital" |
+| **Stem clarity** | No negatives in stem ("Which is NOT...") | YES (regex) | These confuse players and test reading, not knowledge |
+| **Distractor quality** | All 4 options similar in length (within 2x) | YES | Flag when correct answer is 3x longer than others |
+| **Distractor quality** | No "All of the above" / "None of the above" | YES | These are item-writing anti-patterns |
+| **Distractor quality** | Options should not share a common prefix/suffix | YES (heuristic) | If 3 start with "The City of..." that is a stem issue |
+| **Source quality** | Source URL must be HTTPS | YES | Flag HTTP sources |
+| **Source quality** | Source URL domain should be .gov/.edu/.us | YES (warning) | .com sources are lower authority for civic content |
+| **Source quality** | Explanation must contain "According to" | YES | Already enforced by Zod, keep it |
+| **Civic quality** | No partisan language (list of flagged terms) | YES (keyword) | Flag "liberal," "conservative," "Democrat," "Republican" in stem/options |
+| **Civic quality** | Question should not reference phone numbers, addresses, or zip codes | YES (regex) | Per project philosophy -- these are lookup facts, not knowledge |
+| **Civic quality** | No "pure date" questions | PARTIAL (heuristic) | Flag questions where answer options are all years/dates |
+| **Difficulty calibration** | Easy questions should have shorter stems | PARTIAL (heuristic) | Flag easy questions with >40 words |
+| **Expiration** | Time-sensitive questions must have expiresAt | PARTIAL (keyword) | Flag "current" or "currently" in stem without expiresAt |
 
-**Enforcement:** Backend should refuse to serve a collection with fewer than a configured minimum (default: 30). Display collections below target count as "Coming Soon" in the picker rather than offering a degraded experience.
+**Implementation recommendation:** A `validateQuestionQuality(question)` function returning `{ score: number, violations: Violation[], warnings: Warning[] }`. Run it in the AI generation pipeline (reject/flag questions) AND in the admin UI (show quality badges). This is the foundation everything else builds on.
+
+**Confidence:** HIGH for the rule categories. These are well-established in item-writing literature (Haladyna et al.) and align with the project's stated quality philosophy.
+
+### TS-2: Admin Question Explorer UI
+
+**What:** A web-based interface for browsing, filtering, and inspecting all questions across collections. Not for editing (that stays in code/scripts), but for assessment and review.
+**Why expected:** The current admin route (`/admin/questions`) only surfaces expired/expiring questions. There is no way to browse active content, filter by topic, see quality scores, or inspect individual questions without SQL queries. Any content platform needs a browse interface for its content authors.
+**Complexity:** MEDIUM-HIGH
+**Dependencies:** Existing admin routes, TS-1 (quality rules for score display)
+**Notes:**
+
+**Core capabilities (based on quiz CMS patterns from Moodle, LiveLike, and content management best practices):**
+
+| Capability | Description | Priority |
+|------------|-------------|----------|
+| **List view** | Paginated table of all questions with key columns | P1 |
+| **Filter by collection** | Dropdown to scope to one collection | P1 |
+| **Filter by status** | Active / expired / archived | P1 |
+| **Filter by difficulty** | Easy / medium / hard | P1 |
+| **Filter by topic** | Topic category within collection | P2 |
+| **Search by text** | Full-text search on question stem | P2 |
+| **Sort by columns** | Sort by difficulty, date, quality score | P1 |
+| **Question detail view** | Expand to see full question, options, explanation, source, quality score | P1 |
+| **Quality score badge** | Visual indicator of static quality score per question | P2 |
+| **Bulk actions** | Select multiple questions for archive/status change | P3 |
+| **Export** | CSV/JSON export of filtered results | P3 |
+
+**Key columns for list view:**
+- External ID
+- Question text (truncated)
+- Collection
+- Topic
+- Difficulty
+- Status
+- Expires at (if set)
+- Quality score (from TS-1)
+- Created date
+
+**UX pattern:** This is an internal dev/author tool. Use a data table component, not a fancy consumer UI. Something like a React Table or TanStack Table. Prioritize density and filterability over visual polish.
+
+### TS-3: Question Detail Inspector
+
+**What:** A detail view for a single question showing everything: the question as players see it, the correct answer highlighted, explanation, source link (clickable to verify), quality rule results, and (eventually) telemetry data.
+**Why expected:** Content authors need to assess questions holistically. Seeing a question in a table row does not convey whether it "feels right." A detail view lets a reviewer quickly decide "this is good" or "this needs work."
+**Complexity:** LOW-MEDIUM
+**Dependencies:** TS-2 (explorer), TS-1 (quality rules)
+**Notes:**
+
+**Detail view sections:**
+1. **Preview** -- Render the question as it appears in-game (stem, 4 options, correct answer highlighted)
+2. **Metadata** -- Collection, topic, difficulty, status, external ID, created/updated dates, expiration
+3. **Quality assessment** -- Score, list of rule violations/warnings with severity
+4. **Source verification** -- Source name, clickable URL, last-verified date (future)
+5. **Learning content** -- If present, show paragraphs and per-option corrections
+6. **Telemetry** (future) -- Correct rate, distractor selection distribution, skip rate
+
+### TS-4: Collection Health Dashboard (Enhanced)
+
+**What:** Expansion of the existing collection health concept (D-2 from prior research) to include quality distribution, not just expiration counts.
+**Why expected:** Knowing "you have 100 active questions" is incomplete. Knowing "you have 100 active questions, 15 have quality warnings, and 8 have no learning content" is actionable.
+**Complexity:** LOW-MEDIUM
+**Dependencies:** TS-1 (quality rules), existing collection/question schema
+**Notes:**
+
+**Health metrics per collection:**
+
+| Metric | Why It Matters |
+|--------|---------------|
+| Total / active / expired / archived counts | Basic inventory |
+| Difficulty distribution (easy/medium/hard %) | Balance check against 40/40/20 target |
+| Questions with quality warnings | Content maintenance backlog |
+| Questions with quality violations (score < threshold) | Urgent fixes needed |
+| Questions without learning content | Completeness gap |
+| Questions expiring in 30/60/90 days | Upcoming content needs |
+| Average quality score | Overall collection health indicator |
+| Topic coverage distribution | Identify over/under-represented topics |
 
 ---
 
 ## Differentiators
 
-Features that set this product apart from generic trivia apps. Not expected, but create real value for civic education.
+Features that go beyond basic content management and create real quality advantages.
 
-### D-1: Time-Sensitive Question Expiration
+### D-1: Content Telemetry System (Empirical Quality)
 
-**What:** Questions that reference current officeholders, recent events, or time-bound facts have an `expiresAt` date. Expired questions are automatically excluded from the active pool.
-**Why valuable:** This is THE differentiator for local civic trivia. "Who is the current mayor of Bloomington?" is compelling today but actively harmful if the answer is wrong after the next election. Generic trivia platforms do not solve this because their content is evergreen. Civic education platforms MUST solve this.
-**Complexity:** MEDIUM
-**Dependencies:** Question data model extension, scheduled validation
+**What:** Track per-question gameplay metrics to measure empirical quality: how hard is it actually (not just the author's label), how well do distractors work, and how engaging is it.
+**Why valuable:** This is the gap between "we think this is a good question" and "data shows this is a good question." Classical Test Theory (CTT) provides the framework -- it has been used in educational assessment for decades. The key metrics map directly to question quality:
+
+**Core metrics (from CTT item analysis):**
+
+| Metric | Definition | What It Tells You | Good Range |
+|--------|-----------|-------------------|------------|
+| **P-value (difficulty index)** | % of players who answer correctly | Actual difficulty | 0.30 - 0.90 (too low = too hard, too high = too easy) |
+| **Discrimination index** | Correlation between getting this question right and overall game score | Whether the question separates skilled from unskilled players | > 0.20 (below = poor discriminator) |
+| **Distractor selection rate** | % choosing each wrong answer | Whether distractors are plausible | Each distractor > 5% (below = non-functioning distractor) |
+| **Skip/timeout rate** | % of players who run out of time | Whether the question is confusing or too long | < 15% (above = question may be unclear) |
+| **Response time distribution** | Average time to answer | Cognitive load indicator | Varies by difficulty |
+
+**Complexity:** MEDIUM-HIGH
+**Dependencies:** Game session data (already captured in sessions), new analytics table(s)
 **Notes:**
 
-**Data model addition:**
-```typescript
-type Question = {
-  // ... existing fields
-  collectionId: string;
-  expiresAt?: string;        // ISO date, optional (null = evergreen)
-  effectiveAt?: string;       // ISO date, optional (null = always active)
-  temporalNote?: string;      // "As of January 2026 election"
-};
+The existing game flow already records which answers players select and timing data (the plausibility threshold system in `plausibilityThresholds.ts` proves timing is tracked). The missing piece is aggregation: storing per-question tallies that accumulate over many game sessions.
+
+**Implementation approach:** After each game session completes, write per-question outcome records (question_id, selected_option, correct, response_time_ms) to an analytics table. A periodic aggregation job (or materialized view) computes the CTT metrics. The admin detail view (TS-3) displays them.
+
+**Data volume consideration:** At 320 questions and moderate play volume, this is small data. No need for a separate analytics database. PostgreSQL handles this easily with proper indexing.
+
+**Confidence:** HIGH for the metrics (well-established in psychometrics literature). MEDIUM for implementation approach (depends on how game session data is currently stored and what is already captured).
+
+### D-2: Difficulty Calibration Feedback Loop
+
+**What:** Use empirical P-values to flag questions whose actual difficulty diverges from their labeled difficulty. A question labeled "easy" that only 20% of players get right is miscalibrated.
+**Why valuable:** Difficulty labels drive the game's progression feel (Q1=easy, Q10=hard). If labels are wrong, the difficulty curve feels random. Calibration flags surface the worst offenders for relabeling.
+**Complexity:** LOW (once D-1 exists)
+**Dependencies:** D-1 (telemetry system)
+**Notes:**
+
+**Calibration rules:**
+
+| Labeled | Expected P-value | Flag If |
+|---------|-----------------|---------|
+| Easy | 0.70 - 0.95 | P < 0.50 (too hard for "easy") |
+| Medium | 0.40 - 0.70 | P < 0.25 or P > 0.85 |
+| Hard | 0.20 - 0.50 | P > 0.70 (too easy for "hard") |
+
+Show these as amber/red flags in the admin question detail and in the collection health dashboard. Do NOT auto-relabel -- a human should decide if the label is wrong or if the question needs rewriting.
+
+### D-3: AI Content Pipeline with Quality Gates
+
+**What:** Enhance the existing AI generation pipeline (`generate-locale-questions.ts`) to run quality rules (TS-1) as a post-generation validation step, rejecting or flagging questions that fail quality checks before they reach the database.
+**Why valuable:** The current pipeline validates structural correctness via Zod but does not check semantic quality. The QUEST framework research (Springer, 2025) found that LLM-generated MCQs commonly have weak distractors that can be eliminated through simple logic. Catching these automatically reduces the human review burden.
+**Complexity:** MEDIUM
+**Dependencies:** TS-1 (quality rules engine), existing generation pipeline
+**Notes:**
+
+**Proposed pipeline stages:**
+
+```
+1. AI Generation (existing)
+   |
+2. Structural Validation (existing Zod schema)
+   |
+3. Quality Rules Check (NEW - TS-1 rules engine)
+   |-- PASS (score >= threshold) --> 4. Database insert as 'draft'
+   |-- WARN (score borderline) ----> 4. Insert as 'draft' with quality_warnings flag
+   |-- FAIL (critical violations) -> Log and skip (or retry with feedback)
+   |
+4. Human Review Queue
+   |-- Approve --> status: 'active'
+   |-- Reject  --> status: 'archived' with reason
+   |-- Edit    --> modify and re-run quality check
 ```
 
-**Expiration patterns observed in content platforms (MEDIUM confidence):**
-- **Hard expiration:** Question removed from pool entirely after date. Simple, safe. Recommended for MVP.
-- **Soft expiration:** Question flagged for review but stays in pool. Risky -- stale content is worse than missing content.
-- **Scheduled replacement:** New version of question auto-activates when old expires. Elegant but complex.
+**Retry with feedback (advanced):** When a question fails quality checks, include the violation in a follow-up prompt to the LLM asking it to fix the specific issue. The QUEST framework research shows iterative refinement (generate -> assess -> revise) significantly improves quality. This is a natural extension of the existing multi-turn conversation capability but adds API cost.
 
-**Recommendation:** Hard expiration for MVP. Backend filters `expiresAt < now()` questions at load time. Content authors set expiration when creating time-sensitive questions. A weekly content health check (even manual) flags collections dropping below minimum size due to expirations.
+**Recommendation:** Start with gate-and-flag (stages 1-4 without retry). Add iterative refinement as an optional `--refine` flag on the generation script if initial rejection rates are high.
 
-**Content guidance for authors:**
-| Content type | Expiration | Example |
-|-------------|------------|---------|
-| Historical facts | Never expires | "When was Indiana admitted to the Union?" |
-| Structural facts | Rare expiration | "How many city council districts?" (changes with redistricting) |
-| Current officeholders | Next election + buffer | "Who is the current mayor?" (set to 1 month after election) |
-| Recent events | 6-12 months | "What was the 2025 city budget?" |
-| Policy questions | Review annually | "What is the current sales tax rate?" |
+### D-4: Human Review Workflow
 
-### D-2: Collection Health Dashboard (Admin)
-
-**What:** A simple view showing each collection's health: total questions, active questions, expiring-soon questions, below-minimum warnings.
-**Why valuable:** Community collections maintained by volunteers need visibility into content health. Without this, collections silently degrade as questions expire.
-**Complexity:** LOW-MEDIUM
-**Dependencies:** D-1 (expiration), TS-3 (collection registry)
-**Notes:** This does not need to be a full admin panel. A JSON endpoint (`GET /admin/collections/health`) that returns counts is sufficient for MVP. A simple page can render it later. The key insight: content health monitoring is not optional for time-sensitive content -- it is infrastructure.
-
-**Health metrics per collection:**
-- Total questions (all states)
-- Active questions (not expired, within effective date)
-- Expiring within 30/60/90 days
-- Below minimum threshold warning
-- Last content update date
-
-### D-3: Locale-Aware Collection Suggestions
-
-**What:** If the app can detect a user's approximate location (via IP geolocation or browser API), suggest their local collection first in the picker.
-**Why valuable:** A Bloomington resident opening the app should see "Bloomington, IN" prominently. This removes friction between "I want to learn about my city" and "I found the right collection."
+**What:** A structured review status on questions (draft -> review -> active / rejected) with the ability for reviewers to approve, reject with reason, or flag for revision in the admin UI.
+**Why valuable:** The generation pipeline currently seeds questions as "draft" status but there is no workflow to move them to active. The admin routes only handle expiration (renew/archive). A review workflow closes the gap between "AI generated it" and "a human verified it."
 **Complexity:** MEDIUM
-**Dependencies:** TS-1 (collection picker), geolocation mechanism
-**Notes:** This is a suggestion, not a restriction. All collections remain visible. IP-based geolocation is lightweight and does not require permission prompts (unlike browser Geolocation API). Accuracy to city level is sufficient. Many free/cheap IP geolocation APIs exist. For alpha with only 2 communities, even a simple prompt ("Are you in Bloomington or LA?") could work as a low-tech alternative.
+**Dependencies:** TS-2 (admin explorer), TS-3 (detail view)
+**Notes:**
 
-**Recommendation:** Defer to post-MVP. For alpha with 2 communities, manual selection is trivially easy. Invest in this when there are 10+ collections and discovery becomes a real problem.
+**Status lifecycle:**
 
-### D-4: Mixed Collection Mode ("Surprise Me")
+```
+draft --> in_review --> active
+  |          |            |
+  |          +-> rejected  +-> expired --> archived
+  |                              |
+  +------------------------------+-> archived
+```
 
-**What:** A play mode that draws questions from multiple collections, giving players exposure to civics beyond their own locale.
-**Why valuable:** Cross-community civic literacy. A Bloomington player learns something about LA governance and vice versa. Builds empathy across communities.
+**Review actions in admin UI:**
+- **Approve** -- Move to active (available for gameplay)
+- **Reject** -- Move to rejected with required reason text
+- **Flag** -- Keep in review, add a note for another reviewer
+- **Edit + Approve** -- For minor fixes (typo in explanation, adjust difficulty label)
+
+**Important:** Keep this lightweight. This is a dev tool for a small team, not an enterprise workflow engine. No approval chains, no role-based permissions (everyone with admin access can review), no email notifications. Just status transitions with timestamps and optional notes.
+
+### D-5: Source URL Verification
+
+**What:** Automated or semi-automated checking that question source URLs are still accessible and return relevant content.
+**Why valuable:** Source URLs rot. Government websites reorganize. A question citing `bloomington.in.gov/city-council` that now 404s undermines trust. The existing RAG pipeline (`fetch-sources.ts`) already has URL fetching infrastructure that could be repurposed.
 **Complexity:** LOW-MEDIUM
-**Dependencies:** TS-2 (collection-scoped loading)
-**Notes:** Implementation: draw N questions from each of M collections (e.g., 4 federal + 3 local + 3 other locale). Requires at least 3 active collections to be meaningful. Label questions with their collection origin during gameplay so players know the context.
+**Dependencies:** Existing source URL field on questions
+**Notes:**
 
-**Recommendation:** Defer to post-alpha. Focus on getting individual collections right first. This is a nice engagement feature once there is enough content diversity.
+**Two levels:**
+1. **Link check** (automated, run weekly) -- HTTP HEAD request. Flag 404s, 301s (redirects), and timeouts. LOW complexity.
+2. **Content check** (semi-automated, run on demand) -- Fetch page, check if key terms from the question/explanation appear. MEDIUM complexity, builds on existing `fetch-sources.ts` cheerio parsing.
 
-### D-5: Community Contributor Attribution
+**Recommendation:** Start with link checks only. Display last-checked date and status in the question detail view (TS-3). A cron job runs weekly, similar to the existing `expirationSweep.ts` pattern.
 
-**What:** Questions can optionally credit the community member who contributed or reviewed them.
-**Why valuable:** Volunteer motivation. People contribute more when they get credit. Builds community ownership of the content.
-**Complexity:** LOW
-**Dependencies:** Question data model extension
-**Notes:** Add optional `contributor` field to question: `{ name: string, role: "author" | "reviewer" }`. Display on learn-more modal, not during active gameplay (would be distracting). Low effort, high community value.
+### D-6: Quality Score Trend Tracking
 
-### D-6: Per-Collection Topic Categories
-
-**What:** Each collection defines its own set of topic categories relevant to its scope, rather than using a single global enum.
-**Why valuable:** Federal categories (congress, judiciary, amendments) do not apply to local collections. Bloomington needs categories like "city-council", "county-government", "public-safety", "parks-and-rec", "budget". LA needs "city-departments", "county-supervisors", "transportation", "water-and-power".
-**Complexity:** MEDIUM
-**Dependencies:** TS-4 (question tagging), TopicIcon component refactor
-**Notes:** The current `TopicCategory` is a hardcoded TypeScript enum with 9 federal-specific values and matching SVG icons. This needs to become collection-scoped.
-
-**Two approaches:**
-1. **Global expanded enum:** Add all categories from all collections to one big enum. Simple but does not scale -- every new community adds to the global type.
-2. **Collection-defined categories:** Each collection metadata includes its valid topic categories and labels. Questions reference their collection's categories. More flexible, scales to N communities.
-
-**Recommendation:** Approach 2 (collection-defined categories). The TopicCategory type becomes a string (not enum), and each collection's metadata defines the valid values, display labels, and icon mappings. This scales cleanly as communities are added.
+**What:** Track how a collection's overall quality metrics change over time as questions are added, reviewed, and receive gameplay data.
+**Why valuable:** Answers "is our content getting better?" Without trends, you only see a snapshot. With trends, you can see if new AI-generated batches are improving or degrading average quality.
+**Complexity:** LOW (once D-1 and TS-1 exist)
+**Dependencies:** D-1 (telemetry), TS-1 (quality rules), TS-4 (health dashboard)
+**Notes:** Store periodic snapshots of collection health metrics (daily or weekly). Display as a simple line chart on the collection health dashboard. Not a priority for initial implementation but trivial to add once the data infrastructure exists.
 
 ---
 
 ## Anti-Features
 
-Features to explicitly NOT build. Common in this domain but wrong for this project.
+Features to explicitly NOT build. These are common in content management platforms but wrong for this project's scale and philosophy.
 
-### AF-1: User-Generated Questions (Open Submission)
+### AF-1: Full CMS with Inline Question Editing
 
-**What:** Letting any user submit questions directly through the app.
-**Why avoid:** Quality control nightmare. The project context emphasizes "AI-generated starting batches, human-reviewed, volunteers refine over time." Open submission without review creates a moderation burden that volunteer-run communities cannot sustain. Bad questions (factually wrong, politically biased, poorly worded) damage trust in an educational product.
-**What to do instead:** Controlled content pipeline: AI generates draft -> designated reviewers approve -> questions enter pool. A "Suggest a question" form (text only, not direct-to-pool) is fine for gathering ideas.
+**What:** Edit question text, options, explanations, and metadata directly in the admin web UI.
+**Why avoid:** Questions live in the database, seeded from AI generation scripts. The source of truth for content creation is the generation pipeline, not a web form. Adding web-based editing creates two paths to modify content (UI and scripts), leading to inconsistency. At 320 questions across 3 collections, the team does not need a WordPress-style editor.
+**What to do instead:** The admin UI is read-only for question content. Status changes (approve, reject, archive) are the only write operations. Content corrections go through the generation pipeline or direct database scripts with proper review.
 
-### AF-2: Real-Time Collaborative Editing
+### AF-2: Real-Time Analytics Dashboard
 
-**What:** Google Docs-style simultaneous editing of question content by multiple contributors.
-**Why avoid:** Massive engineering complexity for minimal benefit. Question editing is low-frequency, low-concurrency work. Two volunteers will not be editing the same question at the same time.
-**What to do instead:** Simple review workflow. One person edits, another reviews. Version the question files in git. Use pull request workflow for content changes.
+**What:** Live-updating charts showing player engagement, question performance, and collection metrics updating in real-time.
+**Why avoid:** Real-time adds WebSocket complexity for data that changes slowly. Question telemetry aggregates are meaningful over days and weeks, not seconds. No content author needs to watch a P-value change in real-time.
+**What to do instead:** Batch-computed analytics refreshed daily (or on-demand via admin button). Static charts that load the latest computed data. This is orders of magnitude simpler and provides the same value.
 
-### AF-3: Dynamic Difficulty Adjustment Per Collection
+### AF-3: A/B Testing for Question Variants
 
-**What:** Automatically adjusting question difficulty based on player performance within a specific collection.
-**Why avoid:** Premature optimization. With approximately 120 questions per collection and 3 difficulty levels, the existing random-10-from-pool approach provides natural variety. Adaptive difficulty requires significant analytics infrastructure and can feel patronizing in an educational context.
-**What to do instead:** Maintain the existing easy/medium/hard distribution in question authoring. Ensure each collection has a healthy mix (roughly 30% easy, 50% medium, 20% hard).
+**What:** Show different versions of the same question to different players to test which wording performs better.
+**Why avoid:** Requires session-level experiment tracking, variant management, statistical significance calculations, and careful question pool management to avoid showing both variants to the same player. Massive complexity for a product with 320 questions. This is a feature for platforms with millions of users, not hundreds.
+**What to do instead:** Use telemetry data (D-1) to identify poorly performing questions. Rewrite them based on the data. Test the rewrite by deploying it and checking the next batch of telemetry.
 
-### AF-4: Collection Subscriptions / Notifications
+### AF-4: AI Auto-Improvement of Questions
 
-**What:** Push notifications when new questions are added to a collection or when content is updated.
-**Why avoid:** Over-engineering engagement mechanics for a civic education tool. The "no dark patterns" philosophy applies here -- notification-driven engagement is a dark pattern in educational contexts.
-**What to do instead:** Show "New questions added!" badges on collection cards when content has been updated since the player's last session. Pull, not push.
+**What:** Automatically feed telemetry data back into an LLM to rewrite underperforming questions without human review.
+**Why avoid:** Removes human judgment from civic education content. A question about who the mayor is cannot be "improved" by an LLM if the answer changed -- it needs a human who knows the current political landscape. Auto-modification of educational content without review is an anti-pattern for trust.
+**What to do instead:** AI can SUGGEST improvements (e.g., "This question has a non-functioning distractor. Consider replacing Option C."). Humans decide whether to accept. This is the "copilot not autopilot" pattern.
 
-### AF-5: Nested Collection Hierarchies
+### AF-5: Complex Role-Based Access Control
 
-**What:** Collections within collections (e.g., Bloomington -> City Council -> Districts -> District 1).
-**Why avoid:** Adds navigation complexity without proportional value. At the current scale (3 collections), hierarchy is nonsensical. Even at 20 collections, a flat list with search/filter is simpler and more effective than tree navigation.
-**What to do instead:** Flat collection list. Use tags/filters if the list grows beyond approximately 10 (e.g., filter by state, filter by city size). Topic categories within a collection already provide internal structure.
+**What:** Multiple admin roles (content author, reviewer, editor-in-chief, super-admin) with different permission levels.
+**Why avoid:** The team is small. Everyone who has admin access should be able to do everything. RBAC adds complexity to every admin endpoint and UI component. Premature for a team of 1-5 content contributors.
+**What to do instead:** Single admin role. If the team grows to need role separation, add it then. The existing JWT auth with `authenticateToken` middleware is sufficient.
 
-### AF-6: Cross-Collection Leaderboards
+### AF-6: Question Difficulty Prediction via ML
 
-**What:** Global leaderboards comparing scores across different collections.
-**Why avoid:** Collections have different difficulty levels and question pools. Comparing a federal score to a Bloomington score is meaningless and creates perverse incentives (players avoid harder collections to protect rankings).
-**What to do instead:** Per-collection statistics on the player's profile. "You've played Federal 12 times, Bloomington 5 times." Encourage breadth without competitive comparison.
+**What:** Train a machine learning model on question features (word count, topic, readability score) to predict difficulty before gameplay data exists.
+**Why avoid:** Requires training data you do not have yet. The author's difficulty label plus the quality rules heuristics (TS-1) are sufficient for initial calibration. Once enough gameplay data accumulates (D-1), empirical difficulty is more reliable than any prediction model.
+**What to do instead:** Author labels difficulty at creation. Quality rules flag obvious mismatches (easy question with complex vocabulary). Telemetry eventually provides ground truth. Relabel manually when data shows miscalibration (D-2).
 
-### AF-7: Content Versioning / Question History
+### AF-7: Multi-Language Question Support
 
-**What:** Full version history for every question edit with diff viewing and rollback.
-**Why avoid:** Git already provides this. Questions live in JSON files in the repository. Git history IS the version history. Building a custom versioning system duplicates what git does better.
-**What to do instead:** Use git for content versioning. Document the content workflow: edit JSON -> commit -> deploy.
+**What:** Translating questions into Spanish, Mandarin, etc.
+**Why avoid:** Translation of civic education content requires domain expertise, not just language fluency. Legal terminology, government structure names, and civic concepts do not translate 1:1. This is a content strategy decision, not a feature decision, and it is premature.
+**What to do instead:** Focus on English-language content quality first. If multilingual becomes a goal, it deserves its own milestone with proper research into civic education translation patterns.
 
 ---
 
 ## Feature Dependencies
 
 ```
-TS-3 (Collection Registry)
+TS-1 (Quality Rules Engine) [FOUNDATION]
   |
-  +-- TS-5 (Default Federal Collection)
-  |
-  +-- TS-1 (Collection Picker Screen)
+  +-- TS-2 (Admin Question Explorer)
   |     |
-  |     +-- D-3 (Locale-Aware Suggestions) [DEFERRED]
-  |     +-- D-4 (Mixed Mode) [DEFERRED]
-  |
-  +-- TS-6 (Minimum Size Enforcement)
-
-TS-4 (Question Tagging)
-  |
-  +-- TS-2 (Collection-Scoped Loading)
+  |     +-- TS-3 (Question Detail Inspector)
+  |     |     |
+  |     |     +-- D-4 (Human Review Workflow)
+  |     |     +-- D-5 (Source URL Verification) [display in detail view]
   |     |
-  |     +-- D-1 (Expiration Dates)
+  |     +-- TS-4 (Collection Health Dashboard)
   |           |
-  |           +-- D-2 (Health Dashboard)
+  |           +-- D-6 (Quality Score Trends)
   |
-  +-- D-6 (Per-Collection Topic Categories)
+  +-- D-3 (AI Pipeline Quality Gates)
 
-Independent:
-  D-5 (Contributor Attribution) -- can be added to data model at any time
+D-1 (Content Telemetry) [INDEPENDENT - needs game session data]
+  |
+  +-- D-2 (Difficulty Calibration Feedback)
+  |
+  +-- TS-3 (enhanced with telemetry data display)
+  |
+  +-- TS-4 (enhanced with empirical metrics)
+  |
+  +-- D-6 (enhanced with telemetry trends)
+
+D-5 (Source URL Verification) [SEMI-INDEPENDENT - needs existing fetch infrastructure]
 ```
+
+### Dependency Notes
+
+- **TS-1 is the keystone.** Quality rules feed into the admin UI (display), the AI pipeline (gates), and the health dashboard (aggregates). Build this first.
+- **D-1 (telemetry) is independent of the admin UI.** It depends on game session data that already exists. Can be built in parallel with the admin UI.
+- **D-4 (review workflow) requires TS-2 and TS-3.** You need a place to see questions before you can review them.
+- **D-3 (pipeline gates) only requires TS-1.** It is a backend-only enhancement to existing scripts.
+
+---
+
+## Quality Rule Categories (Detailed Specification)
+
+These are the specific, actionable rule categories that should be codified in TS-1. Organized by what they catch.
+
+### Category 1: Stem Quality
+
+Rules about the question text itself.
+
+| Rule ID | Rule | Severity | Check Type | Rationale |
+|---------|------|----------|------------|-----------|
+| SQ-01 | Ends with question mark | ERROR | Regex | Non-questions confuse players |
+| SQ-02 | No negative phrasing ("NOT", "EXCEPT", "NEVER") | WARNING | Keyword | Negatives test reading comprehension, not knowledge |
+| SQ-03 | Length between 15-200 characters | WARNING | Length | Too short = vague; too long = reading test |
+| SQ-04 | No "fill in the blank" style | WARNING | Regex (`___`) | Incomplete stems are harder to parse |
+| SQ-05 | No leading articles that give away answer | WARNING | Heuristic | "An ____" reveals answer starts with vowel |
+
+### Category 2: Distractor Quality
+
+Rules about the answer options.
+
+| Rule ID | Rule | Severity | Check Type | Rationale |
+|---------|------|----------|------------|-----------|
+| DQ-01 | Exactly 4 options | ERROR | Count | Already enforced by Zod, keep |
+| DQ-02 | No option is empty or whitespace-only | ERROR | Trim + length | Data integrity |
+| DQ-03 | No "All of the above" / "None of the above" | WARNING | Keyword | Item-writing anti-pattern |
+| DQ-04 | Options similar in length (max 3x ratio) | WARNING | Length comparison | Longest option is often correct (test-taking cue) |
+| DQ-05 | No duplicate options | ERROR | String comparison | Data integrity |
+| DQ-06 | Correct answer index is valid (0-3) | ERROR | Range check | Already enforced by Zod |
+| DQ-07 | Options should not all share a long common prefix | WARNING | String prefix | Indicates the prefix belongs in the stem |
+
+### Category 3: Civic Content Quality
+
+Rules specific to the civic education domain and the project's quality philosophy.
+
+| Rule ID | Rule | Severity | Check Type | Rationale |
+|---------|------|----------|------------|-----------|
+| CQ-01 | No partisan political terms | WARNING | Keyword list | Neutrality requirement |
+| CQ-02 | No phone numbers in stem or options | WARNING | Regex | "Dinner party test" -- not worth sharing |
+| CQ-03 | No street addresses in stem or options | WARNING | Regex | Lookup fact, not knowledge |
+| CQ-04 | No ZIP codes as answers | WARNING | Regex | Lookup fact |
+| CQ-05 | Explanation references source ("According to") | ERROR | Keyword | Already enforced by Zod |
+| CQ-06 | Source URL is HTTPS | WARNING | Regex | Authority signal |
+| CQ-07 | Source URL domain is .gov, .edu, or .us | INFO | Regex | Preferred civic sources |
+| CQ-08 | Time-sensitive keywords require expiresAt | WARNING | Keyword + null check | "current," "currently," "as of" without expiration |
+
+### Category 4: Difficulty Consistency
+
+Rules that flag potential difficulty label mismatches.
+
+| Rule ID | Rule | Severity | Check Type | Rationale |
+|---------|------|----------|------------|-----------|
+| DC-01 | Easy questions: stem < 40 words | INFO | Word count | Easy should be quick to read |
+| DC-02 | Hard questions: stem > 15 words | INFO | Word count | Hard questions should require thought |
+| DC-03 | Easy questions: no multi-clause stems | INFO | Heuristic | Simple structure for simple questions |
+
+### Scoring Model
+
+Each question gets a quality score from 0-100:
+- Start at 100
+- ERROR violations: -25 each (question should not be published)
+- WARNING violations: -10 each (question needs review)
+- INFO violations: -3 each (suggestion, not blocking)
+
+**Thresholds:**
+- 80-100: GOOD (publishable)
+- 60-79: FAIR (review recommended)
+- 0-59: POOR (should not be published without fixes)
 
 ---
 
 ## MVP Recommendation
 
-### Must Have for Alpha Launch
+### Phase 1: Quality Foundation (Build First)
 
-1. **TS-3** Collection metadata registry (JSON config)
-2. **TS-5** Federal questions become "Federal" collection (migration)
-3. **TS-4** Add `collectionId` to question data model
-4. **TS-2** Backend accepts collection parameter in session creation
-5. **TS-1** Collection picker screen replacing bare "Quick Play"
-6. **TS-6** Minimum collection size enforcement (floor: 30)
-7. **D-1** Expiration dates on time-sensitive questions
-8. **D-6** Per-collection topic categories (replacing hardcoded enum)
+1. **TS-1** Quality rules engine -- The foundation everything depends on
+2. **D-3** AI pipeline quality gates -- Immediate value on next content generation run
 
-### Should Have (Alpha Quality of Life)
+### Phase 2: Admin Visibility
 
-9. **D-5** Contributor attribution field in data model (low cost to add now)
-10. **D-2** Collection health endpoint (needed for content maintenance)
+3. **TS-2** Admin question explorer -- Browse and filter all content
+4. **TS-3** Question detail inspector -- Deep-dive on individual questions
+5. **TS-4** Collection health dashboard -- Collection-level quality view
 
-### Defer to Post-Alpha
+### Phase 3: Workflow and Telemetry
 
-- **D-3** Locale-aware suggestions (only 2-3 communities, manual selection is fine)
-- **D-4** Mixed collection mode (need more collections first)
-- All anti-features
+6. **D-4** Human review workflow -- Structured draft-to-active process
+7. **D-1** Content telemetry -- Start collecting gameplay data per question
+8. **D-5** Source URL verification -- Automated link checking
+
+### Phase 4: Feedback Loops (After Data Accumulates)
+
+9. **D-2** Difficulty calibration -- Requires telemetry data from D-1
+10. **D-6** Quality score trends -- Requires history from TS-1 + D-1
 
 ### Estimated Scope
 
 | Feature | Effort | Risk |
 |---------|--------|------|
-| TS-3 + TS-5 (registry + migration) | 1 day | Low |
-| TS-4 (data model extension) | 0.5 days | Low |
-| TS-2 (backend collection routing) | 1 day | Low |
-| TS-1 (picker UI) | 1-2 days | Low |
-| TS-6 (minimum enforcement) | 0.5 days | Low |
-| D-1 (expiration system) | 1-2 days | Medium -- content authoring guidance needed |
-| D-6 (per-collection categories) | 1-2 days | Medium -- TopicIcon refactor |
-| D-5 (attribution field) | 0.5 days | Low |
-| D-2 (health endpoint) | 0.5 days | Low |
-| **Content creation (2 collections)** | **5-10 days** | **HIGH -- this is the real bottleneck** |
+| TS-1 (quality rules) | 2-3 days | LOW -- rules are well-defined |
+| D-3 (pipeline gates) | 1-2 days | LOW -- extends existing pipeline |
+| TS-2 (explorer UI) | 3-4 days | MEDIUM -- new frontend surface |
+| TS-3 (detail view) | 1-2 days | LOW -- builds on TS-2 |
+| TS-4 (health dashboard) | 1-2 days | LOW -- aggregation queries |
+| D-4 (review workflow) | 2-3 days | LOW -- status transitions |
+| D-1 (telemetry) | 3-4 days | MEDIUM -- new data pipeline |
+| D-5 (source verification) | 1-2 days | LOW -- reuses fetch-sources |
+| D-2 (calibration) | 1 day | LOW -- once D-1 exists |
+| D-6 (trends) | 1 day | LOW -- once data exists |
 
-**Total technical work:** approximately 7-10 days
-**Content creation:** approximately 5-10 days (100-240 questions across 2 collections)
-**Content is the bottleneck, not code.**
+**Total: ~16-24 days of development work across 4 phases.**
 
 ---
 
-## Civic Education Specific Patterns
+## Competitor/Domain Feature Analysis
 
-### What Makes Civic Trivia Different from General Trivia
+| Feature | Moodle Question Bank | Kahoot | LiveLike Trivia CMS | Our Approach |
+|---------|---------------------|--------|---------------------|--------------|
+| Question browsing | Full bank with tag filters | Library search | CSV upload + manual entry | TS-2: Data table with multi-filter |
+| Quality scoring | Item analysis reports (post-exam) | None visible | None visible | TS-1: Static rules + D-1: empirical telemetry |
+| Content review | Teacher approval | Creator-only | Admin-only | D-4: Draft -> review -> active workflow |
+| Difficulty data | CTT statistics | None visible | None visible | D-1: P-value and discrimination index |
+| AI generation | Plugins available | AI question generation | GenAI option | D-3: Pipeline with quality gates |
+| Source verification | Not applicable | Not applicable | Not applicable | D-5: Automated link checks (civic-specific need) |
+| Distractor analysis | Point-biserial on each option | None | None | D-1: Per-distractor selection rates |
+| Bulk operations | Import/export, batch edit | Duplicate/share | CSV upload | TS-2: Bulk status changes |
 
-| Aspect | General Trivia | Civic Education Trivia |
-|--------|---------------|----------------------|
-| Content lifecycle | Evergreen (facts don't change) | Time-sensitive (officials change, budgets update) |
-| Source authority | Multiple valid sources | Official government sources required |
-| Political sensitivity | Low (entertainment) | High (perceived bias can destroy trust) |
-| Community ownership | Platform-owned content | Community-contributed, community-validated |
-| Engagement model | Competitive/entertainment | Learning-first, engagement second |
-| Locale relevance | Universal | Hyper-local (my city, my state) |
-
-### iCivics Content Organization (MEDIUM confidence)
-
-iCivics, the largest civic education game platform, organizes content by:
-- **Curricular units** (e.g., "State and Local Governments", "Constitution and Bill of Rights")
-- **Game type** (simulation games, not trivia per se)
-- **Grade level** (elementary, middle, high school)
-- **Standards alignment** (Common Core, state standards)
-
-Relevance: iCivics separates federal from state/local content into distinct curricular units, validating the collection-per-locale approach. They do NOT mix federal and local in the same game.
-
-### Political Neutrality in Question Authoring
-
-**Critical for civic education:** Questions must be factual, not partisan. "Who is the current mayor?" is factual. "Is the mayor doing a good job?" is partisan. Content review must explicitly check for bias. This is especially important for AI-generated content -- LLMs can embed subtle framing biases.
-
-**Content review checklist for civic questions:**
-- Is the answer verifiable from official government sources?
-- Does the question framing favor any political party or ideology?
-- Are all answer options plausible and respectful?
-- Is the explanation factual and neutral in tone?
-- For time-sensitive questions: is the expiration date set correctly?
+Key takeaway: Most trivia platforms do not invest in question quality tooling because their content is crowdsourced or disposable. Educational assessment platforms (Moodle, standardized testing) have deep quality tooling. This project sits in between -- it needs assessment-grade quality tools but at trivia-platform scale.
 
 ---
 
 ## Sources
 
-### Trivia Platform Patterns
-- [Open Trivia Database API](https://opentdb.com/api_config.php) -- Category-based question filtering, 23 categories with numeric IDs (HIGH confidence, official docs)
-- [Kahoot Question Bank](https://support.kahoot.com/hc/en-us/articles/16130620877971-How-to-use-Kahoot-question-bank) -- Keyword search across community questions, folder-based organization (MEDIUM confidence, official help docs)
-- [Trivia Game UX Case Study](https://medium.com/design-bootcamp/trivia-dive-intern-challenge-9bcefc186517) -- Category voting patterns in multiplayer trivia (LOW confidence, single blog)
-- [Open Trivia Database GitHub](https://github.com/el-cms/Open-trivia-database) -- JSON storage with category_id, tags array, language field (MEDIUM confidence)
+### Item Writing and Question Quality
+- [Haladyna et al. - MC Item Writing Guidelines](https://www.tandfonline.com/doi/abs/10.1207/S15324818AME1503_5) -- Foundational taxonomy of 31 item-writing rules organized by content, stem, and option categories (HIGH confidence, peer-reviewed)
+- [UF Pharmacy - MCQ Writing Checklist](https://cpe.pharmacy.ufl.edu/wordpress/files/2022/09/Checklist-for-Writing-MCQs.pdf) -- Practical checklist derived from Haladyna's taxonomy (HIGH confidence, academic institution)
+- [ACS MC Item Writing Guidelines](https://www.facs.org/for-medical-professionals/education/cme-resources/test-writing/) -- Medical education item-writing standards (HIGH confidence, professional organization)
 
-### Civic Education Platforms
-- [iCivics Platform](https://ed.icivics.org/) -- 20+ games organized by curricular unit, federal/state/local separation (HIGH confidence, official site)
-- [iCivics State and Local Governments](https://ed.icivics.org/curriculum/state-and-local-governments?page=1,1) -- Dedicated state/local curriculum track (HIGH confidence, official site)
-- [Education Commission of the States - Gamification and Civic Learning](https://www.ecs.org/using-gamification-to-enhance-civic-learning/) -- iCivics as leading example (MEDIUM confidence)
-- [Georgetown CERL - Gaming Civics](https://cerl.georgetown.edu/gaming-civics/) -- Academic research on civic education games (MEDIUM confidence)
+### Classical Test Theory and Item Analysis
+- [Assessment Systems - CTT Item Statistics](https://assess.com/item-statistics-classical-test-theory/) -- P-value, discrimination index definitions and thresholds (HIGH confidence, assessment industry)
+- [Assessment Systems - Distractor Analysis](https://assess.com/distractor-analysis-test-items/) -- Non-functioning distractor identification, point-biserial correlation (HIGH confidence)
+- [BYU - Item Analysis Basics](https://open.byu.edu/Assessment_Basics/item_analsyis) -- Educational assessment statistics reference (HIGH confidence, academic institution)
+- [PMC - Distractor Efficiency Impact](https://pmc.ncbi.nlm.nih.gov/articles/PMC11040895/) -- Empirical study on distractor efficiency, difficulty, and discrimination (HIGH confidence, peer-reviewed)
 
-### Content Lifecycle and Expiration
-- [Sensei LMS - Course Access Period](https://senseilms.com/documentation/course-access-expiration/) -- Hard/soft expiration patterns, notification timing (MEDIUM confidence, official docs)
-- [Frontify - Asset Lifecycle](https://help.frontify.com/en/articles/2224883-asset-lifecycle-and-notifications) -- "Available until" date pattern for time-sensitive content (MEDIUM confidence)
-- [Gameful Civic Engagement Literature Review](https://www.sciencedirect.com/science/article/pii/S0740624X19302606) -- Gamification linked to increased civic learning and engagement (HIGH confidence, peer-reviewed)
+### AI-Generated Question Quality
+- [QUEST Framework - Springer 2025](https://link.springer.com/chapter/10.1007/978-3-031-95627-0_20) -- Quality, Uniqueness, Effort, Structure, Transparency dimensions for evaluating LLM-generated MCQs (HIGH confidence, peer-reviewed)
+- [LLM-Generated Q&A Evaluation - AIED 2025](https://arxiv.org/abs/2505.06591) -- Student-centered study finding generated items exhibit strong discrimination and appropriate difficulty (MEDIUM confidence, preprint)
+- [AI-Generated Exam Quality Field Study](https://arxiv.org/html/2508.08314v1) -- Large-scale field evaluation of AI-generated assessment items (MEDIUM confidence, preprint)
 
-### Gamification for Government
-- [Harvard Data-Smart City Solutions](https://datasmart.hks.harvard.edu/news/article/boosting-engagement-by-gamifying-government-1122) -- Government gamification case studies (MEDIUM confidence)
-- [Swagsoft - Gamification for Government](https://www.swagsoft.com/post/gamification-for-government-enhancing-public-engagement) -- Gamified civic education apps teach about voting, government structures (LOW confidence)
+### Quiz/Trivia CMS Patterns
+- [LiveLike Trivia CMS Docs](https://docs.livelike.com/docs/trivia) -- CMS features: CSV upload, manual, GenAI creation; timer config; result customization (HIGH confidence, official docs)
+- [Moodle Question Bank Tag Filter](https://github.com/crs4/moodle.qbank-tag-filter) -- Tag-based filtering for question bank management (MEDIUM confidence, official plugin)
+
+### Item Response Theory
+- [Wikipedia - Item Response Theory](https://en.wikipedia.org/wiki/Item_response_theory) -- IRT fundamentals, 1PL/2PL/3PL models (HIGH confidence)
+- [Assessment Systems - IRT Difficulty Parameter](https://assess.com/irt-item-difficulty-parameter/) -- Difficulty parameter interpretation (HIGH confidence)
+- [Assessment Systems - IRT Discrimination Parameter](https://assess.com/irt-item-discrimination-parameter/) -- Discrimination parameter interpretation (HIGH confidence)
 
 ---
 
@@ -375,20 +509,20 @@ Relevance: iCivics separates federal from state/local content into distinct curr
 
 | Area | Confidence | Notes |
 |------|-----------|-------|
-| Collection picker UX patterns | HIGH | Consistent across all trivia platforms reviewed |
-| Collection data model | HIGH | Standard pattern (category ID on questions + metadata registry) |
-| Expiration system design | MEDIUM | Patterns borrowed from CMS/LMS platforms, not trivia-specific |
-| Minimum collection size | MEDIUM | Mathematical reasoning sound, but no trivia-specific benchmarks found |
-| Civic education patterns | MEDIUM | iCivics structure validated, but iCivics uses simulation games not trivia |
-| Content authoring workflow | LOW | No established patterns for volunteer-maintained civic trivia specifically |
+| Quality rule categories | HIGH | Well-established in item-writing literature (Haladyna), maps directly to project philosophy |
+| Admin UI feature set | HIGH | Standard CMS/data-table patterns; no novel UI problems |
+| CTT telemetry metrics | HIGH | Decades of psychometric research; well-defined formulas |
+| AI pipeline quality gates | MEDIUM-HIGH | QUEST framework is recent (2025) but well-supported; iterative refinement is newer |
+| Implementation complexity estimates | MEDIUM | Based on existing codebase structure; actual effort depends on team velocity |
+| Review workflow design | MEDIUM | Adapted from enterprise CMS patterns; may need simplification for small team |
 
 ## Research Gaps
 
-- **Content generation pipeline specifics:** How to efficiently generate and validate 100+ locale-specific civic questions using AI. The existing `generateLearningContent.ts` script provides a starting pattern but has not been tested for locale-specific content at scale.
-- **Volunteer contributor workflow:** No established patterns found for managing volunteer civic content contributors. This needs to be designed from scratch, informed by open-source project contribution models.
-- **Expiration notification timing:** When to alert content maintainers about expiring questions (30 days? 60 days?) -- no civic-specific guidance found. Recommendation: start with 60 days and adjust based on content maintenance velocity.
+- **Minimum gameplay sessions for reliable telemetry:** How many times must a question be played before P-value and discrimination index are statistically meaningful? CTT literature suggests 30+ responses per item for stable estimates, but civic trivia may have lower play volume. Needs investigation during D-1 implementation.
+- **Quality rule threshold tuning:** The scoring model (100-point scale, -25/-10/-3 penalties) is a starting proposal. Actual thresholds should be calibrated by running rules against the existing 320 questions and examining the distribution.
+- **Admin UI framework choice:** The research does not specify whether to use the existing frontend framework or a separate admin-only framework. This is a stack decision for the STACK.md research.
 
 ---
-*Research completed: 2026-02-18*
+*Research completed: 2026-02-19*
 *Researcher: GSD Project Researcher (Features dimension)*
 *Confidence: MEDIUM-HIGH overall*

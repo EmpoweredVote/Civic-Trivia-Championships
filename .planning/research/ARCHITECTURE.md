@@ -1,827 +1,674 @@
-# Architecture Research: v1.2 Community Question Collections
+# Architecture Research: v1.3 Admin UI, Telemetry, and Quality Tooling
 
-**Focus:** Integrating tag-based collections, collection picker, and question expiration into the existing Civic Trivia architecture
-**Researched:** 2026-02-18
-**Confidence:** HIGH (based on direct codebase analysis; no external library research needed)
+**Focus:** Integrating admin exploration UI, lightweight telemetry counters, and question quality rules into the existing Civic Trivia architecture
+**Researched:** 2026-02-19
+**Confidence:** HIGH (based on direct codebase analysis of all existing components)
 
 ## Executive Summary
 
-The current architecture loads all 120 questions from a single JSON file (`backend/src/data/questions.json`) at server startup, holds them in module-scope memory, and randomly selects 10 per game. Adding community collections requires three fundamental changes: (1) questions must move from JSON to PostgreSQL to support tagging, expiration, and dynamic querying; (2) the game start flow must accept a `collectionId` parameter that filters question selection; (3) a background process must check for expired questions. The existing session management (Redis), scoring, and plausibility systems require zero changes -- the collection choice only affects which questions enter a session.
+The v1.2 architecture already has scaffolding for all three features: an admin route (`/api/admin`) with question management endpoints, an admin page (`/admin`) with content review UI, and a questions table in PostgreSQL ready for new columns. The work is extension, not creation. Telemetry requires adding two integer columns (`encounter_count`, `correct_count`) to the `questions` table and incrementing them during answer submission. The admin UI needs expanded routes for browsing all questions (not just expired ones) and collection management. Quality rules are applied at generation time (scripts) and surfaced in the admin UI for human review -- they do not need a runtime enforcement engine.
 
-**Recommendation:** Migrate questions to PostgreSQL (Supabase, already in use), introduce a `collections` table and `question_tags` junction table, and modify the `POST /api/game/session` endpoint to accept an optional `collectionId`. The JSON file becomes a seed/migration source. This is a clean extension of the existing architecture with no rewrites required.
+**Critical finding:** The admin routes currently have NO authorization check. Any authenticated user can access `/api/admin/*`. The `ProtectedRoute` wrapper on the frontend only checks `isAuthenticated`, not role. Before shipping admin features, an `is_admin` column must be added to the `users` table with a corresponding middleware guard.
 
-## Current Question Architecture
+## Current Architecture Snapshot (Post-v1.2)
 
-### How Questions Flow Today
+### Existing Admin Infrastructure
 
 ```
-Startup (one-time):
-  questions.json ──readFileSync──> allQuestions[] (module scope in game.ts)
+Frontend:
+  App.tsx
+    └─ /admin route (ProtectedRoute wraps it -- auth only, no role check)
+        └─ Admin.tsx -- "Content Review" page
+            └─ useAdminQuestions hook
+                └─ Calls /api/admin/questions, /api/admin/questions/:id/renew, /archive
 
-Game Start (per request):
-  POST /api/game/session
-    │
-    ├─ If questionIds provided: lookup each in allQuestions[]
-    ├─ Else: shuffle(allQuestions).slice(0, 10)
-    │
-    ├─ sessionManager.createSession(userId, selectedQuestions)
-    │   └─ Stores full Question objects in Redis session
-    │
-    └─ Response: { sessionId, questions (stripped of correctAnswer) }
-
-During Game:
-  POST /api/game/answer
-    └─ Reads question from session.questions[] (Redis)
-        └─ No further access to allQuestions[]
-
-Results:
-  GET /api/game/results/:sessionId
-    └─ Reads from session.answers[] (Redis)
-        └─ No further access to allQuestions[]
+Backend:
+  server.ts
+    └─ app.use('/api/admin', adminRouter)   -- line 58
+        └─ routes/admin.ts
+            ├─ router.use(authenticateToken)  -- auth only, no role check
+            ├─ GET /questions?status=         -- list expired/expiring questions
+            ├─ POST /questions/:id/renew      -- renew expired question
+            └─ POST /questions/:id/archive    -- archive question
 ```
 
-**Key insight:** Once a session is created, questions are self-contained in the Redis session. Only the session creation step needs to know about collections.
+### Existing Game Flow (Telemetry Insertion Points)
 
-### Current Question Shape
-
-```typescript
-interface Question {
-  id: string;              // "q001"
-  text: string;
-  options: string[];       // Always 4
-  correctAnswer: number;   // 0-3
-  explanation: string;
-  difficulty: string;      // "easy" | "medium" | "hard"
-  topic: string;           // "Constitution", "Supreme Court", etc.
-  topicCategory: string;   // "bill-of-rights", "judiciary", etc.
-  learningContent?: {      // AI-generated educational content
-    topic: string;
-    paragraphs: string[];
-    corrections: Record<string, string>;
-    source: { name: string; url: string };
-  };
-}
+```
+POST /api/game/answer (routes/game.ts, line 169)
+  │
+  ├─ Validates session, question
+  ├─ sessionManager.submitAnswer()     -- scoring + plausibility
+  │     └─ Returns ServerAnswer with { questionId, selectedOption, basePoints, ... }
+  │
+  ├─ Gets question.correctAnswer from session
+  │
+  └─ Response: { basePoints, speedBonus, totalPoints, correct, correctAnswer }
+      └─ "correct" boolean is already computed -- THIS is where telemetry fires
 ```
 
-### Current Question Distribution
+### Existing Database Schema (questions table)
 
-| Topic Category | Count | Difficulty Spread |
-|---------------|-------|-------------------|
-| judiciary | 33 | Mixed |
-| federalism | 26 | Mixed |
-| congress | 17 | Mixed |
-| amendments | 15 | Mixed |
-| executive | 12 | Mixed |
-| bill-of-rights | 7 | Mixed |
-| elections | 4 | Mixed |
-| civic-participation | 3 | Mixed |
-| voting | 3 | Mixed |
-| **Total** | **120** | 35 easy, 40 medium, 45 hard |
+The `questions` table in `backend/src/db/schema.ts` has these columns:
+- `id` (serial PK), `externalId`, `text`, `options` (JSONB), `correctAnswer`
+- `explanation`, `difficulty`, `topicId`, `subcategory`
+- `source` (JSONB), `learningContent` (JSONB)
+- `expiresAt`, `status`, `expirationHistory` (JSONB)
+- `createdAt`, `updatedAt`
 
-## JSON-to-Database Migration Decision
+**Missing for v1.3:** `encounter_count` (integer), `correct_count` (integer)
 
-### Recommendation: Move Questions to PostgreSQL
+### Existing User Model
 
-**Verdict:** YES -- migrate questions from JSON to the existing Supabase PostgreSQL database.
+The `users` table (via `backend/src/models/User.ts`, raw SQL queries against `pool`) has:
+- `id`, `email`, `password_hash`, `name`
+- `total_xp`, `total_gems`, `games_played`, `best_score`
+- `total_correct`, `total_questions`
+- `avatar_url`, `timer_multiplier`
 
-**Rationale:**
+**Missing for v1.3:** `is_admin` (boolean, default false)
 
-| Concern | JSON File | PostgreSQL |
-|---------|-----------|------------|
-| Tag-based filtering | Requires loading all questions, filtering in-memory | SQL WHERE with JOIN on tags -- efficient, scalable |
-| Question expiration | Requires manual timestamp checks on every request | SQL WHERE `expires_at IS NULL OR expires_at > NOW()` |
-| Adding new questions | Requires redeployment (JSON is baked into build) | INSERT via admin API or migration script -- no deploy needed |
-| Collection queries | Load all, filter in JS | Index-backed queries, fast at any scale |
-| Content generation workflow | Generate JSON, merge, commit, deploy | Generate, INSERT, available immediately |
-| Current question count | 120 -- trivial either way | Scales to thousands without code changes |
-| Rollback risk | Zero -- keep JSON as seed file | Low -- seed from JSON if needed |
-
-**What stays the same:**
-- The JSON file remains as a seed/migration source
-- The `generateLearningContent.ts` and `applyContent.ts` scripts can be adapted to write to DB instead of JSON
-- Question shape is identical in the database (same fields, same types)
-- Redis sessions still store full Question objects (no change to session logic)
-
-**What NOT to do:**
-- Do NOT use a hybrid approach (some questions in JSON, some in DB) -- this creates query complexity and cache invalidation problems
-- Do NOT load all questions into memory at startup from DB -- use per-request queries with proper indexing
-
-## Target Architecture
+## Integration Architecture
 
 ### Component Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ Frontend                                                         │
-│                                                                  │
-│  Dashboard ──> CollectionPicker ──> GameScreen (unchanged)       │
-│       │              │                                           │
-│       │              └─ GET /api/collections                     │
-│       │                                                          │
-│       └─ POST /api/game/session { collectionId? }                │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│ Frontend                                                             │
+│                                                                      │
+│  EXISTING (modified):                                                │
+│    App.tsx         -- Add AdminRoute guard (checks user.isAdmin)     │
+│    Admin.tsx       -- Expand from content-review to full admin hub   │
+│    ProtectedRoute  -- UNCHANGED (AdminRoute is separate)             │
+│    types/auth.ts   -- Add isAdmin to User type                       │
+│    authStore.ts    -- UNCHANGED (User type update propagates)        │
+│                                                                      │
+│  NEW:                                                                │
+│    features/admin/components/QuestionExplorer.tsx                     │
+│    features/admin/components/QuestionDetail.tsx                       │
+│    features/admin/components/CollectionManager.tsx                    │
+│    features/admin/components/TelemetryBadge.tsx                      │
+│    features/admin/hooks/useAdminCollections.ts                       │
+│    features/admin/hooks/useQuestionDetail.ts                         │
+│    components/AdminRoute.tsx                                         │
+│                                                                      │
+│  UNCHANGED:                                                          │
+│    All game components (GameScreen, QuestionCard, AnswerGrid, etc.)  │
+│    Dashboard, Login, Signup, Profile pages                           │
+│    collections/ features                                             │
+│    gameReducer, useGameState, useKeyPress                            │
+└─────────────────────────────────────────────────────────────────────┘
                               │
                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ Backend                                                          │
-│                                                                  │
-│  game.ts routes (modified)                                       │
-│    ├─ POST /session: accepts collectionId, queries QuestionService│
-│    ├─ POST /answer: UNCHANGED                                    │
-│    └─ GET /results: UNCHANGED                                    │
-│                                                                  │
-│  NEW: collection.ts routes                                       │
-│    ├─ GET /api/collections: list available collections           │
-│    └─ GET /api/collections/:id: collection detail + question count│
-│                                                                  │
-│  NEW: QuestionService                                            │
-│    ├─ getRandomQuestions(collectionId?, count): Question[]        │
-│    ├─ getQuestionsByIds(ids): Question[]                         │
-│    └─ (replaces in-memory allQuestions[] array)                  │
-│                                                                  │
-│  NEW: CollectionService                                          │
-│    ├─ listCollections(): Collection[]                            │
-│    └─ getCollection(id): Collection                              │
-│                                                                  │
-│  NEW: ExpirationService                                          │
-│    └─ checkExpiredQuestions(): runs on interval or cron           │
-│                                                                  │
-│  SessionManager: UNCHANGED                                       │
-│  ScoreService: UNCHANGED                                         │
-│  ProgressionService: UNCHANGED                                   │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│ Backend                                                              │
+│                                                                      │
+│  EXISTING (modified):                                                │
+│    routes/admin.ts     -- Add CRUD endpoints, question explorer      │
+│    routes/game.ts      -- Add telemetry increment after answer       │
+│    middleware/auth.ts   -- Add requireAdmin middleware                │
+│    db/schema.ts        -- Add encounter_count, correct_count columns │
+│    models/User.ts      -- Add is_admin to queries                    │
+│    routes/auth.ts      -- Include isAdmin in JWT/login response      │
+│                                                                      │
+│  NEW:                                                                │
+│    services/telemetryService.ts   -- Async counter increment         │
+│    middleware/admin.ts             -- OR inline in auth.ts            │
+│                                                                      │
+│  UNCHANGED:                                                          │
+│    services/sessionService.ts     -- Session management              │
+│    services/scoreService.ts       -- Score calculation               │
+│    services/progressionService.ts -- XP/gems                         │
+│    services/questionService.ts    -- Question selection               │
+│    routes/health.ts, routes/profile.ts                               │
+│    cron/startCron.ts                                                  │
+└─────────────────────────────────────────────────────────────────────┘
                               │
                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ PostgreSQL (Supabase)                                            │
-│  civic_trivia schema                                             │
-│                                                                  │
-│  EXISTING: users                                                 │
-│  NEW: questions                                                  │
-│  NEW: collections                                                │
-│  NEW: question_tags (junction table)                             │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│ PostgreSQL (Supabase) -- civic_trivia schema                         │
+│                                                                      │
+│  MODIFIED:                                                           │
+│    questions -- ADD encounter_count INTEGER DEFAULT 0 NOT NULL        │
+│              -- ADD correct_count INTEGER DEFAULT 0 NOT NULL          │
+│                                                                      │
+│  MODIFIED:                                                           │
+│    users    -- ADD is_admin BOOLEAN DEFAULT FALSE NOT NULL            │
+│                                                                      │
+│  UNCHANGED:                                                          │
+│    collections, collection_questions, topics, collection_topics       │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Database Schema
+## Detailed Integration Points
+
+### 1. Admin Authorization (The Gap That Must Be Filled First)
+
+**Current state:** The admin route at `backend/src/routes/admin.ts` line 10 applies `authenticateToken` to all routes. This verifies the JWT is valid but does NOT check if the user is an admin. Any logged-in user can call `GET /api/admin/questions` or `POST /api/admin/questions/:id/archive`. On the frontend, `/admin` is wrapped by `ProtectedRoute` which only checks `isAuthenticated`.
+
+**Required changes:**
+
+1. **Database migration:** Add `is_admin` column to `users` table.
 
 ```sql
--- Questions table (migrated from JSON)
-CREATE TABLE IF NOT EXISTS questions (
-  id VARCHAR(20) PRIMARY KEY,           -- "q001", matches existing IDs
-  text TEXT NOT NULL,
-  options JSONB NOT NULL,               -- ["option1", "option2", "option3", "option4"]
-  correct_answer SMALLINT NOT NULL,     -- 0-3
-  explanation TEXT NOT NULL,
-  difficulty VARCHAR(10) NOT NULL,      -- "easy", "medium", "hard"
-  topic VARCHAR(100) NOT NULL,          -- "Constitution", "Supreme Court"
-  topic_category VARCHAR(50) NOT NULL,  -- "bill-of-rights", "judiciary"
-  learning_content JSONB,              -- Full learningContent object (nullable)
-  expires_at TIMESTAMPTZ,              -- NULL = never expires
-  is_active BOOLEAN DEFAULT TRUE,      -- Soft delete / manual disable
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
+ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT FALSE;
 
-  CONSTRAINT valid_difficulty CHECK (difficulty IN ('easy', 'medium', 'hard')),
-  CONSTRAINT valid_correct_answer CHECK (correct_answer BETWEEN 0 AND 3),
-  CONSTRAINT options_has_four CHECK (jsonb_array_length(options) = 4)
-);
-
--- Collections table
-CREATE TABLE IF NOT EXISTS collections (
-  id VARCHAR(50) PRIMARY KEY,           -- "general", "springfield-il", "dc-metro"
-  name VARCHAR(200) NOT NULL,           -- "Springfield, IL"
-  description TEXT,
-  locale VARCHAR(100),                  -- Geographic locale if community-specific
-  is_default BOOLEAN DEFAULT FALSE,     -- The "General Civics" collection
-  is_active BOOLEAN DEFAULT TRUE,
-  min_questions SMALLINT DEFAULT 10,    -- Minimum viable questions for a game
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Junction table: questions can belong to multiple collections
-CREATE TABLE IF NOT EXISTS question_tags (
-  question_id VARCHAR(20) NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-  collection_id VARCHAR(50) NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
-  added_at TIMESTAMPTZ DEFAULT NOW(),
-  PRIMARY KEY (question_id, collection_id)
-);
-
--- Indexes for the queries we will run
-CREATE INDEX idx_questions_active_unexpired
-  ON questions (is_active)
-  WHERE is_active = TRUE AND (expires_at IS NULL OR expires_at > NOW());
-
-CREATE INDEX idx_question_tags_collection
-  ON question_tags (collection_id);
-
-CREATE INDEX idx_question_tags_question
-  ON question_tags (question_id);
-
-CREATE INDEX idx_collections_active
-  ON collections (is_active) WHERE is_active = TRUE;
-
--- Trigger for updated_at on questions
-CREATE TRIGGER update_questions_updated_at
-  BEFORE UPDATE ON questions
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
--- Trigger for updated_at on collections
-CREATE TRIGGER update_collections_updated_at
-  BEFORE UPDATE ON collections
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+-- Promote a specific user (run manually or via seed)
+UPDATE users SET is_admin = TRUE WHERE email = '<admin-email>';
 ```
 
-**Design decisions:**
+2. **Backend middleware:** Add `requireAdmin` middleware in `backend/src/middleware/auth.ts`:
 
-1. **String IDs for collections** (`VARCHAR(50)`) rather than `SERIAL` -- allows meaningful slugs like `"springfield-il"` that are URL-friendly and human-readable. Collections are few and rarely created, so auto-increment adds no value.
+```typescript
+// Add to backend/src/middleware/auth.ts (after authenticateToken)
+export async function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  // authenticateToken must run first to set req.user
+  if (!req.user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
 
-2. **String IDs for questions** (`VARCHAR(20)`) -- matches existing `"q001"` format from JSON, ensures backward compatibility during migration.
+  // Query user's admin status
+  const user = await User.findById(req.user.userId);
+  if (!user || !user.isAdmin) {
+    res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
 
-3. **`options` as JSONB** -- the options array is always read as a whole and never queried individually. JSONB is simpler than a separate `question_options` table and matches the existing data shape.
+  next();
+}
+```
 
-4. **`learning_content` as JSONB** -- complex nested structure with paragraphs, corrections, and source. No need to normalize this; it is always read/written as a unit.
+3. **Apply to admin routes** in `backend/src/routes/admin.ts`:
 
-5. **`is_active` flag** -- soft delete for questions and collections. Allows disabling without data loss. The expiration service sets `is_active = false` when `expires_at` passes.
+```typescript
+// Change line 10 from:
+router.use(authenticateToken);
+// To:
+router.use(authenticateToken);
+router.use(requireAdmin);
+```
 
-6. **`min_questions` on collections** -- prevents starting a game with a collection that has fewer than 10 valid questions. The API can return this count to the frontend for UI decisions.
+4. **User model update** in `backend/src/models/User.ts` -- add `isAdmin` to all SELECT queries (add `is_admin as "isAdmin"` to the column list in `findByEmail`, `findById`, `getProfileStats`).
 
-### Key Query: Select 10 Random Questions for a Collection
+5. **Auth response update** -- include `isAdmin` in the login/refresh response so the frontend knows. Modify `backend/src/routes/auth.ts` to include it in the user object returned after login.
+
+6. **Frontend User type** in `frontend/src/types/auth.ts`:
+
+```typescript
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  isAdmin: boolean;  // NEW
+}
+```
+
+7. **Frontend AdminRoute guard** -- new component:
+
+```typescript
+// frontend/src/components/AdminRoute.tsx
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+
+export function AdminRoute() {
+  const { isAuthenticated, isLoading, user } = useAuthStore();
+
+  if (isLoading) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!user?.isAdmin) return <Navigate to="/dashboard" replace />;
+
+  return <Outlet />;
+}
+```
+
+8. **Route update** in `frontend/src/App.tsx`:
+
+```typescript
+// Change from:
+<Route element={<ProtectedRoute />}>
+  <Route path="/profile" element={<Profile />} />
+  <Route path="/admin" element={<Admin />} />
+</Route>
+
+// To:
+<Route element={<ProtectedRoute />}>
+  <Route path="/profile" element={<Profile />} />
+</Route>
+<Route element={<AdminRoute />}>
+  <Route path="/admin" element={<Admin />} />
+  <Route path="/admin/questions/:id" element={<QuestionDetail />} />
+</Route>
+```
+
+### 2. Telemetry Capture (encounter_count, correct_count)
+
+**Where it fires:** In `backend/src/routes/game.ts` at the `POST /answer` endpoint (line 169). After the answer is validated and scored, we know both `questionId` (the externalId) and whether the answer was correct.
+
+**Schema change:**
 
 ```sql
--- Get 10 random active, non-expired questions from a specific collection
-SELECT q.*
-FROM questions q
-JOIN question_tags qt ON q.id = qt.question_id
-WHERE qt.collection_id = $1
-  AND q.is_active = TRUE
-  AND (q.expires_at IS NULL OR q.expires_at > NOW())
-ORDER BY RANDOM()
-LIMIT 10;
+ALTER TABLE civic_trivia.questions
+  ADD COLUMN encounter_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE civic_trivia.questions
+  ADD COLUMN correct_count INTEGER NOT NULL DEFAULT 0;
 ```
 
-**For "Quick Play" (no collection selected):**
+Update `backend/src/db/schema.ts` to include:
 
-```sql
--- Default: pull from the default collection, or all active questions
-SELECT q.*
-FROM questions q
-JOIN question_tags qt ON q.id = qt.question_id
-JOIN collections c ON qt.collection_id = c.id
-WHERE c.is_default = TRUE
-  AND q.is_active = TRUE
-  AND (q.expires_at IS NULL OR q.expires_at > NOW())
-ORDER BY RANDOM()
-LIMIT 10;
+```typescript
+encounterCount: integer('encounter_count').notNull().default(0),
+correctCount: integer('correct_count').notNull().default(0),
 ```
 
-**Performance note:** `ORDER BY RANDOM()` is fine for tables under 10,000 rows. At 120-500 questions per collection, this is a non-issue. If collections grow to thousands, switch to `TABLESAMPLE` or a materialized sampling approach.
+**Telemetry service** -- a thin wrapper for fire-and-forget counter increment:
+
+```typescript
+// backend/src/services/telemetryService.ts
+import { db } from '../db/index.js';
+import { questions } from '../db/schema.js';
+import { eq, sql } from 'drizzle-orm';
+
+/**
+ * Increment encounter and optionally correct counters for a question.
+ * Fire-and-forget: errors are logged but never block the game flow.
+ */
+export async function recordQuestionOutcome(
+  externalId: string,
+  wasCorrect: boolean
+): Promise<void> {
+  try {
+    if (wasCorrect) {
+      await db.update(questions)
+        .set({
+          encounterCount: sql`${questions.encounterCount} + 1`,
+          correctCount: sql`${questions.correctCount} + 1`,
+        })
+        .where(eq(questions.externalId, externalId));
+    } else {
+      await db.update(questions)
+        .set({
+          encounterCount: sql`${questions.encounterCount} + 1`,
+        })
+        .where(eq(questions.externalId, externalId));
+    }
+  } catch (error) {
+    // Log but never throw -- telemetry must not break gameplay
+    console.error(`Telemetry write failed for ${externalId}:`, error);
+  }
+}
+```
+
+**Integration in game route** (`backend/src/routes/game.ts`, inside `POST /answer` handler, after scoring):
+
+```typescript
+// After line ~205 (after correctAnswer is determined)
+// Fire-and-forget telemetry -- do NOT await in the response path
+const isCorrect = clientAnswer.basePoints > 0 ||
+  (clientAnswer.wager !== undefined && clientAnswer.totalPoints > 0);
+recordQuestionOutcome(questionId, isCorrect);  // no await
+
+// Existing response unchanged
+res.status(200).json({ ... });
+```
+
+**Key design decisions:**
+
+- **Fire-and-forget:** The `recordQuestionOutcome` call is NOT awaited. Telemetry writes must never add latency to answer submission or block the game flow. If the DB write fails, it logs and the game continues.
+- **Atomic increment:** Uses `SET encounter_count = encounter_count + 1` (not read-then-write) to handle concurrent game sessions correctly.
+- **No batching needed:** At current scale (dozens of concurrent users, 10 questions per game), individual UPDATE statements are fine. Each UPDATE is ~1ms. If scale grows to thousands of concurrent sessions, batch writes using a queue.
+- **externalId as key:** The game flow uses `externalId` (e.g., "q001") as the question identifier in sessions. The telemetry service matches on `externalId`, not the serial `id`.
+
+### 3. Admin Question Explorer (Expanding the Existing Admin UI)
+
+**Current admin UI scope:** The existing `Admin.tsx` page shows only expired/expiring questions with renew/archive actions. The existing `useAdminQuestions` hook calls `GET /api/admin/questions?status=` which only returns questions matching expiration-related filters.
+
+**New scope:** A full question explorer that lets admins browse ALL questions with:
+- Filter by collection, topic, difficulty, status
+- View telemetry (encounter_count, correct_count, derived correct_rate)
+- Click through to question detail view
+- Edit question text, options, explanation
+
+**New backend endpoints** (added to `backend/src/routes/admin.ts`):
+
+| Endpoint | Purpose | Notes |
+|----------|---------|-------|
+| `GET /api/admin/questions/all` | Browse all questions with filters | Paginated, replaces `/questions` for explorer view |
+| `GET /api/admin/questions/:id` | Full question detail with telemetry | Returns all fields including counters |
+| `PUT /api/admin/questions/:id` | Edit question fields | Text, options, explanation, difficulty |
+| `GET /api/admin/collections` | List all collections (active + inactive) | With question counts |
+| `PUT /api/admin/collections/:id` | Edit collection metadata | Name, description, isActive |
+| `GET /api/admin/stats` | Dashboard summary stats | Total questions, avg correct rate, etc. |
+
+**Why `/api/admin/questions/all` instead of modifying existing `/api/admin/questions`:** The existing endpoint is specifically designed for expiration management (the `status` param filters by expired/expiring-soon/archived). The explorer endpoint has different filter semantics (collection, topic, difficulty) and needs pagination. Keeping them separate preserves backward compatibility and keeps each endpoint focused.
+
+**New frontend components:**
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `QuestionExplorer` | `features/admin/components/QuestionExplorer.tsx` | Table view with filters, pagination, telemetry columns |
+| `QuestionDetail` | `features/admin/components/QuestionDetail.tsx` | Full question view with edit form and telemetry chart |
+| `CollectionManager` | `features/admin/components/CollectionManager.tsx` | Collection list with toggle active/inactive |
+| `TelemetryBadge` | `features/admin/components/TelemetryBadge.tsx` | Reusable badge showing correct_rate with color coding |
+| `AdminNav` | `features/admin/components/AdminNav.tsx` | Tab navigation between Content Review, Explorer, Collections |
+
+**Admin page restructure** -- the existing `Admin.tsx` becomes a layout with tabs:
+
+```
+/admin              -- Admin hub with tab navigation
+  ├─ Content Review  (existing functionality, now a tab)
+  ├─ Question Explorer (new: browse all questions)
+  └─ Collections     (new: manage collections)
+
+/admin/questions/:id -- Question detail page (new route)
+```
+
+### 4. Quality Rules (Generation + Admin Review)
+
+Quality rules are NOT a runtime system. They are applied at two points:
+
+1. **Generation time:** Validation checks run in `backend/src/scripts/content-generation/` after AI generates questions. Rules like "minimum explanation length", "no duplicate options", "source URL required" are checked before INSERT.
+
+2. **Admin review:** The admin UI surfaces telemetry-derived quality signals (e.g., a question with 95% correct rate may be too easy; a question with 5% correct rate may be broken). Admins can then edit, archive, or flag questions.
+
+**No new runtime enforcement is needed.** Questions that pass generation validation and are inserted into the database are assumed valid for gameplay. The telemetry data informs post-hoc quality review.
+
+**Quality signals displayed in admin UI:**
+
+| Signal | Derivation | Threshold | Display |
+|--------|-----------|-----------|---------|
+| Correct rate | `correct_count / encounter_count` | < 15% = possibly broken, > 90% = possibly too easy | Color-coded badge |
+| Encounter count | `encounter_count` | < 10 = insufficient data | Gray "needs data" badge |
+| Staleness | `updatedAt` vs now | > 12 months = review suggested | Warning icon |
 
 ## Data Flow Changes
 
-### Before (v1.1): Game Start
+### Answer Submission (Modified)
 
 ```
-Client: POST /api/game/session {}
+Client: POST /api/game/answer { sessionId, questionId, selectedOption, timeRemaining }
   │
   ▼
-game.ts:
-  shuffle(allQuestions)     ← Module-scope array loaded at startup
-  .slice(0, 10)
+routes/game.ts POST /answer handler:
   │
-  ▼
-sessionManager.createSession(userId, selectedQuestions)
+  ├─ sessionManager.submitAnswer()          -- UNCHANGED
+  │     └─ Returns ServerAnswer
   │
-  ▼
-Redis: SET session:{id} { questions: [...], answers: [], ... }
+  ├─ Gets correctAnswer from session        -- UNCHANGED
   │
-  ▼
-Response: { sessionId, questions (sans correctAnswer) }
+  ├─ recordQuestionOutcome(questionId, isCorrect)   -- NEW (fire-and-forget)
+  │     └─ UPDATE questions SET encounter_count = encounter_count + 1,
+  │        correct_count = correct_count + (isCorrect ? 1 : 0)
+  │        WHERE external_id = questionId
+  │
+  └─ Response: { basePoints, speedBonus, totalPoints, correct, correctAnswer }
+                                             -- UNCHANGED
 ```
 
-### After (v1.2): Game Start
+### Admin Question Browse (New)
 
 ```
-Client: POST /api/game/session { collectionId?: "springfield-il" }
+Client: GET /api/admin/questions/all?collection=&topic=&difficulty=&page=1&limit=25
   │
   ▼
-game.ts:
-  const questions = await questionService.getRandomQuestions(
-    collectionId || null,   ← null means default collection
-    10
-  );
+routes/admin.ts:
+  ├─ authenticateToken   -- verify JWT
+  ├─ requireAdmin        -- verify is_admin = true
   │
-  ▼
-questionService (NEW):
-  SQL query against questions + question_tags tables
-  Returns Question[] with same shape as before
+  ├─ Query: SELECT q.*, t.name as topic_name,
+  │         ARRAY_AGG(c.name) as collection_names
+  │         FROM questions q
+  │         JOIN topics t ON q.topic_id = t.id
+  │         LEFT JOIN collection_questions cq ON q.id = cq.question_id
+  │         LEFT JOIN collections c ON cq.collection_id = c.id
+  │         WHERE [filters]
+  │         GROUP BY q.id, t.name
+  │         ORDER BY q.created_at DESC
+  │         LIMIT 25 OFFSET 0
   │
-  ▼
-sessionManager.createSession(userId, selectedQuestions)  ← UNCHANGED
-  │
-  ▼
-Redis: SET session:{id} { questions: [...], answers: [], ... }  ← UNCHANGED
-  │
-  ▼
-Response: { sessionId, questions (sans correctAnswer), collectionId }
+  └─ Response: {
+       questions: [{ ...question, topicName, collectionNames,
+                     encounterCount, correctCount, correctRate }],
+       total: 347,
+       page: 1,
+       pageSize: 25
+     }
 ```
 
-**Critical point:** Everything downstream of question selection is unchanged. The session stores full Question objects. The answer submission, scoring, plausibility detection, and results aggregation never need to know about collections.
+## Patterns to Follow
 
-### New Flow: Collection Listing
+### Pattern 1: Fire-and-Forget Telemetry
 
-```
-Client: GET /api/collections
-  │
-  ▼
-collection.ts route (NEW):
-  collectionService.listCollections()
-  │
-  ▼
-SQL:
-  SELECT c.*, COUNT(q.id) as question_count
-  FROM collections c
-  LEFT JOIN question_tags qt ON c.id = qt.collection_id
-  LEFT JOIN questions q ON qt.question_id = q.id
-    AND q.is_active = TRUE
-    AND (q.expires_at IS NULL OR q.expires_at > NOW())
-  WHERE c.is_active = TRUE
-  GROUP BY c.id
-  │
-  ▼
-Response: [
-  { id: "general", name: "General Civics", questionCount: 120, isDefault: true },
-  { id: "springfield-il", name: "Springfield, IL", questionCount: 52, isDefault: false },
-  ...
-]
-```
+**What:** Telemetry writes are dispatched without `await` in the request handler. Errors are caught internally and logged.
 
-### New Flow: Question Expiration
+**Why:** Answer submission latency must not increase. A failed counter increment should never cause a 500 error during gameplay. The telemetry data is statistical (approximate counts are fine) so occasional missed writes are acceptable.
 
-```
-On interval (every hour) or cron:
-  expirationService.checkExpiredQuestions()
-  │
-  ▼
-SQL:
-  UPDATE questions
-  SET is_active = FALSE, updated_at = NOW()
-  WHERE expires_at IS NOT NULL
-    AND expires_at <= NOW()
-    AND is_active = TRUE
-  RETURNING id, text, expires_at;
-  │
-  ▼
-  Log expired questions for review
-  (Future: notify admin via webhook/email)
-  │
-  ▼
-  Check collections that now have < min_questions active
-  (Future: alert to generate replacement content)
-```
+**Example:** See `recordQuestionOutcome` above. The function returns a Promise but the caller does not await it.
 
-## Integration Points: Existing Components
+### Pattern 2: Reuse Existing Auth + Add Role Layer
 
-### Modified Components
+**What:** Admin auth builds on top of the existing JWT + `authenticateToken` middleware. A new `requireAdmin` middleware chains after `authenticateToken` and checks the `is_admin` column.
 
-| Component | File | Change | Impact |
-|-----------|------|--------|--------|
-| Game routes | `backend/src/routes/game.ts` | Remove `allQuestions[]` module-scope load; use `QuestionService` instead | HIGH -- core question loading changes |
-| Game session creation | `backend/src/routes/game.ts` | Accept `collectionId` in POST /session body | LOW -- one parameter addition |
-| Question type | `backend/src/services/sessionService.ts` | No change to `Question` interface | NONE |
-| Frontend game service | `frontend/src/services/gameService.ts` | `createGameSession(collectionId?)` | LOW -- one parameter addition |
-| Frontend useGameState | `frontend/src/features/game/hooks/useGameState.ts` | Pass `collectionId` to `createGameSession` | LOW |
-| Frontend Dashboard | `frontend/src/pages/Dashboard.tsx` | Add collection picker before "Quick Play" | MEDIUM -- new UI element |
-| Frontend game types | `frontend/src/types/game.ts` | Add `Collection` type | LOW |
-| Content generation script | `backend/src/scripts/generateLearningContent.ts` | Read from DB instead of JSON | MEDIUM |
-| Content apply script | `backend/src/scripts/applyContent.ts` | Write to DB instead of JSON | MEDIUM |
+**Why:** Do not build a separate auth system. The existing JWT infrastructure works. Adding a boolean column and a middleware function is the minimal change. The admin flag is checked per-request (not cached in JWT) so revoking admin access takes effect immediately.
 
-### Unchanged Components
+**Alternative considered and rejected:** Encoding `isAdmin` in the JWT payload. This would avoid a DB query per admin request but means revoking admin access requires token invalidation. Since admin requests are low-frequency (human clicking around an admin panel), the per-request DB check is negligible.
 
-| Component | Why Unchanged |
-|-----------|---------------|
-| `SessionManager` | Sessions already store full Question objects; no awareness of collections needed |
-| `ScoreService` | Scoring is per-answer, independent of collection |
-| `ProgressionService` | XP/gem awards are per-game, independent of collection |
-| `Plausibility detection` | Per-answer timing analysis, independent of collection |
-| `Redis storage` | Session shape is unchanged; same TTL, same serialization |
-| `Auth middleware` | Authentication is orthogonal to collections |
-| `GameScreen`, `QuestionCard`, `AnswerGrid` | These render questions from session state; source is irrelevant |
-| `ResultsScreen` | Displays answers from session; no collection awareness needed |
-| `WagerScreen` | Wager logic operates on session score, independent of collection |
+### Pattern 3: Expand Existing Admin Routes, Don't Create a Separate Router
 
-### New Components
+**What:** New admin endpoints are added to the existing `backend/src/routes/admin.ts` file, mounted at `/api/admin`.
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| QuestionService | `backend/src/services/questionService.ts` | Query questions from PostgreSQL with collection/expiration filtering |
-| CollectionService | `backend/src/services/collectionService.ts` | CRUD operations for collections |
-| Collection routes | `backend/src/routes/collections.ts` | REST API for collection listing/detail |
-| ExpirationService | `backend/src/services/expirationService.ts` | Background job to deactivate expired questions |
-| Seed migration script | `backend/src/scripts/seedQuestions.ts` | One-time migration from JSON to PostgreSQL |
-| CollectionPicker | `frontend/src/features/game/components/CollectionPicker.tsx` | UI for selecting a collection before game start |
-| Collection store or hook | `frontend/src/store/collectionStore.ts` or hook | State management for available collections |
+**Why:** The router already exists, already has auth middleware applied via `router.use()`. Adding endpoints to it is simpler than creating a new router. The file is currently ~230 lines -- adding explorer and collection management endpoints will grow it to ~400-500 lines, which is still manageable for a single admin domain.
 
-## Architecture Patterns
+**If it gets too large:** Split into `routes/admin/questions.ts` and `routes/admin/collections.ts` with a barrel `routes/admin/index.ts`. But do this only if the file exceeds ~600 lines.
 
-### Pattern 1: Service Layer for Question Access
+### Pattern 4: Derived Metrics, Not Stored Metrics
 
-**What:** All question access goes through `QuestionService`, never direct DB queries in routes.
+**What:** `correct_rate` is computed as `correct_count / encounter_count` at query time, not stored as a column.
 
-**Why:** The current architecture has question loading directly in `game.ts` (`readFileSync` at module scope). This was fine for JSON but is not appropriate for database access. A service layer provides:
-- Single point of change for query logic
-- Testability (mock the service, not the DB)
-- Future caching layer insertion point
-
-```typescript
-// backend/src/services/questionService.ts
-export class QuestionService {
-  constructor(private pool: Pool) {}
-
-  async getRandomQuestions(collectionId: string | null, count: number): Promise<Question[]> {
-    if (collectionId) {
-      // Query with collection filter
-      const result = await this.pool.query(
-        `SELECT q.* FROM questions q
-         JOIN question_tags qt ON q.id = qt.question_id
-         WHERE qt.collection_id = $1
-           AND q.is_active = TRUE
-           AND (q.expires_at IS NULL OR q.expires_at > NOW())
-         ORDER BY RANDOM() LIMIT $2`,
-        [collectionId, count]
-      );
-      return result.rows.map(this.mapRowToQuestion);
-    } else {
-      // Default collection
-      const result = await this.pool.query(
-        `SELECT q.* FROM questions q
-         JOIN question_tags qt ON q.id = qt.question_id
-         JOIN collections c ON qt.collection_id = c.id
-         WHERE c.is_default = TRUE
-           AND q.is_active = TRUE
-           AND (q.expires_at IS NULL OR q.expires_at > NOW())
-         ORDER BY RANDOM() LIMIT $1`,
-        [count]
-      );
-      return result.rows.map(this.mapRowToQuestion);
-    }
-  }
-
-  async getQuestionsByIds(ids: string[]): Promise<Question[]> {
-    const result = await this.pool.query(
-      `SELECT * FROM questions WHERE id = ANY($1) AND is_active = TRUE`,
-      [ids]
-    );
-    return result.rows.map(this.mapRowToQuestion);
-  }
-
-  private mapRowToQuestion(row: any): Question {
-    return {
-      id: row.id,
-      text: row.text,
-      options: row.options,              // JSONB auto-parsed by pg driver
-      correctAnswer: row.correct_answer,
-      explanation: row.explanation,
-      difficulty: row.difficulty,
-      topic: row.topic,
-      topicCategory: row.topic_category,
-      learningContent: row.learning_content || undefined,
-    };
-  }
-}
-```
-
-### Pattern 2: Optional Parameter for Backward Compatibility
-
-**What:** `collectionId` is optional in POST /session. Omitting it uses the default collection.
-
-**Why:** Existing clients (and the current "Quick Play" button) continue to work without changes. The collection picker is additive UI, not a required step.
-
-```typescript
-// Modified game.ts POST /session handler
-router.post('/session', optionalAuth, async (req: Request, res: Response) => {
-  const { questionIds, collectionId } = req.body;  // collectionId is NEW, optional
-
-  let selectedQuestions: Question[];
-
-  if (questionIds && Array.isArray(questionIds)) {
-    // Explicit question IDs (existing behavior, kept for testing/admin)
-    selectedQuestions = await questionService.getQuestionsByIds(questionIds);
-  } else {
-    // Random selection from collection (or default)
-    selectedQuestions = await questionService.getRandomQuestions(
-      collectionId || null,
-      10
-    );
-  }
-
-  if (selectedQuestions.length < 10) {
-    return res.status(400).json({
-      error: `Not enough questions available${collectionId ? ` in collection "${collectionId}"` : ''}. Need 10, found ${selectedQuestions.length}.`
-    });
-  }
-
-  // Everything below is UNCHANGED
-  const userId = req.user?.userId ?? 'anonymous';
-  const sessionId = await sessionManager.createSession(userId, selectedQuestions);
-
-  res.status(201).json({
-    sessionId,
-    questions: stripAnswers(selectedQuestions),
-    degraded: storageFactory.isDegradedMode()
-  });
-});
-```
-
-### Pattern 3: Seed Migration with Idempotent Script
-
-**What:** A one-time script migrates all 120 questions from JSON to PostgreSQL, tags them with the "general" default collection.
-
-**Why:** Clean cutover from JSON to DB. The script is idempotent (uses INSERT ON CONFLICT DO NOTHING) so it can be re-run safely.
-
-```typescript
-// backend/src/scripts/seedQuestions.ts (sketch)
-async function seed() {
-  // 1. Create default collection
-  await pool.query(`
-    INSERT INTO collections (id, name, description, is_default)
-    VALUES ('general', 'General Civics', 'Core U.S. civics questions', TRUE)
-    ON CONFLICT (id) DO NOTHING
-  `);
-
-  // 2. Read JSON
-  const questions = JSON.parse(readFileSync('src/data/questions.json', 'utf-8'));
-
-  // 3. Insert each question
-  for (const q of questions) {
-    await pool.query(`
-      INSERT INTO questions (id, text, options, correct_answer, explanation,
-                            difficulty, topic, topic_category, learning_content)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      ON CONFLICT (id) DO NOTHING
-    `, [q.id, q.text, JSON.stringify(q.options), q.correctAnswer,
-        q.explanation, q.difficulty, q.topic, q.topicCategory,
-        q.learningContent ? JSON.stringify(q.learningContent) : null]);
-
-    // 4. Tag with default collection
-    await pool.query(`
-      INSERT INTO question_tags (question_id, collection_id)
-      VALUES ($1, 'general')
-      ON CONFLICT DO NOTHING
-    `, [q.id]);
-  }
-}
-```
+**Why:** Storing a derived value creates an update anomaly (must recompute every time either counter changes). The division is trivial for the database to compute. Use `CASE WHEN encounter_count > 0 THEN correct_count::float / encounter_count ELSE NULL END` in the SELECT.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Caching Questions in Memory After DB Migration
+### Anti-Pattern 1: Awaiting Telemetry in the Answer Path
 
-**What:** Loading all questions from DB into a module-scope array at startup (replicating the current JSON pattern).
+**What:** `await recordQuestionOutcome(...)` inside the POST /answer handler before sending the response.
 
-**Why bad:** Defeats the purpose of the migration. Cache invalidation becomes a problem when questions are added, expired, or tagged. The database query per game-start is fast enough (~5-15ms for 10 random rows from a few hundred).
+**Why bad:** Adds ~1-5ms DB round-trip to every answer submission. Over 10 questions per game, that is 10-50ms of added latency for purely analytical data. If the DB is slow or temporarily unreachable, answer submission would fail.
 
-**Instead:** Query the database per request via `QuestionService`. If performance becomes an issue later (unlikely at <10K questions), add a short TTL cache (e.g., 60s) at the service layer.
+**Instead:** Call without `await`. Let the Promise resolve in the background.
 
-### Anti-Pattern 2: Storing Collection ID in Redis Session
+### Anti-Pattern 2: Admin Role in JWT Claims
 
-**What:** Adding `collectionId` to the `GameSession` object stored in Redis.
+**What:** Adding `isAdmin: true` to the JWT payload at login time and checking it in middleware without a DB query.
 
-**Why bad:** Once questions are selected, the collection is irrelevant. Storing it adds data to every session for no operational purpose. The session already contains the actual Question objects.
+**Why bad:** If admin access is revoked, the user retains admin privileges until their JWT expires (could be hours). For a security-sensitive feature like admin access, stale authorization is unacceptable.
 
-**Instead:** The collection ID is a query-time filter, not a session attribute. If you need it for analytics, log it at session creation time, do not store it in the session.
+**Instead:** Check `is_admin` from the database on each admin request. The overhead is one simple query per admin page load, which is negligible.
 
-**Exception:** If results screen needs to display "You played: Springfield, IL", store just the collection name (not ID) as a display string in the session. This is a presentation concern, not a data model concern.
+### Anti-Pattern 3: Building a Real-Time Quality Enforcement Engine
 
-### Anti-Pattern 3: Duplicating Questions Across Collections
+**What:** Creating a system that automatically disables questions when their correct_rate falls below a threshold.
 
-**What:** Copying question rows when adding to a new collection.
+**Why bad:** Premature automation. Correct rate thresholds are subjective and context-dependent (a 10% correct rate on a "hard" question might be intentional). Automated disabling could remove valid questions, and reverting requires admin intervention anyway.
 
-**Why bad:** Data duplication leads to inconsistency (edit one copy, forget another). The tag-based junction table explicitly avoids this.
+**Instead:** Surface quality signals in the admin UI. Let humans decide. Automation can be added later when patterns are well-understood.
 
-**Instead:** One question row, many junction table rows. A question about the U.S. Constitution can be in "General Civics", "Springfield, IL", and "DC Metro" simultaneously via three `question_tags` rows.
+### Anti-Pattern 4: Separate Admin Frontend Application
 
-### Anti-Pattern 4: Complex Expiration with Soft States
+**What:** Building the admin UI as a separate React app, deployed to a different URL.
 
-**What:** Having multiple expiration states (warning, expired, archived) with different query behaviors.
+**Why bad:** Doubles build infrastructure, deployment config, and shared code management. The admin UI shares the same auth system, API client, and design tokens. A separate app would need to duplicate or package all of these.
 
-**Why bad:** Overengineering for the current scale. Two states are sufficient: active and inactive.
-
-**Instead:** Binary: `is_active = TRUE` or `is_active = FALSE`. The expiration service flips the flag. A human reviews and either deletes or updates the question. Keep it simple.
+**Instead:** Admin UI lives as protected routes within the existing React app, under `/admin/*`. This is already the established pattern (the existing `Admin.tsx` page is at `/admin`).
 
 ## Build Order (Dependency Graph)
 
-The following build order respects dependencies -- each step requires only previously completed steps.
+The following order respects dependencies and delivers testable increments.
 
-### Step 1: Database Schema + Seed Migration
+### Step 1: Admin Authorization
 
-**Depends on:** Nothing (foundational)
+**Depends on:** Nothing (foundational security gate)
 
-**Tasks:**
-1. Create `questions`, `collections`, `question_tags` tables in Supabase
-2. Write and run `seedQuestions.ts` to migrate 120 questions from JSON
-3. Create "General Civics" default collection
-4. Tag all 120 questions with "general"
-5. Verify data integrity: `SELECT COUNT(*) FROM questions` = 120
+**Files modified:**
+- `users` table -- add `is_admin` column (SQL migration)
+- `backend/src/models/User.ts` -- add `isAdmin` to all SELECT queries
+- `backend/src/middleware/auth.ts` -- add `requireAdmin` function
+- `backend/src/routes/admin.ts` -- add `router.use(requireAdmin)` after `authenticateToken`
+- `backend/src/routes/auth.ts` -- include `isAdmin` in login/refresh response
+- `frontend/src/types/auth.ts` -- add `isAdmin` to User interface
+- `frontend/src/components/AdminRoute.tsx` -- new file
+- `frontend/src/App.tsx` -- replace ProtectedRoute wrapper for /admin with AdminRoute
 
-**Validates:** Schema design, JSON-to-DB mapping, no data loss
+**Validates:** Only admin users can access admin features. Non-admin users get 403 on API and redirect on frontend.
 
-### Step 2: QuestionService + Route Integration
+### Step 2: Telemetry Schema + Capture
 
-**Depends on:** Step 1 (database must be populated)
+**Depends on:** Nothing (independent of admin auth, but naturally follows)
 
-**Tasks:**
-1. Create `QuestionService` with `getRandomQuestions()` and `getQuestionsByIds()`
-2. Modify `POST /api/game/session` to use `QuestionService` instead of `allQuestions[]`
-3. Remove `readFileSync` and module-scope `allQuestions` from `game.ts`
-4. Keep `collectionId` parameter optional (null = default collection)
-5. Verify existing "Quick Play" flow works unchanged
+**Files modified:**
+- `questions` table -- add `encounter_count`, `correct_count` columns (SQL migration)
+- `backend/src/db/schema.ts` -- add columns to Drizzle schema
+- `backend/src/services/telemetryService.ts` -- new file
+- `backend/src/routes/game.ts` -- add fire-and-forget call in POST /answer handler
 
-**Validates:** DB-backed question selection works; no regression in game flow
+**Validates:** Playing a game increments counters. Verify with `SELECT external_id, encounter_count, correct_count FROM civic_trivia.questions WHERE encounter_count > 0`.
 
-### Step 3: Collection API + Frontend Picker
+### Step 3: Admin Question Explorer API
 
-**Depends on:** Step 2 (questions queryable by collection)
+**Depends on:** Step 1 (admin auth must be in place), Step 2 (telemetry columns must exist to query)
 
-**Tasks:**
-1. Create `CollectionService` and `GET /api/collections` route
-2. Create `CollectionPicker` component on frontend
-3. Modify `Dashboard` to show collection picker
-4. Wire `collectionId` through `createGameSession()` to `POST /session`
-5. "Quick Play" continues to work (uses default collection)
+**Files modified:**
+- `backend/src/routes/admin.ts` -- add `GET /questions/all`, `GET /questions/:id`, `PUT /questions/:id`
 
-**Validates:** End-to-end collection selection flow
+**Validates:** Admin can browse all questions with filters, see telemetry data, edit question fields.
 
-### Step 4: Question Expiration
+### Step 4: Admin Question Explorer UI
 
-**Depends on:** Step 2 (questions in database with `expires_at` column)
+**Depends on:** Step 3 (API endpoints must exist)
 
-**Tasks:**
-1. Create `ExpirationService` with periodic check
-2. Run on server startup interval (e.g., every hour)
-3. Log expired questions; set `is_active = FALSE`
-4. Check for collections that drop below `min_questions`
-5. Add `expires_at` to seed script for any time-sensitive existing questions
+**Files created:**
+- `frontend/src/features/admin/components/QuestionExplorer.tsx`
+- `frontend/src/features/admin/components/QuestionDetail.tsx`
+- `frontend/src/features/admin/components/TelemetryBadge.tsx`
+- `frontend/src/features/admin/components/AdminNav.tsx`
+- `frontend/src/features/admin/hooks/useQuestionDetail.ts`
 
-**Validates:** Expired questions no longer appear in games
+**Files modified:**
+- `frontend/src/pages/Admin.tsx` -- restructure as tabbed layout
+- `frontend/src/features/admin/types.ts` -- expand types for explorer data
+- `frontend/src/features/admin/hooks/useAdminQuestions.ts` -- add explorer query support
+- `frontend/src/App.tsx` -- add `/admin/questions/:id` route
 
-### Step 5: Content Generation Workflow Update
+**Validates:** Admin can browse, filter, and inspect questions through the UI. Telemetry badges display correct rates.
 
-**Depends on:** Step 2 (questions in database)
+### Step 5: Admin Collection Management
 
-**Tasks:**
-1. Modify `generateLearningContent.ts` to read from DB instead of JSON
-2. Modify `applyContent.ts` to write to DB instead of JSON
-3. Add support for generating community-specific questions (new prompt templates)
-4. Add ability to tag generated questions with a collection
+**Depends on:** Step 1 (admin auth)
 
-**Validates:** AI content pipeline works with database backend
+**Files modified:**
+- `backend/src/routes/admin.ts` -- add `GET /collections`, `PUT /collections/:id`
+
+**Files created:**
+- `frontend/src/features/admin/components/CollectionManager.tsx`
+- `frontend/src/features/admin/hooks/useAdminCollections.ts`
+
+**Validates:** Admin can view and toggle collection active/inactive status.
+
+### Step 6: Quality Rules in Generation Scripts
+
+**Depends on:** Step 2 (telemetry schema defines what to track), but can be built in parallel
+
+**Files modified:**
+- `backend/src/scripts/content-generation/generate-locale-questions.ts` -- add validation rules after generation
+- New validation utility file for shared quality checks
+
+**Validates:** Generated questions pass quality checks before insertion. Failed checks are logged with specific violation details.
 
 ### Dependency Diagram
 
 ```
-Step 1: Schema + Seed
-    │
-    ▼
-Step 2: QuestionService + Route ──────────┐
+Step 1: Admin Auth ───────────────────────┐
     │                                      │
     ├──────────────┐                       │
-    ▼              ▼                       ▼
-Step 3:        Step 4:                 Step 5:
-Collection     Expiration             Content Gen
-Picker         Service                Workflow
+    ▼              ▼                       │
+Step 3:        Step 5:                     │
+Explorer API   Collection Mgmt            │
+    │                                      │
+    ▼                                      │
+Step 4:                                    │
+Explorer UI                                │
+                                           │
+Step 2: Telemetry ─────────────────────────┘
+    │
+    ▼
+Step 6: Quality Rules (generation scripts)
 ```
 
-Steps 3, 4, and 5 are independent of each other and can be built in parallel after Step 2.
+Steps 1 and 2 are independent foundations. Steps 3 and 5 depend on Step 1. Step 4 depends on Step 3. Step 6 depends on Step 2 conceptually but can be built in parallel.
 
-## Frontend Integration Detail
+## File-Level Change Map
 
-### Collection Picker Placement
+### Backend Changes
 
-The collection picker sits on the Dashboard, above the "Quick Play" button. It does NOT alter the game flow itself -- it simply determines which `collectionId` is passed when starting a game.
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `backend/src/db/schema.ts` | MODIFY | Add `encounterCount`, `correctCount` to questions table definition |
+| `backend/src/models/User.ts` | MODIFY | Add `isAdmin` to all SELECT queries, add to User interface |
+| `backend/src/middleware/auth.ts` | MODIFY | Add `requireAdmin` middleware function |
+| `backend/src/routes/admin.ts` | MODIFY | Add `requireAdmin` to middleware chain; add explorer + collection endpoints |
+| `backend/src/routes/auth.ts` | MODIFY | Include `isAdmin` in user object on login/refresh response |
+| `backend/src/routes/game.ts` | MODIFY | Import and call `recordQuestionOutcome` in POST /answer |
+| `backend/src/services/telemetryService.ts` | NEW | `recordQuestionOutcome(externalId, wasCorrect)` |
 
-```
-Dashboard Layout (v1.2):
-┌────────────────────────────────┐
-│  Welcome, [Name]!              │
-│                                │
-│  ┌──────────────────────────┐  │
-│  │  Choose Your Collection  │  │
-│  │                          │  │
-│  │  [General Civics] (120)  │  │  ← Default selected
-│  │  [Springfield, IL] (52)  │  │
-│  │  [DC Metro] (87)         │  │
-│  └──────────────────────────┘  │
-│                                │
-│     [ Quick Play ]             │  ← Uses selected collection
-│     10 questions.              │
-│                                │
-└────────────────────────────────┘
-```
+### Frontend Changes
 
-### State Management
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `frontend/src/types/auth.ts` | MODIFY | Add `isAdmin: boolean` to User interface |
+| `frontend/src/components/AdminRoute.tsx` | NEW | Route guard checking `user.isAdmin` |
+| `frontend/src/App.tsx` | MODIFY | Use AdminRoute for /admin/* routes |
+| `frontend/src/pages/Admin.tsx` | MODIFY | Restructure as tabbed admin hub |
+| `frontend/src/features/admin/types.ts` | MODIFY | Add explorer types, telemetry fields |
+| `frontend/src/features/admin/components/QuestionExplorer.tsx` | NEW | Question browse table with filters |
+| `frontend/src/features/admin/components/QuestionDetail.tsx` | NEW | Full question view + edit form |
+| `frontend/src/features/admin/components/CollectionManager.tsx` | NEW | Collection management table |
+| `frontend/src/features/admin/components/TelemetryBadge.tsx` | NEW | Correct-rate display component |
+| `frontend/src/features/admin/components/AdminNav.tsx` | NEW | Tab navigation within admin |
+| `frontend/src/features/admin/hooks/useQuestionDetail.ts` | NEW | Fetch + edit single question |
+| `frontend/src/features/admin/hooks/useAdminCollections.ts` | NEW | Fetch collections for admin |
 
-Two approaches, both valid:
+### Database Migrations
 
-**Option A: Local state in Dashboard (recommended for simplicity)**
-```typescript
-// Dashboard.tsx
-const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
-
-// Pass to game start
-const handlePlay = () => {
-  navigate('/play', { state: { collectionId: selectedCollection } });
-};
-```
-
-**Option B: Zustand store (if collection selection persists across navigation)**
-```typescript
-// store/collectionStore.ts
-export const useCollectionStore = create<CollectionState>((set) => ({
-  selectedCollectionId: null,
-  setSelectedCollection: (id: string | null) => set({ selectedCollectionId: id }),
-}));
-```
-
-**Recommendation:** Start with Option A. A Zustand store is only needed if the selected collection must survive navigation away from Dashboard (e.g., returning from settings). For MVP, local state is sufficient.
-
-### Frontend Service Changes
-
-```typescript
-// gameService.ts (modified)
-export async function createGameSession(
-  collectionId?: string   // NEW optional parameter
-): Promise<{ sessionId: string; questions: Question[]; degraded: boolean }> {
-  const body = collectionId ? { collectionId } : {};
-
-  const response = await apiRequest<{ sessionId: string; questions: Question[]; degraded?: boolean }>(
-    '/api/game/session',
-    {
-      method: 'POST',
-      body: JSON.stringify(body),  // Was: no body
-    }
-  );
-
-  return {
-    sessionId: response.sessionId,
-    questions: response.questions,
-    degraded: response.degraded ?? false,
-  };
-}
-```
-
-### useGameState Changes
-
-```typescript
-// useGameState.ts (modified)
-export function useGameState(collectionId?: string): UseGameStateReturn {
-  // ...existing code...
-
-  const startGame = async () => {
-    try {
-      const { sessionId, questions, degraded } = await createGameSession(collectionId);
-      // ...rest unchanged
-    } catch (error) {
-      console.error('Failed to create game session:', error);
-    }
-  };
-
-  // ...rest unchanged
-}
-```
+| Migration | SQL |
+|-----------|-----|
+| Add telemetry columns | `ALTER TABLE civic_trivia.questions ADD COLUMN encounter_count INTEGER NOT NULL DEFAULT 0; ALTER TABLE civic_trivia.questions ADD COLUMN correct_count INTEGER NOT NULL DEFAULT 0;` |
+| Add admin flag | `ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT FALSE;` |
 
 ## Scalability Considerations
 
-| Concern | At 5 collections | At 50 collections | At 500 collections |
-|---------|-------------------|--------------------|--------------------|
-| Collection listing | Single query, <5ms | Single query, <10ms | Paginate, still fast |
-| Question selection | 10 random from ~100, <10ms | Same per collection | Same per collection |
-| Schema size | ~120 questions, trivial | ~3,000 questions | ~30,000 questions -- still fine for PostgreSQL |
-| Expiration check | Scan ~120 rows/hour | Scan ~3,000 rows/hour | Add index on `expires_at`, still fast |
-| Junction table | ~120 rows | ~5,000 rows | ~50,000 rows -- well within PG comfort zone |
-
-**Bottom line:** PostgreSQL handles this scale without any caching, sharding, or optimization. The architecture is designed for simplicity at the current scale (hundreds of questions, dozens of collections) with a clear path to scaling if needed.
-
-## Open Questions
-
-1. **Should the session store the collection name for the results screen?** If so, add `collectionName: string` to the `GameSession` interface and `POST /session` response. This is purely a display concern.
-
-2. **Should collections be ordered?** The schema has no `sort_order` column. If collections should appear in a specific order in the picker, add `sort_order SMALLINT DEFAULT 0` to the `collections` table.
-
-3. **Should anonymous users see all collections?** The current auth model allows anonymous play. Collection access control (e.g., premium collections) is out of scope for v1.2 but the schema supports it with an additional `access_level` column.
-
-4. **Batch INSERT for seed migration?** The seed script shown above inserts one-at-a-time for clarity. For 120 questions this is fine (~2 seconds). For larger imports, use a batch INSERT with `unnest()`.
+| Concern | Current Scale | At 10x Scale | Notes |
+|---------|--------------|--------------|-------|
+| Telemetry writes | ~100 writes/day | ~1,000 writes/day | Single UPDATE per answer, negligible |
+| Admin API queries | ~10 requests/day | ~100 requests/day | Paginated, indexed, no concern |
+| Counter accuracy | Exact (atomic increment) | Exact | No batching needed until >10K concurrent |
+| Admin auth check | 1 DB query per admin request | Same | Could cache for 60s if needed, but unnecessary |
 
 ## Sources
 
 **HIGH Confidence:**
-- Direct codebase analysis of all source files listed in this document
-- Existing database schema from `backend/schema.sql`
-- Current question data from `backend/src/data/questions.json` (120 questions analyzed)
-- PostgreSQL documentation for `ORDER BY RANDOM()`, JSONB, partial indexes
-
-**MEDIUM Confidence:**
-- `ORDER BY RANDOM()` performance characteristics at scale (well-documented PostgreSQL behavior, verified for tables <100K rows)
+- Direct analysis of all source files in `C:/Project Test/backend/src/` and `C:/Project Test/frontend/src/`
+- Existing admin route: `backend/src/routes/admin.ts` (232 lines)
+- Existing admin page: `frontend/src/pages/Admin.tsx` (416 lines)
+- Auth middleware: `backend/src/middleware/auth.ts` (100 lines)
+- Game route with answer flow: `backend/src/routes/game.ts` (285 lines)
+- Session service: `backend/src/services/sessionService.ts` (432 lines)
+- DB schema: `backend/src/db/schema.ts` (123 lines)
+- User model: `backend/src/models/User.ts` (168 lines)
+- Frontend routing: `frontend/src/App.tsx` (46 lines)
+- Auth store: `frontend/src/store/authStore.ts` (45 lines)
+- Auth types: `frontend/src/types/auth.ts` (33 lines)
+- Protected route: `frontend/src/components/ProtectedRoute.tsx` (17 lines)

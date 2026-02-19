@@ -1,404 +1,463 @@
-# Stack Research: v1.2 Community Collections
+# Stack Research: v1.3 Admin UI, Telemetry, and Quality Tooling
 
-**Domain:** Civic Trivia Championship (game-show-style web app)
-**Researched:** 2026-02-18
-**Confidence:** HIGH (existing stack verified, new additions are minimal)
+**Domain:** Civic Trivia Championship -- admin tooling for content quality at scale
+**Researched:** 2026-02-19
+**Confidence:** HIGH (existing stack verified, new additions are minimal and well-scoped)
 
 ## Executive Summary
 
-v1.2 introduces community question collections with tagging, expiration, and locale-specific content generation. The critical stack decision is **migrating questions from JSON file to PostgreSQL** -- everything else follows from that. The existing stack (React 18, TypeScript, Express, PostgreSQL, Redis) handles all new requirements without new runtime dependencies. One new dev dependency (node-cron) is needed for expiration checks, and the existing `@anthropic-ai/sdk` script needs enhancement for locale-aware generation.
+v1.3 adds four capabilities to an existing deployed trivia game: (1) an expanded admin UI for exploring all questions/collections, (2) question telemetry tracking (encounter and correct-answer counts), (3) a codified quality rules engine, and (4) a refined AI generation pipeline that uses quality rules. The critical insight: **almost nothing new needs to be installed.** The existing stack (React 18, TypeScript, Tailwind, Headless UI, Express, Drizzle ORM, PostgreSQL, Zod) handles all four requirements. The one recommended addition is `@tanstack/react-table` for the admin data tables, which replaces the hand-rolled table markup currently in `Admin.tsx` with a headless, sortable, filterable table engine that integrates naturally with Tailwind.
 
-**Zero new runtime dependencies required.** The existing stack covers everything.
+**One new frontend dependency. Zero new backend dependencies.**
 
-## Critical Decision: Questions Must Move to PostgreSQL
+## Current State Assessment
 
-### Current State
+### What Already Exists
 
-Questions live in `backend/src/data/questions.json`, loaded at startup via `readFileSync` into an in-memory array (see `game.ts` lines 17-19). The `allQuestions` constant is module-scoped and immutable at runtime.
+The codebase already has admin infrastructure from v1.2:
 
-### Why JSON No Longer Works
-
-| Requirement | JSON File | PostgreSQL |
+| Component | Location | Current Capability |
 |---|---|---|
-| Multiple collections | Would need nested structure, complex filtering | Natural with relational tables and joins |
-| Tag-based membership (question in multiple collections) | Array-of-arrays, no indexing | Junction table with indexes |
-| Expiration dates | No scheduling mechanism, full file rewrite | `WHERE expires_at > NOW()` in queries |
-| Add new collections without deploy | Requires code deploy to update file | INSERT into database, immediate |
-| Per-collection metadata (name, locale, description) | JSON gets unwieldy | Separate `collections` table |
-| Concurrent content review | File conflicts in git | Database transactions |
+| Admin page | `frontend/src/pages/Admin.tsx` | Table of expired/expiring questions with renew/archive actions |
+| Admin route | `frontend/src/App.tsx` line 37 | Protected route at `/admin` behind `ProtectedRoute` |
+| Admin API | `backend/src/routes/admin.ts` | GET questions (with status filters), POST renew, POST archive |
+| Admin hook | `frontend/src/features/admin/hooks/useAdminQuestions.ts` | Fetch/filter/action hook using Zustand auth store |
+| Admin types | `frontend/src/features/admin/types.ts` | `AdminQuestion` interface, `StatusFilter` type |
+| DB schema | `backend/src/db/schema.ts` | Full Drizzle schema: questions, collections, topics, junction tables |
+| Question model | `backend/src/db/schema.ts` lines 54-92 | `questions` table with status, expiresAt, expirationHistory, JSONB fields |
+| Drizzle ORM | `drizzle-orm@0.45.1` + `drizzle-kit@0.31.9` | Type-safe queries, migrations, schema management |
+| Zod validation | `zod@4.3.6` | Backend validation (already installed) |
+| Headless UI | `@headlessui/react@2.2.9` | Accessible dropdowns, listboxes, dialogs |
+| AI generation | `backend/src/scripts/generateLearningContent.ts` | Claude-powered content generation with structured JSON output |
 
-**Recommendation: Move questions to PostgreSQL.** Use the existing Supabase PostgreSQL instance and `pg` client (`pg@8.11.3` already installed).
+### What Does NOT Exist Yet
 
-### Migration Strategy
+| Need | Current Gap |
+|---|---|
+| Browse ALL questions (not just expired) | Admin API only returns expired/expiring-soon/archived |
+| Search/filter by text, topic, collection, difficulty | No search or multi-filter support |
+| Sortable columns | Table is static HTML, no sort |
+| Pagination | No pagination (loads all matching questions) |
+| Telemetry columns | No encounter_count or correct_count on questions table |
+| Telemetry recording | Answer submission does not increment counters |
+| Quality score computation | No quality rules or scoring logic |
+| Quality-gated generation | Generation script has no quality validation |
 
-Keep `questions.json` as a **seed file** for the initial Federal collection. On startup or via migration script, seed the database if the `questions` table is empty. This preserves the existing 120 questions as the "Federal Civics" collection and allows the JSON file to remain in the repo as a reference/backup.
+## Recommended Stack Additions
 
-### Schema Design
+### Frontend: One New Dependency
 
-Use a relational tagging pattern (not JSONB) because tags are the primary query dimension:
+| Package | Version | Purpose | Why This, Not Alternatives |
+|---|---|---|---|
+| `@tanstack/react-table` | `^8.21.3` | Headless table engine for admin data tables | See detailed rationale below |
+
+#### Why @tanstack/react-table
+
+The current `Admin.tsx` is 416 lines of hand-rolled table markup with inline status badges, date formatting, and action buttons. Adding sorting, multi-column filtering, pagination, and text search to this approach would balloon it to 800+ lines of tightly coupled UI logic.
+
+TanStack Table v8 is headless -- it provides table state management (sorting, filtering, pagination, column visibility) without any UI. You render with Tailwind exactly as the existing admin page does. It does not impose a design system or CSS framework.
+
+**Why not alternatives:**
+
+| Alternative | Why Not |
+|---|---|
+| Hand-rolled sorting/filtering | Quadruples component complexity. Each sortable column needs state, comparators, icons. Pagination needs offset/limit state. This is exactly what TanStack Table abstracts. |
+| AG Grid / MUI DataGrid | Full component libraries with their own CSS. Conflict with existing Tailwind-only approach. AG Grid is 200KB+. |
+| Shadcn/ui Table | Shadcn uses Radix UI primitives. Project uses Headless UI. Mixing two headless UI systems creates inconsistency. Shadcn's table component is itself built on TanStack Table anyway. |
+| react-data-table-component | Opinionated styling, not headless. Would fight Tailwind. |
+
+**Integration with existing patterns:**
+
+```typescript
+// TanStack Table works with existing Tailwind patterns
+const table = useReactTable({
+  data: questions,          // From existing useAdminQuestions hook
+  columns: columnDefs,      // Type-safe column definitions
+  getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
+  getPaginationRowModel: getPaginationRowModel(),
+});
+
+// Render with existing Tailwind classes -- same <table> markup pattern as current Admin.tsx
+```
+
+**Bundle size:** ~53KB minified, ~14KB gzipped. Acceptable for an admin-only route that is code-split via React Router lazy loading.
+
+**Confidence:** HIGH -- TanStack Table is the standard headless table for React. 8.21.3 is current stable. Works with React 18.
+
+### Backend: Zero New Dependencies
+
+Every backend need is covered by existing packages:
+
+| Need | Existing Package | How |
+|---|---|---|
+| New admin API endpoints | `express@4.18.2` | Add routes to existing `routes/admin.ts` |
+| Query building (sort, filter, paginate) | `drizzle-orm@0.45.1` | `orderBy()`, `where()`, `limit()`, `offset()` composable query builders |
+| Input validation | `zod@4.3.6` | Validate query params, rule definitions |
+| Schema migration (new columns) | `drizzle-kit@0.31.9` | `npx drizzle-kit generate` + `npx drizzle-kit push` |
+| Quality rules engine | TypeScript (no library) | Pure functions: `(question) => QualityScore` |
+| AI generation enhancement | `@anthropic-ai/sdk@0.74.0` | Already used in generation scripts |
+| Telemetry recording | `drizzle-orm` + PostgreSQL | Atomic `SET encounter_count = encounter_count + 1` |
+
+### Database: Schema Additions (No New Infra)
+
+Telemetry columns go on the existing `questions` table. No separate telemetry table needed at this scale (320 questions, ~100 games/day estimated).
 
 ```sql
--- Collections (Federal, Bloomington IN, Los Angeles CA, etc.)
-CREATE TABLE IF NOT EXISTS collections (
-  id SERIAL PRIMARY KEY,
-  slug VARCHAR(100) UNIQUE NOT NULL,        -- 'federal', 'bloomington-in', 'los-angeles-ca'
-  name VARCHAR(200) NOT NULL,               -- 'Federal Civics'
-  locale VARCHAR(100),                      -- 'Bloomington, IN' (NULL for federal)
-  description TEXT,
-  icon_url VARCHAR(500),
-  question_count INTEGER DEFAULT 0,         -- Denormalized for fast display
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Add to existing questions table via Drizzle migration
+ALTER TABLE civic_trivia.questions
+  ADD COLUMN encounter_count INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN correct_count INTEGER NOT NULL DEFAULT 0;
 
--- Questions (migrated from JSON)
-CREATE TABLE IF NOT EXISTS questions (
-  id VARCHAR(20) PRIMARY KEY,               -- Keep existing 'q001' format
-  text TEXT NOT NULL,
-  options JSONB NOT NULL,                   -- ['Option A', 'Option B', ...] (always 4)
-  correct_answer INTEGER NOT NULL,
-  explanation TEXT NOT NULL,
-  difficulty VARCHAR(20) NOT NULL,
-  topic VARCHAR(100) NOT NULL,
-  topic_category VARCHAR(100) NOT NULL,
-  learning_content JSONB,                   -- Entire learningContent object (variable structure)
-  expires_at TIMESTAMP,                     -- NULL = never expires
-  is_active BOOLEAN DEFAULT true,           -- Soft delete / manual disable
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Junction table: questions belong to multiple collections
-CREATE TABLE IF NOT EXISTS collection_questions (
-  collection_id INTEGER REFERENCES collections(id) ON DELETE CASCADE,
-  question_id VARCHAR(20) REFERENCES questions(id) ON DELETE CASCADE,
-  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (collection_id, question_id)
-);
-
--- Indexes for common queries
-CREATE INDEX idx_questions_expires_at ON questions(expires_at) WHERE expires_at IS NOT NULL;
-CREATE INDEX idx_questions_active ON questions(is_active) WHERE is_active = true;
-CREATE INDEX idx_collection_questions_collection ON collection_questions(collection_id);
-CREATE INDEX idx_collection_questions_question ON collection_questions(question_id);
-CREATE INDEX idx_collections_active ON collections(is_active) WHERE is_active = true;
+-- Optional: index for quality scoring queries
+CREATE INDEX idx_questions_encounter_count
+  ON civic_trivia.questions(encounter_count)
+  WHERE encounter_count > 0;
 ```
 
-**Why JSONB for `options` and `learning_content` but relational for tags:**
-- `options` is always a fixed 4-element array, never queried individually -- JSONB is simpler than 4 columns or a separate table.
-- `learning_content` has nested, variable structure (paragraphs, corrections, source) -- relational decomposition would create 3+ tables for no query benefit.
-- Tags/collections ARE the primary query dimension ("give me questions in collection X") so they need indexed relational joins. Research confirms: use relational tables for frequently-queried relationships, JSONB for variable nested data.
+**Why columns on questions table, not a separate telemetry table:**
 
-**Confidence:** HIGH -- this follows standard PostgreSQL tagging patterns. The Heap engineering blog specifically warns against JSONB for data you query by (like tags), recommending relational tables instead.
+| Approach | Pros | Cons |
+|---|---|---|
+| Columns on `questions` | Single query for question + stats. Atomic increment. Simple. | Loses per-session granularity. |
+| Separate `question_telemetry` table | Per-session detail, time-series analysis | Extra JOIN for every admin query. Aggregation needed. Over-engineered for 320 questions. |
+| Separate `answer_events` table | Full event sourcing, any analysis possible | Massive table growth. Need background aggregation jobs. Way over-engineered. |
 
-## Expiration System
+**Recommendation: Columns on `questions` table.** At 320 questions and modest traffic, aggregate counters are sufficient. The correct_rate is simply `correct_count / encounter_count`. If per-session analytics become needed later, an events table can be added without losing the aggregate counters.
 
-### Approach: In-Process Cron with `node-cron`
-
-**Install:** `node-cron@3.0.3` (dev dependency if run as separate script, runtime dependency if in-process)
-
-```bash
-cd backend
-npm install node-cron
-npm install -D @types/node-cron
-```
-
-**Why `node-cron` over alternatives:**
-- **Over `node-schedule`:** node-cron is lighter (no date-object scheduling needed; pure cron syntax suffices for "check every hour"). Weekly downloads: node-cron ~2.5M vs node-schedule ~1.8M.
-- **Over Render Cron Jobs:** Render cron jobs spin up a separate process each run (cold start latency, separate billing). For a simple hourly SQL query, in-process cron is simpler and free.
-- **Over `setInterval`:** node-cron handles cron expression parsing, timezone awareness, and is more readable than raw millisecond intervals.
-
-**Implementation pattern:**
+**Where to increment:** In the `POST /api/game/answer` handler in `routes/game.ts`, after scoring the answer. Use a single atomic UPDATE:
 
 ```typescript
-import cron from 'node-cron';
-
-// Run every hour at :00
-cron.schedule('0 * * * *', async () => {
-  const result = await pool.query(`
-    UPDATE questions
-    SET is_active = false
-    WHERE expires_at IS NOT NULL
-      AND expires_at <= NOW()
-      AND is_active = true
-    RETURNING id, text, expires_at
-  `);
-
-  if (result.rows.length > 0) {
-    console.log(`Deactivated ${result.rows.length} expired questions`);
-    // Notification logic here (see Notification section)
-  }
-});
+await db.update(questions)
+  .set({
+    encounterCount: sql`${questions.encounterCount} + 1`,
+    correctCount: answer.isCorrect
+      ? sql`${questions.correctCount} + 1`
+      : questions.correctCount,
+  })
+  .where(eq(questions.id, questionDbId));
 ```
 
-**Why hourly, not per-minute:** Questions expire on a date basis, not second-by-second. Hourly granularity means at most ~59 minutes of an expired question remaining in rotation. Acceptable for trivia content.
+This pattern is safe under concurrent requests -- PostgreSQL handles the atomic increment.
 
-**Alternative considered: PostgreSQL `pg_cron` extension.**
-Supabase supports `pg_cron` for database-level scheduling. However:
-- Requires Supabase Pro plan or manual extension setup
-- Cannot trigger application-level notifications (email, logs)
-- Harder to test locally
-- **Verdict:** Keep scheduling in application code for portability and notification integration.
+## Quality Rules Engine: Pure TypeScript, No Library
 
-## Notification Mechanism for Expired Questions
+The quality rules engine is a set of pure functions that evaluate question quality. No rules engine library (like `json-rules-engine` or `nools`) is needed because:
 
-### Approach: Logging + Optional Email (No New Dependencies)
+1. Rules are simple predicate functions, not complex conditional trees
+2. The rule set is small (10-20 rules) and changes infrequently
+3. Rules don't need dynamic loading or end-user editing
+4. TypeScript provides type safety and testability
 
-For v1.2, expired question notifications target **admin/volunteer reviewers**, not end users. Start simple:
-
-**Tier 1 (MVP): Structured logging**
-```typescript
-// Already have console.log infrastructure
-console.warn(JSON.stringify({
-  event: 'questions_expired',
-  count: result.rows.length,
-  questionIds: result.rows.map(r => r.id),
-  timestamp: new Date().toISOString()
-}));
-```
-Render captures stdout/stderr in its log viewer with search. This is sufficient for a small volunteer team.
-
-**Tier 2 (Post-MVP): Email via Render environment**
-If email notifications become necessary, use a lightweight transactional email service. Options:
-- **Resend** (`resend@4.x`): Modern, developer-friendly, free tier (100 emails/day). Single dependency.
-- **Nodemailer** (`nodemailer@6.x`): Established, works with any SMTP provider. More setup.
-- **SendGrid** (`@sendgrid/mail`): Enterprise-grade, free tier (100 emails/day).
-
-**Recommendation:** Defer email to post-MVP. Structured logging with Render's log viewer is sufficient for the initial volunteer workflow. If email is needed later, use Resend for its simplicity.
-
-**What NOT to build:**
-- Push notifications to end users (no PWA service worker infrastructure exists)
-- Slack/Discord webhooks (adds external service dependency for small team)
-- Admin dashboard for expiration (scope creep -- logs are fine)
-
-## Collection Picker UI
-
-### No New Frontend Dependencies
-
-The collection picker is a standard UI component. The existing frontend stack handles it:
-
-| Need | Existing Tool |
-|---|---|
-| Dropdown/listbox component | `@headlessui/react@2.2.9` (Listbox, RadioGroup) |
-| State management | `zustand@4.4.7` (add `selectedCollection` to game store) |
-| Routing (collection in URL) | `react-router-dom@6.21.1` (query params or route params) |
-| Animations | `framer-motion@12.34.0` (collection card transitions) |
-| Accessibility | `@headlessui/react` handles ARIA, `eslint-plugin-jsx-a11y` validates |
-
-**Implementation approach:**
-- New `CollectionPicker` component using Headless UI `RadioGroup` or `Listbox`
-- Fetch collections list from new `GET /api/game/collections` endpoint
-- Pass `collectionId` (or `collectionSlug`) to `POST /api/game/session`
-- Game route gains optional query param: `/game?collection=bloomington-in`
-- Default to "Federal Civics" if no collection specified (backward compatible)
-
-**No new packages needed on frontend.**
-
-## Content Generation Script Enhancement
-
-### Current State
-`generateLearningContent.ts` generates federal civics content. It reads from `questions.json` and uses `@anthropic-ai/sdk` (already installed as devDependency at `^0.74.0`).
-
-### Changes Needed (No New Dependencies)
-
-The script needs enhancement, not replacement:
-
-1. **Read from database instead of JSON file**: Replace `readFileSync` with `pg` query
-2. **Add `--collection` flag**: Filter by collection slug
-3. **Add `--locale` flag**: Pass locale context to Claude prompt for locale-specific content
-4. **Locale-aware prompt template**: Include civic context (e.g., "Bloomington, IN city government")
+**Pattern:**
 
 ```typescript
-// New flags
-// npx tsx src/scripts/generateLearningContent.ts --collection bloomington-in --limit 20
-// npx tsx src/scripts/generateLearningContent.ts --collection los-angeles-ca --locale "Los Angeles, CA"
-```
+// backend/src/services/qualityRules.ts
+interface QualityRule {
+  id: string;
+  name: string;
+  severity: 'error' | 'warning' | 'info';
+  evaluate: (question: Question) => QualityViolation | null;
+}
 
-**Prompt enhancement for locale-specific generation:**
-```typescript
-function buildLocalePrompt(question: Question, locale: string): string {
-  return `Generate educational content for this ${locale} civic trivia question.
-Write for a general adult audience at an 8th-grade reading level.
-Focus on ${locale}-specific civic knowledge...
-// ... rest of existing prompt structure
-`;
+interface QualityViolation {
+  ruleId: string;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+  field?: string;
+}
+
+interface QualityReport {
+  questionId: number;
+  score: number;          // 0-100
+  violations: QualityViolation[];
+  passesMinimumBar: boolean;
 }
 ```
 
-**Batch question generation (new script):**
-A new companion script `generateCollectionQuestions.ts` will generate entire question batches for new locales:
+Example rules (no external dependencies needed):
 
-```typescript
-// npx tsx src/scripts/generateCollectionQuestions.ts --locale "Bloomington, IN" --count 60
+| Rule | Type | Logic |
+|---|---|---|
+| Question too short | `error` | `text.length < 20` |
+| Question too long | `warning` | `text.length > 300` |
+| Duplicate option text | `error` | `new Set(options).size !== options.length` |
+| Missing explanation | `error` | `!explanation || explanation.length < 10` |
+| Low correct rate | `warning` | `correct_count / encounter_count < 0.15` (after 50+ encounters) |
+| High correct rate | `info` | `correct_count / encounter_count > 0.95` (after 50+ encounters) |
+| Missing source URL | `error` | `!source?.url` |
+| Expired source domain | `warning` | URL returns 404 (async, batch-only) |
+
+**Confidence:** HIGH -- this is standard domain logic. No library needed.
+
+## Admin UI Component Patterns
+
+### Page Structure
+
+The admin UI should follow the existing `Admin.tsx` pattern (single page within the app, not a separate SPA) but expand it with sub-navigation:
+
+```
+/admin                    -> Redirect to /admin/questions
+/admin/questions          -> Question explorer (table with filters)
+/admin/questions/:id      -> Question detail (full view + telemetry + quality report)
+/admin/collections        -> Collection list with stats
+/admin/collections/:id    -> Collection detail (questions in collection, aggregate stats)
+/admin/quality            -> Quality dashboard (worst-scoring questions, rule violations)
 ```
 
-This script:
-- Generates questions (not just learning content) via Claude
-- Outputs to a review JSON file (same pattern as existing generate/apply workflow)
-- Volunteer reviews and edits the JSON
-- `applyContent.ts` pattern extended to seed questions into database
+**Routing approach:** Use nested routes within the existing React Router setup. The existing `ProtectedRoute` wrapper handles auth.
 
-**No new dependencies needed.** Uses existing `@anthropic-ai/sdk` and `pg`.
+```typescript
+// In App.tsx
+<Route element={<ProtectedRoute />}>
+  <Route path="/admin" element={<AdminLayout />}>
+    <Route index element={<Navigate to="questions" replace />} />
+    <Route path="questions" element={<QuestionExplorer />} />
+    <Route path="questions/:id" element={<QuestionDetail />} />
+    <Route path="collections" element={<CollectionExplorer />} />
+    <Route path="collections/:id" element={<CollectionDetail />} />
+    <Route path="quality" element={<QualityDashboard />} />
+  </Route>
+</Route>
+```
 
-## Recommended Stack (Complete)
+### Reusable Admin Components to Build
 
-### New Runtime Dependencies
-
-| Package | Version | Purpose | Why |
-|---|---|---|---|
-| `node-cron` | `^3.0.3` | Scheduled expiration checks | Lightweight cron for hourly expired-question sweep. Simpler than Render cron jobs for single-query tasks. |
-
-### New Dev Dependencies
-
-| Package | Version | Purpose | Why |
-|---|---|---|---|
-| `@types/node-cron` | `^3.0.11` | TypeScript types for node-cron | Type safety for cron schedule setup |
-
-### Existing Dependencies (No Changes)
-
-| Package | Already Installed | Used For |
+| Component | Purpose | Built With |
 |---|---|---|
-| `pg` | `^8.11.3` | Questions in PostgreSQL (was users-only, now questions too) |
-| `redis` | `^4.6.12` | Session storage, token blacklist (unchanged) |
-| `@anthropic-ai/sdk` | `^0.74.0` (devDep) | Content generation scripts (enhanced, not replaced) |
-| `express` | `^4.18.2` | API endpoints (new collection routes) |
-| `express-validator` | `^7.3.1` | Input validation (new collection params) |
-| `@headlessui/react` | `^2.2.9` | Collection picker UI component |
-| `zustand` | `^4.4.7` | Selected collection state |
-| `react-router-dom` | `^6.21.1` | Collection route params |
+| `AdminLayout` | Sidebar nav + content area | Tailwind grid/flex |
+| `DataTable` | Generic sortable/filterable table | `@tanstack/react-table` + Tailwind |
+| `StatusBadge` | Colored pill badges (reuse existing pattern from `Admin.tsx`) | Tailwind |
+| `DifficultyBadge` | Easy/Medium/Hard colored pills (reuse from `Admin.tsx`) | Tailwind |
+| `QualityScoreBadge` | 0-100 score with color gradient | Tailwind |
+| `FilterBar` | Collection, topic, difficulty, status dropdowns | Headless UI Listbox |
+| `SearchInput` | Debounced text search | Native input + `useState` with debounce |
+| `Pagination` | Page controls below table | TanStack Table pagination API |
+| `StatCard` | Metric display (total questions, avg quality, etc.) | Tailwind |
+| `DetailPanel` | Slide-over or page for question detail | Headless UI Dialog or dedicated route |
+
+### Debounced Search: No Library Needed
+
+For the search input, a simple debounce hook is sufficient. No need for `lodash.debounce` or `use-debounce`:
+
+```typescript
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+  return debounced;
+}
+```
+
+## API Design for Admin Endpoints
+
+All new endpoints extend the existing `routes/admin.ts` pattern (JWT-authenticated, Express router).
+
+### New Endpoints Needed
+
+| Method | Path | Purpose | Query Params |
+|---|---|---|---|
+| GET | `/api/admin/questions` | List all questions (paginated) | `page`, `limit`, `sort`, `order`, `search`, `status`, `difficulty`, `collectionId`, `topicId` |
+| GET | `/api/admin/questions/:id` | Single question detail with telemetry + quality | -- |
+| GET | `/api/admin/questions/:id/quality` | Quality report for one question | -- |
+| POST | `/api/admin/questions/quality/batch` | Quality report for multiple questions | Body: `{ questionIds: number[] }` |
+| GET | `/api/admin/collections` | List all collections with stats | -- |
+| GET | `/api/admin/collections/:id` | Collection detail with aggregate telemetry | -- |
+| GET | `/api/admin/quality/summary` | Overall quality dashboard data | -- |
+
+### Server-Side vs Client-Side Filtering
+
+**Use server-side pagination and filtering.** Even at 320 questions, establishing server-side patterns now means the admin UI scales when the question bank grows to 1,000+. The existing admin endpoint already does server-side filtering by status -- extend that pattern.
+
+Drizzle ORM makes composable server-side queries straightforward:
+
+```typescript
+let query = db.select().from(questions);
+
+if (search) query = query.where(ilike(questions.text, `%${search}%`));
+if (status) query = query.where(eq(questions.status, status));
+if (difficulty) query = query.where(eq(questions.difficulty, difficulty));
+
+query = query.orderBy(sortColumn).limit(limit).offset(offset);
+```
 
 ## What NOT to Add
 
-### 1. Database ORM (Prisma, Drizzle, TypeORM)
-**Reason:** Project uses raw `pg` queries throughout (`pool.query()`). Adding an ORM for 5-6 new tables introduces a second data access pattern, migration tooling, and learning curve. The team already has working patterns for raw SQL.
-**Confidence:** HIGH (codebase verified)
+### 1. Separate Admin SPA or Framework (react-admin, Refine, AdminJS)
 
-### 2. Full-Text Search (pg_trgm, Elasticsearch)
-**Reason:** Collections are browsed by list, not searched by text. With 5-20 collections, a simple `SELECT` is sufficient. If search is needed later, PostgreSQL's built-in `pg_trgm` extension (available on Supabase) can be added without new dependencies.
+**Reason:** The admin UI is for 1-3 dev/authors. It is a few protected routes within the existing React app, not a standalone admin panel. Adding react-admin means a second routing system, second state management approach, and a separate build. The existing `Admin.tsx` proves the pattern works: standard React components with Tailwind.
+
 **Confidence:** HIGH
 
-### 3. Database Migration Tool (Knex, node-pg-migrate, Flyway)
-**Reason:** The project uses a single `schema.sql` file applied manually. For v1.2 (adding 3 tables), extending `schema.sql` with new `CREATE TABLE` statements matches the existing pattern. If the project grows beyond 10+ schema changes, revisit with `node-pg-migrate`.
-**Confidence:** MEDIUM -- a migration tool would be better practice, but adding one is itself a scope item. For 3 new tables, manual SQL is pragmatic.
+### 2. Chart Library (Chart.js, Recharts, Nivo)
 
-### 4. Separate Cron Service on Render
-**Reason:** Render cron jobs are a separate billable service with cold start times. For a single hourly SQL query, in-process `node-cron` running inside the existing web service is simpler and free.
-**Confidence:** HIGH (Render docs verified)
+**Reason:** v1.3 admin needs quality scores and telemetry numbers, not time-series charts. Quality scores are displayed as colored badges (0-100). Telemetry is encounter_count and correct_rate displayed as text. If charts become needed in a future version, Recharts (~40KB) integrates well with React/Tailwind.
 
-### 5. Redis for Question Caching
-**Reason:** With ~500 questions across all collections and PostgreSQL on Supabase (low-latency managed service), query times will be <10ms. Redis caching adds cache invalidation complexity (expired questions, new questions) for no measurable benefit at this scale.
+**Confidence:** HIGH -- charts are explicitly not in the v1.3 scope.
+
+### 3. lodash or lodash.debounce
+
+**Reason:** The only "utility" need is debouncing search input, which is 6 lines of custom hook (shown above). No need for a 70KB utility library or even a 1KB single-function package.
+
 **Confidence:** HIGH
 
-### 6. i18n Library (react-intl, i18next)
-**Reason:** "Locale" in this project means geographic locale (Bloomington, IN vs Los Angeles, CA), NOT language translation. All content remains in English. The locale is a metadata field on collections, not a UI translation layer.
-**Confidence:** HIGH (requirements verified)
+### 4. Form Library (React Hook Form, Formik)
 
-### 7. Admin Dashboard Framework
-**Reason:** v1.2 manages collections via scripts (CLI) and direct database operations. An admin UI is a separate feature milestone. Building one now is scope creep.
+**Reason:** The admin UI has no complex forms. Filters are dropdowns and a search input managed by component state. The quality rules engine has no user-editable form. If a question editing form is added later, React Hook Form would be appropriate then -- but it is not in v1.3 scope.
+
 **Confidence:** HIGH
 
-### 8. Webhook/Event System (EventEmitter, Bull, BullMQ)
-**Reason:** The expiration check is a single cron job that runs a query and logs results. No event bus, job queue, or pub/sub needed. If notification requirements grow complex, Bull can be added later (it uses the existing Redis).
+### 5. State Management Library for Admin (Redux Toolkit, Jotai)
+
+**Reason:** Zustand is already installed (`zustand@4.4.7`). Admin state is simple: current filters, current page, search query. A Zustand store or even local component state handles this. No need for a second state library.
+
+**Confidence:** HIGH
+
+### 6. json-rules-engine or Similar Rules Library
+
+**Reason:** Quality rules are 10-20 simple predicates evaluated synchronously. A rules engine library adds complexity (JSON rule definitions, engine instantiation, async evaluation) for something that is clearer as typed functions. If rules become user-editable or number 100+, reconsider.
+
+**Confidence:** HIGH
+
+### 7. Separate Telemetry Database (ClickHouse, TimescaleDB)
+
+**Reason:** Aggregate counters on the questions table handle the scale. At 320 questions and modest traffic, a columnar analytics database is extreme over-engineering. PostgreSQL handles `SUM`, `AVG`, and `GROUP BY` on thousands of rows instantly.
+
+**Confidence:** HIGH
+
+### 8. Background Job Queue (BullMQ, pg-boss)
+
+**Reason:** Quality scoring is synchronous and fast (evaluate 10-20 rules against a question object). Telemetry is a single atomic UPDATE per answer. Neither requires async job processing. The existing in-process `node-cron` handles the only scheduled task (expiration sweep).
+
 **Confidence:** HIGH
 
 ## Installation Commands
 
-### Required
+### Frontend
+
 ```bash
-cd backend
-npm install node-cron
-npm install -D @types/node-cron
+cd frontend
+npm install @tanstack/react-table
 ```
 
-### Database Migration
-```sql
--- Run against Supabase PostgreSQL (extend existing schema.sql)
--- See schema design section above for full SQL
+### Backend
+
+```bash
+# No new packages needed
+# Telemetry columns added via Drizzle migration:
+cd backend
+npx drizzle-kit generate
+npx drizzle-kit push
 ```
 
 ### Not Needed
+
 ```bash
-# DO NOT run these
-npm install prisma              # No ORM needed
-npm install knex                # No migration tool needed
-npm install node-schedule       # node-cron is lighter
-npm install resend              # Defer email to post-MVP
-npm install i18next             # Not a language translation feature
-npm install bullmq              # No job queue needed
+# DO NOT install these
+npm install react-admin         # No separate admin framework
+npm install @tanstack/react-query  # Simple fetch hooks suffice at this scale
+npm install recharts            # No charts in v1.3
+npm install lodash              # Custom debounce hook instead
+npm install react-hook-form     # No complex forms in v1.3
+npm install json-rules-engine   # Pure TypeScript rules instead
+npm install bullmq              # No background jobs needed
 ```
 
 ## Integration Points with Existing Stack
 
-### Backend: game.ts Route Changes
+### 1. Telemetry Recording: game.ts Answer Handler
 
-**Before (current):**
+The `POST /api/game/answer` handler in `routes/game.ts` (line 169) already resolves the question and scores the answer. Add a telemetry increment after scoring, using the existing `db` instance and `questions` schema:
+
 ```typescript
-const allQuestions: Question[] = JSON.parse(readFileSync(questionsPath, 'utf-8'));
+// After line 205 in game.ts (after scoring logic)
+// Fire-and-forget telemetry update (don't block response)
+db.update(questions)
+  .set({
+    encounterCount: sql`${questions.encounterCount} + 1`,
+    correctCount: answer.correct
+      ? sql`${questions.correctCount} + 1`
+      : undefined,
+  })
+  .where(eq(questions.id, dbQuestionId))
+  .execute()
+  .catch(err => console.error('Telemetry update failed:', err));
 ```
 
-**After (v1.2):**
+**Note:** The game routes currently use `externalId` (e.g., "q001") for question identification. Telemetry updates need the database `id` (serial integer). A lookup from `externalId` to `id` is needed, or the session can store the database ID alongside the external ID.
+
+### 2. Admin API Extension: routes/admin.ts
+
+The existing `routes/admin.ts` applies `authenticateToken` middleware to all routes (line 10). New endpoints follow the same pattern. The existing Drizzle query patterns (joins, where conditions, ordering) extend naturally.
+
+### 3. Quality Rules: New Service File
+
+Create `backend/src/services/qualityRules.ts` as a pure module. No Express dependency. Called from:
+- Admin API endpoints (on-demand quality report)
+- Generation pipeline (post-generation quality gate)
+- Batch quality sweep (CLI script)
+
+### 4. Generation Pipeline Enhancement: Existing Script Pattern
+
+The existing `generateLearningContent.ts` pattern (CLI args, file-based I/O, structured JSON output) extends to include a quality validation step after generation:
+
 ```typescript
-// Questions loaded from database per-request, filtered by collection
-router.get('/questions', async (req, res) => {
-  const collectionSlug = req.query.collection as string || 'federal';
-  const questions = await getQuestionsByCollection(collectionSlug);
-  // ... existing shuffle and select logic
-});
-```
-
-### Backend: session creation
-
-`POST /api/game/session` gains optional `collectionSlug` body parameter. If omitted, defaults to `'federal'` for backward compatibility.
-
-### Frontend: gameService.ts
-
-```typescript
-export async function createGameSession(collectionSlug?: string): Promise<...> {
-  const response = await apiRequest('/api/game/session', {
-    method: 'POST',
-    body: JSON.stringify({ collectionSlug }),
-  });
-  // ...
+// In generation script, after Claude returns content:
+const qualityReport = evaluateQuality(generatedQuestion);
+if (!qualityReport.passesMinimumBar) {
+  console.warn(`Quality check failed for generated question: ${qualityReport.violations}`);
+  // Retry with quality feedback in prompt, or skip
 }
 ```
 
-### Database: Shared pool
+### 5. Drizzle Schema Extension
 
-The existing `pool` from `config/database.ts` handles all queries. No new connection needed. The `civic_trivia` schema search path is already configured.
-
-### Expiration Cron: Startup Integration
+Add columns to the existing `questions` table definition in `backend/src/db/schema.ts`:
 
 ```typescript
-// In server.ts, after startServer()
-import { startExpirationCron } from './services/expirationService.js';
-startExpirationCron(pool);
+// Add to questions table definition
+encounterCount: integer('encounter_count').notNull().default(0),
+correctCount: integer('correct_count').notNull().default(0),
 ```
+
+Run `npx drizzle-kit generate` to create the migration, then `npx drizzle-kit push` to apply.
+
+### 6. Frontend Route Structure
+
+The existing `App.tsx` routes pattern extends cleanly. The current `/admin` route is a single page. Convert to a layout with nested routes using `<Outlet />` from react-router-dom (already installed).
 
 ## Sources
 
-### HIGH Confidence (Official Documentation, Verified Code)
-- Existing codebase: `backend/package.json`, `backend/schema.sql`, `backend/src/routes/game.ts`, `backend/src/scripts/generateLearningContent.ts` -- verified by direct file reading
-- [PostgreSQL JSON Types Documentation](https://www.postgresql.org/docs/current/datatype-json.html) -- official PostgreSQL docs
-- [Render Cron Jobs Documentation](https://render.com/docs/cronjobs) -- official Render docs
+### HIGH Confidence (Codebase-Verified)
 
-### MEDIUM Confidence (Multiple Sources Agree)
-- [node-cron npm](https://www.npmjs.com/package/node-cron) -- 3.0.3, ~2.5M weekly downloads
-- [node-cron vs node-schedule comparison](https://npm-compare.com/cron,node-cron,node-schedule) -- adoption and feature comparison
-- [BetterStack: Schedulers in Node.js](https://betterstack.com/community/guides/scaling-nodejs/best-nodejs-schedulers/) -- confirms node-cron as top choice for simple scheduling
-- [When to Avoid JSONB in PostgreSQL (Heap)](https://www.heap.io/blog/when-to-avoid-jsonb-in-a-postgresql-schema) -- confirms relational tables for query-heavy dimensions like tags
-- [PostgreSQL JSONB Best Practices (AWS)](https://aws.amazon.com/blogs/database/postgresql-as-a-json-database-advanced-patterns-and-best-practices/) -- confirms hybrid JSONB + relational approach
+- Existing admin infrastructure: `frontend/src/pages/Admin.tsx`, `backend/src/routes/admin.ts`, `frontend/src/features/admin/` -- verified by direct code reading
+- Database schema: `backend/src/db/schema.ts` -- Drizzle ORM schema with questions, collections, topics, junction tables
+- Package versions: `frontend/package.json` and `backend/package.json` -- verified installed versions
+- Generation pipeline: `backend/src/scripts/generateLearningContent.ts` -- Claude API integration pattern
+- Game answer handler: `backend/src/routes/game.ts` lines 169-224 -- where telemetry will integrate
 
-### LOW Confidence (Informational)
-- [Render Cron Job spinup improvements (Feb 2025)](https://render.com/changelog/significantly-reduced-median-spinup-time-for-cron-jobs) -- changelog, not critical to decision
+### HIGH Confidence (Official Documentation)
+
+- [@tanstack/react-table npm](https://www.npmjs.com/package/@tanstack/react-table) -- v8.21.3, headless table for React
+- [TanStack Table docs](https://tanstack.com/table/latest/docs/introduction) -- headless design, sorting/filtering/pagination APIs
+- [Drizzle ORM Zod integration](https://orm.drizzle.team/docs/zod) -- Zod v4 compatibility confirmed
+- [Drizzle ORM Zod v4 compatibility PR](https://github.com/drizzle-team/drizzle-orm/pull/4820) -- drizzle-zod supports Zod v4
+
+### MEDIUM Confidence (Multiple Sources)
+
+- TanStack Table bundle size (~53KB min, ~14KB gzip) -- reported across multiple sources, not independently verified
+- PostgreSQL atomic increment safety -- well-documented PostgreSQL behavior for `SET col = col + 1`
 
 ---
 
 **Next Steps for Roadmap:**
 
-1. **Phase 1 (Database):** Create collections/questions/junction tables, seed from JSON, update game routes to query PostgreSQL
-2. **Phase 2 (Collection Picker):** Frontend collection selection UI, API endpoint for listing collections
-3. **Phase 3 (Expiration):** Add `node-cron`, implement expiration sweep, structured logging
-4. **Phase 4 (Content Generation):** Enhance scripts for locale-aware generation, add batch question script
+1. **Phase 1 (Telemetry):** Add encounter_count/correct_count columns, instrument answer handler -- prerequisite for quality scoring
+2. **Phase 2 (Quality Rules):** Implement quality rules engine as pure TypeScript service, batch-evaluate existing questions
+3. **Phase 3 (Admin UI):** Install @tanstack/react-table, build question explorer with filters/sort/pagination, quality scores
+4. **Phase 4 (Generation Enhancement):** Add quality gate to generation pipeline, reject/retry low-quality generated questions
 
-Phase 1 is the critical path -- everything depends on questions being in the database.
+Phase 1 is the critical path -- telemetry data informs quality rules, and quality rules inform the admin UI display.
