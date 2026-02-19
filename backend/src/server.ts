@@ -8,6 +8,7 @@ import { router as authRouter } from './routes/auth.js';
 import { router as gameRouter } from './routes/game.js';
 import { router as profileRouter } from './routes/profile.js';
 import { router as healthRouter } from './routes/health.js';
+import { router as adminRouter } from './routes/admin.js';
 import { storageFactory } from './config/redis.js';
 import { initializeSessionManager } from './services/sessionService.js';
 import { startExpirationCron } from './cron/startCron.js';
@@ -52,6 +53,9 @@ async function startServer() {
 
   // Profile routes
   app.use('/api/users/profile', profileRouter);
+
+  // Admin routes
+  app.use('/api/admin', adminRouter);
 
   // Start server
   app.listen(PORT, () => {
