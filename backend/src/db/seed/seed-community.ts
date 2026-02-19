@@ -78,7 +78,14 @@ async function seedLocale(slug: string, data: DataFile) {
   }
 
   const collectionId = collection.id;
-  console.log(`  Collection found: id=${collectionId}`);
+
+  // Ensure collection is active
+  await db
+    .update(collections)
+    .set({ isActive: true })
+    .where(eq(collections.slug, slug));
+
+  console.log(`  Collection found: id=${collectionId} (ensured active)`);
 
   // 2. Upsert topic categories and link to collection
   const topicIdMap: Record<string, number> = {};
