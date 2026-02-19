@@ -60,6 +60,16 @@ export function Header() {
                 {user.name || user.email}
               </span>
 
+              {/* Admin pill (only for admin users) */}
+              {user.isAdmin && (
+                <Link
+                  to="/admin"
+                  className="text-xs font-medium bg-red-100 text-red-700 px-2 py-0.5 rounded-full hover:bg-red-200 transition-colors"
+                >
+                  Admin
+                </Link>
+              )}
+
               {/* Hamburger menu */}
               <div className="relative" ref={menuRef}>
                 <button
@@ -86,12 +96,6 @@ export function Header() {
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                     >
                       Profile
-                    </button>
-                    <button
-                      onClick={() => handleMenuItemClick(() => navigate('/admin'))}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      Review
                     </button>
                     <button
                       onClick={() => handleMenuItemClick(handleLogout)}
