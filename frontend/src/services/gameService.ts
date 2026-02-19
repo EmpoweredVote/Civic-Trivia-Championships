@@ -15,18 +15,34 @@ export async function fetchQuestions(): Promise<Question[]> {
 }
 
 // Create a new game session
-export async function createGameSession(): Promise<{ sessionId: string; questions: Question[]; degraded: boolean }> {
-  const response = await apiRequest<{ sessionId: string; questions: Question[]; degraded?: boolean }>(
+export async function createGameSession(collectionId?: number): Promise<{
+  sessionId: string;
+  questions: Question[];
+  degraded: boolean;
+  collectionName: string;
+  collectionSlug: string;
+}> {
+  const body = collectionId !== undefined ? JSON.stringify({ collectionId }) : undefined;
+  const response = await apiRequest<{
+    sessionId: string;
+    questions: Question[];
+    degraded?: boolean;
+    collectionName?: string;
+    collectionSlug?: string;
+  }>(
     '/api/game/session',
     {
       method: 'POST',
+      ...(body ? { body } : {}),
     }
   );
 
   return {
     sessionId: response.sessionId,
     questions: response.questions,
-    degraded: response.degraded ?? false, // Default to false if not present
+    degraded: response.degraded ?? false,
+    collectionName: response.collectionName ?? 'Federal Civics',
+    collectionSlug: response.collectionSlug ?? 'federal-civics',
   };
 }
 
@@ -101,6 +117,8 @@ export interface GameSessionResult {
     totalPoints: number;
     responseTime: number;
   }>;
+  collectionName?: string;
+  collectionSlug?: string;
 }
 
 export async function fetchGameResults(sessionId: string): Promise<GameSessionResult> {

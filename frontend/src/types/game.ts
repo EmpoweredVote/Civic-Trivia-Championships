@@ -99,4 +99,6 @@ export type GameState = {
   wagerCategory: string | null; // Category for final question wagering (defaults to null)
   currentStreak: number; // Tracks consecutive correct answers
   degraded: boolean; // True when backend is running in-memory fallback mode
+  collectionName: string | null; // Name of collection being played
+  collectionSlug: string | null; // Slug of collection being played
 };
