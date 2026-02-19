@@ -4,8 +4,14 @@ import { optionalAuth } from '../middleware/auth.js';
 import { updateUserProgression } from '../services/progressionService.js';
 import { storageFactory } from '../config/redis.js';
 import { selectQuestionsForGame, getCollectionMetadata, getFederalCollectionId } from '../services/questionService.js';
+import { db } from '../db/index.js';
+import { collections, collectionQuestions, questions } from '../db/schema.js';
+import { eq, sql, isNull, or, gt } from 'drizzle-orm';
 
 const router = Router();
+
+// Minimum question threshold for a collection to be playable
+const MIN_QUESTION_THRESHOLD = 10;
 
 // Fisher-Yates shuffle algorithm
 function shuffle<T>(array: T[]): T[] {
@@ -35,6 +41,46 @@ function recordPlayedQuestions(userId: string | number, questionIds: string[]): 
   const updated = [...questionIds, ...existing].slice(0, MAX_RECENT);
   recentQuestions.set(userId, updated);
 }
+
+// GET /collections - Returns active collections with question counts
+router.get('/collections', async (_req: Request, res: Response) => {
+  try {
+    const now = new Date();
+
+    // Query active collections with question counts (excluding expired questions)
+    const rows = await db
+      .select({
+        id: collections.id,
+        name: collections.name,
+        slug: collections.slug,
+        description: collections.description,
+        themeColor: collections.themeColor,
+        sortOrder: collections.sortOrder,
+        questionCount: sql<number>`COUNT(DISTINCT ${collectionQuestions.questionId})::int`.as('questionCount')
+      })
+      .from(collections)
+      .leftJoin(collectionQuestions, eq(collections.id, collectionQuestions.collectionId))
+      .leftJoin(questions, eq(collectionQuestions.questionId, questions.id))
+      .where(
+        sql`${collections.isActive} = true
+        AND (${questions.id} IS NULL
+          OR ${questions.expiresAt} IS NULL
+          OR ${questions.expiresAt} > ${now})`
+      )
+      .groupBy(collections.id)
+      .orderBy(collections.sortOrder);
+
+    // Filter out collections with fewer than minimum questions
+    const filtered = rows.filter(r => r.questionCount >= MIN_QUESTION_THRESHOLD);
+
+    res.status(200).json({ collections: filtered });
+  } catch (error) {
+    console.error('Error fetching collections:', error);
+    res.status(500).json({
+      error: 'Failed to fetch collections'
+    });
+  }
+});
 
 // GET /questions - Returns 10 randomized questions (legacy endpoint)
 router.get('/questions', async (_req: Request, res: Response) => {
