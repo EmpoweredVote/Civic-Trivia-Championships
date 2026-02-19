@@ -142,10 +142,10 @@ Requirements for Community Collections milestone. Continues from v1.1 phases.
 
 ### Expiration System
 
-- [ ] **EXP-01**: Expired questions automatically removed from game rotation
-- [ ] **EXP-02**: Expiration check runs on an hourly schedule (cron job)
-- [ ] **EXP-03**: Expired questions logged and flagged for content review
-- [ ] **EXP-04**: Active game sessions not affected by mid-session expiration (session isolation)
+- [x] **EXP-01**: Expired questions automatically removed from game rotation
+- [x] **EXP-02**: Expiration check runs on an hourly schedule (cron job)
+- [x] **EXP-03**: Expired questions logged and flagged for content review
+- [x] **EXP-04**: Active game sessions not affected by mid-session expiration (session isolation)
 
 ### Content Creation
 
@@ -157,7 +157,7 @@ Requirements for Community Collections milestone. Continues from v1.1 phases.
 
 ### Admin & Health
 
-- [ ] **ADM-01**: Collection health dashboard showing per-collection question counts, expiring-soon counts, and expired counts
+- [x] **ADM-01**: Collection health dashboard showing per-collection question counts, expiring-soon counts, and expired counts
 
 ## v2 Requirements
 
@@ -297,11 +297,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CGFLOW-05 | Phase 14 | Complete |
 | CGFLOW-01 | Phase 15 | Complete |
 | CGFLOW-02 | Phase 15 | Complete |
-| EXP-01 | Phase 16 | Pending |
-| EXP-02 | Phase 16 | Pending |
-| EXP-03 | Phase 16 | Pending |
-| EXP-04 | Phase 16 | Pending |
-| ADM-01 | Phase 16 | Pending |
+| EXP-01 | Phase 16 | Complete |
+| EXP-02 | Phase 16 | Complete |
+| EXP-03 | Phase 16 | Complete |
+| EXP-04 | Phase 16 | Complete |
+| ADM-01 | Phase 16 | Complete |
 | CCONT-02 | Phase 17 | Pending |
 | CCONT-03 | Phase 17 | Pending |
 | CCONT-04 | Phase 17 | Pending |
