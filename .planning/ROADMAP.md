@@ -12,7 +12,7 @@ This roadmap delivers a polished, educational trivia game across three milestone
 - [x] **Phase 14: Question Service & Route Integration** - Swap data layer from JSON to database queries
 - [x] **Phase 15: Collection Picker UI** - Card-based collection selection before game start
 - [x] **Phase 16: Expiration System** - Hourly cron sweep with soft-delete and health monitoring
-- [ ] **Phase 17: Community Content Generation** - Bloomington IN and Los Angeles CA question banks
+- [x] **Phase 17: Community Content Generation** - Bloomington IN and Los Angeles CA question banks
 
 ## Phase Details (v1.2)
 
@@ -95,10 +95,10 @@ Plans:
   5. Both collections appear in the collection picker and are playable end-to-end
 **Plans**: 4 plans in 4 waves
 Plans:
-- [ ] 17-01-PLAN.md — Content generation tooling infrastructure (Anthropic client, Zod schema, locale configs, RAG fetcher, seeder)
-- [ ] 17-02-PLAN.md — Bloomington IN source curation and ~100 question generation with human review
-- [ ] 17-03-PLAN.md — Los Angeles CA source curation and ~100 question generation with human review
-- [ ] 17-04-PLAN.md — Activate both collections and end-to-end playability verification
+- [x] 17-01-PLAN.md — Content generation tooling infrastructure (Anthropic client, Zod schema, locale configs, RAG fetcher, seeder)
+- [x] 17-02-PLAN.md — Bloomington IN source curation and ~100 question generation with human review
+- [x] 17-03-PLAN.md — Los Angeles CA source curation and ~100 question generation with human review
+- [x] 17-04-PLAN.md — Activate both collections and end-to-end playability verification
 
 ## Progress (v1.2)
 
@@ -112,7 +112,7 @@ Note: Phases 15 and 16 are independent after Phase 14 and could parallelize.
 | 14. Question Service & Route Integration | 2/2 | Complete | 2026-02-18 |
 | 15. Collection Picker UI | 3/3 | Complete | 2026-02-18 |
 | 16. Expiration System | 3/3 | Complete | 2026-02-19 |
-| 17. Community Content Generation | 0/4 | Not started | - |
+| 17. Community Content Generation | 4/4 | Complete | 2026-02-19 |
 
 ## Requirement Coverage (v1.2)
 
@@ -284,6 +284,6 @@ Plans:
 
 ---
 *Created: 2026-02-03 (v1.0)*
-*Updated: 2026-02-19 (Phase 17 planned)*
-*Current Milestone: v1.2 Community Collections*
-*Phases: 17 (16 complete, 0 in progress, 1 planned)*
+*Updated: 2026-02-19 (Phase 17 complete)*
+*Current Milestone: v1.2 Community Collections — COMPLETE*
+*Phases: 17 (17 complete, 0 in progress, 0 planned)*

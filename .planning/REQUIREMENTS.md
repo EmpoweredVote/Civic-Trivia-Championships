@@ -150,10 +150,10 @@ Requirements for Community Collections milestone. Continues from v1.1 phases.
 ### Content Creation
 
 - [x] **CCONT-01**: Federal collection populated with existing 120-question bank
-- [ ] **CCONT-02**: Bloomington IN collection with 50-120 local + Indiana state questions
-- [ ] **CCONT-03**: Los Angeles CA collection with 50-120 local + California state questions
-- [ ] **CCONT-04**: Content generation tooling supports locale-specific question generation
-- [ ] **CCONT-05**: All locale content cross-referenced with authoritative local government sources
+- [x] **CCONT-02**: Bloomington IN collection with 50-120 local + Indiana state questions
+- [x] **CCONT-03**: Los Angeles CA collection with 50-120 local + California state questions
+- [x] **CCONT-04**: Content generation tooling supports locale-specific question generation
+- [x] **CCONT-05**: All locale content cross-referenced with authoritative local government sources
 
 ### Admin & Health
 
@@ -302,10 +302,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXP-03 | Phase 16 | Complete |
 | EXP-04 | Phase 16 | Complete |
 | ADM-01 | Phase 16 | Complete |
-| CCONT-02 | Phase 17 | Pending |
-| CCONT-03 | Phase 17 | Pending |
-| CCONT-04 | Phase 17 | Pending |
-| CCONT-05 | Phase 17 | Pending |
+| CCONT-02 | Phase 17 | Complete |
+| CCONT-03 | Phase 17 | Complete |
+| CCONT-04 | Phase 17 | Complete |
+| CCONT-05 | Phase 17 | Complete |
 
 **Coverage (v1.0):**
 - v1.0 requirements: 50 total
