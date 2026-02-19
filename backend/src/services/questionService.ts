@@ -292,7 +292,7 @@ export async function selectQuestionsForGame(
     // Base conditions: join collection and exclude expired
     const baseConditions = and(
       eq(collectionQuestions.collectionId, targetCollectionId),
-      or(isNull(questions.status), eq(questions.status, 'active')),
+      eq(questions.status, 'active'),
       or(
         isNull(questions.expiresAt),
         gt(questions.expiresAt, now)

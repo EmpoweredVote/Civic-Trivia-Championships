@@ -1,8 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { storageFactory } from '../config/redis.js';
-import { db } from '../db/index.js';
-import { collections, collectionQuestions, questions } from '../db/schema.js';
-import { eq, sql } from 'drizzle-orm';
+import { pool } from '../config/database.js';
 
 const router = Router();
 
@@ -34,73 +32,56 @@ router.get('/', async (_req: Request, res: Response) => {
 router.get('/collections', async (_req: Request, res: Response) => {
   try {
     const now = new Date();
-    const soonThreshold = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+    const soonThreshold = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // Query collection health with aggregated question counts
-    const collectionHealthData = await db
-      .select({
-        id: collections.id,
-        name: collections.name,
-        slug: collections.slug,
-        activeCount: sql<number>`
-          COUNT(CASE
-            WHEN ${questions.status} = 'active'
-            AND (${questions.expiresAt} IS NULL OR ${questions.expiresAt} > ${soonThreshold})
-            THEN 1
-          END)
-        `.as('active_count'),
-        expiringSoonCount: sql<number>`
-          COUNT(CASE
-            WHEN ${questions.status} = 'active'
-            AND ${questions.expiresAt} > ${now}
-            AND ${questions.expiresAt} <= ${soonThreshold}
-            THEN 1
-          END)
-        `.as('expiring_soon_count'),
-        expiredCount: sql<number>`
-          COUNT(CASE
-            WHEN ${questions.status} = 'expired'
-            THEN 1
-          END)
-        `.as('expired_count'),
-        archivedCount: sql<number>`
-          COUNT(CASE
-            WHEN ${questions.status} = 'archived'
-            THEN 1
-          END)
-        `.as('archived_count')
-      })
-      .from(collections)
-      .leftJoin(collectionQuestions, eq(collections.id, collectionQuestions.collectionId))
-      .leftJoin(questions, eq(collectionQuestions.questionId, questions.id))
-      .where(eq(collections.isActive, true))
-      .groupBy(collections.id, collections.name, collections.slug);
+    // Use raw SQL to avoid drizzle column reference issues
+    const result = await pool.query(`
+      SELECT
+        c.id,
+        c.name,
+        c.slug,
+        COUNT(CASE
+          WHEN COALESCE(q.status, 'active') = 'active'
+          AND (q.expires_at IS NULL OR q.expires_at > $1)
+          THEN 1
+        END)::int AS "activeCount",
+        COUNT(CASE
+          WHEN COALESCE(q.status, 'active') = 'active'
+          AND q.expires_at > $2
+          AND q.expires_at <= $1
+          THEN 1
+        END)::int AS "expiringSoonCount",
+        COUNT(CASE
+          WHEN q.status = 'expired'
+          THEN 1
+        END)::int AS "expiredCount",
+        COUNT(CASE
+          WHEN q.status = 'archived'
+          THEN 1
+        END)::int AS "archivedCount"
+      FROM collections c
+      LEFT JOIN collection_questions cq ON c.id = cq.collection_id
+      LEFT JOIN questions q ON cq.question_id = q.id
+      WHERE c.is_active = true
+      GROUP BY c.id, c.name, c.slug
+    `, [soonThreshold, now]);
 
-    // Compute tier and isPlayable for each collection, and build summary
     let totalActive = 0;
     let totalExpiringSoon = 0;
     let totalExpired = 0;
     let totalArchived = 0;
 
-    const collectionsWithTier = collectionHealthData.map((col) => {
-      const activeCount = Number(col.activeCount);
-      const expiringSoonCount = Number(col.expiringSoonCount);
-      const expiredCount = Number(col.expiredCount);
-      const archivedCount = Number(col.archivedCount);
+    const collectionsData = result.rows.map((col: any) => {
+      const activeCount = col.activeCount || 0;
+      const expiringSoonCount = col.expiringSoonCount || 0;
+      const expiredCount = col.expiredCount || 0;
+      const archivedCount = col.archivedCount || 0;
 
-      // Compute tier
       let tier: 'Healthy' | 'At Risk' | 'Critical';
-      if (activeCount >= 20) {
-        tier = 'Healthy';
-      } else if (activeCount >= 10) {
-        tier = 'At Risk';
-      } else {
-        tier = 'Critical';
-      }
+      if (activeCount >= 20) tier = 'Healthy';
+      else if (activeCount >= 10) tier = 'At Risk';
+      else tier = 'Critical';
 
-      const isPlayable = activeCount >= 10;
-
-      // Add to summary
       totalActive += activeCount;
       totalExpiringSoon += expiringSoonCount;
       totalExpired += expiredCount;
@@ -115,19 +96,19 @@ router.get('/collections', async (_req: Request, res: Response) => {
         expiredCount,
         archivedCount,
         tier,
-        isPlayable
+        isPlayable: activeCount >= 10
       };
     });
 
     res.json({
       summary: {
-        totalCollections: collectionHealthData.length,
+        totalCollections: collectionsData.length,
         totalActive,
         totalExpiringSoon,
         totalExpired,
         totalArchived
       },
-      collections: collectionsWithTier
+      collections: collectionsData
     });
   } catch (error: any) {
     console.error('Error fetching collection health:', error);
