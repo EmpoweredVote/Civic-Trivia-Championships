@@ -72,6 +72,13 @@ export const questions = civicTriviaSchema.table('questions', {
     corrections: Record<string, string>; // Per-wrong-answer explanations
   }>(), // Nullable - optional deep-dive content
   expiresAt: timestamp('expires_at', { withTimezone: true }), // Nullable
+  status: text('status').notNull().default('active'), // 'active' | 'expired' | 'archived'
+  expirationHistory: jsonb('expiration_history').$type<Array<{
+    action: 'expired' | 'renewed' | 'archived';
+    timestamp: string; // ISO 8601
+    previousExpiresAt?: string;
+    newExpiresAt?: string;
+  }>>().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
 }, (table) => ({
@@ -80,7 +87,8 @@ export const questions = civicTriviaSchema.table('questions', {
     .using('gin', sql`${table.learningContent} jsonb_path_ops`),
   expiresAtIdx: index('idx_questions_expires_at')
     .on(table.expiresAt)
-    .where(sql`${table.expiresAt} IS NOT NULL`)
+    .where(sql`${table.expiresAt} IS NOT NULL`),
+  statusIdx: index('idx_questions_status').on(table.status)
 }));
 
 // Collection-Questions junction table
