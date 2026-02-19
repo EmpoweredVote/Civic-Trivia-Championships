@@ -10,6 +10,7 @@ import { router as profileRouter } from './routes/profile.js';
 import { router as healthRouter } from './routes/health.js';
 import { storageFactory } from './config/redis.js';
 import { initializeSessionManager } from './services/sessionService.js';
+import { startExpirationCron } from './cron/startCron.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,9 @@ async function startServer() {
 
   // Initialize session manager with storage backend
   initializeSessionManager(storageFactory.getStorage());
+
+  // Start expiration cron job
+  startExpirationCron();
 
   // Middleware
   app.use(cors({
