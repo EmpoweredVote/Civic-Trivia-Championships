@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-18)
 
 **Core value:** Make civic learning fun through game show mechanics — play, not study
-**Current focus:** v1.2 Community Collections — Phase 17 in progress (Plan 1 of 3 complete)
+**Current focus:** v1.2 Community Collections — Phase 17 in progress (Plan 2 of 3 complete)
 
 ## Current Position
 
 Phase: 17 of 17 (Community Content Generation) — In progress
-Plan: 1 of 3 in phase 17
+Plan: 2 of 3 in phase 17
 Status: In progress
-Last activity: 2026-02-19 — Completed 17-01 (Content Generation Infrastructure)
+Last activity: 2026-02-19 — Completed 17-02 (Bloomington Content Generation)
 
-Progress: [████████████████░░░░] v1.2: 83% (content generation tooling built, questions not yet generated)
+Progress: [█████████████████░░░] v1.2: 90% (100 Bloomington questions seeded as drafts, LA generation remaining)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -36,8 +36,8 @@ Progress: [████████████████░░░░] v1.2: 8
 - Total execution time: 164.2 min
 
 **Recent Trend:**
-- Last 5 plans: 16-01 (3.7 min), 16-02 (1.9 min), 16-03 (6.2 min), 17-01 (6 min)
-- Trend: Strong velocity — infrastructure plans taking 6min, well within budget
+- Last 5 plans: 16-02 (1.9 min), 16-03 (6.2 min), 17-01 (6 min), 17-02 (~20 min incl. human review)
+- Trend: Strong velocity — content generation plans longer due to AI API calls + human verify checkpoint
 
 *Updated after each plan completion*
 
@@ -83,6 +83,8 @@ Recent decisions affecting current work:
 | ON CONFLICT DO NOTHING for question seeding | 17-01 | Idempotent — safe to re-run batches without duplicate entries |
 | cache_control: ephemeral on last RAG source block | 17-01 | Caches entire source document prefix across batches, reducing API cost |
 | LocaleConfig interface in bloomington-in.ts | 17-01 | Shared type imported by all locale configs and main script |
+| Difficulty distribution 30/44/26 accepted | 17-02 | Actual easy/medium/hard split acceptable; local civic content skews medium by nature |
+| Human verify checkpoint as blocking gate | 17-02 | AI-generated content always gated by human review before plan completes |
 
 ### Pending Todos
 
@@ -92,22 +94,23 @@ Deployment Follow-up:
 - [ ] Add to ev-prototypes.netlify.app (optional)
 
 Content Generation:
-- [ ] Run Plan 02: Generate Bloomington questions (--fetch-sources first run)
+- [x] Run Plan 02: Generate Bloomington questions — 100 questions seeded (bli-001 to bli-100)
 - [ ] Run Plan 03: Generate LA questions
-- [ ] Admin review: Activate generated questions from 'draft' status
+- [ ] Admin review: Activate generated questions from 'draft' status (Bloomington ready now)
 
 ### Blockers/Concerns
 
 None currently.
 
 **Research flags for v1.2:**
-- Phase 17 Plans 02+03: AI hallucination risk on local civic facts — RAG sources mitigate but human review essential before activation
+- Phase 17 Plan 03: AI hallucination risk on LA civic facts — RAG sources mitigate but human review essential before activation
+- Phase 17 Plan 02 (Bloomington): Human review completed, questions approved — hallucination risk managed
 
 ## Session Continuity
 
 Last session: 2026-02-19
-Topic: Phase 17 Plan 01 — Content generation tooling built
-Stopped at: Completed 17-01-PLAN.md
+Topic: Phase 17 Plan 02 — Bloomington IN content generation (100 questions seeded, human-approved)
+Stopped at: Completed 17-02-PLAN.md
 Resume file: None
 
 ---
