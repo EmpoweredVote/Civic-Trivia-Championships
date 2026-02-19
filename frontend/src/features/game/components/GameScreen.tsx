@@ -355,39 +355,49 @@ export function GameScreen({
 
       {/* Main content container */}
       <div className="relative min-h-screen flex flex-col py-4 md:py-8 px-4">
-        {/* Top HUD - Quit button, Question number, Progress dots */}
-        <div className="flex items-center justify-between mb-4 md:mb-8 max-w-5xl mx-auto w-full">
-          {/* Quit button */}
-          <button
-            onClick={handleQuitClick}
-            className="min-w-[48px] min-h-[48px] text-slate-400 hover:text-white transition-colors p-2 flex items-center justify-center"
-            aria-label="Quit game"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {/* Top HUD - Quit button, Collection name, Question number, Progress dots */}
+        <div className="flex flex-col items-center gap-2 mb-4 md:mb-8 max-w-5xl mx-auto w-full">
+          {/* Collection name badge */}
+          {state.collectionName && (
+            <div className="text-xs text-slate-500 font-medium tracking-wide uppercase">
+              {state.collectionName}
+            </div>
+          )}
+
+          {/* Controls row */}
+          <div className="flex items-center justify-between w-full">
+            {/* Quit button */}
+            <button
+              onClick={handleQuitClick}
+              className="min-w-[48px] min-h-[48px] text-slate-400 hover:text-white transition-colors p-2 flex items-center justify-center"
+              aria-label="Quit game"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
 
-          {/* Question number indicator (center) */}
-          <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">
-            Q{state.currentQuestionIndex + 1} of 10
-          </span>
+            {/* Question number indicator (center) */}
+            <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">
+              Q{state.currentQuestionIndex + 1} of 10
+            </span>
 
-          {/* Progress dots */}
-          <ProgressDots
-            currentIndex={state.currentQuestionIndex}
-            total={state.questions.length}
-          />
+            {/* Progress dots */}
+            <ProgressDots
+              currentIndex={state.currentQuestionIndex}
+              total={state.questions.length}
+            />
+          </div>
         </div>
 
         {/* Score display - conditionally rendered based on phase */}

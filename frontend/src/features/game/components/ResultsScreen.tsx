@@ -12,11 +12,12 @@ import { announce } from '../../../utils/announce';
 interface ResultsScreenProps {
   result: GameResult;
   questions: Question[];
+  collectionName?: string | null;
   onPlayAgain: () => void;
   onHome: () => void;
 }
 
-export function ResultsScreen({ result, questions, onPlayAgain, onHome }: ResultsScreenProps) {
+export function ResultsScreen({ result, questions, collectionName, onPlayAgain, onHome }: ResultsScreenProps) {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
   const [learnMoreQuestion, setLearnMoreQuestion] = useState<{ content: LearningContent; userAnswer: number | null; correctAnswer: number } | null>(null);
   const motionScore = useMotionValue(0);
@@ -166,6 +167,9 @@ export function ResultsScreen({ result, questions, onPlayAgain, onHome }: Result
           className="text-center mb-8"
         >
           <h1 className="text-4xl font-bold text-white mb-6">Game Complete!</h1>
+          {collectionName && (
+            <div className="text-slate-400 text-sm mb-4">{collectionName}</div>
+          )}
 
           {/* Primary score display with perfect game treatment */}
           <motion.div
