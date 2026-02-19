@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 ## Current Position
 
 Phase: 15 of 17 (Collection Picker UI) — IN PROGRESS
-Plan: 1 of 3 in phase 15
-Status: Phase 15 started — Plan 01 complete (collections API endpoint)
-Last activity: 2026-02-18 — Completed 15-01-PLAN.md
+Plan: 2 of 3 in phase 15
+Status: Phase 15 in progress — Plan 02 complete (picker UI components)
+Last activity: 2026-02-19 — Completed 15-02-PLAN.md
 
-Progress: [█████████░░░░░░░░░░░] v1.2: 43% (2.33/5 phases)
+Progress: [█████████░░░░░░░░░░░] v1.2: 47% (2.67/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -31,13 +31,13 @@ Progress: [█████████░░░░░░░░░░░] v1.2: 4
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 40
-- Average duration: 3.6 min
-- Total execution time: 148.2 min
+- Total plans completed: 41
+- Average duration: 3.5 min
+- Total execution time: 149.8 min
 
 **Recent Trend:**
-- Last 5 plans: 13-03 (3 min), 14-01 (2 min), 14-02 (2 min), 15-01 (1.2 min)
-- Trend: Strong velocity — last plan under 2 minutes
+- Last 5 plans: 14-01 (2 min), 14-02 (2 min), 15-01 (1.2 min), 15-02 (1.6 min)
+- Trend: Strong velocity — consistently under 2 minutes
 
 *Updated after each plan completion*
 
@@ -64,6 +64,9 @@ Recent decisions affecting current work:
 | In-memory recent question tracking (not persisted) | 14-02 | Sufficient for per-deployment variety; Redis persistence deferred |
 | Collections query excludes expired questions from count | 15-01 | Ensures picker shows accurate playable question counts using JOIN through questions table |
 | MIN_QUESTION_THRESHOLD applied in JS, not SQL | 15-01 | Allows future configuration without query changes |
+| Inline style for themeColor (not dynamic Tailwind) | 15-02 | Tailwind JIT purges dynamic class strings — inline style required for runtime colors |
+| CollectionPicker as pure component (props, not hook) | 15-02 | Makes component testable and reusable — Dashboard owns useCollections hook |
+| localStorage persistence for last-played collection | 15-02 | Better UX — remembers user preference across sessions with 'lastCollectionId' key |
 
 ### Pending Todos
 
@@ -82,9 +85,9 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Topic: Phase 15 Plan 01 execution complete
-Stopped at: Completed 15-01-PLAN.md — collections API endpoint ready
+Last session: 2026-02-19
+Topic: Phase 15 Plan 02 execution complete
+Stopped at: Completed 15-02-PLAN.md — collection picker UI components ready
 Resume file: None
 
 ---
