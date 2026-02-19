@@ -1,10 +1,13 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Header } from '../components/layout/Header';
+import { useCollections } from '../features/collections/hooks/useCollections';
+import { CollectionPicker } from '../features/collections/components/CollectionPicker';
 
 export function Dashboard() {
   const { user, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const { collections, selectedId, selectedCollection, loading, select } = useCollections();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -16,18 +19,23 @@ export function Dashboard() {
             {isAuthenticated && user ? `Welcome, ${user.name}!` : 'Civic Trivia Championship'}
           </h2>
 
-          {/* Quick Play CTA */}
+          {/* Start Game Button */}
           <div className="text-center py-8">
             <button
-              onClick={() => navigate('/play')}
+              onClick={() => navigate('/play', { state: { collectionId: selectedId } })}
               className="px-12 py-4 min-h-[48px] bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold rounded-lg shadow-lg transition-all transform hover:scale-105"
             >
-              Quick Play
+              {selectedCollection ? `Play ${selectedCollection.name}` : 'Quick Play'}
             </button>
-            <p className="text-gray-600 mt-4">
-              10 questions. Test your civic knowledge.
-            </p>
           </div>
+
+          {/* Collection Picker */}
+          <CollectionPicker
+            collections={collections}
+            selectedId={selectedId}
+            loading={loading}
+            onSelect={select}
+          />
 
           {/* Sign-in nudge for anonymous users */}
           {!isAuthenticated && (

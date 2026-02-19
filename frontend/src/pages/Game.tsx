@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useGameState } from '../features/game/hooks/useGameState';
 import { GameScreen } from '../features/game/components/GameScreen';
 import { ResultsScreen } from '../features/game/components/ResultsScreen';
@@ -7,6 +7,9 @@ import { announce } from '../utils/announce';
 
 export function Game() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const collectionId = (location.state as { collectionId?: number } | null)?.collectionId;
+
   const {
     state,
     currentQuestion,
@@ -27,8 +30,15 @@ export function Game() {
     resumeGame,
   } = useGameState();
 
+  // Auto-start game when navigating from Dashboard with a collectionId
+  useEffect(() => {
+    if (collectionId !== undefined && state.phase === 'idle') {
+      startGame(collectionId);
+    }
+  }, []);
+
   const handlePlayAgain = () => {
-    startGame();
+    startGame(collectionId);
   };
 
   const handleHome = () => {
@@ -39,6 +49,9 @@ export function Game() {
     quitGame();
     navigate('/dashboard');
   };
+
+  // Wrapper for GameScreen startGame that passes collectionId
+  const handleStartGame = () => startGame(collectionId);
 
   // Announce game completion for screen readers
   useEffect(() => {
@@ -55,6 +68,7 @@ export function Game() {
       <ResultsScreen
         result={gameResult}
         questions={state.questions}
+        collectionName={state.collectionName}
         onPlayAgain={handlePlayAgain}
         onHome={handleHome}
       />
@@ -66,7 +80,7 @@ export function Game() {
     <GameScreen
       state={state}
       currentQuestion={currentQuestion}
-      startGame={startGame}
+      startGame={handleStartGame}
       selectAnswer={selectAnswer}
       lockAnswer={lockAnswer}
       handleTimeout={handleTimeout}

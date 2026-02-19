@@ -14,7 +14,7 @@ const WAGER_SUSPENSE_MS = 1500; // Suspense pause after locking wager
 interface UseGameStateReturn {
   state: GameState;
   currentQuestion: Question | null;
-  startGame: () => Promise<void>;
+  startGame: (collectionId?: number) => Promise<void>;
   selectAnswer: (optionIndex: number, timeRemaining?: number) => void;
   lockAnswer: (timeRemaining: number) => void;
   handleTimeout: () => void;
@@ -89,9 +89,9 @@ export function useGameState(): UseGameStateReturn {
       : null;
 
   // Start game by creating a server session
-  const startGame = async () => {
+  const startGame = async (collectionId?: number) => {
     try {
-      const { sessionId, questions, degraded, collectionName, collectionSlug } = await createGameSession();
+      const { sessionId, questions, degraded, collectionName, collectionSlug } = await createGameSession(collectionId);
       sessionIdRef.current = sessionId;
       setHasShownTooltip(false); // Reset tooltip flag for new game
       dispatch({ type: 'SESSION_CREATED', sessionId, questions, degraded, collectionName, collectionSlug });
