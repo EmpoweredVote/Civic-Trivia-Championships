@@ -80,9 +80,11 @@ router.get('/collections', async (_req: Request, res: Response) => {
     res.status(200).json({ collections: filtered });
   } catch (error: any) {
     console.error('Error fetching collections:', error);
+    const cause = error?.cause;
     res.status(500).json({
       error: 'Failed to fetch collections',
-      detail: error?.message || String(error)
+      detail: error?.message || String(error),
+      pgError: cause?.message || cause?.detail || undefined
     });
   }
 });
