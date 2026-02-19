@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-18)
 
 ## Current Position
 
-Phase: 14 of 17 (Question Service & Route Integration) — COMPLETE
-Plan: 2 of 2 in phase 14
-Status: Phase 14 complete, verified, ready for Phase 15
-Last activity: 2026-02-18 — Phase 14 complete (2 plans, verified)
+Phase: 15 of 17 (Collection Picker UI) — IN PROGRESS
+Plan: 1 of 3 in phase 15
+Status: Phase 15 started — Plan 01 complete (collections API endpoint)
+Last activity: 2026-02-18 — Completed 15-01-PLAN.md
 
-Progress: [████████░░░░░░░░░░░░] v1.2: 40% (2/5 phases)
+Progress: [█████████░░░░░░░░░░░] v1.2: 43% (2.33/5 phases)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -31,13 +31,13 @@ Progress: [████████░░░░░░░░░░░░] v1.2: 4
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 39
-- Average duration: 3.7 min
-- Total execution time: 147 min
+- Total plans completed: 40
+- Average duration: 3.6 min
+- Total execution time: 148.2 min
 
 **Recent Trend:**
-- Last 5 plans: 13-02 (2 min), 13-03 (3 min), 14-01 (2 min), 14-02 (2 min)
-- Trend: Consistent 2-4 min velocity maintained
+- Last 5 plans: 13-03 (3 min), 14-01 (2 min), 14-02 (2 min), 15-01 (1.2 min)
+- Trend: Strong velocity — last plan under 2 minutes
 
 *Updated after each plan completion*
 
@@ -62,6 +62,8 @@ Recent decisions affecting current work:
 | Module-level caching for topicMap and federalCollectionId | 14-01 | Both immutable at runtime — avoids repeated DB round-trips |
 | Legacy questionIds path fetches from DB and filters | 14-02 | Backward compat without maintaining removed allQuestions variable |
 | In-memory recent question tracking (not persisted) | 14-02 | Sufficient for per-deployment variety; Redis persistence deferred |
+| Collections query excludes expired questions from count | 15-01 | Ensures picker shows accurate playable question counts using JOIN through questions table |
+| MIN_QUESTION_THRESHOLD applied in JS, not SQL | 15-01 | Allows future configuration without query changes |
 
 ### Pending Todos
 
@@ -81,8 +83,8 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-02-18
-Topic: Phase 14 execution complete
-Stopped at: Phase 14 verified and complete — ready for Phase 15 planning
+Topic: Phase 15 Plan 01 execution complete
+Stopped at: Completed 15-01-PLAN.md — collections API endpoint ready
 Resume file: None
 
 ---
