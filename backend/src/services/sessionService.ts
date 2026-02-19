@@ -54,6 +54,9 @@ export interface GameSession {
   lastActivityTime: Date;
   progressionAwarded: boolean; // Prevents double-awarding progression
   plausibilityFlags: number; // Count of suspicious answer patterns in this session
+  collectionId: number | null;    // null = Federal default (backward compat)
+  collectionName: string | null;  // e.g. "Federal Civics"
+  collectionSlug: string | null;  // e.g. "federal-civics"
 }
 
 // Results returned to client
@@ -108,9 +111,14 @@ export class SessionManager {
    * Create a new game session
    * @param userId - User identifier (number for authenticated, 'anonymous' for unauthenticated)
    * @param questions - Array of questions for this game
+   * @param collectionMeta - Optional collection metadata (defaults to null for backward compat)
    * @returns Session ID
    */
-  async createSession(userId: string | number, questions: Question[]): Promise<string> {
+  async createSession(
+    userId: string | number,
+    questions: Question[],
+    collectionMeta?: { id: number; name: string; slug: string }
+  ): Promise<string> {
     const sessionId = randomUUID();
     const now = new Date();
 
@@ -122,7 +130,10 @@ export class SessionManager {
       createdAt: now,
       lastActivityTime: now,
       progressionAwarded: false,
-      plausibilityFlags: 0
+      plausibilityFlags: 0,
+      collectionId: collectionMeta?.id ?? null,
+      collectionName: collectionMeta?.name ?? null,
+      collectionSlug: collectionMeta?.slug ?? null,
     };
 
     await this.storage.set(sessionId, session, 3600); // 1 hour TTL

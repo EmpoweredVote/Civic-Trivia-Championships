@@ -1,22 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { sessionManager, Question } from '../services/sessionService.js';
 import { optionalAuth } from '../middleware/auth.js';
 import { updateUserProgression } from '../services/progressionService.js';
 import { storageFactory } from '../config/redis.js';
+import { selectQuestionsForGame, getCollectionMetadata, getFederalCollectionId } from '../services/questionService.js';
 
 const router = Router();
-
-// Get current file's directory for ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load questions from JSON file
-const questionsPath = join(__dirname, '../data/questions.json');
-const questionsData = readFileSync(questionsPath, 'utf-8');
-const allQuestions: Question[] = JSON.parse(questionsData);
 
 // Fisher-Yates shuffle algorithm
 function shuffle<T>(array: T[]): T[] {
@@ -33,16 +22,25 @@ function stripAnswers(questions: Question[]): Omit<Question, 'correctAnswer'>[] 
   return questions.map(({ correctAnswer, ...rest }) => rest);
 }
 
-// GET /questions - Returns 10 randomized questions
-router.get('/questions', (_req: Request, res: Response) => {
-  try {
-    // Shuffle all questions and take first 10
-    const shuffled = shuffle(allQuestions);
-    const selectedQuestions = shuffled.slice(0, 10);
+// Track recent questions per user (last 30 question IDs)
+const recentQuestions = new Map<string | number, string[]>();
+const MAX_RECENT = 30;
 
-    res.status(200).json({
-      questions: selectedQuestions
-    });
+function getRecentQuestionIds(userId: string | number): string[] {
+  return recentQuestions.get(userId) || [];
+}
+
+function recordPlayedQuestions(userId: string | number, questionIds: string[]): void {
+  const existing = recentQuestions.get(userId) || [];
+  const updated = [...questionIds, ...existing].slice(0, MAX_RECENT);
+  recentQuestions.set(userId, updated);
+}
+
+// GET /questions - Returns 10 randomized questions (legacy endpoint)
+router.get('/questions', async (_req: Request, res: Response) => {
+  try {
+    const questions = await selectQuestionsForGame(null, []);
+    res.status(200).json({ questions });
   } catch (error) {
     console.error('Error fetching questions:', error);
     res.status(500).json({
@@ -54,12 +52,16 @@ router.get('/questions', (_req: Request, res: Response) => {
 // POST /session - Create a new game session
 router.post('/session', optionalAuth, async (req: Request, res: Response) => {
   try {
-    const { questionIds } = req.body;
+    const { questionIds, collectionId } = req.body;
 
     let selectedQuestions: Question[];
 
+    // Get userId from auth middleware (authenticated) or use 'anonymous'
+    const userId = req.user?.userId ?? 'anonymous';
+
     if (questionIds && Array.isArray(questionIds)) {
-      // Validate that all question IDs exist
+      // Legacy path: questionIds provided — fetch from DB and filter to matching IDs
+      const allQuestions = await selectQuestionsForGame(null, []);
       selectedQuestions = questionIds.map((id: string) => {
         const question = allQuestions.find((q: Question) => q.id === id);
         if (!question) {
@@ -68,20 +70,33 @@ router.post('/session', optionalAuth, async (req: Request, res: Response) => {
         return question;
       });
     } else {
-      // No questionIds provided - pick 10 random questions
-      const shuffled = shuffle(allQuestions);
-      selectedQuestions = shuffled.slice(0, 10);
+      // Normal path: select questions from collection (defaults to Federal Civics)
+      selectedQuestions = await selectQuestionsForGame(
+        collectionId ?? null,
+        getRecentQuestionIds(userId)
+      );
     }
 
-    // Get userId from auth middleware (authenticated) or use 'anonymous'
-    const userId = req.user?.userId ?? 'anonymous';
-    const sessionId = await sessionManager.createSession(userId, selectedQuestions);
+    // Look up collection metadata
+    const resolvedCollectionId = collectionId ?? await getFederalCollectionId();
+    const collectionMeta = await getCollectionMetadata(resolvedCollectionId);
+
+    const sessionId = await sessionManager.createSession(
+      userId,
+      selectedQuestions,
+      collectionMeta ? { id: collectionMeta.id, name: collectionMeta.name, slug: collectionMeta.slug } : undefined
+    );
+
+    // Record played questions for recent-question exclusion
+    recordPlayedQuestions(userId, selectedQuestions.map(q => q.id));
 
     // Return session with questions stripped of correctAnswer
     res.status(201).json({
       sessionId,
       questions: stripAnswers(selectedQuestions),
-      degraded: storageFactory.isDegradedMode()
+      degraded: storageFactory.isDegradedMode(),
+      collectionName: collectionMeta?.name ?? 'Federal Civics',
+      collectionSlug: collectionMeta?.slug ?? 'federal-civics',
     });
   } catch (error) {
     console.error('Error creating session:', error);
@@ -195,7 +210,9 @@ router.get('/results/:sessionId', async (req: Request, res: Response) => {
       ...results,
       answers: cleanedAnswers,
       progression,
-      degraded: storageFactory.isDegradedMode()
+      degraded: storageFactory.isDegradedMode(),
+      collectionName: session.collectionName ?? 'Federal Civics',
+      collectionSlug: session.collectionSlug ?? 'federal-civics',
     });
   } catch (error) {
     console.error('Error fetching results:', error);
