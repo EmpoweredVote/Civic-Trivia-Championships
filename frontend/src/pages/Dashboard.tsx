@@ -15,9 +15,13 @@ export function Dashboard() {
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-white mb-4">
-            {isAuthenticated && user ? `Welcome, ${user.name}!` : 'Civic Trivia Championship'}
-          </h2>
+          <div className="flex justify-center mb-4">
+            <img
+              src="/images/civic-trivia-logo.png"
+              alt="Civic Trivia Championship"
+              className="h-32 sm:h-40 w-auto"
+            />
+          </div>
 
           {/* Start Game Button */}
           <div className="text-center py-8">
