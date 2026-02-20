@@ -50,7 +50,13 @@ export function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-xl font-bold text-teal-400">Civic Trivia</h1>
+            <Link to="/">
+              <img
+                src="/images/Empowered_Vote_Logo_2026.png"
+                alt="Empowered Vote"
+                className="h-10"
+              />
+            </Link>
           </div>
 
           {/* User info and hamburger menu / Sign in links */}
