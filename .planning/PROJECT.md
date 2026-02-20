@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A game-show-style trivia experience that makes civic learning engaging, social, and repeatable. Players answer multiple-choice questions about government, policy, and civic systems while earning rewards and deepening their understanding of democracy. This is the first feature being built for the Empowered.Vote platform.
+A game-show-style trivia experience that makes civic learning engaging, social, and repeatable. Players answer multiple-choice questions about government, policy, and civic systems while earning rewards and deepening their understanding of democracy. Includes admin tooling for question quality management, content generation, and collection health monitoring. This is the first feature being built for the Empowered.Vote platform.
 
 ## Core Value
 
@@ -30,20 +30,13 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Federal, Bloomington IN, and Los Angeles CA collections (320 total questions) — v1.2
 - Question expiration system with hourly cron sweep and admin review — v1.2
 - AI-powered locale-specific content generation tooling — v1.2
-
-### Active — v1.3 Question Quality & Admin Tools
-
-**Goal:** Build the quality framework and tooling needed to scale question collections — codify what makes great civic trivia, audit and improve existing content, create admin tools for exploration and review, and add Indiana and California collections.
-
-- [ ] Codified question quality rules (dinner party test, civic utility, no pure lookup facts)
-- [ ] Audit existing 320 questions against quality rules, flag and remove bad ones
-- [ ] Generate replacement questions for any removed to maintain collection sizes
-- [ ] Refined AI generation pipeline with quality rules baked in
-- [ ] Admin web UI for exploring collections, questions, and Learn More content
-- [ ] Question telemetry — track encounter/correct counts during gameplay
-- [ ] Telemetry display in admin UI — difficulty rates, filtering, sorting
-- [ ] Indiana (state) question collection
-- [ ] California (state) question collection
+- Codified question quality rules (dinner party test, civic utility, no pure lookup facts) — v1.3
+- Audit existing questions against quality rules, archive bad ones, generate replacements — v1.3
+- Refined AI generation pipeline with quality rules baked in — v1.3
+- Admin web UI for exploring collections, questions, and Learn More content — v1.3
+- Question telemetry (encounter/correct counts) with difficulty rates in admin UI — v1.3
+- Indiana and California state question collections — v1.3
+- Admin question editing with quality re-scoring and optimistic updates — v1.3
 
 ### Out of Scope
 
@@ -60,24 +53,31 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Collection search/browse — not enough collections yet to need search
 - Volunteer question authoring portal — AI generation + manual review sufficient for now
 - Numeric/date answer questions (Wits & Wagers style) — requires multiplayer first
-- Auto-difficulty calibration — collect telemetry data first, calibrate later
+- Auto-difficulty calibration — collecting telemetry data, calibrate later
+- Granular admin permissions (editor, reviewer roles) — boolean is_admin sufficient for now
+- Real-time telemetry dashboard — batch/on-demand stats sufficient at current scale
 
 ## Context
 
-**Current state (v1.2 shipped 2026-02-19):**
-- 320 playable questions across 3 collections (Federal 120, Bloomington IN 100, Los Angeles CA 100)
+**Current state (v1.3 shipped 2026-02-20):**
+- 547 playable questions across 5 collections (Federal 119, Bloomington IN 116, Los Angeles CA 114, Indiana 100, California 98)
+- Quality rules engine with 8 rules, blocking/advisory severity, 0-100 scoring
+- Admin UI with question explorer, collection health dashboard, inline editing
+- Quality-gated AI generation pipeline with state and city templates
+- Gameplay telemetry tracking encounter/correct counts per question
 
-**Question quality philosophy (v1.3):**
+**Question quality philosophy:**
 - "Dinner party test" — would knowing this answer be worth sharing at dinner?
 - Civic utility — the knowledge should make you a more informed citizen
 - Recall satisfaction — pulling up something you didn't think you knew feels great
 - Reasoning possible — you can work toward the answer, not just know it or not
 - Anti-patterns: phone numbers, addresses, obscure dates, pure lookup facts with no civic value
 - Easy questions are welcome — "Who is your mayor?" feels fair and memorable
-- This lens is evolving — the rules will be refined as we review more content
-- Tech stack: React 18, TypeScript, Vite, Tailwind, Framer Motion, Node.js, Express, PostgreSQL (Supabase), Redis (Upstash), JWT
-- Frontend: ~8,000 LOC TypeScript/React
-- Backend: ~4,000 LOC TypeScript/Express
+- Quality rules codified as TypeScript functions with blocking/advisory severity
+
+**Tech stack:** React 18, TypeScript, Vite, Tailwind, Framer Motion, Node.js, Express, PostgreSQL (Supabase), Redis (Upstash), JWT
+- Frontend: ~12,000 LOC TypeScript/React
+- Backend: ~8,000 LOC TypeScript/Express
 - Live: civic-trivia-frontend.onrender.com / civic-trivia-backend.onrender.com
 
 **Design principles (from design doc):**
@@ -88,7 +88,7 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 
 **Visual direction:**
 - Subtle game show stage aesthetic (curtains, spotlights, modern/clean)
-- Empowered.Vote teal + warm accents
+- Empowered.Vote teal + warm accents (red theme for admin areas)
 - Typography: Poppins or similar (confident, slightly playful)
 - Modest celebrations (subtle confetti, not over-the-top)
 
@@ -110,7 +110,7 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - **Tech stack**: React 18+, TypeScript, Vite, Tailwind, Framer Motion, Node.js, Express, PostgreSQL, Redis, JWT — specified in design doc
 - **Performance**: FCP <1.5s, TTI <3s, bundle <300KB gzipped
 - **Accessibility**: WCAG AA compliance required
-- **Content**: 100 questions minimum for MVP launch
+- **Content**: 547 questions across 5 collections (minimum 50 per collection for gameplay)
 
 ## Key Decisions
 
@@ -124,8 +124,14 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 | Quality over quantity for local sets | 50 compelling questions beats 100 half-compelling; target ~120 but don't force it | Good — 100 per locale with strong quality |
 | AI-generated + human-reviewed content | AI kickstarts local question banks, volunteers refine over time | Good — efficient pipeline |
 | Auto-remove + notify on expiration | Time-sensitive questions drop from rotation and flag for review | Good — admin review UI in place |
-| Codify quality rules before scaling content | Phone number questions revealed need for explicit quality criteria | — Pending |
-| Lightweight telemetry over complex analytics | Two columns (encounter_count, correct_count) give 80% of value | — Pending |
+| Codify quality rules before scaling content | Phone number questions revealed need for explicit quality criteria | Good — 8 rules with blocking/advisory severity |
+| Lightweight telemetry over complex analytics | Two columns (encounter_count, correct_count) give 80% of value | Good — simple and effective |
+| Boolean is_admin over roles table | Only a few admins needed; RBAC adds unnecessary complexity | Good — simple and sufficient |
+| Red admin theme vs teal player theme | Clear visual separation between admin and player experiences | Good — instantly distinguishable |
+| Quality score informational, blocking flag actionable | Score (0-100) for sorting/display, hasBlockingViolations for archival decisions | Good — separates severity levels |
+| URL validation deferred for legacy content | All 320 original questions have broken source.url links from CMS migration | Debt — needs dedicated URL update pass |
+| State template 40/30/30 topic distribution | Government/civic processes/broader civics avoids "too bureaucratic" feel | Good — balanced content |
+| Stable option IDs for drag-and-drop | Options tracked by opt-0/opt-1 ID, not array index, so correct answer follows during reorder | Good — prevents correctAnswer drift |
 
 ---
-*Last updated: 2026-02-19 after v1.3 milestone started*
+*Last updated: 2026-02-20 after v1.3 milestone shipped*

@@ -1,5 +1,31 @@
 # Project Milestones: Civic Trivia Championship
 
+## v1.3 Question Quality & Admin Tools (Shipped: 2026-02-20)
+
+**Delivered:** Quality framework and admin tooling to scale question collections — codified quality rules, audited and improved existing content, built admin exploration and editing UI, enhanced AI generation pipeline, and added Indiana and California state collections.
+
+**Phases completed:** 18-22 (17 plans total)
+
+**Key accomplishments:**
+- Built quality rules engine with 8 rules, blocking/advisory severity, and 0-100 scoring
+- Audited all 320 questions, archived 9 failing blocking rules, generated 38 replacements
+- Created admin UI with question explorer, detail panel, collection health dashboard, and inline editing
+- Developed quality-gated AI generation pipeline with retry-and-feedback loop
+- Added state-level generation template and produced Indiana (100) and California (98) collections
+- Expanded content to 547 playable questions across 5 collections
+
+**Stats:**
+- 109 files created/modified
+- ~20,000 lines of TypeScript (cumulative)
+- 5 phases, 17 plans, 23 requirements delivered
+- 2 days from start to ship (2026-02-19 → 2026-02-20)
+
+**Git range:** `docs(18)` → `docs(22)`
+
+**What's next:** TBD — start with `/gsd:new-milestone`
+
+---
+
 ## v1.2 Community Collections (Shipped: 2026-02-19)
 
 **Delivered:** Multi-collection trivia system with community-specific question banks for Bloomington IN and Los Angeles CA, plus question expiration and admin review tools.
