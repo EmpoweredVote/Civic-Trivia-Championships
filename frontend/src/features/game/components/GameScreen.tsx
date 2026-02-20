@@ -374,8 +374,8 @@ export function GameScreen({
               />
             </div>
 
-            {/* Timer (center - grid guarantees true center) */}
-            <div className="flex items-center justify-center">
+            {/* Timer (center - grid guarantees true center, min-h reserves space) */}
+            <div className="flex items-center justify-center min-h-[80px]">
               {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
                 <GameTimer
                   key={timerKey}
