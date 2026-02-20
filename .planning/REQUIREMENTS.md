@@ -21,16 +21,16 @@
 
 ### Admin Exploration UI
 
-- [ ] **EXPL-01**: Sortable, filterable question table (by collection, difficulty, quality score, telemetry stats)
-- [ ] **EXPL-02**: Question detail view showing full question, options, explanation, Learn More, and metadata
-- [ ] **EXPL-03**: Collection health dashboard (question counts, difficulty distribution, quality scores, telemetry summary)
-- [ ] **EXPL-04**: Admin API endpoints for question listing, detail, and collection health
+- [x] **EXPL-01**: Sortable, filterable question table (by collection, difficulty, quality score, telemetry stats)
+- [x] **EXPL-02**: Question detail view showing full question, options, explanation, Learn More, and metadata
+- [x] **EXPL-03**: Collection health dashboard (question counts, difficulty distribution, quality scores, telemetry summary)
+- [x] **EXPL-04**: Admin API endpoints for question listing, detail, and collection health
 
 ### Telemetry
 
 - [ ] **TELE-01**: `encounter_count` and `correct_count` columns on questions table
 - [ ] **TELE-02**: Increment counters during gameplay (fire-and-forget on answer submission)
-- [ ] **TELE-03**: Calculated difficulty rate (correct/encounters) displayed in admin UI
+- [x] **TELE-03**: Calculated difficulty rate (correct/encounters) displayed in admin UI
 
 ### AI Generation Pipeline
 
@@ -89,11 +89,11 @@ Deferred to later milestones. Tracked but not in current roadmap.
 | QUAL-02 | Phase 19 | Complete |
 | QUAL-03 | Phase 19 | Complete |
 | QUAL-04 | Phase 19 | Complete |
-| EXPL-01 | Phase 20 | Pending |
-| EXPL-02 | Phase 20 | Pending |
-| EXPL-03 | Phase 20 | Pending |
-| EXPL-04 | Phase 20 | Pending |
-| TELE-03 | Phase 20 | Pending |
+| EXPL-01 | Phase 20 | Complete |
+| EXPL-02 | Phase 20 | Complete |
+| EXPL-03 | Phase 20 | Complete |
+| EXPL-04 | Phase 20 | Complete |
+| TELE-03 | Phase 20 | Complete |
 | GENR-01 | Phase 21 | Pending |
 | GENR-02 | Phase 21 | Pending |
 | GENR-03 | Phase 21 | Pending |
@@ -108,4 +108,4 @@ Deferred to later milestones. Tracked but not in current roadmap.
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after Phase 19 completion*
+*Last updated: 2026-02-20 after Phase 20 completion*

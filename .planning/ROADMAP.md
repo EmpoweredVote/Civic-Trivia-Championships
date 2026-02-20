@@ -15,7 +15,7 @@
 
 - [x] **Phase 18: Foundation (Admin Auth + Telemetry)** - Secure admin access and start collecting gameplay data
 - [x] **Phase 19: Quality Rules Engine** - Codify quality rules, audit existing content, remove bad questions
-- [ ] **Phase 20: Admin Exploration UI** - Question explorer, detail view, collection health dashboard
+- [x] **Phase 20: Admin Exploration UI** - Question explorer, detail view, collection health dashboard
 - [ ] **Phase 21: Generation Pipeline + New Collections** - Quality-gated AI pipeline, state templates, Indiana and California collections
 
 ## Phase Details
@@ -65,9 +65,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 20-01-PLAN.md -- Admin API endpoints (question list with filtering/sorting, detail with violations, collection health stats)
-- [ ] 20-02-PLAN.md -- Question explorer table with search, filters, sorting, pagination, and slide-over detail panel
-- [ ] 20-03-PLAN.md -- Collection health dashboard with expandable cards and updated admin dashboard
+- [x] 20-01-PLAN.md -- Admin API endpoints (question list with filtering/sorting, detail with violations, collection health stats)
+- [x] 20-02-PLAN.md -- Question explorer table with search, filters, sorting, pagination, and slide-over detail panel
+- [x] 20-03-PLAN.md -- Collection health dashboard with expandable cards and updated admin dashboard
 
 ### Phase 21: Generation Pipeline + New Collections
 **Goal**: AI generation pipeline rejects bad questions before they enter the database, and Indiana and California state collections are live
@@ -97,7 +97,7 @@ Phases execute in numeric order: 18 -> 19 -> 20 -> 21
 |-------|----------------|--------|-----------|
 | 18. Foundation (Admin Auth + Telemetry) | 3/3 | Complete | 2026-02-19 |
 | 19. Quality Rules Engine | 3/3 | Complete | 2026-02-19 |
-| 20. Admin Exploration UI | 0/3 | Not started | - |
+| 20. Admin Exploration UI | 3/3 | Complete | 2026-02-20 |
 | 21. Generation Pipeline + New Collections | 0/5 | Not started | - |
 
 ## Coverage
