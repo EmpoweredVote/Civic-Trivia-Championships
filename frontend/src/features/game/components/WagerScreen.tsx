@@ -78,7 +78,7 @@ export function WagerScreen({
           <img
             src="/images/FinalQuestion_A.png"
             alt="Final Question"
-            className="h-[20vh] mx-auto mb-4 object-contain"
+            className="h-[23vh] mx-auto mb-4 object-contain"
           />
           <p className="text-teal-400 text-lg">
             Category: <span className="font-semibold">{categoryLabel}</span>
