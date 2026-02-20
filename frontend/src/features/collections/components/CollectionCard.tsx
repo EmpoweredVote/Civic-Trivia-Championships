@@ -23,11 +23,18 @@ export function CollectionCard({ collection, isSelected, onSelect }: CollectionC
       aria-pressed={isSelected}
       aria-label={`${collection.name}${isAdmin ? `, ${collection.questionCount} questions` : ''}${isSelected ? ', selected' : ''}`}
     >
-      {/* Colored header band - uses inline style for dynamic color */}
+      {/* Banner image with themeColor fallback */}
       <div
-        className="h-14 rounded-t-xl"
+        className="h-28 rounded-t-xl overflow-hidden"
         style={{ backgroundColor: collection.themeColor }}
-      />
+      >
+        <img
+          src={`/images/collections/${collection.slug}.jpg`}
+          alt=""
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+      </div>
 
       {/* Card body */}
       <div className="bg-slate-800 p-3">
