@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 22 (fifth of 5 in v1.3: Phases 18-22) — IN PROGRESS
-Plan: 1 of 3 complete
-Status: Phase 22 in progress - Backend Question Edit API complete
-Last activity: 2026-02-20 -- Completed 22-01 (Backend Question Edit API)
+Plan: 2 of 3 complete
+Status: Phase 22 in progress - Edit form UI components complete
+Last activity: 2026-02-20 -- Completed 22-02 (QuestionEditForm UI Components)
 
-Progress: ██████████████████░░ v1.3: 88% (15/17 plans)
+Progress: ██████████████████░░ v1.3: 94% (16/17 plans)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
 - v1.2 (Phases 13-17): Complete - 20/20 requirements delivered
-- v1.3 (Phases 18-22): In progress - 21/23 requirements, 15/17 plans
+- v1.3 (Phases 18-22): In progress - 21/23 requirements, 16/17 plans
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -32,7 +32,7 @@ Progress: ██████████████████░░ v1.3: 88%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 70 (26 v1.0 + 11 v1.1 + 15 v1.2 + 18 v1.3)
+- Total plans completed: 71 (26 v1.0 + 11 v1.1 + 15 v1.2 + 19 v1.3)
 
 ## Accumulated Context
 
@@ -71,6 +71,10 @@ Recent decisions affecting current work:
 - [22-01]: Source field preservation pattern - keep existing name, update URL only
 - [22-01]: Difficulty mapping 1-3=easy, 4-7=medium, 8-10=hard for admin numeric input
 - [22-01]: Quality delta response pattern includes oldScore, newScore, oldViolations, newViolations, violations array
+- [22-02]: Options tracked by stable ID (opt-0, opt-1, etc.) not array index - correct answer follows option during reorder
+- [22-02]: Character counters change color to red when > 90% of limit (270/300 chars for question, 450/500 for explanation)
+- [22-02]: URL validation on blur and change events with inline error display
+- [22-02]: Dirty state tracked via stringified comparison of current vs initial state
 
 ### Pending Todos
 
@@ -93,9 +97,9 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Phase 22 Plan 01 execution
-Stopped at: Completed 22-01-PLAN.md (Backend Question Edit API)
+Topic: Phase 22 Plan 02 execution
+Stopped at: Completed 22-02-PLAN.md (QuestionEditForm UI Components)
 Resume file: None
 
 ---
-*v1.3 Question Quality & Admin Tools -- Phase 22 IN PROGRESS (1/3 plans complete)*
+*v1.3 Question Quality & Admin Tools -- Phase 22 IN PROGRESS (2/3 plans complete)*
