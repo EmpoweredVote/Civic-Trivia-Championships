@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 19 (second of 4 in v1.3: Phases 18-21)
-Plan: 02 of 3
-Status: In progress
-Last activity: 2026-02-20 -- Completed 19-02-PLAN.md
+Plan: 03 of 3 (COMPLETE)
+Status: Phase 19 complete, ready for Phase 20
+Last activity: 2026-02-19 -- Completed 19-03-PLAN.md
 
-Progress: █████░░░░░░░░░░░░░░░ v1.3: 33% (5/15 plans)
+Progress: ██████░░░░░░░░░░░░░░ v1.3: 40% (6/15 plans)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
 - v1.2 (Phases 13-17): Complete - 20/20 requirements delivered
-- v1.3 (Phases 18-21): In progress - 6/20 requirements, 5/15 plans
+- v1.3 (Phases 18-21): In progress - 9/20 requirements, 6/15 plans
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -32,7 +32,7 @@ Progress: █████░░░░░░░░░░░░░░░ v1.3: 33%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 57 (26 v1.0 + 11 v1.1 + 15 v1.2 + 5 v1.3)
+- Total plans completed: 58 (26 v1.0 + 11 v1.1 + 15 v1.2 + 6 v1.3)
 
 ## Accumulated Context
 
@@ -63,6 +63,11 @@ Recent decisions affecting current work:
 - [19-02]: Index uses DESC NULLS LAST for efficient admin UI sorting (highest quality first)
 - [19-02]: Audit script is reusable with CLI flags (--skip-url-check, --save-scores)
 - [19-02]: Console summary includes after-archival counts to predict collection health
+- [19-03]: URL validation deferred for existing 320 questions - all have broken source.url links (technical debt)
+- [19-03]: Only content-quality violations archived (9 questions: ambiguous answers, pure lookup)
+- [19-03]: Collection threshold raised from 10 to 50 to ensure robust gameplay
+- [19-03]: Archive script uses soft-delete (status='archived') maintaining database integrity
+- [19-03]: Quality scores saved for ALL questions during archive operation (not just archived ones)
 
 ### Pending Todos
 
@@ -74,13 +79,14 @@ Recent decisions affecting current work:
 ### Blockers/Concerns
 
 - REQUIREMENTS.md lists 22 requirements but only 20 are defined in the traceability table. Coverage validated against the 20 actual requirements.
+- **Technical debt:** All 320 existing questions have broken source.url Learn More links (legacy CMS migration issue). URL validation deferred for existing questions but remains active for Phase 21 new question generation. Needs dedicated URL update phase.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Topic: Phase 19 Plan 02 execution
-Stopped at: Completed 19-02-PLAN.md - Quality score migration and audit script complete
+Last session: 2026-02-19
+Topic: Phase 19 Plan 03 execution
+Stopped at: Completed 19-03-PLAN.md - Archive blocking violations and collection threshold update complete
 Resume file: None
 
 ---
-*v1.3 Question Quality & Admin Tools -- Phase 19 in progress (Plan 02 complete)*
+*v1.3 Question Quality & Admin Tools -- Phase 19 COMPLETE (3/3 plans)*
