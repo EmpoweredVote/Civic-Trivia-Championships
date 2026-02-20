@@ -444,4 +444,88 @@ router.get('/questions/:id/detail', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /collections/health - Get health stats for all collections
+ * Returns aggregated stats for each collection including:
+ * - Question counts (active, archived, total)
+ * - Difficulty distribution
+ * - Quality score summary (avg, min, unscored count)
+ * - Telemetry aggregates (encounters, correct rate)
+ */
+router.get('/collections/health', async (req: Request, res: Response) => {
+  try {
+    // Single aggregated query for all collections
+    const results = await db
+      .select({
+        id: collections.id,
+        name: collections.name,
+        slug: collections.slug,
+        isActive: collections.isActive,
+        themeColor: collections.themeColor,
+        // Question counts
+        activeCount: sql<number>`COUNT(DISTINCT ${questions.id}) FILTER (WHERE ${questions.status} = 'active')`,
+        archivedCount: sql<number>`COUNT(DISTINCT ${questions.id}) FILTER (WHERE ${questions.status} = 'archived')`,
+        totalCount: sql<number>`COUNT(DISTINCT ${questions.id})`,
+        // Difficulty distribution (active questions only)
+        easyCount: sql<number>`COUNT(DISTINCT ${questions.id}) FILTER (WHERE ${questions.difficulty} = 'easy' AND ${questions.status} = 'active')`,
+        mediumCount: sql<number>`COUNT(DISTINCT ${questions.id}) FILTER (WHERE ${questions.difficulty} = 'medium' AND ${questions.status} = 'active')`,
+        hardCount: sql<number>`COUNT(DISTINCT ${questions.id}) FILTER (WHERE ${questions.difficulty} = 'hard' AND ${questions.status} = 'active')`,
+        // Quality score stats (active questions only, non-null scores)
+        avgQualityScore: sql<number | null>`AVG(${questions.qualityScore}) FILTER (WHERE ${questions.status} = 'active' AND ${questions.qualityScore} IS NOT NULL)`,
+        minQualityScore: sql<number | null>`MIN(${questions.qualityScore}) FILTER (WHERE ${questions.status} = 'active' AND ${questions.qualityScore} IS NOT NULL)`,
+        unscoredCount: sql<number>`COUNT(${questions.id}) FILTER (WHERE ${questions.status} = 'active' AND ${questions.qualityScore} IS NULL)`,
+        // Telemetry aggregates (active questions only)
+        totalEncounters: sql<number>`SUM(${questions.encounterCount}) FILTER (WHERE ${questions.status} = 'active')`,
+        totalCorrect: sql<number>`SUM(${questions.correctCount}) FILTER (WHERE ${questions.status} = 'active')`
+      })
+      .from(collections)
+      .leftJoin(collectionQuestions, eq(collections.id, collectionQuestions.collectionId))
+      .leftJoin(questions, eq(collectionQuestions.questionId, questions.id))
+      .groupBy(collections.id)
+      .orderBy(collections.sortOrder);
+
+    // Map to response shape with calculated correct rate
+    const collectionsData = results.map(r => {
+      const totalEncounters = r.totalEncounters || 0;
+      const totalCorrect = r.totalCorrect || 0;
+      const overallCorrectRate = totalEncounters > 0
+        ? Math.round((totalCorrect / totalEncounters) * 100)
+        : null;
+
+      return {
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        isActive: r.isActive,
+        themeColor: r.themeColor,
+        stats: {
+          activeCount: Number(r.activeCount),
+          archivedCount: Number(r.archivedCount),
+          totalCount: Number(r.totalCount),
+          difficulty: {
+            easy: Number(r.easyCount),
+            medium: Number(r.mediumCount),
+            hard: Number(r.hardCount)
+          },
+          quality: {
+            avgScore: r.avgQualityScore !== null ? Math.round(Number(r.avgQualityScore)) : null,
+            minScore: r.minQualityScore !== null ? Number(r.minQualityScore) : null,
+            unscoredCount: Number(r.unscoredCount)
+          },
+          telemetry: {
+            totalEncounters,
+            totalCorrect,
+            overallCorrectRate
+          }
+        }
+      };
+    });
+
+    res.json({ collections: collectionsData });
+  } catch (error: any) {
+    console.error('Error fetching collection health:', error);
+    res.status(500).json({ error: 'Failed to fetch collection health', detail: error?.message || String(error) });
+  }
+});
+
 export { router };
