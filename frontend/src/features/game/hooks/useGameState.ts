@@ -6,8 +6,7 @@ import { apiRequest } from '../../../services/api';
 import { useAuthStore } from '../../../store/authStore';
 
 // Timing constants
-const SUSPENSE_PAUSE_MS = 750; // Pause after lock-in before reveal (reduced for snappier pacing)
-const AUTO_ADVANCE_MS = 4000; // Auto-advance after reveal (reduced for faster flow)
+const SUSPENSE_PAUSE_MS = 375; // Pause after lock-in before reveal (halved for snappier pacing)
 const ANNOUNCEMENT_DURATION_MS = 2500; // 2.5s for "FINAL QUESTION" screen
 const WAGER_SUSPENSE_MS = 1500; // Suspense pause after locking wager
 
@@ -21,8 +20,6 @@ interface UseGameStateReturn {
   nextQuestion: () => void;
   quitGame: () => void;
   gameResult: GameResult | null;
-  pauseAutoAdvance: () => void;
-  resumeAutoAdvance: () => void;
   hasShownTooltip: boolean;
   setHasShownTooltip: (value: boolean) => void;
   startWager: () => void;
@@ -40,10 +37,7 @@ export function useGameState(): UseGameStateReturn {
 
   // Refs to track timeouts for cleanup and sessionId for server calls
   const suspenseTimeoutRef = useRef<number | null>(null);
-  const autoAdvanceTimeoutRef = useRef<number | null>(null);
   const sessionIdRef = useRef<string | null>(null);
-  const autoAdvancePausedAtRef = useRef<number | null>(null);
-  const revealStartTimeRef = useRef<number | null>(null);
 
   // Derived values
   const currentQuestion = state.questions[state.currentQuestionIndex] || null;
@@ -228,11 +222,6 @@ export function useGameState(): UseGameStateReturn {
 
   // Move to next question
   const nextQuestion = () => {
-    // Cancel auto-advance if user manually advances
-    if (autoAdvanceTimeoutRef.current) {
-      clearTimeout(autoAdvanceTimeoutRef.current);
-      autoAdvanceTimeoutRef.current = null;
-    }
     dispatch({ type: 'NEXT_QUESTION' });
   };
 
@@ -266,30 +255,6 @@ export function useGameState(): UseGameStateReturn {
     }, WAGER_SUSPENSE_MS);
   };
 
-  // Pause auto-advance timer and save remaining time
-  const pauseAutoAdvance = () => {
-    if (autoAdvanceTimeoutRef.current && revealStartTimeRef.current) {
-      const elapsed = Date.now() - revealStartTimeRef.current;
-      const remaining = AUTO_ADVANCE_MS - elapsed;
-      autoAdvancePausedAtRef.current = remaining > 0 ? remaining : 0;
-      clearTimeout(autoAdvanceTimeoutRef.current);
-      autoAdvanceTimeoutRef.current = null;
-    }
-  };
-
-  // Resume auto-advance timer with saved remaining time
-  const resumeAutoAdvance = () => {
-    if (autoAdvancePausedAtRef.current !== null) {
-      const remainingTime = autoAdvancePausedAtRef.current;
-      autoAdvanceTimeoutRef.current = setTimeout(() => {
-        dispatch({ type: 'NEXT_QUESTION' });
-      }, remainingTime);
-      autoAdvancePausedAtRef.current = null;
-      // Update reveal start time to account for the pause
-      revealStartTimeRef.current = Date.now() - (AUTO_ADVANCE_MS - remainingTime);
-    }
-  };
-
   // Pause game (user-initiated via Escape key)
   const pauseGame = () => {
     dispatch({ type: 'PAUSE_GAME' });
@@ -299,32 +264,6 @@ export function useGameState(): UseGameStateReturn {
   const resumeGame = () => {
     dispatch({ type: 'RESUME_GAME' });
   };
-
-  // Auto-advance logic when entering revealing phase
-  useEffect(() => {
-    if (state.phase === 'revealing') {
-      // Clear any existing auto-advance timeout
-      if (autoAdvanceTimeoutRef.current) {
-        clearTimeout(autoAdvanceTimeoutRef.current);
-      }
-
-      // Record when reveal phase started
-      revealStartTimeRef.current = Date.now();
-
-      // Start auto-advance timer
-      autoAdvanceTimeoutRef.current = setTimeout(() => {
-        dispatch({ type: 'NEXT_QUESTION' });
-      }, AUTO_ADVANCE_MS);
-    }
-
-    // Cleanup on unmount or phase change
-    return () => {
-      if (autoAdvanceTimeoutRef.current) {
-        clearTimeout(autoAdvanceTimeoutRef.current);
-        autoAdvanceTimeoutRef.current = null;
-      }
-    };
-  }, [state.phase]);
 
   // Handle final announcement phase - auto-transition to wager screen
   useEffect(() => {
@@ -365,9 +304,6 @@ export function useGameState(): UseGameStateReturn {
       if (suspenseTimeoutRef.current) {
         clearTimeout(suspenseTimeoutRef.current);
       }
-      if (autoAdvanceTimeoutRef.current) {
-        clearTimeout(autoAdvanceTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -381,8 +317,6 @@ export function useGameState(): UseGameStateReturn {
     nextQuestion,
     quitGame,
     gameResult,
-    pauseAutoAdvance,
-    resumeAutoAdvance,
     hasShownTooltip,
     setHasShownTooltip,
     startWager,
