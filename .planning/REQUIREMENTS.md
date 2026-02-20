@@ -13,10 +13,10 @@
 
 ### Question Quality Rules
 
-- [ ] **QUAL-01**: Codified quality rules as TypeScript functions (dinner party test, civic utility, no pure lookup facts, reasoning possible)
-- [ ] **QUAL-02**: Two-tier rule severity — blocking rules (auto-flag for removal) vs advisory rules (flag for review)
-- [ ] **QUAL-03**: Dry-run audit of all 320 existing questions against quality rules with report
-- [ ] **QUAL-04**: Remove/archive questions that fail blocking rules
+- [x] **QUAL-01**: Codified quality rules as TypeScript functions (dinner party test, civic utility, no pure lookup facts, reasoning possible)
+- [x] **QUAL-02**: Two-tier rule severity — blocking rules (auto-flag for removal) vs advisory rules (flag for review)
+- [x] **QUAL-03**: Dry-run audit of all 320 existing questions against quality rules with report
+- [x] **QUAL-04**: Remove/archive questions that fail blocking rules
 - [ ] **QUAL-05**: Generate replacement questions to maintain collection sizes
 
 ### Admin Exploration UI
@@ -85,10 +85,10 @@ Deferred to later milestones. Tracked but not in current roadmap.
 | ADMN-03 | Phase 18 | Complete |
 | TELE-01 | Phase 18 | Complete |
 | TELE-02 | Phase 18 | Complete |
-| QUAL-01 | Phase 19 | Pending |
-| QUAL-02 | Phase 19 | Pending |
-| QUAL-03 | Phase 19 | Pending |
-| QUAL-04 | Phase 19 | Pending |
+| QUAL-01 | Phase 19 | Complete |
+| QUAL-02 | Phase 19 | Complete |
+| QUAL-03 | Phase 19 | Complete |
+| QUAL-04 | Phase 19 | Complete |
 | EXPL-01 | Phase 20 | Pending |
 | EXPL-02 | Phase 20 | Pending |
 | EXPL-03 | Phase 20 | Pending |
@@ -108,4 +108,4 @@ Deferred to later milestones. Tracked but not in current roadmap.
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after roadmap creation*
+*Last updated: 2026-02-19 after Phase 19 completion*
