@@ -5,7 +5,7 @@
 - v1.0 MVP - Phases 1-7 (shipped 2026-02-13)
 - v1.1 Production Hardening - Phases 8-12 (shipped 2026-02-18)
 - v1.2 Community Collections - Phases 13-17 (shipped 2026-02-19)
-- v1.3 Question Quality & Admin Tools - Phases 18-21 (in progress)
+- v1.3 Question Quality & Admin Tools - Phases 18-22 (in progress)
 
 ## Phases
 
@@ -17,6 +17,7 @@
 - [x] **Phase 19: Quality Rules Engine** - Codify quality rules, audit existing content, remove bad questions
 - [x] **Phase 20: Admin Exploration UI** - Question explorer, detail view, collection health dashboard
 - [ ] **Phase 21: Generation Pipeline + New Collections** - Quality-gated AI pipeline, state templates, Indiana and California collections
+- [ ] **Phase 22: Admin Question Editing** - Edit questions inline from the detail panel, re-score with quality rules after save
 
 ## Phase Details
 
@@ -79,19 +80,32 @@ Plans:
   3. A state-level generation template exists that accounts for state government structures (distinct from the city-level template)
   4. Indiana state collection has 80-100 playable questions visible in the collection picker
   5. California state collection has 80-100 playable questions visible in the collection picker
+**Plans**: 5 plans
+
+Plans:
+- [ ] 21-01-PLAN.md -- Quality guidelines prompt text and validation+retry pipeline
+- [ ] 21-02-PLAN.md -- State system prompt, Indiana/California configs, and state generation script
+- [ ] 21-03-PLAN.md -- Generate and review Indiana state collection (80-100 questions)
+- [ ] 21-04-PLAN.md -- Generate and review California state collection (80-100 questions)
+- [ ] 21-05-PLAN.md -- Replacement question generation for Phase 19 archival backfill
+
+### Phase 22: Admin Question Editing
+**Goal**: Admin can edit questions inline from the detail panel, with automatic quality re-scoring and violation count updates
+**Depends on**: Phase 20 (detail panel to extend), Phase 19 (quality rules for re-scoring)
+**Requirements**: EDIT-01, EDIT-02, EDIT-03
+**Success Criteria** (what must be TRUE):
+  1. Admin can toggle the question detail panel into edit mode and modify question text, options, explanation, source URL, and difficulty
+  2. Saving an edited question re-runs quality rules and updates quality_score and violation_count in the database
+  3. The question table row updates to reflect changes after a successful save without full page reload
 **Plans**: TBD
 
 Plans:
-- [ ] 21-01: Integrate quality rules into generation prompts and post-generation validation
-- [ ] 21-02: State-level generation template
-- [ ] 21-03: Generate and review Indiana state collection
-- [ ] 21-04: Generate and review California state collection
-- [ ] 21-05: Generate replacement questions for Phase 19 removals
+- [ ] TBD (run /gsd:plan-phase 22 to break down)
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 18 -> 19 -> 20 -> 21
+Phases execute in numeric order: 18 -> 19 -> 20 -> 21 -> 22
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -99,10 +113,11 @@ Phases execute in numeric order: 18 -> 19 -> 20 -> 21
 | 19. Quality Rules Engine | 3/3 | Complete | 2026-02-19 |
 | 20. Admin Exploration UI | 3/3 | Complete | 2026-02-20 |
 | 21. Generation Pipeline + New Collections | 0/5 | Not started | - |
+| 22. Admin Question Editing | 0/? | Not started | - |
 
 ## Coverage
 
-**v1.3 Requirements: 20/20 mapped**
+**v1.3 Requirements: 23/23 mapped**
 
 | Requirement | Phase |
 |-------------|-------|
@@ -126,5 +141,8 @@ Phases execute in numeric order: 18 -> 19 -> 20 -> 21
 | QUAL-05 | 21 |
 | COLL-01 | 21 |
 | COLL-02 | 21 |
+| EDIT-01 | 22 |
+| EDIT-02 | 22 |
+| EDIT-03 | 22 |
 
 No orphaned requirements. No duplicate mappings.
