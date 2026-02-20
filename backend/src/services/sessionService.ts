@@ -83,7 +83,7 @@ export interface GameSessionResult {
 const SESSION_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const QUESTION_DURATION = 20; // seconds (matches frontend GameScreen.tsx)
-const FINAL_QUESTION_DURATION = 50; // seconds (for Q10)
+const FINAL_QUESTION_DURATION = 50; // seconds (for final question)
 const MAX_PLAUSIBLE_TIME_REMAINING = 20; // seconds (matches QUESTION_DURATION)
 
 /**
@@ -193,9 +193,9 @@ export class SessionManager {
       return existingAnswer;
     }
 
-    // Determine if this is the final question (Q10 = index 9)
+    // Determine if this is the final question (last question in session)
     const questionIndex = session.questions.findIndex(q => q.id === questionId);
-    const isFinalQuestion = questionIndex === 9;
+    const isFinalQuestion = questionIndex === session.questions.length - 1;
 
     // Wager validation
     if (wager !== undefined) {
@@ -360,10 +360,11 @@ export class SessionManager {
       }
     }
 
-    // Check for wager result (final question is index 9)
+    // Check for wager result (final question is last in session)
     let wagerResult: GameSessionResult['wagerResult'] = null;
-    if (session.answers.length >= 10) {
-      const finalAnswer = session.answers[9];
+    const finalIndex = session.questions.length - 1;
+    if (session.answers.length >= session.questions.length) {
+      const finalAnswer = session.answers[finalIndex];
       if (finalAnswer.wager !== undefined) {
         wagerResult = {
           wagerAmount: finalAnswer.wager,

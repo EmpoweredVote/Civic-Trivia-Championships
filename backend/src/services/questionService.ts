@@ -11,6 +11,8 @@ import { questions, collections, collectionQuestions, topics } from '../db/schem
 import { eq, and, notInArray, isNull, or, gt, sql } from 'drizzle-orm';
 import { Question } from '../services/sessionService.js';
 
+const TOTAL_QUESTIONS = 8;
+
 // Get current file's directory for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -98,25 +100,25 @@ function transformDBQuestions(dbRows: DBQuestionRow[], topicMap: Map<number, str
 
 /**
  * Load questions from JSON file as emergency fallback
- * Shuffled and limited to 10 — no difficulty ordering, no collection filtering
+ * Shuffled and limited to 8 — no difficulty ordering, no collection filtering
  */
 function loadQuestionsFromJSON(): Question[] {
   const questionsPath = join(__dirname, '../data/questions.json');
   const questionsData = readFileSync(questionsPath, 'utf-8');
   const allQuestions: Question[] = JSON.parse(questionsData);
-  return shuffle(allQuestions).slice(0, 10);
+  return shuffle(allQuestions).slice(0, TOTAL_QUESTIONS);
 }
 
 /**
- * Apply difficulty selection algorithm to produce a balanced 10-question set.
+ * Apply difficulty selection algorithm to produce a balanced 8-question set.
  *
  * Target distribution:
  *   Q1  = easy
- *   Q10 = hard
- *   Q2-Q9 = 3 easy + 3 medium + 2 hard (shuffled)
+ *   Q8  = hard
+ *   Q2-Q7 = 2 easy + 2 medium + 2 hard (shuffled)
  *
  * Constraint relaxation: if any pool is too small, fill from other pools.
- * Never returns duplicates. Always returns up to 10 unique questions.
+ * Never returns duplicates. Always returns up to 8 unique questions.
  */
 function applyDifficultySelection(
   allRows: DBQuestionRow[],
@@ -128,7 +130,7 @@ function applyDifficultySelection(
 
   const total = allRows.length;
 
-  if (total < 10) {
+  if (total < TOTAL_QUESTIONS) {
     console.warn(
       `Relaxed difficulty constraints: only ${total} questions available for collection ${collectionId}`
     );
@@ -145,20 +147,20 @@ function applyDifficultySelection(
     q1 = hardPool.shift()!;
   }
 
-  // Pick Q10 (hard) — fallback to medium, then easy
-  let q10: DBQuestionRow | undefined;
+  // Pick final question (hard) — fallback to medium, then easy
+  let qFinal: DBQuestionRow | undefined;
   if (hardPool.length > 0) {
-    q10 = hardPool.shift()!;
+    qFinal = hardPool.shift()!;
   } else if (mediumPool.length > 0) {
-    q10 = mediumPool.shift()!;
+    qFinal = mediumPool.shift()!;
   } else {
-    q10 = easyPool.shift()!;
+    qFinal = easyPool.shift()!;
   }
 
-  // For Q2-Q9, pick 3 easy + 3 medium + 2 hard
+  // For Q2-Q7, pick 2 easy + 2 medium + 2 hard
   // Track how many we still need from each pool
-  let needEasy = 3;
-  let needMedium = 3;
+  let needEasy = 2;
+  let needMedium = 2;
   let needHard = 2;
 
   const middleQuestions: DBQuestionRow[] = [];
@@ -195,11 +197,11 @@ function applyDifficultySelection(
     }
   }
 
-  // Shuffle the 8 middle questions
+  // Shuffle the 6 middle questions
   const shuffledMiddle = shuffle(middleQuestions);
 
-  // Combine: [Q1_easy, ...middle_8_shuffled, Q10_hard]
-  return [q1!, ...shuffledMiddle, q10!];
+  // Combine: [Q1_easy, ...middle_6_shuffled, Q8_hard]
+  return [q1!, ...shuffledMiddle, qFinal!];
 }
 
 /**
@@ -262,18 +264,18 @@ export async function getCollectionMetadata(
 }
 
 /**
- * Select 10 questions for a game session from a specific collection.
+ * Select 8 questions for a game session from a specific collection.
  *
  * Algorithm:
  *   1. Resolve collectionId (use federal-civics if null)
  *   2. Query all available questions for the collection (excluding recent + expired)
- *   3. Apply difficulty selection: Q1=easy, Q10=hard, Q2-Q9=balanced mix
+ *   3. Apply difficulty selection: Q1=easy, Q8=hard, Q2-Q7=balanced mix
  *   4. Transform DB rows to the existing Question interface (externalId -> id)
  *   5. On any error: fall back silently to JSON file
  *
  * @param collectionId - Collection to query (null = federal civics)
  * @param recentQuestionIds - Question external IDs to exclude from selection
- * @returns Array of up to 10 questions shaped as Question interface
+ * @returns Array of up to 8 questions shaped as Question interface
  */
 export async function selectQuestionsForGame(
   collectionId: number | null,
