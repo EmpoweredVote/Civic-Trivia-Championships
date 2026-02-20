@@ -74,6 +74,13 @@ export function Game() {
     );
   }
 
+  // Hide idle screen flash when auto-starting from Dashboard
+  if (state.phase === 'idle' && collectionId !== undefined) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900" />
+    );
+  }
+
   // Otherwise show the game screen
   return (
     <GameScreen

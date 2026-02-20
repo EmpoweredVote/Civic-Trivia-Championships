@@ -361,7 +361,7 @@ export function GameScreen({
       {/* Main content container */}
       <div className="relative min-h-screen flex flex-col py-4 md:py-8 px-4">
         {/* Top HUD - Score, Timer, Collection name, Progress dots */}
-        <div className="flex flex-col items-center mb-[70px] md:mb-[140px] max-w-5xl mx-auto w-full">
+        <div className="flex flex-col items-center mb-[70px] md:mb-[120px] max-w-5xl mx-auto w-full">
           {/* Controls row - three equal columns for true centering */}
           <div className="grid grid-cols-3 items-center w-full">
             {/* Score display (left) */}
@@ -471,8 +471,8 @@ export function GameScreen({
             <AnimatePresence>
               {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ duration: 0.4 }}
                   className="w-full pt-[20px] pb-[40px]"
                 >
