@@ -12,7 +12,7 @@ import { and, eq, sql, isNull, or, gt } from 'drizzle-orm';
 const router = Router();
 
 // Minimum question threshold for a collection to be playable
-const MIN_QUESTION_THRESHOLD = 10;
+const MIN_QUESTION_THRESHOLD = 50;
 
 // Fisher-Yates shuffle algorithm
 function shuffle<T>(array: T[]): T[] {
