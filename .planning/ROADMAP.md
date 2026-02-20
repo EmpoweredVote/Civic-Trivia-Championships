@@ -62,13 +62,12 @@ Plans:
   2. Admin can click a question to see its full text, all options, explanation, Learn More link, quality assessment, and telemetry data
   3. Admin can view a collection health dashboard showing question counts, difficulty distribution, quality score summary, and aggregate telemetry
   4. Calculated difficulty rate (correct_count / encounter_count) is displayed for questions with sufficient data and shows "insufficient data" for questions with fewer than 20 encounters
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 20-01: Admin API endpoints (question list, detail, collection health)
-- [ ] 20-02: Question explorer table with sorting and filtering
-- [ ] 20-03: Question detail view
-- [ ] 20-04: Collection health dashboard
+- [ ] 20-01-PLAN.md -- Admin API endpoints (question list with filtering/sorting, detail with violations, collection health stats)
+- [ ] 20-02-PLAN.md -- Question explorer table with search, filters, sorting, pagination, and slide-over detail panel
+- [ ] 20-03-PLAN.md -- Collection health dashboard with expandable cards and updated admin dashboard
 
 ### Phase 21: Generation Pipeline + New Collections
 **Goal**: AI generation pipeline rejects bad questions before they enter the database, and Indiana and California state collections are live
@@ -98,7 +97,7 @@ Phases execute in numeric order: 18 -> 19 -> 20 -> 21
 |-------|----------------|--------|-----------|
 | 18. Foundation (Admin Auth + Telemetry) | 3/3 | Complete | 2026-02-19 |
 | 19. Quality Rules Engine | 3/3 | Complete | 2026-02-19 |
-| 20. Admin Exploration UI | 0/4 | Not started | - |
+| 20. Admin Exploration UI | 0/3 | Not started | - |
 | 21. Generation Pipeline + New Collections | 0/5 | Not started | - |
 
 ## Coverage
