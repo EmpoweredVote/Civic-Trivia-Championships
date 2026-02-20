@@ -192,6 +192,34 @@ export function QuestionsPage() {
     setSelectedQuestionId(null);
   };
 
+  // Handle question updated (optimistic table row update)
+  const handleQuestionUpdated = (updated: {
+    id: number;
+    text: string;
+    difficulty: string;
+    qualityScore: number | null;
+    violationCount: number;
+    status: string;
+  }) => {
+    setQuestions((prev) => {
+      if (!prev) return prev;
+      return prev.map((q) => {
+        if (q.id !== updated.id) return q;
+        return {
+          ...q,
+          text:
+            updated.text.length > 120
+              ? updated.text.substring(0, 120) + '...'
+              : updated.text,
+          difficulty: updated.difficulty,
+          qualityScore: updated.qualityScore,
+          violationCount: updated.violationCount,
+          status: updated.status,
+        };
+      });
+    });
+  };
+
   // Calculate pagination display
   const startItem = pagination ? (pagination.page - 1) * pagination.limit + 1 : 0;
   const endItem = pagination
@@ -343,6 +371,7 @@ export function QuestionsPage() {
         onNavigate={handlePanelNavigate}
         hasPrev={selectedQuestionIndex > 0}
         hasNext={questions ? selectedQuestionIndex < questions.length - 1 : false}
+        onQuestionUpdated={handleQuestionUpdated}
       />
     </div>
   );
