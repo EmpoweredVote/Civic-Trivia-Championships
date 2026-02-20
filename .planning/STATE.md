@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 21 (fourth of 5 in v1.3: Phases 18-22) — IN PROGRESS
-Plan: 1 of 5 complete
+Plan: 2 of 5 complete
 Status: In progress
-Last activity: 2026-02-20 -- Completed 21-01-PLAN.md (quality-gated generation infrastructure)
+Last activity: 2026-02-20 -- Completed 21-02-PLAN.md (state generation template and script)
 
-Progress: ███████████████░░░░░ v1.3: 73% (11/15 plans)
+Progress: ████████████████░░░░ v1.3: 80% (12/15 plans)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -32,7 +32,7 @@ Progress: ███████████████░░░░░ v1.3: 73%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 63 (26 v1.0 + 11 v1.1 + 15 v1.2 + 11 v1.3)
+- Total plans completed: 64 (26 v1.0 + 11 v1.1 + 15 v1.2 + 12 v1.3)
 
 ## Accumulated Context
 
@@ -63,6 +63,9 @@ Recent decisions affecting current work:
 - [21-01]: Quality guidelines summarized (200-400 tokens) not full implementations - prevents token bloat in prompts
 - [21-01]: Validation-retry loop decoupled via RegenerateFn callback - reusable across generation scripts
 - [21-01]: URL validation skipped during generation (skipUrlCheck: true) - batch validate after insertion for speed
+- [21-02]: State template 40/30/30 distribution (government/civic processes/broader civics) - avoids "too bureaucratic" feel
+- [21-02]: State questions auto-insert as 'active' status - quality-validated questions need no manual review
+- [21-02]: Topic distribution exactly 100 questions per state - Indiana and California use identical structure for consistency
 
 ### Pending Todos
 
@@ -85,8 +88,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Phase 21 plan 01 execution
-Stopped at: Completed 21-01-PLAN.md (quality-gated generation infrastructure)
+Topic: Phase 21 plan 02 execution
+Stopped at: Completed 21-02-PLAN.md (state generation template and script)
 Resume file: None
 
 ---
