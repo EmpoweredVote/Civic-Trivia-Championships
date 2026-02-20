@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 19 (second of 4 in v1.3: Phases 18-21)
-Plan: 01 of 3
+Plan: 02 of 3
 Status: In progress
-Last activity: 2026-02-20 -- Completed 19-01-PLAN.md
+Last activity: 2026-02-20 -- Completed 19-02-PLAN.md
 
-Progress: ████░░░░░░░░░░░░░░░░ v1.3: 27% (4/15 plans)
+Progress: █████░░░░░░░░░░░░░░░ v1.3: 33% (5/15 plans)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
 - v1.2 (Phases 13-17): Complete - 20/20 requirements delivered
-- v1.3 (Phases 18-21): In progress - 6/20 requirements, 4/15 plans
+- v1.3 (Phases 18-21): In progress - 6/20 requirements, 5/15 plans
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -32,7 +32,7 @@ Progress: ████░░░░░░░░░░░░░░░░ v1.3: 27%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 56 (26 v1.0 + 11 v1.1 + 15 v1.2 + 4 v1.3)
+- Total plans completed: 57 (26 v1.0 + 11 v1.1 + 15 v1.2 + 5 v1.3)
 
 ## Accumulated Context
 
@@ -59,6 +59,10 @@ Recent decisions affecting current work:
 - [19-01]: Link validation treats timeouts as advisory, hard failures as blocking
 - [19-01]: Partisan framing is advisory only with conservative keywords (needs LLM upgrade Phase 21)
 - [19-01]: Quality score (0-100) is informational only - hasBlockingViolations flag triggers archival
+- [19-02]: quality_score starts as NULL (not 100) - indicates "not yet scored" until audit runs
+- [19-02]: Index uses DESC NULLS LAST for efficient admin UI sorting (highest quality first)
+- [19-02]: Audit script is reusable with CLI flags (--skip-url-check, --save-scores)
+- [19-02]: Console summary includes after-archival counts to predict collection health
 
 ### Pending Todos
 
@@ -74,9 +78,9 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Phase 19 Plan 01 execution
-Stopped at: Completed 19-01-PLAN.md - Quality rules engine built
+Topic: Phase 19 Plan 02 execution
+Stopped at: Completed 19-02-PLAN.md - Quality score migration and audit script complete
 Resume file: None
 
 ---
-*v1.3 Question Quality & Admin Tools -- Phase 19 in progress (Plan 01 complete)*
+*v1.3 Question Quality & Admin Tools -- Phase 19 in progress (Plan 02 complete)*
