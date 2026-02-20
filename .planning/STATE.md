@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: All v1.3 phases complete (18-22)
 Plan: N/A — milestone shipped
 Status: v1.3 milestone archived, ready for next milestone
-Last activity: 2026-02-20 -- Quick task 010 (collection card banner images) completed
+Last activity: 2026-02-20 -- Quick task 011 (dashboard dark mode) completed
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -64,6 +64,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | 008 | Profile edit name and password | 2026-02-20 | 4c2f5dd | [008-profile-edit-name-password](./quick/008-profile-edit-name-password/) |
 | 009 | Collection card fixed height and fun descriptions | 2026-02-20 | 764b087 | [009-collection-card-fixed-height](./quick/009-collection-card-fixed-height/) |
 | 010 | Add location banner images to collection cards | 2026-02-20 | f1bae8f | [010-collection-card-banner-images](./quick/010-collection-card-banner-images/) |
+| 011 | Dashboard and Header dark mode (slate/teal theme) | 2026-02-20 | 52651b9 | [011-dashboard-dark-mode](./quick/011-dashboard-dark-mode/) |
 
 ### Blockers/Concerns
 
@@ -72,8 +73,8 @@ None — clean slate for next milestone.
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Quick task 010 - collection card banner images
-Stopped at: Quick task 010 complete
+Topic: Quick task 011 - dashboard dark mode
+Stopped at: Quick task 011 complete
 Resume file: None
 
 ---
