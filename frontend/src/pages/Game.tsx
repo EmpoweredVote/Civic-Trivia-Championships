@@ -17,10 +17,9 @@ export function Game() {
     selectAnswer,
     lockAnswer,
     handleTimeout,
+    nextQuestion,
     quitGame,
     gameResult,
-    pauseAutoAdvance,
-    resumeAutoAdvance,
     hasShownTooltip,
     setHasShownTooltip,
     setWagerAmount,
@@ -85,8 +84,7 @@ export function Game() {
       lockAnswer={lockAnswer}
       handleTimeout={handleTimeout}
       quitGame={handleQuit}
-      pauseAutoAdvance={pauseAutoAdvance}
-      resumeAutoAdvance={resumeAutoAdvance}
+      nextQuestion={nextQuestion}
       hasShownTooltip={hasShownTooltip}
       setHasShownTooltip={setHasShownTooltip}
       setWagerAmount={setWagerAmount}

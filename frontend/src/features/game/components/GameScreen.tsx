@@ -34,8 +34,7 @@ interface GameScreenProps {
   lockAnswer: (timeRemaining: number) => void;
   handleTimeout: () => void;
   quitGame: () => void;
-  pauseAutoAdvance: () => void;
-  resumeAutoAdvance: () => void;
+  nextQuestion: () => void;
   hasShownTooltip: boolean;
   setHasShownTooltip: (value: boolean) => void;
   setWagerAmount: (amount: number) => void;
@@ -53,8 +52,7 @@ export function GameScreen({
   lockAnswer,
   handleTimeout,
   quitGame,
-  pauseAutoAdvance,
-  resumeAutoAdvance,
+  nextQuestion,
   hasShownTooltip,
   setHasShownTooltip,
   setWagerAmount,
@@ -105,13 +103,11 @@ export function GameScreen({
   const handleOpenLearnMore = () => {
     setShowTooltip(false);
     setIsLearnMoreOpen(true);
-    pauseAutoAdvance();
   };
 
   // Handle closing Learn More modal
   const handleCloseLearnMore = () => {
     setIsLearnMoreOpen(false);
-    resumeAutoAdvance();
   };
 
   // Extract teaser text (first sentence of first paragraph)
@@ -200,6 +196,23 @@ export function GameScreen({
     return () => window.removeEventListener('keydown', handleEscapeKey);
   }, [state.phase, state.isPaused, pauseGame]);
 
+  // Space/Enter to advance during reveal phase
+  useEffect(() => {
+    if (state.phase !== 'revealing') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if Learn More modal is open
+      if (isLearnMoreOpen) return;
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        nextQuestion();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state.phase, isLearnMoreOpen, nextQuestion]);
+
   // Timer threshold announcements for screen readers
   useEffect(() => {
     if (state.phase !== 'answering' && !(state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) return;
@@ -252,11 +265,11 @@ export function GameScreen({
 
       let message = '';
       if (latestAnswer.correct) {
-        message = `Correct! The answer is ${correctLetter}, ${correctText}. You earned ${latestAnswer.totalPoints} points.`;
+        message = `Correct! The answer is ${correctLetter}, ${correctText}. You earned ${latestAnswer.totalPoints} points. Press Space or tap Next to continue.`;
       } else if (latestAnswer.selectedOption !== null) {
-        message = `Not quite. The correct answer was ${correctLetter}, ${correctText}.`;
+        message = `Not quite. The correct answer was ${correctLetter}, ${correctText}. Press Space or tap Next to continue.`;
       } else {
-        message = `Time's up. The correct answer was ${correctLetter}, ${correctText}.`;
+        message = `Time's up. The correct answer was ${correctLetter}, ${correctText}. Press Space or tap Next to continue.`;
       }
 
       announce.polite(message);
@@ -523,6 +536,22 @@ export function GameScreen({
                           onReadMore={handleOpenLearnMore}
                         />
                       </div>
+                    </div>
+                  )}
+
+                  {/* Next Question button - pauses until user taps */}
+                  {state.phase === 'revealing' && (
+                    <div className="flex justify-center">
+                      <motion.button
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.3 }}
+                        onClick={nextQuestion}
+                        className="mt-6 mb-4 px-8 py-3 bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white text-lg font-semibold rounded-lg shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-slate-900 min-h-[48px]"
+                        aria-label="Next question"
+                      >
+                        {state.currentQuestionIndex < state.questions.length - 1 ? 'Next Question' : 'See Results'}
+                      </motion.button>
                     </div>
                   )}
                 </motion.div>
