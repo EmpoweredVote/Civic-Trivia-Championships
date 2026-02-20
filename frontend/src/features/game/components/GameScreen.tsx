@@ -23,7 +23,7 @@ import { announce } from '../../../utils/announce';
 import type { GameState, Question, LearningContent } from '../../../types/game';
 
 const QUESTION_DURATION = 20; // seconds
-const FINAL_QUESTION_DURATION = 50; // seconds for Q10
+const FINAL_QUESTION_DURATION = 50; // seconds for final question
 const QUESTION_PREVIEW_MS = 1000; // show question before revealing options
 
 interface GameScreenProps {
@@ -189,7 +189,7 @@ export function GameScreen({
     const handleEscapeKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         // Only pause during answering or selected phases (not during reveal, wager, or already paused)
-        if ((state.phase === 'answering' || (state.phase === 'selected' && state.currentQuestionIndex === 9)) && !state.isPaused) {
+        if ((state.phase === 'answering' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && !state.isPaused) {
           pauseGame();
           announce.polite('Game paused');
         }
@@ -202,7 +202,7 @@ export function GameScreen({
 
   // Timer threshold announcements for screen readers
   useEffect(() => {
-    if (state.phase !== 'answering' && !(state.phase === 'selected' && state.currentQuestionIndex === 9)) return;
+    if (state.phase !== 'answering' && !(state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) return;
 
     if (currentTimeRemaining === 10) {
       announce.polite('10 seconds remaining');
@@ -232,7 +232,7 @@ export function GameScreen({
   useEffect(() => {
     if (state.phase === 'answering' && showOptions) {
       if (state.currentQuestionIndex === 0) {
-        announce.polite('Question 1 of 10');
+        announce.polite(`Question 1 of ${state.questions.length}`);
       } else if (isFinalQuestion) {
         announce.assertive('Final Question');
       }
@@ -389,7 +389,7 @@ export function GameScreen({
 
             {/* Question number indicator (center) */}
             <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">
-              Q{state.currentQuestionIndex + 1} of 10
+              Q{state.currentQuestionIndex + 1} of {state.questions.length}
             </span>
 
             {/* Progress dots */}
@@ -455,7 +455,7 @@ export function GameScreen({
             className="flex-1 flex flex-col items-center pt-2 md:pt-6 gap-3 md:gap-8 max-w-[700px] mx-auto w-full px-4"
           >
             {/* Timer - positioned above question */}
-            {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === 9)) && (
+            {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
               <div className="flex justify-center">
                 <GameTimer
                   key={timerKey}
@@ -481,12 +481,13 @@ export function GameScreen({
               <QuestionCard
                 question={currentQuestion}
                 questionNumber={state.currentQuestionIndex + 1}
+                totalQuestions={state.questions.length}
               />
             </div>
 
             {/* Answer grid - revealed after question preview */}
             <AnimatePresence>
-              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === 9)) && (
+              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}

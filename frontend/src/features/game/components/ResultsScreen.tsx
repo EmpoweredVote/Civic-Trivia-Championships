@@ -40,7 +40,7 @@ export function ResultsScreen({ result, questions, collectionName, onPlayAgain, 
       if (!reducedMotion) {
         fireConfettiRain();
       }
-      announce.polite('Perfect game! You answered all 10 questions correctly!');
+      announce.polite(`Perfect game! You answered all ${result.totalQuestions} questions correctly!`);
     }
   }, [isPerfectGame, reducedMotion, fireConfettiRain]);
 
@@ -243,14 +243,15 @@ export function ResultsScreen({ result, questions, collectionName, onPlayAgain, 
             {(() => {
               // If wager exists and wagerAmount > 0, calculate Q1-Q9 base+speed separately
               if (result.wagerResult && result.wagerResult.wagerAmount > 0) {
-                const q1to9BasePoints = result.answers.slice(0, 9).reduce((sum, a) => sum + a.basePoints, 0);
-                const q1to9SpeedBonus = result.answers.slice(0, 9).reduce((sum, a) => sum + a.speedBonus, 0);
+                const nonFinalAnswers = result.answers.slice(0, -1);
+                const nonFinalBasePoints = nonFinalAnswers.reduce((sum, a) => sum + a.basePoints, 0);
+                const nonFinalSpeedBonus = nonFinalAnswers.reduce((sum, a) => sum + a.speedBonus, 0);
                 const wagerSign = result.wagerResult.won ? '+' : '-';
                 const wagerColor = result.wagerResult.won ? 'text-green-400' : 'text-red-400';
                 return (
                   <>
-                    {q1to9BasePoints.toLocaleString()} base +{' '}
-                    {q1to9SpeedBonus.toLocaleString()} speed{' '}
+                    {nonFinalBasePoints.toLocaleString()} base +{' '}
+                    {nonFinalSpeedBonus.toLocaleString()} speed{' '}
                     <span className={wagerColor}>
                       {wagerSign} {result.wagerResult.wagerAmount.toLocaleString()} wager
                     </span>
@@ -535,8 +536,8 @@ export function ResultsScreen({ result, questions, collectionName, onPlayAgain, 
                           <div id={`question-detail-${index}`} className="px-4 pb-4 pt-2 border-t border-slate-700 bg-slate-900/30">
                             {/* Score breakdown */}
                             <div className="mb-4 flex items-center gap-4 text-sm">
-                              {index === 9 && answer.wager !== undefined && answer.wager > 0 ? (
-                                // Q10 with wager: show wager-specific info
+                              {index === questions.length - 1 && answer.wager !== undefined && answer.wager > 0 ? (
+                                // Final question with wager: show wager-specific info
                                 <>
                                   <span className="text-slate-400">
                                     Wager: <span className="text-white">{answer.wager.toLocaleString()} points</span>
@@ -553,8 +554,8 @@ export function ResultsScreen({ result, questions, collectionName, onPlayAgain, 
                                     Time: <span className="text-white">{answer.responseTime.toFixed(1)}s</span>
                                   </span>
                                 </>
-                              ) : index === 9 && answer.wager !== undefined && answer.wager === 0 ? (
-                                // Q10 with 0 wager: "Played for Fun"
+                              ) : index === questions.length - 1 && answer.wager !== undefined && answer.wager === 0 ? (
+                                // Final question with 0 wager: "Played for Fun"
                                 <>
                                   <span className="text-slate-400">
                                     Wager: <span className="text-slate-400">0 (played for fun)</span>
@@ -567,7 +568,7 @@ export function ResultsScreen({ result, questions, collectionName, onPlayAgain, 
                                   </span>
                                 </>
                               ) : isCorrect ? (
-                                // Regular questions Q1-Q9: base + speed breakdown
+                                // Regular questions: base + speed breakdown
                                 <>
                                   <span className="text-slate-400">
                                     Base: <span className="text-white">+{answer.basePoints}</span>

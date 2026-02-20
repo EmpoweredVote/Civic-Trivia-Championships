@@ -47,7 +47,7 @@ export function useGameState(): UseGameStateReturn {
 
   // Derived values
   const currentQuestion = state.questions[state.currentQuestionIndex] || null;
-  const isFinalQuestion = state.currentQuestionIndex === 9;
+  const isFinalQuestion = state.currentQuestionIndex === state.questions.length - 1;
 
   const gameResult: GameResult | null =
     state.phase === 'complete'
@@ -74,8 +74,8 @@ export function useGameState(): UseGameStateReturn {
           })(),
           progression: progression,
           wagerResult: (() => {
-            // Check if final answer (Q10) has a wager
-            const finalAnswer = state.answers[9];
+            // Check if final answer has a wager
+            const finalAnswer = state.answers[state.questions.length - 1];
             if (finalAnswer?.wager !== undefined) {
               return {
                 wagerAmount: finalAnswer.wager,
@@ -113,8 +113,8 @@ export function useGameState(): UseGameStateReturn {
     const currentQuestion = state.questions[state.currentQuestionIndex];
     if (!currentQuestion) return;
 
-    // Include wager for final question (Q10)
-    const wager = state.currentQuestionIndex === 9 ? state.wagerAmount : undefined;
+    // Include wager for final question
+    const wager = state.currentQuestionIndex === state.questions.length - 1 ? state.wagerAmount : undefined;
 
     try {
       const [serverResponse] = await Promise.all([
@@ -156,18 +156,18 @@ export function useGameState(): UseGameStateReturn {
     }
   };
 
-  // Select an answer option (Q1-Q9: immediate submission, Q10: two-step with lock-in)
+  // Select an answer option (non-final: immediate submission, final: two-step with lock-in)
   const selectAnswer = (optionIndex: number, timeRemaining?: number) => {
     dispatch({ type: 'SELECT_ANSWER', optionIndex });
 
-    // For Q1-Q9, immediately submit (reducer already set phase to 'locked')
-    if (state.currentQuestionIndex !== 9 && timeRemaining !== undefined) {
+    // For non-final questions, immediately submit (reducer already set phase to 'locked')
+    if (state.currentQuestionIndex !== state.questions.length - 1 && timeRemaining !== undefined) {
       submitAndReveal(optionIndex, timeRemaining);
     }
-    // For Q10, just dispatch (lockAnswer handles submission)
+    // For final question, just dispatch (lockAnswer handles submission)
   };
 
-  // Lock in the selected answer (Q10-only: two-step confirmation preserved for high stakes)
+  // Lock in the selected answer (final question only: two-step confirmation preserved for high stakes)
   const lockAnswer = async (timeRemaining: number) => {
     if (state.phase !== 'selected' || !sessionIdRef.current) return;
 
@@ -186,8 +186,8 @@ export function useGameState(): UseGameStateReturn {
     const currentQuestion = state.questions[state.currentQuestionIndex];
     if (!currentQuestion) return;
 
-    // Include wager for final question (Q10)
-    const wager = state.currentQuestionIndex === 9 ? state.wagerAmount : undefined;
+    // Include wager for final question
+    const wager = state.currentQuestionIndex === state.questions.length - 1 ? state.wagerAmount : undefined;
 
     try {
       const serverResponse = await submitAnswer(

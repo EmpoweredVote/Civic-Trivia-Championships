@@ -47,6 +47,8 @@ export const initialGameState: GameState = {
 
 // Pure reducer function for game state transitions
 export function gameReducer(state: GameState, action: GameAction): GameState {
+  const finalIndex = state.questions.length - 1;
+
   switch (action.type) {
     case 'SESSION_CREATED':
       return {
@@ -68,13 +70,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     case 'SELECT_ANSWER': {
-      // Only valid during answering phase, or during selected phase for Q10 (allows re-selection)
-      if (state.phase !== 'answering' && !(state.phase === 'selected' && state.currentQuestionIndex === 9)) {
+      // Only valid during answering phase, or during selected phase for final question (allows re-selection)
+      if (state.phase !== 'answering' && !(state.phase === 'selected' && state.currentQuestionIndex === finalIndex)) {
         return state;
       }
 
-      // Q10 (index 9) keeps two-step confirmation for dramatic stakes
-      if (state.currentQuestionIndex === 9) {
+      // Final question keeps two-step confirmation for dramatic stakes
+      if (state.currentQuestionIndex === finalIndex) {
         return {
           ...state,
           phase: 'selected',
@@ -82,7 +84,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         };
       }
 
-      // All other questions (Q1-Q9): immediate lock-in (single-click)
+      // All other questions: immediate lock-in (single-click)
       return {
         ...state,
         phase: 'locked',
@@ -92,7 +94,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'LOCK_ANSWER': {
-      // Q10-only: Lock in wager question answer (two-step confirmation preserved for high stakes)
+      // Final question only: Lock in wager question answer (two-step confirmation preserved for high stakes)
       // Only valid in selected phase with a selected option
       if (state.phase !== 'selected' || state.selectedOption === null) {
         return state;
@@ -124,8 +126,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         basePoints: action.scoreData.basePoints,
         speedBonus: action.scoreData.speedBonus,
         totalPoints: action.scoreData.totalPoints,
-        responseTime: (state.currentQuestionIndex === 9 ? 50 : 20) - action.timeRemaining,
-        ...(state.currentQuestionIndex === 9 && state.wagerAmount > 0 ? { wager: state.wagerAmount } : {}),
+        responseTime: (state.currentQuestionIndex === finalIndex ? 50 : 20) - action.timeRemaining,
+        ...(state.currentQuestionIndex === finalIndex && state.wagerAmount > 0 ? { wager: state.wagerAmount } : {}),
       };
 
       return {
@@ -157,8 +159,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         basePoints: action.scoreData.basePoints,
         speedBonus: action.scoreData.speedBonus,
         totalPoints: action.scoreData.totalPoints,
-        responseTime: (state.currentQuestionIndex === 9 ? 50 : 20) - action.timeRemaining,
-        ...(state.currentQuestionIndex === 9 && state.wagerAmount > 0 ? { wager: state.wagerAmount } : {}),
+        responseTime: (state.currentQuestionIndex === finalIndex ? 50 : 20) - action.timeRemaining,
+        ...(state.currentQuestionIndex === finalIndex && state.wagerAmount > 0 ? { wager: state.wagerAmount } : {}),
       };
 
       return {
@@ -184,8 +186,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         };
       }
 
-      // Check if next question is Q10 (0-indexed: 9) - trigger final announcement
-      if (nextIndex === 9) {
+      // Check if next question is the final question - trigger final announcement
+      if (nextIndex === finalIndex) {
         return {
           ...state,
           phase: 'final-announcement',
@@ -268,7 +270,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.phase !== 'wager-locked') {
         return state;
       }
-      // Transition to answering phase for Q10 (reuse existing answering logic)
+      // Transition to answering phase for final question (reuse existing answering logic)
       return {
         ...state,
         phase: 'answering',

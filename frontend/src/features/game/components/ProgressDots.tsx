@@ -3,7 +3,7 @@ interface ProgressDotsProps {
   total?: number;
 }
 
-export function ProgressDots({ currentIndex, total = 10 }: ProgressDotsProps) {
+export function ProgressDots({ currentIndex, total = 8 }: ProgressDotsProps) {
   return (
     <div className="flex gap-2 items-center justify-center">
       {Array.from({ length: total }).map((_, index) => {
