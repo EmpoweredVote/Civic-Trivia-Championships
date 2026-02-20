@@ -14,6 +14,8 @@ import { Profile } from './pages/Profile';
 import { Forbidden } from './pages/Forbidden';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { QuestionsPage } from './pages/admin/QuestionsPage';
+import { CollectionsPage } from './pages/admin/CollectionsPage';
 
 // AdminGuard component: checks for admin role
 function AdminGuard() {
@@ -54,7 +56,8 @@ function App() {
             <Route element={<AdminGuard />}>
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
-                {/* Future admin routes will be added here in Phase 20 */}
+                <Route path="questions" element={<QuestionsPage />} />
+                <Route path="collections" element={<CollectionsPage />} />
               </Route>
             </Route>
           </Routes>
