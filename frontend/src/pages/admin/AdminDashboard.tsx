@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { API_URL } from '../../services/api';
 
 interface CollectionHealth {
   id: number;
@@ -33,7 +34,7 @@ export function AdminDashboard() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/collections/health`, {
+      const response = await fetch(`${API_URL}/api/admin/collections/health`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -44,7 +45,7 @@ export function AdminDashboard() {
       }
 
       const data = await response.json();
-      setCollections(data);
+      setCollections(data.collections || data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

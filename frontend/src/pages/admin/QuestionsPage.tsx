@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { API_URL } from '../../services/api';
 import { useDebounce } from '../../hooks/useDebounce';
 import { QuestionTable, QuestionRow } from './components/QuestionTable';
 import { QuestionDetailPanel } from './components/QuestionDetailPanel';
@@ -38,14 +39,25 @@ export function QuestionsPage() {
   );
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
 
-  // Collections list (hardcoded for now)
-  const collections = [
-    'Politics 101',
-    'Voting & Civics',
-    'Bills',
-    'Terminology',
-    'History',
-  ];
+  // Collections list (fetched from API)
+  const [collections, setCollections] = useState<{ name: string; slug: string }[]>([]);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      if (!accessToken) return;
+      try {
+        const response = await fetch(`${API_URL}/api/admin/collections/health`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const list = data.collections || data;
+          setCollections(list.map((c: any) => ({ name: c.name, slug: c.slug })));
+        }
+      } catch { /* ignore */ }
+    };
+    fetchCollections();
+  }, [accessToken]);
 
   // Get current filter values from URL
   const page = parseInt(searchParams.get('page') || '1', 10);
@@ -87,7 +99,7 @@ export function QuestionsPage() {
         if (search) params.set('search', search);
 
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/admin/questions/explore?${params.toString()}`,
+          `${API_URL}/api/admin/questions/explore?${params.toString()}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -122,23 +134,28 @@ export function QuestionsPage() {
     setSearchParams(newParams);
   };
 
-  // Handle filter changes
+  // Handle filter changes (set filter + reset to page 1 in one update)
   const handleFilterChange = (key: string, value: string) => {
-    updateParam(key, value);
-    // Reset to page 1 when filters change
-    updateParam('page', '1');
+    const newParams = new URLSearchParams(searchParams);
+    if (value) {
+      newParams.set(key, value);
+    } else {
+      newParams.delete(key);
+    }
+    newParams.set('page', '1');
+    setSearchParams(newParams);
   };
 
-  // Handle sort change
+  // Handle sort change (set sort + order in one update)
   const handleSortChange = (column: string) => {
+    const newParams = new URLSearchParams(searchParams);
     if (sort === column) {
-      // Toggle order
-      updateParam('order', order === 'asc' ? 'desc' : 'asc');
+      newParams.set('order', order === 'asc' ? 'desc' : 'asc');
     } else {
-      // New column, default to asc
-      updateParam('sort', column);
-      updateParam('order', 'asc');
+      newParams.set('sort', column);
+      newParams.set('order', 'asc');
     }
+    setSearchParams(newParams);
   };
 
   // Handle pagination
@@ -223,8 +240,8 @@ export function QuestionsPage() {
           >
             <option value="">All collections</option>
             {collections.map((coll) => (
-              <option key={coll} value={coll}>
-                {coll}
+              <option key={coll.slug} value={coll.slug}>
+                {coll.name}
               </option>
             ))}
           </select>

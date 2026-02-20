@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useAuthStore } from '../../../store/authStore';
+import { API_URL } from '../../../services/api';
 import { DifficultyRate } from './DifficultyRate';
 
 interface Violation {
@@ -17,13 +18,8 @@ interface QuestionDetail {
   difficulty: string;
   status: string;
   createdAt: string;
-  options: {
-    a: string;
-    b: string;
-    c: string;
-    d: string;
-  };
-  correctAnswer: 'a' | 'b' | 'c' | 'd';
+  options: string[];
+  correctAnswer: number; // 0-based index
   explanation: string;
   source: {
     name: string;
@@ -131,7 +127,7 @@ export function QuestionDetailPanel({
 
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/admin/questions/${questionId}/detail`,
+          `${API_URL}/api/admin/questions/${questionId}/detail`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -144,7 +140,25 @@ export function QuestionDetailPanel({
         }
 
         const data = await response.json();
-        setQuestionDetail(data);
+        // Map API response shape to component shape
+        const q = data.question;
+        const audit = data.audit || {};
+        setQuestionDetail({
+          id: q.id,
+          externalId: q.externalId,
+          text: q.text,
+          difficulty: q.difficulty,
+          status: q.status,
+          createdAt: q.createdAt,
+          options: q.options || [],
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          source: q.source || { name: '', url: null },
+          encounterCount: q.encounterCount || 0,
+          correctCount: q.correctCount || 0,
+          qualityScore: audit.score ?? q.qualityScore ?? null,
+          violations: audit.violations || [],
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -341,8 +355,9 @@ export function QuestionDetailPanel({
                               Answer Options
                             </h4>
                             <div className="space-y-2">
-                              {(['a', 'b', 'c', 'd'] as const).map((key) => {
-                                const isCorrect = questionDetail.correctAnswer === key;
+                              {questionDetail.options.map((optionText, idx) => {
+                                const isCorrect = questionDetail.correctAnswer === idx;
+                                const label = String.fromCharCode(65 + idx); // A, B, C, D
                                 const optionViolations = getViolationsForSection(
                                   questionDetail.violations,
                                   'options'
@@ -350,14 +365,14 @@ export function QuestionDetailPanel({
                                 const hasEvidence = optionViolations.some(
                                   (v) =>
                                     v.evidence &&
-                                    questionDetail.options[key]
+                                    optionText
                                       .toLowerCase()
                                       .includes(v.evidence.toLowerCase())
                                 );
 
                                 return (
                                   <div
-                                    key={key}
+                                    key={idx}
                                     className={`flex items-start p-3 rounded-md border ${
                                       isCorrect && !hasEvidence
                                         ? 'bg-green-50 border-green-300'
@@ -367,11 +382,11 @@ export function QuestionDetailPanel({
                                     }`}
                                   >
                                     <span className="font-semibold text-gray-700 mr-2">
-                                      {key.toUpperCase()}.
+                                      {label}.
                                     </span>
                                     <div className="flex-1">
                                       <span className="text-gray-900">
-                                        {questionDetail.options[key]}
+                                        {optionText}
                                       </span>
                                       {isCorrect && (
                                         <svg

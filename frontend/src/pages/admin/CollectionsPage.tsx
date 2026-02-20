@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { API_URL } from '../../services/api';
 import { CollectionCard } from './components/CollectionCard';
 
 interface CollectionHealth {
@@ -34,7 +35,7 @@ export function CollectionsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/collections/health`, {
+      const response = await fetch(`${API_URL}/api/admin/collections/health`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -45,7 +46,7 @@ export function CollectionsPage() {
       }
 
       const data = await response.json();
-      setCollections(data);
+      setCollections(data.collections || data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
