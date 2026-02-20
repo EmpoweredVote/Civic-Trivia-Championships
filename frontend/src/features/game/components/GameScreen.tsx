@@ -362,8 +362,8 @@ export function GameScreen({
       <div className="relative min-h-screen flex flex-col py-4 md:py-8 px-4">
         {/* Top HUD - Score, Timer, Collection name, Progress dots */}
         <div className="flex flex-col items-center mb-2 md:mb-4 max-w-5xl mx-auto w-full">
-          {/* Controls row - three columns: score | timer (centered) | collection + dots */}
-          <div className="flex items-center justify-between w-full relative">
+          {/* Controls row - three columns: score | timer | collection + dots */}
+          <div className="flex items-center justify-between w-full">
             {/* Score display (left) */}
             <ScoreDisplay
               score={state.totalScore}
@@ -372,8 +372,8 @@ export function GameScreen({
               compact={true}
             />
 
-            {/* Timer (center, absolutely positioned for true centering) */}
-            <div className="absolute left-1/2 -translate-x-1/2">
+            {/* Timer (center) */}
+            <div className="flex items-center justify-center">
               {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
                 <GameTimer
                   key={timerKey}
@@ -381,13 +381,13 @@ export function GameScreen({
                   onTimeout={onTimeout}
                   onTimeUpdate={setCurrentTimeRemaining}
                   isPaused={state.isTimerPaused || !showOptions}
-                  size={48}
+                  size={80}
                 />
               )}
             </div>
 
             {/* Collection name + Progress dots + question counter (right) */}
-            <div className="flex flex-col items-end gap-0.5">
+            <div className="flex flex-col items-end gap-0.5 ml-[30px]">
               {state.collectionName && (
                 <div className="text-xs text-slate-500 font-medium tracking-wide uppercase truncate max-w-[160px]">
                   {state.collectionName}
@@ -472,7 +472,7 @@ export function GameScreen({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
-                  className="w-full"
+                  className="w-full py-[10px]"
                 >
                   <AnswerGrid
                     options={currentQuestion.options}
