@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-02-20T06:13:49.736Z",
+  "target": "california-state",
+  "config": {
+    "targetQuestions": 100,
+    "batchSize": 25,
+    "maxRetries": 3
+  },
+  "results": {
+    "totalGenerated": 1,
+    "passedValidation": 25,
+    "failedValidation": 0,
+    "retryExhausted": 0,
+    "finalInserted": 25
+  },
+  "breakdown": {
+    "byRule": {},
+    "byRetryAttempt": {},
+    "byDifficulty": {
+      "medium": 13,
+      "hard": 3,
+      "easy": 9
+    },
+    "byTopic": {
+      "ballot-initiatives": 12,
+      "civic-history": 13
+    }
+  },
+  "failures": [],
+  "performance": {
+    "totalDurationMs": 162786,
+    "apiCalls": 1,
+    "tokensUsed": {
+      "input": 95,
+      "output": 5005,
+      "cached": 0
+    },
+    "estimatedCostUsd": 0.10709625
+  }
+}

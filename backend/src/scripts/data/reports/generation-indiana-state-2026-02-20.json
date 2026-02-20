@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-02-20T06:13:45.292Z",
+  "target": "indiana-state",
+  "config": {
+    "targetQuestions": 100,
+    "batchSize": 25,
+    "maxRetries": 3
+  },
+  "results": {
+    "totalGenerated": 1,
+    "passedValidation": 25,
+    "failedValidation": 0,
+    "retryExhausted": 0,
+    "finalInserted": 25
+  },
+  "breakdown": {
+    "byRule": {},
+    "byRetryAttempt": {},
+    "byDifficulty": {
+      "easy": 13,
+      "medium": 10,
+      "hard": 2
+    },
+    "byTopic": {
+      "state-constitution": 13,
+      "policy-civics": 12
+    }
+  },
+  "failures": [],
+  "performance": {
+    "totalDurationMs": 123412,
+    "apiCalls": 1,
+    "tokensUsed": {
+      "input": 96,
+      "output": 4976,
+      "cached": 0
+    },
+    "estimatedCostUsd": 0.089253
+  }
+}
