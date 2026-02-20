@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Make civic learning fun through game show mechanics -- play, not study
-**Current focus:** v1.3 Phase 19 - Quality Rules Engine
+**Current focus:** v1.3 Phase 20 - Admin Exploration UI
 
 ## Current Position
 
-Phase: 19 (second of 4 in v1.3: Phases 18-21)
-Plan: 03 of 3 (COMPLETE)
-Status: Phase 19 complete, ready for Phase 20
-Last activity: 2026-02-19 -- Completed 19-03-PLAN.md
+Phase: 20 (third of 4 in v1.3: Phases 18-21)
+Plan: 01 of 3 (COMPLETE)
+Status: In progress
+Last activity: 2026-02-20 -- Completed 20-01-PLAN.md
 
-Progress: ██████░░░░░░░░░░░░░░ v1.3: 40% (6/15 plans)
+Progress: ███████░░░░░░░░░░░░░ v1.3: 47% (7/15 plans)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -32,7 +32,7 @@ Progress: ██████░░░░░░░░░░░░░░ v1.3: 40%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 58 (26 v1.0 + 11 v1.1 + 15 v1.2 + 6 v1.3)
+- Total plans completed: 59 (26 v1.0 + 11 v1.1 + 15 v1.2 + 7 v1.3)
 
 ## Accumulated Context
 
@@ -68,6 +68,12 @@ Recent decisions affecting current work:
 - [19-03]: Collection threshold raised from 10 to 50 to ensure robust gameplay
 - [19-03]: Archive script uses soft-delete (status='archived') maintaining database integrity
 - [19-03]: Quality scores saved for ALL questions during archive operation (not just archived ones)
+- [20-01]: violation_count column stored in DB, populated by audit script (not computed per-row)
+- [20-01]: /questions/explore path separate from existing /questions (expired/expiring questions)
+- [20-01]: Quality violations computed on-demand in detail endpoint (skipUrlCheck: true)
+- [20-01]: NULLS LAST for quality_score sorting surfaces scored questions before unscored
+- [20-01]: Question list truncates text to 120 chars, full text available in detail panel
+- [20-01]: Collection health uses single aggregated SQL query with FILTER clauses
 
 ### Pending Todos
 
@@ -75,18 +81,20 @@ Recent decisions affecting current work:
 - [ ] Invite volunteers to GitHub org
 - [ ] Share live URLs with team
 - [ ] Add ADMIN_EMAIL environment variable to production backend
+- [ ] Update Phase 19 audit script to populate violation_count column when saving quality scores
 
 ### Blockers/Concerns
 
 - REQUIREMENTS.md lists 22 requirements but only 20 are defined in the traceability table. Coverage validated against the 20 actual requirements.
 - **Technical debt:** All 320 existing questions have broken source.url Learn More links (legacy CMS migration issue). URL validation deferred for existing questions but remains active for Phase 21 new question generation. Needs dedicated URL update phase.
+- **Violation count population:** violation_count column added to questions table but currently NULL for all rows. Audit script must be updated to populate this column (outside Phase 20 scope). Question list will show NULL until populated.
 
 ## Session Continuity
 
-Last session: 2026-02-19
-Topic: Phase 19 Plan 03 execution
-Stopped at: Completed 19-03-PLAN.md - Archive blocking violations and collection threshold update complete
+Last session: 2026-02-20
+Topic: Phase 20 Plan 01 execution
+Stopped at: Completed 20-01-PLAN.md - Admin API endpoints for exploration UI complete
 Resume file: None
 
 ---
-*v1.3 Question Quality & Admin Tools -- Phase 19 COMPLETE (3/3 plans)*
+*v1.3 Question Quality & Admin Tools -- Phase 20 IN PROGRESS (1/3 plans)*
