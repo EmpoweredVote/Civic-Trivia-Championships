@@ -435,9 +435,9 @@ export function GameScreen({
             transition={{ duration: reducedMotion ? 0 : 0.2 }}
             className="flex-1 flex flex-col items-center pt-2 md:pt-6 gap-3 md:gap-8 max-w-[700px] mx-auto w-full px-4"
           >
-            {/* Timer - positioned above question */}
-            {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
-              <div className="flex justify-center">
+            {/* Timer - always reserve space to prevent layout shift */}
+            <div className="flex justify-center min-h-[80px] items-center">
+              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
                 <GameTimer
                   key={timerKey}
                   duration={isFinalQuestion ? finalQuestionDuration : questionDuration}
@@ -445,8 +445,8 @@ export function GameScreen({
                   onTimeUpdate={setCurrentTimeRemaining}
                   isPaused={state.isTimerPaused || !showOptions}
                 />
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Final question badge */}
             {isFinalQuestion && (
