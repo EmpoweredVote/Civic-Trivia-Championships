@@ -34,7 +34,7 @@ export function CollectionCard({ collection, isSelected, onSelect }: CollectionC
         <div className="text-white font-semibold text-sm leading-tight">
           {collection.name}
         </div>
-        <div className="text-slate-400 text-xs mt-1 line-clamp-3">
+        <div className="text-slate-400 text-xs mt-1 line-clamp-3 min-h-[3rem]">
           {collection.description}
         </div>
         {isAdmin && (
