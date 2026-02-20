@@ -169,7 +169,7 @@ export function ResultsScreen({ result, questions, collectionName, onPlayAgain, 
           <img
             src="/images/GameComplete.png"
             alt="Game Complete!"
-            className="h-[33vh] mx-auto mb-6 object-contain"
+            className="h-[60vh] w-auto max-w-none mx-auto mb-6 object-contain"
           />
           {collectionName && (
             <div className="text-slate-400 text-sm mb-4">{collectionName}</div>

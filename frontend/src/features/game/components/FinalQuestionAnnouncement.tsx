@@ -28,7 +28,7 @@ export function FinalQuestionAnnouncement({ show }: FinalQuestionAnnouncementPro
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="h-[25vh] mx-auto object-contain"
+              className="h-[80vh] w-auto max-w-none mx-auto object-contain"
             />
           </div>
         </motion.div>
