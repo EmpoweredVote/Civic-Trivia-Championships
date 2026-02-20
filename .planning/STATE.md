@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: All v1.3 phases complete (18-22)
 Plan: N/A — milestone shipped
 Status: v1.3 milestone archived, ready for next milestone
-Last activity: 2026-02-20 -- v1.3 milestone completed and archived
+Last activity: 2026-02-20 -- Quick task 005 (admin-only question count) completed
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -61,8 +61,8 @@ None — clean slate for next milestone.
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: v1.3 milestone completion
-Stopped at: Milestone archived, ready for /gsd:new-milestone
+Topic: Quick task 005 - hide question count for non-admin users
+Stopped at: Quick task 005 complete
 Resume file: None
 
 ---
