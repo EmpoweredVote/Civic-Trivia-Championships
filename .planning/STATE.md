@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: All v1.3 phases complete (18-22)
 Plan: N/A — milestone shipped
 Status: v1.3 milestone archived, ready for next milestone
-Last activity: 2026-02-20 -- Quick task 011 (dashboard dark mode) completed
+Last activity: 2026-02-20 -- Quick task 012 (reduce game to 8 rounds) completed
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -65,6 +65,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | 009 | Collection card fixed height and fun descriptions | 2026-02-20 | 764b087 | [009-collection-card-fixed-height](./quick/009-collection-card-fixed-height/) |
 | 010 | Add location banner images to collection cards | 2026-02-20 | f1bae8f | [010-collection-card-banner-images](./quick/010-collection-card-banner-images/) |
 | 011 | Dashboard and Header dark mode (slate/teal theme) | 2026-02-20 | 52651b9 | [011-dashboard-dark-mode](./quick/011-dashboard-dark-mode/) |
+| 012 | Reduce game from 10 to 8 rounds | 2026-02-20 | 0474d51 | [012-reduce-game-to-8-rounds](./quick/012-reduce-game-to-8-rounds/) |
 
 ### Blockers/Concerns
 
@@ -73,8 +74,8 @@ None — clean slate for next milestone.
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Quick task 011 - dashboard dark mode
-Stopped at: Quick task 011 complete
+Topic: Quick task 012 - reduce game to 8 rounds
+Stopped at: Quick task 012 complete
 Resume file: None
 
 ---
