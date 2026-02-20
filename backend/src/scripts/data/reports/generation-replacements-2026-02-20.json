@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-02-20T06:18:19.078Z",
+  "target": "replacements",
+  "config": {
+    "targetQuestions": 36,
+    "batchSize": 38,
+    "maxRetries": 3
+  },
+  "results": {
+    "totalGenerated": 38,
+    "passedValidation": 38,
+    "failedValidation": 0,
+    "retryExhausted": 0,
+    "finalInserted": 38
+  },
+  "breakdown": {
+    "byRule": {},
+    "byRetryAttempt": {
+      "0": 38
+    },
+    "byDifficulty": {
+      "easy": 11,
+      "medium": 19,
+      "hard": 8
+    },
+    "byTopic": {
+      "city-government": 5,
+      "elections-voting": 5,
+      "landmarks-culture": 5,
+      "monroe-county": 5,
+      "civic-history": 15,
+      "budget-finance": 3
+    }
+  },
+  "failures": [],
+  "performance": {
+    "totalDurationMs": 158082,
+    "apiCalls": 2,
+    "tokensUsed": {
+      "input": 1512,
+      "output": 7863,
+      "cached": 17623
+    },
+    "estimatedCostUsd": 0.15312915
+  }
+}

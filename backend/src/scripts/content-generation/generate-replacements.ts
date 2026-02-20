@@ -108,6 +108,9 @@ async function analyzeArchivedQuestions(
 ): Promise<ArchivedAnalysis[]> {
   console.log('\n[Analyzing archived questionsTable...]');
 
+  // Only process city-level collections (have locale configs)
+  const supportedCollections = ['bloomington-in', 'los-angeles-ca'];
+
   // Get collections with archived questions
   const collectionsQuery = await db
     .select({
@@ -116,7 +119,11 @@ async function analyzeArchivedQuestions(
       collectionName: collections.name,
     })
     .from(collections)
-    .where(collectionSlug ? eq(collections.slug, collectionSlug) : sql`true`);
+    .where(
+      collectionSlug
+        ? eq(collections.slug, collectionSlug)
+        : inArray(collections.slug, supportedCollections)
+    );
 
   const analyses: ArchivedAnalysis[] = [];
 
