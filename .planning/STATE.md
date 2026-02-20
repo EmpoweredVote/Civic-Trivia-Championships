@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: All v1.3 phases complete (18-22)
 Plan: N/A — milestone shipped
 Status: v1.3 milestone archived, ready for next milestone
-Last activity: 2026-02-20 -- Quick task 005 (admin-only question count) completed
+Last activity: 2026-02-20 -- Quick task 006 (fix admin pagination total pages) completed
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -59,6 +59,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 005 | Show question count on collection cards only for admins | 2026-02-20 | 2107aa2 | [005-admin-only-question-count](./quick/005-admin-only-question-count/) |
+| 006 | Fix admin pagination showing "Page 1 of" with missing total | 2026-02-20 | c0d965a | [006-fix-admin-pagination-total-pages](./quick/006-fix-admin-pagination-total-pages/) |
 
 ### Blockers/Concerns
 
@@ -67,8 +68,8 @@ None — clean slate for next milestone.
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Quick task 005 - hide question count for non-admin users
-Stopped at: Quick task 005 complete
+Topic: Quick task 006 - fix admin pagination total pages display
+Stopped at: Quick task 006 complete
 Resume file: None
 
 ---
