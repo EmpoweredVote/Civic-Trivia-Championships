@@ -45,9 +45,9 @@
 
 ### Admin Question Editing
 
-- [ ] **EDIT-01**: Edit question text, options, explanation, source URL, and difficulty from the detail panel
-- [ ] **EDIT-02**: Automatic quality re-scoring after save (re-run rules, update quality_score and violation_count)
-- [ ] **EDIT-03**: Optimistic table row update after successful save (no full page reload)
+- [x] **EDIT-01**: Edit question text, options, explanation, source URL, and difficulty from the detail panel
+- [x] **EDIT-02**: Automatic quality re-scoring after save (re-run rules, update quality_score and violation_count)
+- [x] **EDIT-03**: Optimistic table row update after successful save (no full page reload)
 
 ## Future Requirements
 
@@ -79,7 +79,7 @@ Deferred to later milestones. Tracked but not in current roadmap.
 | Public-facing admin UI | Admin is internal dev/author tool only |
 | Real-time telemetry dashboard | Batch/on-demand stats sufficient at current scale |
 | Dynamic rule loading / rule editor UI | Rules are TypeScript functions maintained by devs |
-| Question editing in admin UI | Read-only explorer for v1.3; edit via scripts/DB |
+| Question editing in admin UI | Delivered in Phase 22 |
 | Automated question approval | Automated checks are gatekeepers, not approvers — human review required |
 
 ## Traceability
@@ -106,9 +106,9 @@ Deferred to later milestones. Tracked but not in current roadmap.
 | QUAL-05 | Phase 21 | Complete |
 | COLL-01 | Phase 21 | Complete |
 | COLL-02 | Phase 21 | Complete |
-| EDIT-01 | Phase 22 | Pending |
-| EDIT-02 | Phase 22 | Pending |
-| EDIT-03 | Phase 22 | Pending |
+| EDIT-01 | Phase 22 | Complete |
+| EDIT-02 | Phase 22 | Complete |
+| EDIT-03 | Phase 22 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 23 total
@@ -117,4 +117,4 @@ Deferred to later milestones. Tracked but not in current roadmap.
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-20 after Phase 21 completion*
+*Last updated: 2026-02-20 after Phase 22 completion*

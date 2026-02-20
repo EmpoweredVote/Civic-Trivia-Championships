@@ -5,11 +5,11 @@
 - v1.0 MVP - Phases 1-7 (shipped 2026-02-13)
 - v1.1 Production Hardening - Phases 8-12 (shipped 2026-02-18)
 - v1.2 Community Collections - Phases 13-17 (shipped 2026-02-19)
-- v1.3 Question Quality & Admin Tools - Phases 18-22 (in progress)
+- v1.3 Question Quality & Admin Tools - Phases 18-22 (shipped 2026-02-20)
 
 ## Phases
 
-### v1.3 Question Quality & Admin Tools (In Progress)
+### v1.3 Question Quality & Admin Tools (Complete)
 
 **Milestone Goal:** Build the quality framework and tooling needed to scale question collections -- codify what makes great civic trivia, audit and improve existing content, create admin tools for exploration and review, enhance the AI pipeline, and add Indiana and California state collections.
 
@@ -17,7 +17,7 @@
 - [x] **Phase 19: Quality Rules Engine** - Codify quality rules, audit existing content, remove bad questions
 - [x] **Phase 20: Admin Exploration UI** - Question explorer, detail view, collection health dashboard
 - [x] **Phase 21: Generation Pipeline + New Collections** - Quality-gated AI pipeline, state templates, Indiana and California collections
-- [ ] **Phase 22: Admin Question Editing** - Edit questions inline from the detail panel, re-score with quality rules after save
+- [x] **Phase 22: Admin Question Editing** - Edit questions inline from the detail panel, re-score with quality rules after save
 
 ## Phase Details
 
@@ -100,9 +100,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 22-01-PLAN.md -- Backend PUT endpoint with Zod validation and quality re-scoring
-- [ ] 22-02-PLAN.md -- Install @dnd-kit + QuestionEditForm and SortableOption components
-- [ ] 22-03-PLAN.md -- Panel edit mode integration, quality comparison modal, optimistic table update, archive action
+- [x] 22-01-PLAN.md -- Backend PUT endpoint with Zod validation and quality re-scoring
+- [x] 22-02-PLAN.md -- Install @dnd-kit + QuestionEditForm and SortableOption components
+- [x] 22-03-PLAN.md -- Panel edit mode integration, quality comparison modal, optimistic table update, archive action
 
 ## Progress
 
@@ -115,7 +115,7 @@ Phases execute in numeric order: 18 -> 19 -> 20 -> 21 -> 22
 | 19. Quality Rules Engine | 3/3 | Complete | 2026-02-19 |
 | 20. Admin Exploration UI | 3/3 | Complete | 2026-02-20 |
 | 21. Generation Pipeline + New Collections | 5/5 | Complete | 2026-02-20 |
-| 22. Admin Question Editing | 0/3 | Not started | - |
+| 22. Admin Question Editing | 3/3 | Complete | 2026-02-20 |
 
 ## Coverage
 
