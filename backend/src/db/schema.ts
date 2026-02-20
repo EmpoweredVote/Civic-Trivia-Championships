@@ -82,7 +82,8 @@ export const questions = civicTriviaSchema.table('questions', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   encounterCount: integer('encounter_count').notNull().default(0),
-  correctCount: integer('correct_count').notNull().default(0)
+  correctCount: integer('correct_count').notNull().default(0),
+  qualityScore: integer('quality_score')
 }, (table) => ({
   topicIdx: index('idx_questions_topic_id').on(table.topicId),
   learningContentIdx: index('idx_questions_learning_content')
@@ -90,7 +91,8 @@ export const questions = civicTriviaSchema.table('questions', {
   expiresAtIdx: index('idx_questions_expires_at')
     .on(table.expiresAt)
     .where(sql`${table.expiresAt} IS NOT NULL`),
-  statusIdx: index('idx_questions_status').on(table.status)
+  statusIdx: index('idx_questions_status').on(table.status),
+  qualityScoreIdx: index('idx_questions_quality_score').on(table.qualityScore)
 }));
 
 // Collection-Questions junction table
