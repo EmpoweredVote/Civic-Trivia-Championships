@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: All v1.3 phases complete (18-22)
 Plan: N/A — milestone shipped
 Status: v1.3 milestone archived, ready for next milestone
-Last activity: 2026-02-20 -- Quick task 015 (reserve timer space to prevent question shift) completed
+Last activity: 2026-02-20 -- Quick task 016 (move timer to top bar, collection title to right column) completed
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -69,6 +69,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | 013 | Pause after reveal, tap to continue | 2026-02-20 | c79fe37 | [013-pause-after-reveal-tap-to-continue](./quick/013-pause-after-reveal-tap-to-continue/) |
 | 014 | Game UI tap-anywhere layout improvements | 2026-02-20 | 55e7661 | [014-game-ui-tap-anywhere-layout-improvements](./quick/014-game-ui-tap-anywhere-layout-improvements/) |
 | 015 | Reserve timer space to prevent question shift | 2026-02-20 | df17fa5 | [015-reserve-timer-space-prevent-question-shift](./quick/015-reserve-timer-space-prevent-question-shift/) |
+| 016 | Move timer to top bar, collection title to right column | 2026-02-20 | 69490c3 | [016-timer-to-top-bar-collection-title](./quick/016-timer-to-top-bar-collection-title/) |
 
 ### Blockers/Concerns
 
@@ -77,8 +78,8 @@ None — clean slate for next milestone.
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Quick task 015 - reserve timer space to prevent question shift
-Stopped at: Quick task 015 complete
+Topic: Quick task 016 - move timer to top bar, collection title to right column
+Stopped at: Quick task 016 complete
 Resume file: None
 
 ---
