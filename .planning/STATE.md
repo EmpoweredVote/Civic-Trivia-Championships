@@ -54,6 +54,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - useBlocker unavailable (requires createBrowserRouter) — sidebar nav during edit won't prompt for unsaved changes
 - seed-questions.ts comment says status='draft' but scripts insert as 'active'
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 005 | Show question count on collection cards only for admins | 2026-02-20 | 2107aa2 | [005-admin-only-question-count](./quick/005-admin-only-question-count/) |
+
 ### Blockers/Concerns
 
 None — clean slate for next milestone.
