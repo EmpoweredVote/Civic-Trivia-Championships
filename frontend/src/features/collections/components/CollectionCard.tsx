@@ -1,4 +1,5 @@
 import type { CollectionSummary } from '../types';
+import { useAuthStore } from '../../../store/authStore';
 
 interface CollectionCardProps {
   collection: CollectionSummary;
@@ -7,6 +8,9 @@ interface CollectionCardProps {
 }
 
 export function CollectionCard({ collection, isSelected, onSelect }: CollectionCardProps) {
+  const user = useAuthStore((state) => state.user);
+  const isAdmin = user?.isAdmin === true;
+
   return (
     <button
       onClick={() => onSelect(collection.id)}
@@ -17,7 +21,7 @@ export function CollectionCard({ collection, isSelected, onSelect }: CollectionC
           : 'opacity-80 hover:opacity-100 hover:scale-[1.02]',
       ].join(' ')}
       aria-pressed={isSelected}
-      aria-label={`${collection.name}, ${collection.questionCount} questions${isSelected ? ', selected' : ''}`}
+      aria-label={`${collection.name}${isAdmin ? `, ${collection.questionCount} questions` : ''}${isSelected ? ', selected' : ''}`}
     >
       {/* Colored header band - uses inline style for dynamic color */}
       <div
@@ -33,9 +37,11 @@ export function CollectionCard({ collection, isSelected, onSelect }: CollectionC
         <div className="text-slate-400 text-xs mt-1 line-clamp-2">
           {collection.description}
         </div>
-        <div className="text-slate-500 text-xs mt-2">
-          {collection.questionCount} questions
-        </div>
+        {isAdmin && (
+          <div className="text-slate-500 text-xs mt-2">
+            {collection.questionCount} questions
+          </div>
+        )}
       </div>
 
       {/* Selected checkmark indicator */}
