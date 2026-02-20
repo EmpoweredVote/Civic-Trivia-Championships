@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 19 (second of 4 in v1.3: Phases 18-21)
-Plan: --
-Status: Ready to plan
-Last activity: 2026-02-19 -- Phase 18 complete (verified)
+Plan: 01 of 3
+Status: In progress
+Last activity: 2026-02-20 -- Completed 19-01-PLAN.md
 
-Progress: ████░░░░░░░░░░░░░░░░ v1.3: 20% (3/15 plans)
+Progress: ████░░░░░░░░░░░░░░░░ v1.3: 27% (4/15 plans)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
 - v1.2 (Phases 13-17): Complete - 20/20 requirements delivered
-- v1.3 (Phases 18-21): In progress - 5/20 requirements, 3/15 plans
+- v1.3 (Phases 18-21): In progress - 6/20 requirements, 4/15 plans
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -32,7 +32,7 @@ Progress: ████░░░░░░░░░░░░░░░░ v1.3: 20%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 55 (26 v1.0 + 11 v1.1 + 15 v1.2 + 3 v1.3)
+- Total plans completed: 56 (26 v1.0 + 11 v1.1 + 15 v1.2 + 4 v1.3)
 
 ## Accumulated Context
 
@@ -54,6 +54,11 @@ Recent decisions affecting current work:
 - [18-03]: Use externalId for telemetry to avoid extra DB lookup per answer
 - [18-03]: Fire-and-forget pattern ensures telemetry never blocks gameplay
 - [18-03]: Atomic SQL increment prevents race conditions from concurrent gameplay
+- [19-01]: Ambiguity detection uses Jaccard similarity >70% with civic stop words filtered out
+- [19-01]: Pure lookup detection uses allowlist (foundational patterns) and blocklist (obscure indicators)
+- [19-01]: Link validation treats timeouts as advisory, hard failures as blocking
+- [19-01]: Partisan framing is advisory only with conservative keywords (needs LLM upgrade Phase 21)
+- [19-01]: Quality score (0-100) is informational only - hasBlockingViolations flag triggers archival
 
 ### Pending Todos
 
@@ -68,10 +73,10 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-19
-Topic: Phase 18 execution complete
-Stopped at: Phase 18 verified and complete, ready for Phase 19
+Last session: 2026-02-20
+Topic: Phase 19 Plan 01 execution
+Stopped at: Completed 19-01-PLAN.md - Quality rules engine built
 Resume file: None
 
 ---
-*v1.3 Question Quality & Admin Tools -- Phase 18 complete, ready for Phase 19*
+*v1.3 Question Quality & Admin Tools -- Phase 19 in progress (Plan 01 complete)*
