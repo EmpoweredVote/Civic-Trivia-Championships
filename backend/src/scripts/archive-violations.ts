@@ -6,8 +6,9 @@
  * Reports collection health and questions that need archival.
  *
  * Usage:
- *   npm run archive-violations                # Archive blocking violations
- *   npm run archive-violations -- --dry-run   # Preview what would be archived
+ *   npm run archive-violations                      # Archive blocking violations (includes URL checks)
+ *   npm run archive-violations -- --dry-run         # Preview what would be archived
+ *   npm run archive-violations -- --skip-url-check  # Skip URL validation (archive content-quality issues only)
  */
 
 import '../env.js';
@@ -37,6 +38,7 @@ function parseFlags() {
   const args = process.argv.slice(2);
   return {
     dryRun: args.includes('--dry-run'),
+    skipUrlCheck: args.includes('--skip-url-check'),
   };
 }
 
@@ -71,14 +73,19 @@ async function fetchQuestions(): Promise<QuestionRow[]> {
 }
 
 /**
- * Run audit on all questions with full validation (including URL checks)
+ * Run audit on all questions
  */
-async function runAudit(questionRows: QuestionRow[]): Promise<AuditResult[]> {
-  console.log(`\nAuditing ${questionRows.length} questions with full validation (including URL checks)...`);
-  console.log('This may take several minutes.\n');
+async function runAudit(questionRows: QuestionRow[], skipUrlCheck: boolean): Promise<AuditResult[]> {
+  if (skipUrlCheck) {
+    console.log(`\nAuditing ${questionRows.length} questions (SKIPPING URL validation)...`);
+    console.log('Will only flag content-quality issues (ambiguous answers, pure lookup).\n');
+  } else {
+    console.log(`\nAuditing ${questionRows.length} questions with full validation (including URL checks)...`);
+    console.log('This may take several minutes.\n');
+  }
 
   const results: AuditResult[] = [];
-  const batchSize = 10; // Process 10 at a time for URL checks
+  const batchSize = skipUrlCheck ? 50 : 10; // Faster batches when skipping URL checks
 
   for (let i = 0; i < questionRows.length; i += batchSize) {
     const batch = questionRows.slice(i, Math.min(i + batchSize, questionRows.length));
@@ -95,8 +102,8 @@ async function runAudit(questionRows: QuestionRow[]): Promise<AuditResult[]> {
         source: row.source,
       };
 
-      // Run with full validation (skipUrlCheck: false)
-      const result = await auditQuestion(questionInput, { skipUrlCheck: false });
+      // Run audit with specified URL check behavior
+      const result = await auditQuestion(questionInput, { skipUrlCheck });
       results.push(result);
     }
 
@@ -296,8 +303,14 @@ async function main() {
     const questionRows = await fetchQuestions();
     console.log(`Fetched ${questionRows.length} active questions\n`);
 
-    // Run audit with full validation
-    const auditResults = await runAudit(questionRows);
+    if (flags.skipUrlCheck) {
+      console.log('FLAG: --skip-url-check enabled');
+      console.log('URL validation will be SKIPPED for all questions.');
+      console.log('Only content-quality violations (ambiguous answers, pure lookup) will be flagged.\n');
+    }
+
+    // Run audit with specified URL check behavior
+    const auditResults = await runAudit(questionRows, flags.skipUrlCheck);
 
     // Identify blocking violations
     const blockingResults = auditResults.filter(r => r.hasBlockingViolations);
