@@ -83,7 +83,8 @@ export const questions = civicTriviaSchema.table('questions', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   encounterCount: integer('encounter_count').notNull().default(0),
   correctCount: integer('correct_count').notNull().default(0),
-  qualityScore: integer('quality_score')
+  qualityScore: integer('quality_score'),
+  violationCount: integer('violation_count')
 }, (table) => ({
   topicIdx: index('idx_questions_topic_id').on(table.topicId),
   learningContentIdx: index('idx_questions_learning_content')
