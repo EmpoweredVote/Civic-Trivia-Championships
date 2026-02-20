@@ -9,18 +9,18 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 20 (third of 4 in v1.3: Phases 18-21) — COMPLETE
-Plan: 3 of 3 (ALL COMPLETE)
-Status: Phase complete
-Last activity: 2026-02-20 -- Completed Phase 20 (Admin Exploration UI)
+Phase: 21 (fourth of 5 in v1.3: Phases 18-22) — IN PROGRESS
+Plan: 1 of 5 complete
+Status: In progress
+Last activity: 2026-02-20 -- Completed 21-01-PLAN.md (quality-gated generation infrastructure)
 
-Progress: ██████████████░░░░░░ v1.3: 67% (10/15 plans)
+Progress: ███████████████░░░░░ v1.3: 73% (11/15 plans)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
 - v1.2 (Phases 13-17): Complete - 20/20 requirements delivered
-- v1.3 (Phases 18-21): In progress - 14/20 requirements, 9/15 plans
+- v1.3 (Phases 18-22): In progress - 14/23 requirements, 9/15+ plans
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -32,7 +32,7 @@ Progress: ██████████████░░░░░░ v1.3: 67%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 62 (26 v1.0 + 11 v1.1 + 15 v1.2 + 10 v1.3)
+- Total plans completed: 63 (26 v1.0 + 11 v1.1 + 15 v1.2 + 11 v1.3)
 
 ## Accumulated Context
 
@@ -60,6 +60,9 @@ Recent decisions affecting current work:
 - [20-02]: Violation-to-section mapping for inline badges (question/options/explanation/source)
 - [20-03]: Health indicator thresholds: red (<50 questions OR <50 quality), yellow (<80 OR <70), green (>=80 AND >=70)
 - [20-03]: Click-through from collection card to question table via URL params
+- [21-01]: Quality guidelines summarized (200-400 tokens) not full implementations - prevents token bloat in prompts
+- [21-01]: Validation-retry loop decoupled via RegenerateFn callback - reusable across generation scripts
+- [21-01]: URL validation skipped during generation (skipUrlCheck: true) - batch validate after insertion for speed
 
 ### Pending Todos
 
@@ -68,6 +71,10 @@ Recent decisions affecting current work:
 - [ ] Share live URLs with team
 - [ ] Add ADMIN_EMAIL environment variable to production backend
 - [ ] Update Phase 19 audit script to populate violation_count column when saving quality scores
+
+### Roadmap Evolution
+
+- Phase 22 added: Admin Question Editing — edit questions inline from detail panel, re-score with quality rules after save
 
 ### Blockers/Concerns
 
@@ -78,9 +85,9 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Phase 20 execution (all 3 plans)
-Stopped at: Phase 20 complete — Admin Exploration UI verified (22/22 must-haves)
+Topic: Phase 21 plan 01 execution
+Stopped at: Completed 21-01-PLAN.md (quality-gated generation infrastructure)
 Resume file: None
 
 ---
-*v1.3 Question Quality & Admin Tools -- Phase 20 COMPLETE (3/3 plans), Phase 21 next*
+*v1.3 Question Quality & Admin Tools -- Phase 20 COMPLETE (3/3 plans), Phase 21 next, Phase 22 added*

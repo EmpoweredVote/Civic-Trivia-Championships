@@ -83,7 +83,7 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 21-01-PLAN.md -- Quality guidelines prompt text and validation+retry pipeline
+- [x] 21-01-PLAN.md -- Quality guidelines prompt text and validation+retry pipeline
 - [ ] 21-02-PLAN.md -- State system prompt, Indiana/California configs, and state generation script
 - [ ] 21-03-PLAN.md -- Generate and review Indiana state collection (80-100 questions)
 - [ ] 21-04-PLAN.md -- Generate and review California state collection (80-100 questions)
@@ -112,7 +112,7 @@ Phases execute in numeric order: 18 -> 19 -> 20 -> 21 -> 22
 | 18. Foundation (Admin Auth + Telemetry) | 3/3 | Complete | 2026-02-19 |
 | 19. Quality Rules Engine | 3/3 | Complete | 2026-02-19 |
 | 20. Admin Exploration UI | 3/3 | Complete | 2026-02-20 |
-| 21. Generation Pipeline + New Collections | 0/5 | Not started | - |
+| 21. Generation Pipeline + New Collections | 1/5 | In progress | - |
 | 22. Admin Question Editing | 0/? | Not started | - |
 
 ## Coverage
