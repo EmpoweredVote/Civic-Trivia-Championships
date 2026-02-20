@@ -17,11 +17,9 @@ export function FinalQuestionAnnouncement({ show }: FinalQuestionAnnouncementPro
         >
           {/* Content */}
           <div className="text-center relative">
-            {/* Decorative top line */}
-            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
-
-            {/* Main announcement text with pulsing animation */}
-            <motion.h1
+            <motion.img
+              src="/images/FinalQuestion_A.png"
+              alt="Final Question"
               animate={{
                 scale: [1, 1.05, 1],
               }}
@@ -30,19 +28,8 @@ export function FinalQuestionAnnouncement({ show }: FinalQuestionAnnouncementPro
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="text-5xl md:text-7xl font-bold text-white"
-              style={{
-                textShadow: '0 0 40px rgba(251, 191, 36, 0.4), 0 0 80px rgba(251, 191, 36, 0.2)',
-              }}
-            >
-              FINAL QUESTION
-            </motion.h1>
-
-            {/* Decorative bottom line */}
-            <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-64 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
-
-            {/* Spotlight gradient effect */}
-            <div className="absolute inset-0 -z-10 bg-gradient-radial from-amber-500/10 via-transparent to-transparent blur-3xl" />
+              className="h-[25vh] mx-auto object-contain"
+            />
           </div>
         </motion.div>
       )}

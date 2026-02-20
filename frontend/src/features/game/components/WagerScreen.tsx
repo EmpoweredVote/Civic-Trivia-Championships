@@ -75,7 +75,11 @@ export function WagerScreen({
       >
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white mb-4">Final Question</h2>
+          <img
+            src="/images/FinalQuestion_A.png"
+            alt="Final Question"
+            className="h-[20vh] mx-auto mb-4 object-contain"
+          />
           <p className="text-teal-400 text-lg">
             Category: <span className="font-semibold">{categoryLabel}</span>
           </p>
