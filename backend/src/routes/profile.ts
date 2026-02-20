@@ -1,10 +1,13 @@
 import { Router, Request, Response } from 'express';
 import multer, { MulterError } from 'multer';
+import bcrypt from 'bcrypt';
 import { fileTypeFromBuffer } from 'file-type';
 import { join, extname } from 'path';
 import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
 import { randomUUID } from 'crypto';
 import { authenticateToken } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { updateNameValidation, updatePasswordValidation } from '../utils/validation.js';
 import { User } from '../models/User.js';
 
 export const router = Router();
@@ -121,6 +124,57 @@ router.patch('/settings', async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     console.error('Error updating settings:', error);
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+/**
+ * PATCH /name - Update display name
+ */
+router.patch('/name', updateNameValidation, validate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { name } = req.body;
+
+    await User.updateName(userId, name);
+
+    res.json({ name });
+  } catch (error) {
+    console.error('Error updating name:', error);
+    res.status(500).json({ error: 'Failed to update name' });
+  }
+});
+
+/**
+ * PATCH /password - Change password (requires current password verification)
+ */
+router.patch('/password', updatePasswordValidation, validate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    // Fetch user to get current password hash
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Verify current password
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      res.status(401).json({ error: 'Current password is incorrect' });
+      return;
+    }
+
+    // Hash new password with cost 12 (matching authController)
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    await User.updatePassword(userId, hashedPassword);
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error updating password:', error);
+    res.status(500).json({ error: 'Failed to update password' });
   }
 });
 

@@ -169,5 +169,25 @@ export const User = {
       `UPDATE users SET timer_multiplier = $1 WHERE id = $2`,
       [multiplier, id]
     );
+  },
+
+  /**
+   * Update user display name
+   */
+  async updateName(id: number, name: string): Promise<void> {
+    await pool.query(
+      `UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2`,
+      [name, id]
+    );
+  },
+
+  /**
+   * Update user password hash
+   */
+  async updatePassword(id: number, passwordHash: string): Promise<void> {
+    await pool.query(
+      `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+      [passwordHash, id]
+    );
   }
 };
