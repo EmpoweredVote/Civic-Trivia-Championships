@@ -522,7 +522,7 @@ router.get('/questions/explore', async (req: Request, res: Response) => {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit)
       }
     });
   } catch (error: any) {
