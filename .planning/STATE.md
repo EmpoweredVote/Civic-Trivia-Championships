@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: All v1.3 phases complete (18-22)
 Plan: N/A — milestone shipped
 Status: v1.3 milestone archived, ready for next milestone
-Last activity: 2026-02-20 -- Quick task 008 (profile edit name and password) completed
+Last activity: 2026-02-20 -- Quick task 009 (collection card fixed height and descriptions) completed
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -62,6 +62,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | 006 | Fix admin pagination showing "Page 1 of" with missing total | 2026-02-20 | c0d965a | [006-fix-admin-pagination-total-pages](./quick/006-fix-admin-pagination-total-pages/) |
 | 007 | Rename collections (remove 'Civics'), remove Content Generation card | 2026-02-20 | 5cbe032 | [007-rename-collections-remove-content-card](./quick/007-rename-collections-remove-content-card/) |
 | 008 | Profile edit name and password | 2026-02-20 | 4c2f5dd | [008-profile-edit-name-password](./quick/008-profile-edit-name-password/) |
+| 009 | Collection card fixed height and fun descriptions | 2026-02-20 | 764b087 | [009-collection-card-fixed-height](./quick/009-collection-card-fixed-height/) |
 
 ### Blockers/Concerns
 
@@ -70,8 +71,8 @@ None — clean slate for next milestone.
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Quick task 008 - profile edit name and password
-Stopped at: Quick task 008 complete
+Topic: Quick task 009 - collection card fixed height and descriptions
+Stopped at: Quick task 009 complete
 Resume file: None
 
 ---
