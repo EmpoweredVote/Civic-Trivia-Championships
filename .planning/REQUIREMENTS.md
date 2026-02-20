@@ -17,7 +17,7 @@
 - [x] **QUAL-02**: Two-tier rule severity — blocking rules (auto-flag for removal) vs advisory rules (flag for review)
 - [x] **QUAL-03**: Dry-run audit of all 320 existing questions against quality rules with report
 - [x] **QUAL-04**: Remove/archive questions that fail blocking rules
-- [ ] **QUAL-05**: Generate replacement questions to maintain collection sizes
+- [x] **QUAL-05**: Generate replacement questions to maintain collection sizes
 
 ### Admin Exploration UI
 
@@ -34,14 +34,20 @@
 
 ### AI Generation Pipeline
 
-- [ ] **GENR-01**: Quality rules integrated into generation prompts (prevent bad questions at creation)
-- [ ] **GENR-02**: Post-generation validation script that runs quality rules on generated batches
-- [ ] **GENR-03**: State-level generation template (distinct from city-level — different government structures)
+- [x] **GENR-01**: Quality rules integrated into generation prompts (prevent bad questions at creation)
+- [x] **GENR-02**: Post-generation validation script that runs quality rules on generated batches
+- [x] **GENR-03**: State-level generation template (distinct from city-level — different government structures)
 
 ### New Collections
 
-- [ ] **COLL-01**: Indiana state question collection (~80-100 questions)
-- [ ] **COLL-02**: California state question collection (~80-100 questions)
+- [x] **COLL-01**: Indiana state question collection (~80-100 questions)
+- [x] **COLL-02**: California state question collection (~80-100 questions)
+
+### Admin Question Editing
+
+- [ ] **EDIT-01**: Edit question text, options, explanation, source URL, and difficulty from the detail panel
+- [ ] **EDIT-02**: Automatic quality re-scoring after save (re-run rules, update quality_score and violation_count)
+- [ ] **EDIT-03**: Optimistic table row update after successful save (no full page reload)
 
 ## Future Requirements
 
@@ -94,18 +100,21 @@ Deferred to later milestones. Tracked but not in current roadmap.
 | EXPL-03 | Phase 20 | Complete |
 | EXPL-04 | Phase 20 | Complete |
 | TELE-03 | Phase 20 | Complete |
-| GENR-01 | Phase 21 | Pending |
-| GENR-02 | Phase 21 | Pending |
-| GENR-03 | Phase 21 | Pending |
-| QUAL-05 | Phase 21 | Pending |
-| COLL-01 | Phase 21 | Pending |
-| COLL-02 | Phase 21 | Pending |
+| GENR-01 | Phase 21 | Complete |
+| GENR-02 | Phase 21 | Complete |
+| GENR-03 | Phase 21 | Complete |
+| QUAL-05 | Phase 21 | Complete |
+| COLL-01 | Phase 21 | Complete |
+| COLL-02 | Phase 21 | Complete |
+| EDIT-01 | Phase 22 | Pending |
+| EDIT-02 | Phase 22 | Pending |
+| EDIT-03 | Phase 22 | Pending |
 
 **Coverage:**
-- v1.3 requirements: 20 total
-- Mapped to phases: 20
+- v1.3 requirements: 23 total
+- Mapped to phases: 23
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-20 after Phase 20 completion*
+*Last updated: 2026-02-20 after Phase 21 completion*

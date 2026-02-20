@@ -16,7 +16,7 @@
 - [x] **Phase 18: Foundation (Admin Auth + Telemetry)** - Secure admin access and start collecting gameplay data
 - [x] **Phase 19: Quality Rules Engine** - Codify quality rules, audit existing content, remove bad questions
 - [x] **Phase 20: Admin Exploration UI** - Question explorer, detail view, collection health dashboard
-- [ ] **Phase 21: Generation Pipeline + New Collections** - Quality-gated AI pipeline, state templates, Indiana and California collections
+- [x] **Phase 21: Generation Pipeline + New Collections** - Quality-gated AI pipeline, state templates, Indiana and California collections
 - [ ] **Phase 22: Admin Question Editing** - Edit questions inline from the detail panel, re-score with quality rules after save
 
 ## Phase Details
@@ -84,10 +84,10 @@ Plans:
 
 Plans:
 - [x] 21-01-PLAN.md -- Quality guidelines prompt text and validation+retry pipeline
-- [ ] 21-02-PLAN.md -- State system prompt, Indiana/California configs, and state generation script
-- [ ] 21-03-PLAN.md -- Generate and review Indiana state collection (80-100 questions)
-- [ ] 21-04-PLAN.md -- Generate and review California state collection (80-100 questions)
-- [ ] 21-05-PLAN.md -- Replacement question generation for Phase 19 archival backfill
+- [x] 21-02-PLAN.md -- State system prompt, Indiana/California configs, and state generation script
+- [x] 21-03-PLAN.md -- Generate and review Indiana state collection (80-100 questions)
+- [x] 21-04-PLAN.md -- Generate and review California state collection (80-100 questions)
+- [x] 21-05-PLAN.md -- Replacement question generation for Phase 19 archival backfill
 
 ### Phase 22: Admin Question Editing
 **Goal**: Admin can edit questions inline from the detail panel, with automatic quality re-scoring and violation count updates
@@ -112,7 +112,7 @@ Phases execute in numeric order: 18 -> 19 -> 20 -> 21 -> 22
 | 18. Foundation (Admin Auth + Telemetry) | 3/3 | Complete | 2026-02-19 |
 | 19. Quality Rules Engine | 3/3 | Complete | 2026-02-19 |
 | 20. Admin Exploration UI | 3/3 | Complete | 2026-02-20 |
-| 21. Generation Pipeline + New Collections | 1/5 | In progress | - |
+| 21. Generation Pipeline + New Collections | 5/5 | Complete | 2026-02-20 |
 | 22. Admin Question Editing | 0/? | Not started | - |
 
 ## Coverage
