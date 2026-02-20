@@ -7,6 +7,7 @@ interface AuthStore extends AuthState {
   clearAuth: () => void;
   setLoading: (loading: boolean) => void;
   setTimerMultiplier: (multiplier: number) => void;
+  setUserName: (name: string) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -42,4 +43,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({
       timerMultiplier: multiplier,
     }),
+
+  setUserName: (name: string) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, name } : null,
+    })),
 }));

@@ -59,3 +59,29 @@ export async function updateTimerMultiplier(multiplier: number): Promise<{ timer
     body: JSON.stringify({ timerMultiplier: multiplier }),
   });
 }
+
+export async function updateName(name: string): Promise<{ name: string }> {
+  const { accessToken } = useAuthStore.getState();
+
+  return apiRequest<{ name: string }>('/api/users/profile/name', {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function updatePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+  const { accessToken } = useAuthStore.getState();
+
+  return apiRequest<{ message: string }>('/api/users/profile/password', {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}

@@ -4,8 +4,9 @@ import { Header } from '../components/layout/Header';
 import { Avatar } from '../components/Avatar';
 import { XpIcon } from '../components/icons/XpIcon';
 import { GemIcon } from '../components/icons/GemIcon';
-import { fetchProfile, uploadAvatar, updateTimerMultiplier, ProfileStats } from '../services/profileService';
+import { fetchProfile, uploadAvatar, updateTimerMultiplier, updateName, updatePassword, ProfileStats } from '../services/profileService';
 import { useAuthStore } from '../store/authStore';
+import type { AuthError } from '../types/auth';
 
 export function Profile() {
   const navigate = useNavigate();
@@ -15,6 +16,21 @@ export function Profile() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [updatingTimer, setUpdatingTimer] = useState(false);
+
+  // Name editing state
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  // Password change state
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   const loadProfile = async () => {
     setLoading(true);
@@ -72,6 +88,112 @@ export function Profile() {
       setError(err?.error || 'Failed to update timer setting');
     } finally {
       setUpdatingTimer(false);
+    }
+  };
+
+  const handleStartEditName = () => {
+    setNameInput(profile?.name || '');
+    setNameError(null);
+    setEditingName(true);
+  };
+
+  const handleCancelEditName = () => {
+    setNameInput('');
+    setNameError(null);
+    setEditingName(false);
+  };
+
+  const handleSaveName = async () => {
+    // Client-side validation
+    const trimmed = nameInput.trim();
+    if (trimmed.length < 2 || trimmed.length > 50) {
+      setNameError('Name must be between 2 and 50 characters');
+      return;
+    }
+
+    setSavingName(true);
+    setNameError(null);
+    try {
+      const result = await updateName(trimmed);
+      if (profile) {
+        setProfile({ ...profile, name: result.name });
+      }
+      useAuthStore.getState().setUserName(result.name);
+      setEditingName(false);
+    } catch (err: any) {
+      const authErr = err as AuthError;
+      if (authErr?.errors && authErr.errors.length > 0) {
+        setNameError(authErr.errors.map(e => e.message).join('. '));
+      } else if (authErr?.error) {
+        setNameError(authErr.error);
+      } else {
+        setNameError('Failed to update name');
+      }
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const handleCancelPassword = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setShowPasswordForm(false);
+  };
+
+  const handleSubmitPassword = async () => {
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    // Client-side: confirm match
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    // Client-side: validate strength
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters long');
+      return;
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      setPasswordError('Password must contain at least one uppercase letter');
+      return;
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      setPasswordError('Password must contain at least one lowercase letter');
+      return;
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      setPasswordError('Password must contain at least one number');
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await updatePassword(currentPassword, newPassword);
+      setPasswordSuccess('Password updated successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      // Hide form after 2 seconds
+      setTimeout(() => {
+        setShowPasswordForm(false);
+        setPasswordSuccess(null);
+      }, 2000);
+    } catch (err: any) {
+      const authErr = err as AuthError;
+      if (authErr?.errors && authErr.errors.length > 0) {
+        setPasswordError(authErr.errors.map(e => e.message).join('. '));
+      } else if (authErr?.error) {
+        setPasswordError(authErr.error);
+      } else {
+        setPasswordError('Failed to update password');
+      }
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -136,8 +258,112 @@ export function Profile() {
 
             {/* Identity and currency */}
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white">{profile.name}</h1>
+              {/* Name - inline edit */}
+              {editingName ? (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveName();
+                      if (e.key === 'Escape') handleCancelEditName();
+                    }}
+                    autoFocus
+                    className="bg-slate-700 text-white rounded px-3 py-1 text-2xl font-bold border border-slate-600 focus:border-teal-500 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleSaveName}
+                    disabled={savingName}
+                    className="px-3 py-1 bg-teal-600 text-white text-sm font-semibold rounded hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {savingName ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    onClick={handleCancelEditName}
+                    disabled={savingName}
+                    className="px-3 py-1 bg-slate-600 text-white text-sm font-semibold rounded hover:bg-slate-500 transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-3xl font-bold text-white">{profile.name}</h1>
+                  <button
+                    onClick={handleStartEditName}
+                    className="text-slate-400 hover:text-teal-400 transition-colors p-1"
+                    title="Edit name"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              {nameError && (
+                <p className="text-red-400 text-sm mt-1">{nameError}</p>
+              )}
+
               <p className="text-slate-400 mt-1">{profile.email}</p>
+
+              {/* Change Password */}
+              {!showPasswordForm ? (
+                <button
+                  onClick={() => { setPasswordError(null); setPasswordSuccess(null); setShowPasswordForm(true); }}
+                  className="text-teal-400 hover:text-teal-300 text-sm mt-1 transition-colors"
+                >
+                  Change Password
+                </button>
+              ) : (
+                <div className="mt-3 bg-slate-700/50 rounded-lg p-4 max-w-sm space-y-3">
+                  <h3 className="text-sm font-semibold text-white">Change Password</h3>
+                  <input
+                    type="password"
+                    placeholder="Current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full bg-slate-700 text-white rounded px-3 py-2 text-sm border border-slate-600 focus:border-teal-500 focus:outline-none"
+                  />
+                  <input
+                    type="password"
+                    placeholder="New password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-slate-700 text-white rounded px-3 py-2 text-sm border border-slate-600 focus:border-teal-500 focus:outline-none"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSubmitPassword(); }}
+                    className="w-full bg-slate-700 text-white rounded px-3 py-2 text-sm border border-slate-600 focus:border-teal-500 focus:outline-none"
+                  />
+                  {passwordError && (
+                    <p className="text-red-400 text-sm">{passwordError}</p>
+                  )}
+                  {passwordSuccess && (
+                    <p className="text-green-400 text-sm">{passwordSuccess}</p>
+                  )}
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={handleSubmitPassword}
+                      disabled={savingPassword}
+                      className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {savingPassword ? 'Saving...' : 'Update Password'}
+                    </button>
+                    <button
+                      onClick={handleCancelPassword}
+                      disabled={savingPassword}
+                      className="px-4 py-2 bg-slate-600 text-white text-sm font-semibold rounded hover:bg-slate-500 transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* XP and Gems totals */}
               <div className="flex items-center space-x-6 mt-4">
