@@ -1,6 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { useBlocker } from 'react-router-dom';
 import { useAuthStore } from '../../../store/authStore';
 import { API_URL } from '../../../services/api';
 import { DifficultyRate } from './DifficultyRate';
@@ -192,25 +191,6 @@ export function QuestionDetailPanel({
 
     fetchDetail();
   }, [questionId, accessToken]);
-
-  // Block React Router navigation when there are unsaved changes
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
-  );
-
-  useEffect(() => {
-    if (blocker.state === 'blocked') {
-      const shouldProceed = window.confirm(
-        'You have unsaved changes. Discard changes?'
-      );
-      if (shouldProceed) {
-        blocker.proceed();
-      } else {
-        blocker.reset();
-      }
-    }
-  }, [blocker]);
 
   // Block browser close/reload when there are unsaved changes
   useEffect(() => {
