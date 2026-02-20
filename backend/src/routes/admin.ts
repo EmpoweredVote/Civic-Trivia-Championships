@@ -5,6 +5,7 @@ import { questions, collections, collectionQuestions } from '../db/schema.js';
 import { eq, and, or, lte, gt, isNotNull, sql, inArray, ilike, desc, asc } from 'drizzle-orm';
 import { auditQuestion } from '../services/qualityRules/index.js';
 import type { QuestionInput } from '../services/qualityRules/types.js';
+import { z } from 'zod';
 
 const router = Router();
 
@@ -228,6 +229,170 @@ router.post('/questions/:id/archive', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error archiving question:', error);
     res.status(500).json({ error: 'Failed to archive question' });
+  }
+});
+
+/**
+ * Zod schema for validating question updates
+ */
+const UpdateQuestionSchema = z.object({
+  text: z.string().min(20, 'Question text must be at least 20 characters').max(300, 'Question text must be at most 300 characters'),
+  options: z.array(z.string().min(1, 'Option cannot be empty').max(150, 'Option must be at most 150 characters')).length(4, 'Must provide exactly 4 options'),
+  correctAnswer: z.number().int().min(0, 'Correct answer must be between 0 and 3').max(3, 'Correct answer must be between 0 and 3'),
+  explanation: z.string().min(30, 'Explanation must be at least 30 characters').max(500, 'Explanation must be at most 500 characters'),
+  sourceUrl: z.string().url('Source URL must be a valid URL'),
+  difficulty: z.number().int().min(1, 'Difficulty must be between 1 and 10').max(10, 'Difficulty must be between 1 and 10')
+}).strict();
+
+/**
+ * Map numeric difficulty (1-10) to string difficulty (easy/medium/hard)
+ */
+function mapDifficultyToString(difficulty: number): string {
+  if (difficulty >= 1 && difficulty <= 3) return 'easy';
+  if (difficulty >= 4 && difficulty <= 7) return 'medium';
+  if (difficulty >= 8 && difficulty <= 10) return 'hard';
+  return 'medium'; // Fallback (should never happen with Zod validation)
+}
+
+/**
+ * PUT /questions/:id - Update a question with validation and quality re-scoring
+ * Body: { text, options, correctAnswer, explanation, sourceUrl, difficulty }
+ * Returns: { question, qualityDelta: { oldScore, newScore, oldViolations, newViolations, violations } }
+ */
+router.put('/questions/:id', async (req: Request, res: Response) => {
+  try {
+    // Parse and validate question ID
+    const questionId = parseInt(req.params.id, 10);
+    if (isNaN(questionId)) {
+      return res.status(400).json({ error: 'Invalid question ID' });
+    }
+
+    // Validate request body with Zod
+    const validation = UpdateQuestionSchema.safeParse(req.body);
+    if (!validation.success) {
+      const details = validation.error.issues.map((err: any) => ({
+        field: err.path.join('.'),
+        message: err.message
+      }));
+      return res.status(400).json({
+        error: 'Validation failed',
+        details
+      });
+    }
+
+    const validatedData = validation.data;
+
+    // Fetch existing question
+    const [existingQuestion] = await db
+      .select()
+      .from(questions)
+      .where(eq(questions.id, questionId))
+      .limit(1);
+
+    if (!existingQuestion) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    // Capture old quality metrics for delta
+    const oldQualityScore = existingQuestion.qualityScore;
+    const oldViolationCount = existingQuestion.violationCount;
+
+    // Map numeric difficulty to string
+    const difficultyString = mapDifficultyToString(validatedData.difficulty);
+
+    // Preserve existing source.name, update URL
+    const existingSource = existingQuestion.source as { name: string; url: string };
+    const updatedSource = {
+      name: existingSource.name,
+      url: validatedData.sourceUrl
+    };
+
+    // Update the question in DB
+    const [updatedQuestion] = await db
+      .update(questions)
+      .set({
+        text: validatedData.text,
+        options: validatedData.options,
+        correctAnswer: validatedData.correctAnswer,
+        explanation: validatedData.explanation,
+        source: updatedSource,
+        difficulty: difficultyString,
+        updatedAt: new Date()
+      })
+      .where(eq(questions.id, questionId))
+      .returning();
+
+    // Build QuestionInput for quality audit
+    const questionInput: QuestionInput = {
+      text: validatedData.text,
+      options: validatedData.options,
+      correctAnswer: validatedData.correctAnswer,
+      explanation: validatedData.explanation,
+      difficulty: difficultyString,
+      source: updatedSource,
+      externalId: updatedQuestion.externalId
+    };
+
+    // Run quality audit (skip URL check for fast response)
+    const auditResult = await auditQuestion(questionInput, { skipUrlCheck: true });
+
+    // Update quality_score and violation_count
+    await db
+      .update(questions)
+      .set({
+        qualityScore: auditResult.score,
+        violationCount: auditResult.violations.length
+      })
+      .where(eq(questions.id, questionId));
+
+    // Fetch the fully updated question with collection names
+    const result = await db
+      .select({
+        id: questions.id,
+        externalId: questions.externalId,
+        text: questions.text,
+        options: questions.options,
+        correctAnswer: questions.correctAnswer,
+        explanation: questions.explanation,
+        difficulty: questions.difficulty,
+        topicId: questions.topicId,
+        subcategory: questions.subcategory,
+        source: questions.source,
+        learningContent: questions.learningContent,
+        expiresAt: questions.expiresAt,
+        status: questions.status,
+        expirationHistory: questions.expirationHistory,
+        createdAt: questions.createdAt,
+        updatedAt: questions.updatedAt,
+        encounterCount: questions.encounterCount,
+        correctCount: questions.correctCount,
+        qualityScore: questions.qualityScore,
+        violationCount: questions.violationCount,
+        collectionNames: sql<string[]>`array_agg(DISTINCT ${collections.name})`
+      })
+      .from(questions)
+      .leftJoin(collectionQuestions, eq(questions.id, collectionQuestions.questionId))
+      .leftJoin(collections, eq(collectionQuestions.collectionId, collections.id))
+      .where(eq(questions.id, questionId))
+      .groupBy(questions.id)
+      .limit(1);
+
+    const finalQuestion = result[0];
+
+    // Return updated question with quality delta
+    res.json({
+      question: finalQuestion,
+      qualityDelta: {
+        oldScore: oldQualityScore,
+        newScore: auditResult.score,
+        oldViolations: oldViolationCount,
+        newViolations: auditResult.violations.length,
+        violations: auditResult.violations
+      }
+    });
+  } catch (error: any) {
+    console.error('Error updating question:', error);
+    res.status(500).json({ error: 'Failed to update question', detail: error?.message || String(error) });
   }
 });
 
