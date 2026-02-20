@@ -361,7 +361,7 @@ export function GameScreen({
       {/* Main content container */}
       <div className="relative min-h-screen flex flex-col py-4 md:py-8 px-4">
         {/* Top HUD - Score, Timer, Collection name, Progress dots */}
-        <div className="flex flex-col items-center mb-[40px] max-w-5xl mx-auto w-full">
+        <div className="flex flex-col items-center mb-[70px] max-w-5xl mx-auto w-full">
           {/* Controls row - three equal columns for true centering */}
           <div className="grid grid-cols-3 items-center w-full">
             {/* Score display (left) */}
@@ -474,7 +474,7 @@ export function GameScreen({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
-                  className="w-full py-[20px]"
+                  className="w-full pt-[20px] pb-[40px]"
                 >
                   <AnswerGrid
                     options={currentQuestion.options}
