@@ -46,12 +46,12 @@ Plans:
   2. A dry-run audit report exists showing how every one of the 320 existing questions scores against the rules
   3. Questions that fail blocking rules are archived/removed from active rotation and no longer appear in gameplay
   4. Collection sizes remain playable after removals (no collection drops below its minimum viable question count)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 19-01: Quality rules service (TypeScript functions + two-tier severity)
-- [ ] 19-02: Dry-run audit of 320 existing questions
-- [ ] 19-03: Archive blocking failures and verify collection health
+- [ ] 19-01-PLAN.md -- Quality rules service (types, rule functions, scoring, audit runner)
+- [ ] 19-02-PLAN.md -- DB migration (quality_score column) and dry-run audit script
+- [ ] 19-03-PLAN.md -- Archive blocking violations and update collection safety threshold
 
 ### Phase 20: Admin Exploration UI
 **Goal**: Admin users can explore, filter, and inspect questions and collection health through a web interface
