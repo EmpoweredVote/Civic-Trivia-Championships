@@ -18,7 +18,7 @@ export function CollectionPicker({ collections, selectedId, loading, onSelect }:
   return (
     <div>
       {/* Section heading */}
-      <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
+      <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
         Choose Your Collection
       </h2>
 
