@@ -4,7 +4,7 @@ export const collectionsData: NewCollection[] = [
   {
     name: 'Federal',
     slug: 'federal',
-    description: 'Test your knowledge of U.S. federal government, the Constitution, and how democracy works at the national level.',
+    description: 'How well do you really know Uncle Sam? Put your federal know-how to the test.',
     localeCode: 'en-US',
     localeName: 'United States',
     iconIdentifier: 'flag-us',
@@ -15,7 +15,7 @@ export const collectionsData: NewCollection[] = [
   {
     name: 'Bloomington, IN',
     slug: 'bloomington-in',
-    description: 'Explore Bloomington city government, Indiana state civics, and what makes local democracy work in Monroe County.',
+    description: 'B-Town bragging rights on the line. Show off your local civic smarts.',
     localeCode: 'en-US',
     localeName: 'Bloomington, Indiana',
     iconIdentifier: 'flag-in',
@@ -26,7 +26,7 @@ export const collectionsData: NewCollection[] = [
   {
     name: 'Los Angeles, CA',
     slug: 'los-angeles-ca',
-    description: 'Discover how Los Angeles city government works, California state civics, and the issues shaping the nation\'s second-largest city.',
+    description: 'Think you know the City of Angels? Prove it — from City Hall to the Capitol.',
     localeCode: 'en-US',
     localeName: 'Los Angeles, California',
     iconIdentifier: 'flag-ca',
