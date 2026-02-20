@@ -245,22 +245,6 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* Content Generation - Future card */}
-          <div className="mt-8 bg-white rounded-lg border-2 border-gray-200 p-6">
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg mb-4">
-              <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="text-lg font-semibold text-gray-900">Content Generation</h3>
-              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
-                Coming Soon
-              </span>
-            </div>
-            <p className="text-sm text-gray-600 mb-3">AI-powered question pipeline</p>
-            <p className="text-xs text-gray-500 font-medium">Coming in Phase 21</p>
-          </div>
         </>
       )}
     </div>
