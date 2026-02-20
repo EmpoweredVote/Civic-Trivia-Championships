@@ -361,18 +361,20 @@ export function GameScreen({
       {/* Main content container */}
       <div className="relative min-h-screen flex flex-col py-4 md:py-8 px-4">
         {/* Top HUD - Score, Timer, Collection name, Progress dots */}
-        <div className="flex flex-col items-center mb-[30px] max-w-5xl mx-auto w-full">
-          {/* Controls row - three columns: score | timer | collection + dots */}
-          <div className="flex items-center justify-between w-full">
+        <div className="flex flex-col items-center mb-[40px] max-w-5xl mx-auto w-full">
+          {/* Controls row - three equal columns for true centering */}
+          <div className="grid grid-cols-3 items-center w-full">
             {/* Score display (left) */}
-            <ScoreDisplay
-              score={state.totalScore}
-              shouldShake={shouldShake}
-              showRedFlash={showRedFlash}
-              compact={true}
-            />
+            <div className="justify-self-start">
+              <ScoreDisplay
+                score={state.totalScore}
+                shouldShake={shouldShake}
+                showRedFlash={showRedFlash}
+                compact={true}
+              />
+            </div>
 
-            {/* Timer (center) */}
+            {/* Timer (center - grid guarantees true center) */}
             <div className="flex items-center justify-center">
               {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
                 <GameTimer
@@ -387,7 +389,7 @@ export function GameScreen({
             </div>
 
             {/* Collection name + Progress dots + question counter (right) */}
-            <div className="flex flex-col items-end gap-0.5">
+            <div className="flex flex-col items-end gap-0.5 justify-self-end">
               {state.collectionName && (
                 <div className="text-xs text-slate-500 font-medium tracking-wide uppercase truncate max-w-[160px]">
                   {state.collectionName}
