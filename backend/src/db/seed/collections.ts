@@ -15,7 +15,7 @@ export const collectionsData: NewCollection[] = [
   {
     name: 'Bloomington, IN',
     slug: 'bloomington-in',
-    description: 'B-Town bragging rights on the line. Show off your local civic smarts.',
+    description: 'B-Town bragging rights are on the line!',
     localeCode: 'en-US',
     localeName: 'Bloomington, Indiana',
     iconIdentifier: 'flag-in',
@@ -26,7 +26,7 @@ export const collectionsData: NewCollection[] = [
   {
     name: 'Los Angeles, CA',
     slug: 'los-angeles-ca',
-    description: 'Think you know the City of Angels? Prove it — from City Hall to the Capitol.',
+    description: 'Think you know the City of Angels?',
     localeCode: 'en-US',
     localeName: 'Los Angeles, California',
     iconIdentifier: 'flag-ca',
