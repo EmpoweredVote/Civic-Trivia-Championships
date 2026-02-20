@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-20T06:13:49.736Z",
+  "timestamp": "2026-02-20T06:18:29.407Z",
   "target": "california-state",
   "config": {
     "targetQuestions": 100,
@@ -17,24 +17,24 @@
     "byRule": {},
     "byRetryAttempt": {},
     "byDifficulty": {
-      "medium": 13,
-      "hard": 3,
-      "easy": 9
+      "easy": 6,
+      "medium": 12,
+      "hard": 7
     },
     "byTopic": {
-      "ballot-initiatives": 12,
-      "civic-history": 13
+      "state-constitution": 12,
+      "policy-civics": 13
     }
   },
   "failures": [],
   "performance": {
-    "totalDurationMs": 162786,
+    "totalDurationMs": 197528,
     "apiCalls": 1,
     "tokensUsed": {
-      "input": 95,
-      "output": 5005,
+      "input": 96,
+      "output": 5136,
       "cached": 0
     },
-    "estimatedCostUsd": 0.10709625
+    "estimatedCostUsd": 0.10906799999999998
   }
 }
