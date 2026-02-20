@@ -97,10 +97,12 @@ Plans:
   1. Admin can toggle the question detail panel into edit mode and modify question text, options, explanation, source URL, and difficulty
   2. Saving an edited question re-runs quality rules and updates quality_score and violation_count in the database
   3. The question table row updates to reflect changes after a successful save without full page reload
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 22 to break down)
+- [ ] 22-01-PLAN.md -- Backend PUT endpoint with Zod validation and quality re-scoring
+- [ ] 22-02-PLAN.md -- Install @dnd-kit + QuestionEditForm and SortableOption components
+- [ ] 22-03-PLAN.md -- Panel edit mode integration, quality comparison modal, optimistic table update, archive action
 
 ## Progress
 
@@ -113,7 +115,7 @@ Phases execute in numeric order: 18 -> 19 -> 20 -> 21 -> 22
 | 19. Quality Rules Engine | 3/3 | Complete | 2026-02-19 |
 | 20. Admin Exploration UI | 3/3 | Complete | 2026-02-20 |
 | 21. Generation Pipeline + New Collections | 5/5 | Complete | 2026-02-20 |
-| 22. Admin Question Editing | 0/? | Not started | - |
+| 22. Admin Question Editing | 0/3 | Not started | - |
 
 ## Coverage
 
