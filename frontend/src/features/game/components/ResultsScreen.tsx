@@ -166,7 +166,11 @@ export function ResultsScreen({ result, questions, collectionName, onPlayAgain, 
           transition={{ duration: 0.4 }}
           className="text-center mb-8"
         >
-          <h1 className="text-4xl font-bold text-white mb-6">Game Complete!</h1>
+          <img
+            src="/images/GameComplete.png"
+            alt="Game Complete!"
+            className="h-[25vh] mx-auto mb-6 object-contain"
+          />
           {collectionName && (
             <div className="text-slate-400 text-sm mb-4">{collectionName}</div>
           )}
