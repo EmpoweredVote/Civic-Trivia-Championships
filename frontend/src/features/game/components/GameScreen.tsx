@@ -360,17 +360,10 @@ export function GameScreen({
 
       {/* Main content container */}
       <div className="relative min-h-screen flex flex-col py-4 md:py-8 px-4">
-        {/* Top HUD - Quit button, Collection name, Question number, Progress dots */}
-        <div className="flex flex-col items-center gap-2 mb-4 md:mb-8 max-w-5xl mx-auto w-full">
-          {/* Collection name badge */}
-          {state.collectionName && (
-            <div className="text-xs text-slate-500 font-medium tracking-wide uppercase">
-              {state.collectionName}
-            </div>
-          )}
-
-          {/* Controls row */}
-          <div className="flex items-center justify-between w-full">
+        {/* Top HUD - Score, Timer, Collection name, Progress dots */}
+        <div className="flex flex-col items-center mb-2 md:mb-4 max-w-5xl mx-auto w-full">
+          {/* Controls row - three columns: score | timer (centered) | collection + dots */}
+          <div className="flex items-center justify-between w-full relative">
             {/* Score display (left) */}
             <ScoreDisplay
               score={state.totalScore}
@@ -379,8 +372,27 @@ export function GameScreen({
               compact={true}
             />
 
-            {/* Progress dots + question counter (right) */}
-            <div className="flex flex-col items-center gap-0.5">
+            {/* Timer (center, absolutely positioned for true centering) */}
+            <div className="absolute left-1/2 -translate-x-1/2">
+              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
+                <GameTimer
+                  key={timerKey}
+                  duration={isFinalQuestion ? finalQuestionDuration : questionDuration}
+                  onTimeout={onTimeout}
+                  onTimeUpdate={setCurrentTimeRemaining}
+                  isPaused={state.isTimerPaused || !showOptions}
+                  size={48}
+                />
+              )}
+            </div>
+
+            {/* Collection name + Progress dots + question counter (right) */}
+            <div className="flex flex-col items-end gap-0.5">
+              {state.collectionName && (
+                <div className="text-xs text-slate-500 font-medium tracking-wide uppercase truncate max-w-[160px]">
+                  {state.collectionName}
+                </div>
+              )}
               <ProgressDots
                 currentIndex={state.currentQuestionIndex}
                 total={state.questions.length}
@@ -433,21 +445,8 @@ export function GameScreen({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: reducedMotion ? 0 : 0.2 }}
-            className="flex-1 flex flex-col items-center pt-2 md:pt-6 gap-3 md:gap-8 max-w-[700px] mx-auto w-full px-4"
+            className="flex-1 flex flex-col items-center pt-0 md:pt-2 gap-3 md:gap-8 max-w-[700px] mx-auto w-full px-4"
           >
-            {/* Timer - always reserve space to prevent layout shift */}
-            <div className="flex justify-center min-h-[80px] items-center">
-              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
-                <GameTimer
-                  key={timerKey}
-                  duration={isFinalQuestion ? finalQuestionDuration : questionDuration}
-                  onTimeout={onTimeout}
-                  onTimeUpdate={setCurrentTimeRemaining}
-                  isPaused={state.isTimerPaused || !showOptions}
-                />
-              )}
-            </div>
-
             {/* Final question badge */}
             {isFinalQuestion && (
               <div className="flex justify-center">

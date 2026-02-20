@@ -7,6 +7,7 @@ interface GameTimerProps {
   isPaused: boolean;
   onTimeUpdate?: (remainingTime: number) => void;
   key?: string | number;
+  size?: number;
 }
 
 export function GameTimer({
@@ -14,7 +15,10 @@ export function GameTimer({
   onTimeout,
   isPaused,
   onTimeUpdate,
+  size = 80,
 }: GameTimerProps) {
+  const isSmall = size < 60;
+
   return (
     <div className="flex items-center justify-center">
       <CountdownCircleTimer
@@ -22,8 +26,8 @@ export function GameTimer({
         duration={duration}
         colors={['#14B8A6', '#FBBF24', '#F97316', '#EF4444']}
         colorsTime={[20, 10, 5, 0]}
-        size={80}
-        strokeWidth={6}
+        size={size}
+        strokeWidth={isSmall ? 4 : 6}
         onComplete={() => {
           onTimeout();
           return { shouldRepeat: false };
@@ -44,19 +48,19 @@ export function GameTimer({
               transition={{ repeat: Infinity, duration: 0.6 }}
               className="flex flex-col items-center justify-center"
             >
-              <div className="text-2xl font-bold" style={{ color }}>
+              <div className={`${isSmall ? 'text-lg' : 'text-2xl'} font-bold`} style={{ color }}>
                 {remainingTime}
               </div>
 
-              {/* Warning icon (amber clock) at <=10s */}
-              {isWarning && (
+              {/* Warning icon (amber clock) at <=10s - hidden at small sizes */}
+              {!isSmall && isWarning && (
                 <svg className="w-4 h-4 text-amber-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
 
-              {/* Critical icon (red exclamation triangle) at <=5s */}
-              {isCritical && (
+              {/* Critical icon (red exclamation triangle) at <=5s - hidden at small sizes */}
+              {!isSmall && isCritical && (
                 <svg className="w-4 h-4 text-red-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
