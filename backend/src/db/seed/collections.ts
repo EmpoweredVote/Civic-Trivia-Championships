@@ -2,7 +2,7 @@ import type { NewCollection } from '../schema.js';
 
 export const collectionsData: NewCollection[] = [
   {
-    name: 'Federal Civics',
+    name: 'Federal',
     slug: 'federal',
     description: 'Test your knowledge of U.S. federal government, the Constitution, and how democracy works at the national level.',
     localeCode: 'en-US',
@@ -13,7 +13,7 @@ export const collectionsData: NewCollection[] = [
     sortOrder: 1
   },
   {
-    name: 'Bloomington, IN Civics',
+    name: 'Bloomington, IN',
     slug: 'bloomington-in',
     description: 'Explore Bloomington city government, Indiana state civics, and what makes local democracy work in Monroe County.',
     localeCode: 'en-US',
@@ -24,7 +24,7 @@ export const collectionsData: NewCollection[] = [
     sortOrder: 2
   },
   {
-    name: 'Los Angeles, CA Civics',
+    name: 'Los Angeles, CA',
     slug: 'los-angeles-ca',
     description: 'Discover how Los Angeles city government works, California state civics, and the issues shaping the nation\'s second-largest city.',
     localeCode: 'en-US',
