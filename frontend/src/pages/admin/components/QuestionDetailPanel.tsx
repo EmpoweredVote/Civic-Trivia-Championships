@@ -1,8 +1,11 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
+import { useBlocker } from 'react-router-dom';
 import { useAuthStore } from '../../../store/authStore';
 import { API_URL } from '../../../services/api';
 import { DifficultyRate } from './DifficultyRate';
+import { QuestionEditForm, EditFormData } from './QuestionEditForm';
+import { QualityComparisonModal, QualityDelta } from './QualityComparisonModal';
 
 interface Violation {
   rule: string;
@@ -31,12 +34,22 @@ interface QuestionDetail {
   violations: Violation[];
 }
 
+export interface UpdatedQuestionData {
+  id: number;
+  text: string;
+  difficulty: string;
+  qualityScore: number | null;
+  violationCount: number;
+  status: string;
+}
+
 interface QuestionDetailPanelProps {
   questionId: number | null;
   onClose: () => void;
   onNavigate: (direction: 'prev' | 'next') => void;
   hasPrev: boolean;
   hasNext: boolean;
+  onQuestionUpdated?: (updatedQuestion: UpdatedQuestionData) => void;
 }
 
 // Helper to map violations to content sections
@@ -106,6 +119,7 @@ export function QuestionDetailPanel({
   onNavigate,
   hasPrev,
   hasNext,
+  onQuestionUpdated,
 }: QuestionDetailPanelProps) {
   const { accessToken } = useAuthStore();
   const [questionDetail, setQuestionDetail] = useState<QuestionDetail | null>(
@@ -113,6 +127,13 @@ export function QuestionDetailPanel({
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [qualityDelta, setQualityDelta] = useState<QualityDelta | null>(null);
+  const [showQualityModal, setShowQualityModal] = useState(false);
 
   // Fetch question detail when questionId changes
   useEffect(() => {
@@ -124,6 +145,9 @@ export function QuestionDetailPanel({
     const fetchDetail = async () => {
       setLoading(true);
       setError(null);
+      setIsEditMode(false);
+      setHasUnsavedChanges(false);
+      setIsSaving(false);
 
       try {
         const response = await fetch(
@@ -169,6 +193,177 @@ export function QuestionDetailPanel({
     fetchDetail();
   }, [questionId, accessToken]);
 
+  // Block React Router navigation when there are unsaved changes
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      const shouldProceed = window.confirm(
+        'You have unsaved changes. Discard changes?'
+      );
+      if (shouldProceed) {
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker]);
+
+  // Block browser close/reload when there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    if (hasUnsavedChanges) {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [hasUnsavedChanges]);
+
+  // Handle close with unsaved changes
+  const handleClose = () => {
+    if (hasUnsavedChanges) {
+      const shouldClose = window.confirm(
+        'You have unsaved changes. Discard changes?'
+      );
+      if (!shouldClose) return;
+    }
+    setIsEditMode(false);
+    setHasUnsavedChanges(false);
+    onClose();
+  };
+
+  // Handle save
+  const handleSave = async (formData: EditFormData) => {
+    if (!questionDetail) return;
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/admin/questions/${questionDetail.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save question');
+      }
+
+      const data = await response.json();
+      const updatedQuestion = data.question;
+      const delta = data.qualityDelta;
+
+      // Update local state
+      setQuestionDetail({
+        ...questionDetail,
+        text: updatedQuestion.text,
+        options: updatedQuestion.options,
+        correctAnswer: updatedQuestion.correctAnswer,
+        explanation: updatedQuestion.explanation,
+        difficulty: updatedQuestion.difficulty,
+        source: updatedQuestion.source,
+        qualityScore: updatedQuestion.qualityScore,
+        violations: delta.violations || [],
+      });
+
+      // Set quality delta and show modal
+      setQualityDelta(delta);
+      setShowQualityModal(true);
+
+      // Notify parent to update table row
+      if (onQuestionUpdated) {
+        onQuestionUpdated({
+          id: updatedQuestion.id,
+          text: updatedQuestion.text,
+          difficulty: updatedQuestion.difficulty,
+          qualityScore: updatedQuestion.qualityScore,
+          violationCount: delta.newViolations,
+          status: updatedQuestion.status,
+        });
+      }
+
+      // Exit edit mode
+      setIsEditMode(false);
+      setHasUnsavedChanges(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save question');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle cancel
+  const handleCancel = () => {
+    if (hasUnsavedChanges) {
+      const shouldCancel = window.confirm('Discard changes?');
+      if (!shouldCancel) return;
+    }
+    setIsEditMode(false);
+    setHasUnsavedChanges(false);
+  };
+
+  // Handle archive
+  const handleArchive = async () => {
+    if (!questionDetail) return;
+
+    const confirmed = window.confirm(
+      'Are you sure you want to archive this question? It will be removed from active rotation.'
+    );
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/admin/questions/${questionDetail.id}/archive`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to archive question');
+      }
+
+      // Update local state
+      setQuestionDetail({
+        ...questionDetail,
+        status: 'archived',
+      });
+
+      // Notify parent to update table row
+      if (onQuestionUpdated) {
+        onQuestionUpdated({
+          id: questionDetail.id,
+          text: questionDetail.text,
+          difficulty: questionDetail.difficulty,
+          qualityScore: questionDetail.qualityScore,
+          violationCount: questionDetail.violations.length,
+          status: 'archived',
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to archive question');
+    }
+  };
+
   const isOpen = questionId !== null;
 
   // Badge helpers
@@ -198,448 +393,516 @@ export function QuestionDetailPanel({
   };
 
   return (
-    <Transition show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        {/* Backdrop */}
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/30" />
-        </Transition.Child>
+    <>
+      <Transition show={isOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={handleClose}>
+          {/* Backdrop */}
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/30" />
+          </Transition.Child>
 
-        {/* Panel */}
-        <div className="fixed inset-0 overflow-hidden">
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
-              <Transition.Child
-                as={Fragment}
-                enter="transform transition ease-in-out duration-300"
-                enterFrom="translate-x-full"
-                enterTo="translate-x-0"
-                leave="transform transition ease-in-out duration-300"
-                leaveFrom="translate-x-0"
-                leaveTo="translate-x-full"
-              >
-                <Dialog.Panel className="pointer-events-auto w-screen max-w-2xl">
-                  <div className="flex h-full flex-col bg-white shadow-xl">
-                    {/* Header */}
-                    <div className="bg-red-900 px-6 py-4">
-                      <div className="flex items-center justify-between">
-                        <Dialog.Title className="text-lg font-semibold text-white">
-                          Question Details
-                        </Dialog.Title>
-                        <div className="flex items-center space-x-2">
-                          {/* Prev button */}
-                          <button
-                            onClick={() => onNavigate('prev')}
-                            disabled={!hasPrev}
-                            className="p-2 text-white hover:bg-red-800 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label="Previous question"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+          {/* Panel */}
+          <div className="fixed inset-0 overflow-hidden">
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                <Transition.Child
+                  as={Fragment}
+                  enter="transform transition ease-in-out duration-300"
+                  enterFrom="translate-x-full"
+                  enterTo="translate-x-0"
+                  leave="transform transition ease-in-out duration-300"
+                  leaveFrom="translate-x-0"
+                  leaveTo="translate-x-full"
+                >
+                  <Dialog.Panel className="pointer-events-auto w-screen max-w-2xl">
+                    <div className="flex h-full flex-col bg-white shadow-xl">
+                      {/* Header */}
+                      <div className="bg-red-900 px-6 py-4">
+                        <div className="flex items-center justify-between">
+                          <Dialog.Title className="text-lg font-semibold text-white">
+                            Question Details
+                          </Dialog.Title>
+                          <div className="flex items-center space-x-2">
+                            {/* Edit/Save/Cancel buttons */}
+                            {!isEditMode && questionDetail && !loading && (
+                              <button
+                                onClick={() => setIsEditMode(true)}
+                                className="px-3 py-1.5 text-sm font-medium text-white bg-red-700 hover:bg-red-600 rounded"
+                              >
+                                Edit
+                              </button>
+                            )}
+                            {isEditMode && (
+                              <>
+                                <button
+                                  onClick={handleCancel}
+                                  disabled={isSaving}
+                                  className="px-3 py-1.5 text-sm font-medium text-white bg-gray-600 hover:bg-gray-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    // Trigger form submission via the form's submit event
+                                    const form = document.querySelector(
+                                      'form'
+                                    ) as HTMLFormElement;
+                                    if (form) form.requestSubmit();
+                                  }}
+                                  disabled={isSaving}
+                                  className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {isSaving ? 'Saving...' : 'Save'}
+                                </button>
+                              </>
+                            )}
+                            {/* Prev/Next buttons - hidden in edit mode */}
+                            {!isEditMode && (
+                              <>
+                                <button
+                                  onClick={() => onNavigate('prev')}
+                                  disabled={!hasPrev}
+                                  className="p-2 text-white hover:bg-red-800 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                  aria-label="Previous question"
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15 19l-7-7 7-7"
+                                    />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => onNavigate('next')}
+                                  disabled={!hasNext}
+                                  className="p-2 text-white hover:bg-red-800 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                  aria-label="Next question"
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 5l7 7-7 7"
+                                    />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
+                            {/* Close button */}
+                            <button
+                              onClick={handleClose}
+                              className="p-2 text-white hover:bg-red-800 rounded"
+                              aria-label="Close panel"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 19l-7-7 7-7"
-                              />
-                            </svg>
-                          </button>
-                          {/* Next button */}
-                          <button
-                            onClick={() => onNavigate('next')}
-                            disabled={!hasNext}
-                            className="p-2 text-white hover:bg-red-800 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label="Next question"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </button>
-                          {/* Close button */}
-                          <button
-                            onClick={onClose}
-                            className="p-2 text-white hover:bg-red-800 rounded"
-                            aria-label="Close panel"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          </button>
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Body */}
-                    <div className="flex-1 overflow-y-auto px-6 py-6">
-                      {/* Loading state */}
-                      {loading && (
-                        <div className="space-y-4 animate-pulse">
-                          <div className="h-8 bg-gray-200 rounded w-3/4" />
-                          <div className="h-4 bg-gray-200 rounded w-full" />
-                          <div className="h-4 bg-gray-200 rounded w-5/6" />
-                          <div className="space-y-2">
-                            <div className="h-6 bg-gray-200 rounded w-full" />
-                            <div className="h-6 bg-gray-200 rounded w-full" />
-                            <div className="h-6 bg-gray-200 rounded w-full" />
-                            <div className="h-6 bg-gray-200 rounded w-full" />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Error state */}
-                      {error && !loading && (
-                        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
-                          {error}
-                        </div>
-                      )}
-
-                      {/* Content */}
-                      {questionDetail && !loading && (
-                        <div className="space-y-6">
-                          {/* Question text */}
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">
-                              {questionDetail.text}
-                            </h3>
-                            {/* Inline violations for question */}
-                            {getViolationsForSection(
-                              questionDetail.violations,
-                              'question'
-                            ).length > 0 && (
-                              <div className="border-l-4 border-red-300 pl-3 mt-2">
-                                {getViolationsForSection(
-                                  questionDetail.violations,
-                                  'question'
-                                ).map((v, idx) => (
-                                  <InlineViolationBadge key={idx} violation={v} />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Answer options */}
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                              Answer Options
-                            </h4>
+                      {/* Body */}
+                      <div className="flex-1 overflow-y-auto px-6 py-6">
+                        {/* Loading state */}
+                        {loading && (
+                          <div className="space-y-4 animate-pulse">
+                            <div className="h-8 bg-gray-200 rounded w-3/4" />
+                            <div className="h-4 bg-gray-200 rounded w-full" />
+                            <div className="h-4 bg-gray-200 rounded w-5/6" />
                             <div className="space-y-2">
-                              {questionDetail.options.map((optionText, idx) => {
-                                const isCorrect = questionDetail.correctAnswer === idx;
-                                const label = String.fromCharCode(65 + idx); // A, B, C, D
-                                const optionViolations = getViolationsForSection(
-                                  questionDetail.violations,
-                                  'options'
-                                );
-                                const hasEvidence = optionViolations.some(
-                                  (v) =>
-                                    v.evidence &&
-                                    optionText
-                                      .toLowerCase()
-                                      .includes(v.evidence.toLowerCase())
-                                );
-
-                                return (
-                                  <div
-                                    key={idx}
-                                    className={`flex items-start p-3 rounded-md border ${
-                                      isCorrect && !hasEvidence
-                                        ? 'bg-green-50 border-green-300'
-                                        : hasEvidence
-                                        ? 'bg-red-50 border-red-300'
-                                        : 'bg-gray-50 border-gray-200'
-                                    }`}
-                                  >
-                                    <span className="font-semibold text-gray-700 mr-2">
-                                      {label}.
-                                    </span>
-                                    <div className="flex-1">
-                                      <span className="text-gray-900">
-                                        {optionText}
-                                      </span>
-                                      {isCorrect && (
-                                        <svg
-                                          className="inline-block w-5 h-5 ml-2 text-green-600"
-                                          fill="currentColor"
-                                          viewBox="0 0 20 20"
-                                        >
-                                          <path
-                                            fillRule="evenodd"
-                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                            clipRule="evenodd"
-                                          />
-                                        </svg>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            {/* Inline violations for options */}
-                            {getViolationsForSection(
-                              questionDetail.violations,
-                              'options'
-                            ).length > 0 && (
-                              <div className="border-l-4 border-red-300 pl-3 mt-3">
-                                {getViolationsForSection(
-                                  questionDetail.violations,
-                                  'options'
-                                ).map((v, idx) => (
-                                  <InlineViolationBadge key={idx} violation={v} />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Explanation */}
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                              Explanation
-                            </h4>
-                            <div className="bg-gray-50 p-4 rounded-md">
-                              <p className="text-gray-900">
-                                {questionDetail.explanation}
-                              </p>
-                            </div>
-                            {/* Inline violations for explanation */}
-                            {getViolationsForSection(
-                              questionDetail.violations,
-                              'explanation'
-                            ).length > 0 && (
-                              <div className="border-l-4 border-yellow-300 pl-3 mt-2">
-                                {getViolationsForSection(
-                                  questionDetail.violations,
-                                  'explanation'
-                                ).map((v, idx) => (
-                                  <InlineViolationBadge key={idx} violation={v} />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Learn More */}
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                              Learn More
-                            </h4>
-                            {questionDetail.source.url ? (
-                              <a
-                                href={questionDetail.source.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-red-600 hover:text-red-700 underline"
-                              >
-                                {questionDetail.source.name}
-                                <svg
-                                  className="inline-block w-4 h-4 ml-1"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                  />
-                                </svg>
-                              </a>
-                            ) : (
-                              <span className="text-gray-500">
-                                {questionDetail.source.name || 'No source provided'}
-                              </span>
-                            )}
-                            {/* Inline violations for source */}
-                            {getViolationsForSection(
-                              questionDetail.violations,
-                              'source'
-                            ).length > 0 && (
-                              <div className="border-l-4 border-red-300 pl-3 mt-2">
-                                {getViolationsForSection(
-                                  questionDetail.violations,
-                                  'source'
-                                ).map((v, idx) => (
-                                  <InlineViolationBadge key={idx} violation={v} />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Metadata */}
-                          <div className="flex items-center space-x-4 text-sm">
-                            <span
-                              className={`px-2 py-1 rounded-full font-semibold ${getDifficultyBadge(
-                                questionDetail.difficulty
-                              )}`}
-                            >
-                              {questionDetail.difficulty}
-                            </span>
-                            <span
-                              className={`px-2 py-1 rounded-full font-semibold ${getStatusBadge(
-                                questionDetail.status
-                              )}`}
-                            >
-                              {questionDetail.status}
-                            </span>
-                            <span className="text-gray-600">
-                              Created:{' '}
-                              {new Date(questionDetail.createdAt).toLocaleDateString()}
-                            </span>
-                            <span className="text-gray-600">
-                              ID: {questionDetail.externalId}
-                            </span>
-                          </div>
-
-                          {/* Telemetry */}
-                          <div className="bg-blue-50 p-4 rounded-md">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                              Telemetry Data
-                            </h4>
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <div className="text-gray-600 mb-1">Encounters</div>
-                                <div className="text-lg font-semibold text-gray-900">
-                                  {questionDetail.encounterCount}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-gray-600 mb-1">Correct</div>
-                                <div className="text-lg font-semibold text-gray-900">
-                                  {questionDetail.correctCount}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-gray-600 mb-1">
-                                  Calculated Difficulty
-                                </div>
-                                <div className="text-lg font-semibold">
-                                  <DifficultyRate
-                                    correctCount={questionDetail.correctCount}
-                                    encounterCount={questionDetail.encounterCount}
-                                  />
-                                </div>
-                              </div>
+                              <div className="h-6 bg-gray-200 rounded w-full" />
+                              <div className="h-6 bg-gray-200 rounded w-full" />
+                              <div className="h-6 bg-gray-200 rounded w-full" />
+                              <div className="h-6 bg-gray-200 rounded w-full" />
                             </div>
                           </div>
+                        )}
 
-                          {/* Quality Assessment Summary */}
-                          <div className="border-t pt-6">
-                            <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                              Quality Assessment
-                            </h4>
+                        {/* Error state */}
+                        {error && !loading && (
+                          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
+                            {error}
+                          </div>
+                        )}
 
-                            {/* Score */}
-                            <div className="mb-4">
-                              <div className="text-sm text-gray-600 mb-1">
-                                Quality Score
-                              </div>
-                              {questionDetail.qualityScore !== null ? (
-                                <div
-                                  className={`text-4xl font-bold ${getQualityScoreColor(
-                                    questionDetail.qualityScore
-                                  )}`}
-                                >
-                                  {questionDetail.qualityScore}
-                                  <span className="text-lg text-gray-500">/100</span>
-                                </div>
-                              ) : (
-                                <div className="text-2xl text-gray-400">Not scored</div>
-                              )}
-                            </div>
+                        {/* Edit mode */}
+                        {isEditMode && questionDetail && !loading && (
+                          <QuestionEditForm
+                            question={questionDetail}
+                            onSave={handleSave}
+                            onCancel={handleCancel}
+                            onDirtyChange={setHasUnsavedChanges}
+                            isSaving={isSaving}
+                          />
+                        )}
 
-                            {/* Violations list */}
+                        {/* View mode */}
+                        {!isEditMode && questionDetail && !loading && (
+                          <div className="space-y-6">
+                            {/* Question text */}
                             <div>
-                              <div className="text-sm font-semibold text-gray-700 mb-2">
-                                Violations
-                              </div>
-                              {questionDetail.violations.length > 0 ? (
-                                <div className="space-y-3">
-                                  {questionDetail.violations.map((violation, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="bg-gray-50 p-3 rounded-md border border-gray-200"
-                                    >
-                                      <div className="flex items-start justify-between mb-1">
-                                        <span
-                                          className={`px-2 py-1 text-xs font-semibold rounded ${
-                                            violation.severity === 'blocking'
-                                              ? 'bg-red-100 text-red-800'
-                                              : 'bg-yellow-100 text-yellow-800'
-                                          }`}
-                                        >
-                                          {violation.severity === 'blocking'
-                                            ? 'Blocking'
-                                            : 'Advisory'}
-                                        </span>
-                                        <span className="text-sm font-medium text-gray-700">
-                                          {violation.rule
-                                            .split('-')
-                                            .map(
-                                              (w) =>
-                                                w.charAt(0).toUpperCase() + w.slice(1)
-                                            )
-                                            .join(' ')}
-                                        </span>
-                                      </div>
-                                      <p className="text-sm text-gray-900 mb-1">
-                                        {violation.message}
-                                      </p>
-                                      {violation.evidence && (
-                                        <p className="text-xs text-gray-600 font-mono bg-gray-100 p-2 rounded mt-2">
-                                          {violation.evidence}
-                                        </p>
-                                      )}
-                                    </div>
+                              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                                {questionDetail.text}
+                              </h3>
+                              {/* Inline violations for question */}
+                              {getViolationsForSection(
+                                questionDetail.violations,
+                                'question'
+                              ).length > 0 && (
+                                <div className="border-l-4 border-red-300 pl-3 mt-2">
+                                  {getViolationsForSection(
+                                    questionDetail.violations,
+                                    'question'
+                                  ).map((v, idx) => (
+                                    <InlineViolationBadge key={idx} violation={v} />
                                   ))}
                                 </div>
-                              ) : (
-                                <p className="text-sm text-gray-600 italic">
-                                  No violations found
-                                </p>
                               )}
                             </div>
+
+                            {/* Answer options */}
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                                Answer Options
+                              </h4>
+                              <div className="space-y-2">
+                                {questionDetail.options.map((optionText, idx) => {
+                                  const isCorrect = questionDetail.correctAnswer === idx;
+                                  const label = String.fromCharCode(65 + idx); // A, B, C, D
+                                  const optionViolations = getViolationsForSection(
+                                    questionDetail.violations,
+                                    'options'
+                                  );
+                                  const hasEvidence = optionViolations.some(
+                                    (v) =>
+                                      v.evidence &&
+                                      optionText
+                                        .toLowerCase()
+                                        .includes(v.evidence.toLowerCase())
+                                  );
+
+                                  return (
+                                    <div
+                                      key={idx}
+                                      className={`flex items-start p-3 rounded-md border ${
+                                        isCorrect && !hasEvidence
+                                          ? 'bg-green-50 border-green-300'
+                                          : hasEvidence
+                                          ? 'bg-red-50 border-red-300'
+                                          : 'bg-gray-50 border-gray-200'
+                                      }`}
+                                    >
+                                      <span className="font-semibold text-gray-700 mr-2">
+                                        {label}.
+                                      </span>
+                                      <div className="flex-1">
+                                        <span className="text-gray-900">
+                                          {optionText}
+                                        </span>
+                                        {isCorrect && (
+                                          <svg
+                                            className="inline-block w-5 h-5 ml-2 text-green-600"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              {/* Inline violations for options */}
+                              {getViolationsForSection(
+                                questionDetail.violations,
+                                'options'
+                              ).length > 0 && (
+                                <div className="border-l-4 border-red-300 pl-3 mt-3">
+                                  {getViolationsForSection(
+                                    questionDetail.violations,
+                                    'options'
+                                  ).map((v, idx) => (
+                                    <InlineViolationBadge key={idx} violation={v} />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Explanation */}
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                                Explanation
+                              </h4>
+                              <div className="bg-gray-50 p-4 rounded-md">
+                                <p className="text-gray-900">
+                                  {questionDetail.explanation}
+                                </p>
+                              </div>
+                              {/* Inline violations for explanation */}
+                              {getViolationsForSection(
+                                questionDetail.violations,
+                                'explanation'
+                              ).length > 0 && (
+                                <div className="border-l-4 border-yellow-300 pl-3 mt-2">
+                                  {getViolationsForSection(
+                                    questionDetail.violations,
+                                    'explanation'
+                                  ).map((v, idx) => (
+                                    <InlineViolationBadge key={idx} violation={v} />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Learn More */}
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                                Learn More
+                              </h4>
+                              {questionDetail.source.url ? (
+                                <a
+                                  href={questionDetail.source.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-red-600 hover:text-red-700 underline"
+                                >
+                                  {questionDetail.source.name}
+                                  <svg
+                                    className="inline-block w-4 h-4 ml-1"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                    />
+                                  </svg>
+                                </a>
+                              ) : (
+                                <span className="text-gray-500">
+                                  {questionDetail.source.name || 'No source provided'}
+                                </span>
+                              )}
+                              {/* Inline violations for source */}
+                              {getViolationsForSection(
+                                questionDetail.violations,
+                                'source'
+                              ).length > 0 && (
+                                <div className="border-l-4 border-red-300 pl-3 mt-2">
+                                  {getViolationsForSection(
+                                    questionDetail.violations,
+                                    'source'
+                                  ).map((v, idx) => (
+                                    <InlineViolationBadge key={idx} violation={v} />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Metadata */}
+                            <div className="flex items-center space-x-4 text-sm">
+                              <span
+                                className={`px-2 py-1 rounded-full font-semibold ${getDifficultyBadge(
+                                  questionDetail.difficulty
+                                )}`}
+                              >
+                                {questionDetail.difficulty}
+                              </span>
+                              <span
+                                className={`px-2 py-1 rounded-full font-semibold ${getStatusBadge(
+                                  questionDetail.status
+                                )}`}
+                              >
+                                {questionDetail.status}
+                              </span>
+                              <span className="text-gray-600">
+                                Created:{' '}
+                                {new Date(questionDetail.createdAt).toLocaleDateString()}
+                              </span>
+                              <span className="text-gray-600">
+                                ID: {questionDetail.externalId}
+                              </span>
+                            </div>
+
+                            {/* Telemetry */}
+                            <div className="bg-blue-50 p-4 rounded-md">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                                Telemetry Data
+                              </h4>
+                              <div className="grid grid-cols-3 gap-4 text-sm">
+                                <div>
+                                  <div className="text-gray-600 mb-1">Encounters</div>
+                                  <div className="text-lg font-semibold text-gray-900">
+                                    {questionDetail.encounterCount}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-gray-600 mb-1">Correct</div>
+                                  <div className="text-lg font-semibold text-gray-900">
+                                    {questionDetail.correctCount}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-gray-600 mb-1">
+                                    Calculated Difficulty
+                                  </div>
+                                  <div className="text-lg font-semibold">
+                                    <DifficultyRate
+                                      correctCount={questionDetail.correctCount}
+                                      encounterCount={questionDetail.encounterCount}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Quality Assessment Summary */}
+                            <div className="border-t pt-6">
+                              <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                                Quality Assessment
+                              </h4>
+
+                              {/* Score */}
+                              <div className="mb-4">
+                                <div className="text-sm text-gray-600 mb-1">
+                                  Quality Score
+                                </div>
+                                {questionDetail.qualityScore !== null ? (
+                                  <div
+                                    className={`text-4xl font-bold ${getQualityScoreColor(
+                                      questionDetail.qualityScore
+                                    )}`}
+                                  >
+                                    {questionDetail.qualityScore}
+                                    <span className="text-lg text-gray-500">/100</span>
+                                  </div>
+                                ) : (
+                                  <div className="text-2xl text-gray-400">Not scored</div>
+                                )}
+                              </div>
+
+                              {/* Violations list */}
+                              <div>
+                                <div className="text-sm font-semibold text-gray-700 mb-2">
+                                  Violations
+                                </div>
+                                {questionDetail.violations.length > 0 ? (
+                                  <div className="space-y-3">
+                                    {questionDetail.violations.map((violation, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="bg-gray-50 p-3 rounded-md border border-gray-200"
+                                      >
+                                        <div className="flex items-start justify-between mb-1">
+                                          <span
+                                            className={`px-2 py-1 text-xs font-semibold rounded ${
+                                              violation.severity === 'blocking'
+                                                ? 'bg-red-100 text-red-800'
+                                                : 'bg-yellow-100 text-yellow-800'
+                                            }`}
+                                          >
+                                            {violation.severity === 'blocking'
+                                              ? 'Blocking'
+                                              : 'Advisory'}
+                                          </span>
+                                          <span className="text-sm font-medium text-gray-700">
+                                            {violation.rule
+                                              .split('-')
+                                              .map(
+                                                (w) =>
+                                                  w.charAt(0).toUpperCase() + w.slice(1)
+                                              )
+                                              .join(' ')}
+                                          </span>
+                                        </div>
+                                        <p className="text-sm text-gray-900 mb-1">
+                                          {violation.message}
+                                        </p>
+                                        {violation.evidence && (
+                                          <p className="text-xs text-gray-600 font-mono bg-gray-100 p-2 rounded mt-2">
+                                            {violation.evidence}
+                                          </p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-gray-600 italic">
+                                    No violations found
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Archive section */}
+                            {questionDetail.status !== 'archived' && (
+                              <div className="border-t border-red-200 pt-6">
+                                <button
+                                  onClick={handleArchive}
+                                  className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-300 hover:bg-red-100 rounded-md"
+                                >
+                                  Archive Question
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
+                  </Dialog.Panel>
+                </Transition.Child>
+              </div>
             </div>
           </div>
-        </div>
-      </Dialog>
-    </Transition>
+        </Dialog>
+      </Transition>
+
+      {/* Quality Comparison Modal */}
+      <QualityComparisonModal
+        isOpen={showQualityModal}
+        onClose={() => setShowQualityModal(false)}
+        delta={qualityDelta}
+      />
+    </>
   );
 }
