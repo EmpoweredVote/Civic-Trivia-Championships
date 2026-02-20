@@ -5,7 +5,7 @@ import { useCollections } from '../features/collections/hooks/useCollections';
 import { CollectionPicker } from '../features/collections/components/CollectionPicker';
 
 export function Dashboard() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const { collections, selectedId, selectedCollection, loading, select } = useCollections();
 
