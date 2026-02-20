@@ -5,7 +5,6 @@ import { GameTimer } from './GameTimer';
 import { ProgressDots } from './ProgressDots';
 import { QuestionCard } from './QuestionCard';
 import { AnswerGrid } from './AnswerGrid';
-import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { ScoreDisplay } from './ScoreDisplay';
 import { ScorePopup } from './ScorePopup';
 import { LearnMoreButton } from './LearnMoreButton';
@@ -62,7 +61,6 @@ export function GameScreen({
   resumeGame,
 }: GameScreenProps) {
 
-  const [showQuitDialog, setShowQuitDialog] = useState(false);
   const [showTimeoutFlash, setShowTimeoutFlash] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
@@ -295,19 +293,6 @@ export function GameScreen({
     lockAnswer(currentTimeRemaining);
   };
 
-  const handleQuitClick = () => {
-    setShowQuitDialog(true);
-  };
-
-  const handleQuitConfirm = () => {
-    setShowQuitDialog(false);
-    quitGame();
-  };
-
-  const handleQuitCancel = () => {
-    setShowQuitDialog(false);
-  };
-
   // Idle state - show start button
   if (state.phase === 'idle') {
     return (
@@ -356,7 +341,14 @@ export function GameScreen({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-x-hidden">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-x-hidden"
+      onClick={() => {
+        if (state.phase === 'revealing' && !isLearnMoreOpen) {
+          nextQuestion();
+        }
+      }}
+    >
       {/* Degraded mode banner - shown only when backend is in fallback mode */}
       <DegradedBanner visible={state.degraded} />
 
@@ -379,50 +371,26 @@ export function GameScreen({
 
           {/* Controls row */}
           <div className="flex items-center justify-between w-full">
-            {/* Quit button */}
-            <button
-              onClick={handleQuitClick}
-              className="min-w-[48px] min-h-[48px] text-slate-400 hover:text-white transition-colors p-2 flex items-center justify-center"
-              aria-label="Quit game"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-
-            {/* Question number indicator (center) */}
-            <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">
-              Q{state.currentQuestionIndex + 1} of {state.questions.length}
-            </span>
-
-            {/* Progress dots */}
-            <ProgressDots
-              currentIndex={state.currentQuestionIndex}
-              total={state.questions.length}
-            />
-          </div>
-        </div>
-
-        {/* Score display - conditionally rendered based on phase */}
-        {(state.phase === 'revealing' || state.phase === 'locked' || state.phase === 'complete' || !showOptions) && (
-          <div className="flex justify-center mb-2 md:mb-4">
+            {/* Score display (left) */}
             <ScoreDisplay
               score={state.totalScore}
               shouldShake={shouldShake}
               showRedFlash={showRedFlash}
+              compact={true}
             />
+
+            {/* Progress dots + question counter (right) */}
+            <div className="flex flex-col items-center gap-0.5">
+              <ProgressDots
+                currentIndex={state.currentQuestionIndex}
+                total={state.questions.length}
+              />
+              <span className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">
+                Q{state.currentQuestionIndex + 1} of {state.questions.length}
+              </span>
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Timeout flash message */}
         <AnimatePresence>
@@ -523,7 +491,7 @@ export function GameScreen({
 
                   {/* Learn More button and tooltip - shown during reveal below answers */}
                   {state.phase === 'revealing' && learningContent && (
-                    <div className="relative flex justify-center mt-4">
+                    <div className="relative flex justify-center mt-4" onClick={(e) => e.stopPropagation()}>
                       <div className="relative">
                         <LearnMoreButton
                           onOpenModal={handleOpenLearnMore}
@@ -541,7 +509,7 @@ export function GameScreen({
 
                   {/* Next Question button - pauses until user taps */}
                   {state.phase === 'revealing' && (
-                    <div className="flex justify-center">
+                    <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
                       <motion.button
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -563,6 +531,7 @@ export function GameScreen({
 
       {/* Learn More modal - rendered outside main content */}
       {learningContent && latestAnswer && (
+        <div onClick={(e) => e.stopPropagation()}>
         <LearnMoreModal
           isOpen={isLearnMoreOpen}
           onClose={handleCloseLearnMore}
@@ -570,18 +539,8 @@ export function GameScreen({
           userAnswer={latestAnswer.selectedOption}
           correctAnswer={latestAnswer.correctAnswer}
         />
+        </div>
       )}
-
-      {/* Quit confirmation dialog */}
-      <ConfirmDialog
-        isOpen={showQuitDialog}
-        onConfirm={handleQuitConfirm}
-        onCancel={handleQuitCancel}
-        title="Quit Game?"
-        message="Are you sure you want to quit? Your progress will be lost."
-        confirmText="Quit"
-        cancelText="Continue Playing"
-      />
 
       {/* Pause overlay */}
       {state.isPaused && (

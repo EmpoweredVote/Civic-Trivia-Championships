@@ -5,9 +5,10 @@ interface ScoreDisplayProps {
   score: number;
   shouldShake: boolean;
   showRedFlash: boolean;
+  compact?: boolean;
 }
 
-export function ScoreDisplay({ score, shouldShake, showRedFlash }: ScoreDisplayProps) {
+export function ScoreDisplay({ score, shouldShake, showRedFlash, compact = false }: ScoreDisplayProps) {
   const motionScore = useMotionValue(0);
 
   // Animate score changes with spring physics
@@ -55,18 +56,20 @@ export function ScoreDisplay({ score, shouldShake, showRedFlash }: ScoreDisplayP
               }
             : {}
         }
-        className="relative bg-slate-800/80 backdrop-blur-sm rounded-lg px-6 py-3 border border-slate-700"
+        className={`relative bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700 ${compact ? 'px-3 py-1.5' : 'px-6 py-3'}`}
       >
         <div className="text-center">
           <motion.div
             key={displayScore}
-            className="text-3xl font-bold text-teal-400 tabular-nums"
+            className={`font-bold text-teal-400 tabular-nums ${compact ? 'text-xl' : 'text-3xl'}`}
           >
             {displayScore.toLocaleString()}
           </motion.div>
-          <div className="text-slate-400 text-xs mt-0.5 uppercase tracking-wide">
-            pts
-          </div>
+          {!compact && (
+            <div className="text-slate-400 text-xs mt-0.5 uppercase tracking-wide">
+              pts
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
