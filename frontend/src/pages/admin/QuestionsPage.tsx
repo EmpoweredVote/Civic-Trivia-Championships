@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useDebounce } from '../../hooks/useDebounce';
 import { QuestionTable, QuestionRow } from './components/QuestionTable';
+import { QuestionDetailPanel } from './components/QuestionDetailPanel';
 
 interface PaginationMeta {
   total: number;
@@ -31,12 +32,10 @@ export function QuestionsPage() {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Detail panel state (will be used in Task 2)
-  // @ts-expect-error - will be used when detail panel is added in Task 2
+  // Detail panel state
   const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(
     null
   );
-  // @ts-expect-error - will be used when detail panel is added in Task 2
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
 
   // Collections list (hardcoded for now)
@@ -151,6 +150,29 @@ export function QuestionsPage() {
   const handleQuestionClick = (id: number, index: number) => {
     setSelectedQuestionId(id);
     setSelectedQuestionIndex(index);
+  };
+
+  // Handle detail panel navigation
+  const handlePanelNavigate = (direction: 'prev' | 'next') => {
+    if (!questions) return;
+
+    if (direction === 'prev' && selectedQuestionIndex > 0) {
+      const newIndex = selectedQuestionIndex - 1;
+      setSelectedQuestionIndex(newIndex);
+      setSelectedQuestionId(questions[newIndex].id);
+    } else if (
+      direction === 'next' &&
+      selectedQuestionIndex < questions.length - 1
+    ) {
+      const newIndex = selectedQuestionIndex + 1;
+      setSelectedQuestionIndex(newIndex);
+      setSelectedQuestionId(questions[newIndex].id);
+    }
+  };
+
+  // Handle detail panel close
+  const handlePanelClose = () => {
+    setSelectedQuestionId(null);
   };
 
   // Calculate pagination display
@@ -296,6 +318,15 @@ export function QuestionsPage() {
           </div>
         </div>
       )}
+
+      {/* Detail Panel */}
+      <QuestionDetailPanel
+        questionId={selectedQuestionId}
+        onClose={handlePanelClose}
+        onNavigate={handlePanelNavigate}
+        hasPrev={selectedQuestionIndex > 0}
+        hasNext={questions ? selectedQuestionIndex < questions.length - 1 : false}
+      />
     </div>
   );
 }
