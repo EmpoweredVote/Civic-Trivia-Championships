@@ -52,7 +52,7 @@ export function Header() {
           <div className="flex-shrink-0">
             <Link to="/">
               <img
-                src="/images/Empowered_Vote_Logo_2026.png"
+                src="/images/Empowered Vote Dark Logo.png"
                 alt="Empowered Vote"
                 className="h-10"
               />
