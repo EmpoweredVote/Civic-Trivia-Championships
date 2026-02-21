@@ -24,6 +24,17 @@ export const collectionsData: NewCollection[] = [
     sortOrder: 2
   },
   {
+    name: 'Fremont, CA',
+    slug: 'fremont-ca',
+    description: 'Five towns, one city — how well do you know Fremont?',
+    localeCode: 'en-US',
+    localeName: 'Fremont, California',
+    iconIdentifier: 'flag-ca',
+    themeColor: '#047857', // emerald green
+    isActive: false, // Activate in Phase 25 after questions reviewed
+    sortOrder: 3
+  },
+  {
     name: 'Los Angeles, CA',
     slug: 'los-angeles-ca',
     description: 'Think you know the City of Angels?',
@@ -32,6 +43,6 @@ export const collectionsData: NewCollection[] = [
     iconIdentifier: 'flag-ca',
     themeColor: '#0369A1', // ocean blue - California
     isActive: true,
-    sortOrder: 3
+    sortOrder: 4 // Updated from 3 to accommodate Fremont
   }
 ];
