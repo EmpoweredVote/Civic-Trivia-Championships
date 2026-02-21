@@ -53,6 +53,7 @@ interface DataFile {
 const LOCALES = [
   { slug: 'bloomington-in', file: 'bloomington-in-questions.json' },
   { slug: 'los-angeles-ca', file: 'los-angeles-ca-questions.json' },
+  { slug: 'fremont-ca', file: 'fremont-ca-questions.json' },
 ];
 
 function loadDataFile(filename: string): DataFile {
