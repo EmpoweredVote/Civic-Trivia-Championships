@@ -66,7 +66,7 @@ Usage: npx tsx src/scripts/content-generation/generate-locale-questions.ts [opti
 
 Options:
   --locale <slug>     Locale to generate questions for (required)
-                      Supported: bloomington-in, los-angeles-ca
+                      Supported: bloomington-in, los-angeles-ca, fremont-ca
   --batch <N>         Generate only batch N (1-indexed). Default: all batches.
   --fetch-sources     Re-fetch and save RAG source documents before generating
   --dry-run           Generate and validate questions but do not seed to database
@@ -85,6 +85,7 @@ async function loadLocaleConfig(locale: string): Promise<LocaleConfig> {
   const supportedLocales: Record<string, () => Promise<{ default?: LocaleConfig; [key: string]: unknown }>> = {
     'bloomington-in': () => import('./locale-configs/bloomington-in.js') as Promise<{ bloomingtonConfig: LocaleConfig }>,
     'los-angeles-ca': () => import('./locale-configs/los-angeles-ca.js') as Promise<{ losAngelesConfig: LocaleConfig }>,
+    'fremont-ca': () => import('./locale-configs/fremont-ca.js') as Promise<{ fremontConfig: LocaleConfig }>,
   };
 
   const loader = supportedLocales[locale];
@@ -96,7 +97,7 @@ async function loadLocaleConfig(locale: string): Promise<LocaleConfig> {
   const module = await loader();
 
   // Extract the config from the module (different export names per file)
-  const configKeys = ['bloomingtonConfig', 'losAngelesConfig'];
+  const configKeys = ['bloomingtonConfig', 'losAngelesConfig', 'fremontConfig'];
   for (const key of configKeys) {
     if (module[key]) return module[key] as LocaleConfig;
   }
@@ -138,7 +139,7 @@ async function generateBatch(
     ])
   );
 
-  const systemPromptText = buildSystemPrompt(config.name, batchTopicDistribution);
+  const systemPromptText = buildSystemPrompt(config.name, batchTopicDistribution, config.locale);
 
   // Determine next ID range for this batch
   const startId = batchIndex * config.batchSize + 1;

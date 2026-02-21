@@ -1,10 +1,13 @@
+import { QUALITY_GUIDELINES } from './quality-guidelines.js';
+
 /**
  * Builds the system prompt for civic trivia question generation.
  * Encodes all content decisions from 17-CONTEXT.md.
  */
 export function buildSystemPrompt(
   localeName: string,
-  topicDistribution: Record<string, number>
+  topicDistribution: Record<string, number>,
+  localeSlug?: string
 ): string {
   const topicLines = Object.entries(topicDistribution)
     .map(([slug, count]) => `  - ${slug}: ${count} questions`)
@@ -96,5 +99,65 @@ Distribute difficulty across the full batch:
 - Questions with multiple defensible correct answers
 - Trivia about individual private citizens
 - Questions requiring knowledge of other questions
-- Anything that could embarrass or politically compromise the civic education mission`;
+- Anything that could embarrass or politically compromise the civic education mission
+
+${QUALITY_GUIDELINES}${localeSlug === 'fremont-ca' ? buildFremontSensitivityInstructions() : ''}`;
+}
+
+/**
+ * Builds Fremont-specific sensitivity instructions for content generation.
+ * These guidelines ensure culturally appropriate and accurate representation.
+ */
+function buildFremontSensitivityInstructions(): string {
+  return `
+
+## Fremont-Specific Content Guidelines
+
+### Ohlone / Indigenous History
+- ALWAYS use present tense: "Ohlone people have lived here for thousands of years"
+- NEVER purely past tense: "Ohlone people lived here before colonization"
+- Acknowledge ongoing presence, not just historical existence
+- Respectful framing without romanticization of mission system
+
+### Afghan-American Community / Little Kabul
+- Focus on CULTURAL HERITAGE: food, traditions, cultural institutions, contributions to Fremont
+- Do NOT reduce to refugee/immigration narrative
+- Celebrate how the Afghan-American community has shaped Fremont's identity
+- No poverty tourism or tragedy framing
+
+### Tesla / NUMMI
+- CIVIC ANGLES ONLY: zoning decisions, environmental review, job numbers, tax revenue, factory reuse
+- NUMMI history and Tesla acquisition are fine (economic impact on Fremont)
+- Do NOT ask about Tesla products (cars, batteries, software)
+- Do NOT ask about Elon Musk personally (wealth, views, social media)
+- Do NOT ask about corporate strategy (production targets, stock price)
+
+### Mission San Jose Disambiguation
+- "Mission San Jose (historic mission)" = 1797 Spanish mission (Mission San Jose de Guadalupe)
+- "Mission San Jose district" = modern neighborhood within Fremont
+- NEVER use ambiguous "Mission San Jose" without a qualifier
+
+### Five-Town Consolidation (1956)
+- When mentioning consolidation, name ALL five towns: Centerville, Niles, Irvington, Mission San Jose, Warm Springs
+- This is a core Fremont identity story — ensure accuracy
+
+### Diversity and Demographics
+- Celebrate diversity through institutions, events, and cultural contributions
+- Do NOT use census-style statistics ("X% of Fremont is Y ethnicity")
+- Do NOT rank communities against each other
+- Focus on what makes Fremont unique
+
+### Expiration Timestamps for Elected Officials
+- Fremont Mayor: term ends January 2027. Set expiresAt: "2027-01-01T00:00:00Z"
+- City Council Districts up in 2026: expiresAt: "2027-01-01T00:00:00Z"
+- Alameda County Supervisor District 1: expiresAt: "2027-01-01T00:00:00Z"
+- For structural questions about offices (not specific people): expiresAt: null
+- Prefer structural questions over current-official-name questions to reduce expiration churn
+
+### Difficulty Distribution (Fremont-specific calibration)
+- Target: 40% easy, 40% medium, 20% hard
+- Easy: Foundational facts a civic-minded resident would know (e.g., "How many districts does Fremont have?")
+- Medium: Requires civic knowledge but learnable (e.g., "What role does the city manager play?")
+- Hard: Nuanced details even locals might not know (e.g., "Which five towns consolidated to form Fremont in 1956?")
+- Distractors should scale with difficulty — easy has obviously wrong answers, hard has genuinely tricky ones`;
 }
