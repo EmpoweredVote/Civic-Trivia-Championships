@@ -93,10 +93,12 @@ Plans:
   10. Diversity and demographic questions use percentages/trends, not exact population numbers
   11. Time-sensitive questions (current officials, budget figures) have expiration timestamps matching term end dates
   12. All questions include explanations (1-3 sentences, neutral, informative)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 24-01: TBD
+- [ ] 24-01-PLAN.md — Register Fremont locale in generation pipeline, enhance system prompt with sensitivity notes and quality guidelines, fetch RAG sources
+- [ ] 24-02-PLAN.md — Generate ~130 Fremont questions with quality validation retry loop, seed as draft to database
+- [ ] 24-03-PLAN.md — Spot-check sample for cultural sensitivity, curate to ~100 best questions, activate final set
 
 ---
 
@@ -143,9 +145,9 @@ Phases execute in numeric order: 23 → 24 → 25 → 26
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 23. Collection Setup | v1.4 | 1/1 | Complete | 2026-02-21 |
-| 24. Question Generation | v1.4 | 0/TBD | Not started | - |
+| 24. Question Generation | v1.4 | 0/3 | Not started | - |
 | 25. Image & Activation | v1.4 | 0/TBD | Not started | - |
 | 26. Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-21 after Phase 23 complete*
+*Last updated: 2026-02-21 after Phase 24 planning*
