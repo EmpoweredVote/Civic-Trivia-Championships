@@ -114,7 +114,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 25-01-PLAN.md — Add Mission Peak banner image, export 92 active questions to JSON with status filter, register Fremont in seed script
+- [x] 25-01-PLAN.md — Add Mission Peak banner image, export 92 active questions to JSON with status filter, register Fremont in seed script
 
 ---
 
@@ -146,8 +146,8 @@ Phases execute in numeric order: 23 → 24 → 25 → 26
 |-------|-----------|----------------|--------|-----------|
 | 23. Collection Setup | v1.4 | 1/1 | Complete | 2026-02-21 |
 | 24. Question Generation | v1.4 | 3/3 | Complete | 2026-02-21 |
-| 25. Image & Activation | v1.4 | 0/1 | Not started | - |
+| 25. Image & Activation | v1.4 | 1/1 | Complete | 2026-02-21 |
 | 26. Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-21 after Phase 25 planned*
+*Last updated: 2026-02-21 after Phase 25 complete*

@@ -11,7 +11,7 @@ Requirements for Fremont, CA Collection. Each maps to roadmap phases.
 
 - [x] **COLL-01**: Fremont, CA collection exists in database with slug `fremont-ca`, description, theme color, and sort order
 - [x] **COLL-02**: Fremont collection has 8 topic categories (city government, county government, state government, civic history, local services, elections & voting, landmarks & culture, budget & finance)
-- [ ] **COLL-03**: Fremont collection card displays a skyline banner image (`fremont-ca.jpg`)
+- [x] **COLL-03**: Fremont collection card displays a skyline banner image (`fremont-ca.jpg`)
 
 ### Question Content
 
@@ -33,8 +33,8 @@ Requirements for Fremont, CA Collection. Each maps to roadmap phases.
 
 ### Activation & Playability
 
-- [ ] **ACTV-01**: Fremont collection seeded to database via community seed script
-- [ ] **ACTV-02**: Collection activated (`isActive: true`) and appears in collection picker
+- [x] **ACTV-01**: Fremont collection seeded to database via community seed script
+- [x] **ACTV-02**: Collection activated (`isActive: true`) and appears in collection picker
 - [ ] **ACTV-03**: Collection has minimum 50 questions (gameplay threshold) — targeting ~100
 - [ ] **ACTV-04**: Game sessions can be created from Fremont collection with 8-question rounds
 
@@ -64,7 +64,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | COLL-01 | Phase 23 | Complete |
 | COLL-02 | Phase 23 | Complete |
-| COLL-03 | Phase 25 | Pending |
+| COLL-03 | Phase 25 | Complete |
 | QUES-01 | Phase 24 | Complete |
 | QUES-02 | Phase 24 | Complete |
 | QUES-03 | Phase 24 | Complete |
@@ -77,8 +77,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FREM-04 | Phase 24 | Complete |
 | FREM-05 | Phase 24 | Complete |
 | FREM-06 | Phase 24 | Complete |
-| ACTV-01 | Phase 25 | Pending |
-| ACTV-02 | Phase 25 | Pending |
+| ACTV-01 | Phase 25 | Complete |
+| ACTV-02 | Phase 25 | Complete |
 | ACTV-03 | Phase 26 | Pending |
 | ACTV-04 | Phase 26 | Pending |
 
@@ -89,4 +89,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-21 after Phase 24 complete (QUES-01 through QUES-06, FREM-01 through FREM-06 delivered)*
+*Last updated: 2026-02-21 after Phase 25 complete (COLL-03, ACTV-01, ACTV-02 delivered)*
