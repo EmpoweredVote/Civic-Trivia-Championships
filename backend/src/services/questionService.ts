@@ -10,6 +10,8 @@ import { db } from '../db/index.js';
 import { questions, collections, collectionQuestions, topics } from '../db/schema.js';
 import { eq, and, notInArray, isNull, or, gt, sql } from 'drizzle-orm';
 import { Question } from '../services/sessionService.js';
+import { gameModes, DEFAULT_GAME_MODE } from './gameModes.js';
+import type { DBQuestionRow } from './gameModes.js';
 
 const TOTAL_QUESTIONS = 8;
 
@@ -21,20 +23,8 @@ const __dirname = dirname(__filename);
 let cachedFederalCollectionId: number | null = null;
 let cachedTopicMap: Map<number, string> | null = null;
 
-// Type for raw DB rows returned from the question query
-interface DBQuestionRow {
-  id: number;
-  externalId: string;
-  text: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string;
-  difficulty: string;
-  topicId: number;
-  subcategory: string | null;
-  source: { name: string; url: string };
-  learningContent: { paragraphs: string[]; corrections: Record<string, string> } | null;
-}
+// Re-export DBQuestionRow for external consumers
+export type { DBQuestionRow } from './gameModes.js';
 
 /**
  * Fisher-Yates shuffle algorithm
@@ -110,98 +100,33 @@ function loadQuestionsFromJSON(): Question[] {
 }
 
 /**
- * Apply difficulty selection algorithm to produce a balanced 8-question set.
+ * Apply difficulty selection using the pluggable game mode strategy system.
  *
- * Target distribution:
- *   Q1  = easy
- *   Q8  = hard
- *   Q2-Q7 = 2 easy + 2 medium + 2 hard (shuffled)
+ * Delegates to the selected strategy from gameModes registry.
+ * Falls back to DEFAULT_GAME_MODE if the requested mode is unknown.
  *
- * Constraint relaxation: if any pool is too small, fill from other pools.
- * Never returns duplicates. Always returns up to 8 unique questions.
+ * Constraint relaxation: if fewer than TOTAL_QUESTIONS available, returns all shuffled.
  */
 function applyDifficultySelection(
   allRows: DBQuestionRow[],
-  collectionId: number
+  collectionId: number,
+  gameMode?: string
 ): DBQuestionRow[] {
+  const modeName = gameMode && gameModes[gameMode] ? gameMode : DEFAULT_GAME_MODE;
+  const strategy = gameModes[modeName];
+
   const easyPool = shuffle(allRows.filter(q => q.difficulty === 'easy'));
   const mediumPool = shuffle(allRows.filter(q => q.difficulty === 'medium'));
   const hardPool = shuffle(allRows.filter(q => q.difficulty === 'hard'));
 
-  const total = allRows.length;
-
-  if (total < TOTAL_QUESTIONS) {
+  if (allRows.length < TOTAL_QUESTIONS) {
     console.warn(
-      `Relaxed difficulty constraints: only ${total} questions available for collection ${collectionId}`
+      `Relaxed difficulty constraints: only ${allRows.length} questions for collection ${collectionId}`
     );
     return shuffle(allRows);
   }
 
-  // Pick Q1 (easy) — fallback to medium, then hard
-  let q1: DBQuestionRow | undefined;
-  if (easyPool.length > 0) {
-    q1 = easyPool.shift()!;
-  } else if (mediumPool.length > 0) {
-    q1 = mediumPool.shift()!;
-  } else {
-    q1 = hardPool.shift()!;
-  }
-
-  // Pick final question (hard) — fallback to medium, then easy
-  let qFinal: DBQuestionRow | undefined;
-  if (hardPool.length > 0) {
-    qFinal = hardPool.shift()!;
-  } else if (mediumPool.length > 0) {
-    qFinal = mediumPool.shift()!;
-  } else {
-    qFinal = easyPool.shift()!;
-  }
-
-  // For Q2-Q7, pick 2 easy + 2 medium + 2 hard
-  // Track how many we still need from each pool
-  let needEasy = 2;
-  let needMedium = 2;
-  let needHard = 2;
-
-  const middleQuestions: DBQuestionRow[] = [];
-
-  // Pick from easy pool
-  while (needEasy > 0 && easyPool.length > 0) {
-    middleQuestions.push(easyPool.shift()!);
-    needEasy--;
-  }
-
-  // Pick from medium pool
-  while (needMedium > 0 && mediumPool.length > 0) {
-    middleQuestions.push(mediumPool.shift()!);
-    needMedium--;
-  }
-
-  // Pick from hard pool
-  while (needHard > 0 && hardPool.length > 0) {
-    middleQuestions.push(hardPool.shift()!);
-    needHard--;
-  }
-
-  // Fill remaining gaps from any available pool
-  const remaining = needEasy + needMedium + needHard;
-  if (remaining > 0) {
-    const remainingAll = shuffle([...easyPool, ...mediumPool, ...hardPool]);
-    for (let i = 0; i < remaining && i < remainingAll.length; i++) {
-      middleQuestions.push(remainingAll[i]);
-    }
-    if (remaining > remainingAll.length) {
-      console.warn(
-        `Relaxed difficulty constraints: only ${total} questions available for collection ${collectionId}`
-      );
-    }
-  }
-
-  // Shuffle the 6 middle questions
-  const shuffledMiddle = shuffle(middleQuestions);
-
-  // Combine: [Q1_easy, ...middle_6_shuffled, Q8_hard]
-  return [q1!, ...shuffledMiddle, qFinal!];
+  return strategy(easyPool, mediumPool, hardPool, TOTAL_QUESTIONS);
 }
 
 /**
@@ -275,11 +200,13 @@ export async function getCollectionMetadata(
  *
  * @param collectionId - Collection to query (null = federal civics)
  * @param recentQuestionIds - Question external IDs to exclude from selection
+ * @param gameMode - Game mode strategy name (defaults to 'easy-steps')
  * @returns Array of up to 8 questions shaped as Question interface
  */
 export async function selectQuestionsForGame(
   collectionId: number | null,
-  recentQuestionIds: string[]
+  recentQuestionIds: string[],
+  gameMode?: string
 ): Promise<Question[]> {
   try {
     // Resolve collection ID
@@ -350,7 +277,8 @@ export async function selectQuestionsForGame(
     // Apply difficulty selection algorithm
     const selectedRows = applyDifficultySelection(
       uniqueRows,
-      targetCollectionId
+      targetCollectionId,
+      gameMode
     );
 
     // Final dedup safety check on selected questions
