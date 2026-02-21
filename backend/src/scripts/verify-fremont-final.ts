@@ -40,8 +40,9 @@ async function verify() {
   `);
   console.log('\nDifficulty distribution:');
   for (const row of diffResult.rows) {
-    const pct = ((row.count / activeResult.rows[0].count) * 100).toFixed(1);
-    console.log(`  ${row.difficulty}: ${row.count} (${pct}%)`);
+    const r = row as any;
+    const pct = ((r.count / (activeResult.rows[0] as any).count) * 100).toFixed(1);
+    console.log(`  ${r.difficulty}: ${r.count} (${pct}%)`);
   }
 
   // Expiration timestamps

@@ -43,7 +43,7 @@ async function main() {
       WHERE c.slug = 'fremont-ca' AND q.status = 'active'
     `);
 
-    const count = parseInt(result.rows[0].count);
+    const count = parseInt((result.rows[0] as any).count);
     const passed = count >= 50;
 
     results.push({
@@ -79,7 +79,7 @@ async function main() {
       throw new Error('Fremont collection not found');
     }
 
-    fremonCollectionId = collResult.rows[0].id;
+    fremonCollectionId = (collResult.rows[0] as any).id;
 
     // Create 3 test sessions
     let allSessionsValid = true;
@@ -212,7 +212,7 @@ async function main() {
     `);
 
     const nonMatching = result.rows
-      .map(row => row.external_id)
+      .map(row => (row as any).external_id as string)
       .filter(id => !id.startsWith('fre-'));
 
     const passed = nonMatching.length === 0;
@@ -253,8 +253,9 @@ async function main() {
     let total = 0;
 
     for (const row of result.rows) {
-      distribution[row.difficulty] = parseInt(row.count);
-      total += parseInt(row.count);
+      const r = row as any;
+      distribution[r.difficulty] = parseInt(r.count);
+      total += parseInt(r.count);
     }
 
     const hasEasy = (distribution.easy || 0) >= 1;
@@ -306,8 +307,8 @@ async function main() {
         AND q.expires_at IS NOT NULL AND q.expires_at < NOW()
     `);
 
-    const withExpiration = parseInt(withExpirationResult.rows[0].count);
-    const expiredActive = parseInt(expiredActiveResult.rows[0].count);
+    const withExpiration = parseInt((withExpirationResult.rows[0] as any).count);
+    const expiredActive = parseInt((expiredActiveResult.rows[0] as any).count);
 
     const passed = withExpiration >= 1 && expiredActive === 0;
 
