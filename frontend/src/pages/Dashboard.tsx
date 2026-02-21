@@ -26,7 +26,7 @@ export function Dashboard() {
           </div>
 
           {/* Start Game Button */}
-          <div className="text-center py-2 h-16 sm:h-20 flex items-center justify-center">
+          <div className="text-center py-2 -mt-6 sm:-mt-8 h-16 sm:h-20 flex items-center justify-center">
             <button
               onClick={() => navigate('/play', { state: { collectionId: selectedId } })}
               onPointerDown={() => setPlayPressed(true)}
@@ -37,7 +37,7 @@ export function Dashboard() {
               <img
                 src={playPressed ? '/images/Play_Down.png' : '/images/Play_Up.png'}
                 alt="Play"
-                className="h-64 sm:h-80"
+                className="h-52 sm:h-64"
                 draggable={false}
               />
             </button>
