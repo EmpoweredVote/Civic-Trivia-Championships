@@ -9,8 +9,8 @@ Requirements for Fremont, CA Collection. Each maps to roadmap phases.
 
 ### Collection Setup
 
-- [ ] **COLL-01**: Fremont, CA collection exists in database with slug `fremont-ca`, description, theme color, and sort order
-- [ ] **COLL-02**: Fremont collection has 8 topic categories (city government, county government, state government, civic history, local services, elections & voting, landmarks & culture, budget & finance)
+- [x] **COLL-01**: Fremont, CA collection exists in database with slug `fremont-ca`, description, theme color, and sort order
+- [x] **COLL-02**: Fremont collection has 8 topic categories (city government, county government, state government, civic history, local services, elections & voting, landmarks & culture, budget & finance)
 - [ ] **COLL-03**: Fremont collection card displays a skyline banner image (`fremont-ca.jpg`)
 
 ### Question Content
@@ -62,8 +62,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COLL-01 | Phase 23 | Pending |
-| COLL-02 | Phase 23 | Pending |
+| COLL-01 | Phase 23 | Complete |
+| COLL-02 | Phase 23 | Complete |
 | COLL-03 | Phase 25 | Pending |
 | QUES-01 | Phase 24 | Pending |
 | QUES-02 | Phase 24 | Pending |
@@ -89,4 +89,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-20 after roadmap creation*
+*Last updated: 2026-02-21 after Phase 23 complete (COLL-01, COLL-02 delivered)*
