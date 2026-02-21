@@ -13,7 +13,7 @@ import { Question } from '../services/sessionService.js';
 import { gameModes, DEFAULT_GAME_MODE } from './gameModes.js';
 import type { DBQuestionRow } from './gameModes.js';
 
-const TOTAL_QUESTIONS = 8;
+export const TOTAL_QUESTIONS = 8;
 
 // Get current file's directory for ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -298,4 +298,106 @@ export async function selectQuestionsForGame(
     console.warn('Database question query failed, falling back to JSON:', error);
     return loadQuestionsFromJSON();
   }
+}
+
+/**
+ * Transform a single DB question row to a Question interface.
+ * Used by the adaptive flow to transform dynamically-selected next questions.
+ */
+export async function transformSingleDBQuestion(row: DBQuestionRow): Promise<Question> {
+  const topicMap = await loadTopicMap();
+  return transformDBQuestions([row], topicMap)[0];
+}
+
+/**
+ * Create an adaptive game session: fetch all questions for the collection,
+ * split into difficulty pools, and pick the first easy question.
+ *
+ * Returns the first question and the remaining candidate pools for
+ * on-the-fly selection during gameplay.
+ */
+export async function createAdaptiveSession(
+  collectionId: number | null,
+  recentQuestionIds: string[]
+): Promise<{
+  firstQuestion: Question;
+  candidatePools: { easy: DBQuestionRow[]; medium: DBQuestionRow[]; hard: DBQuestionRow[] };
+  firstQuestionDbId: number;
+}> {
+  // Resolve collection ID
+  const targetCollectionId = collectionId ?? await getFederalCollectionId();
+
+  // Load topic map (cached)
+  const topicMap = await loadTopicMap();
+
+  // Build query conditions (same as selectQuestionsForGame)
+  const now = new Date();
+  const baseConditions = and(
+    eq(collectionQuestions.collectionId, targetCollectionId),
+    eq(questions.status, 'active'),
+    or(
+      isNull(questions.expiresAt),
+      gt(questions.expiresAt, now)
+    )
+  );
+
+  const whereCondition = recentQuestionIds.length > 0
+    ? and(baseConditions, notInArray(questions.externalId, recentQuestionIds))
+    : baseConditions;
+
+  const dbRows = await db
+    .select({
+      id: questions.id,
+      externalId: questions.externalId,
+      text: questions.text,
+      options: questions.options,
+      correctAnswer: questions.correctAnswer,
+      explanation: questions.explanation,
+      difficulty: questions.difficulty,
+      topicId: questions.topicId,
+      subcategory: questions.subcategory,
+      source: questions.source,
+      learningContent: questions.learningContent,
+    })
+    .from(questions)
+    .innerJoin(collectionQuestions, eq(questions.id, collectionQuestions.questionId))
+    .where(whereCondition);
+
+  if (dbRows.length === 0) {
+    throw new Error(`No questions found for collection ${targetCollectionId}`);
+  }
+
+  // Deduplicate
+  const seenIds = new Set<string>();
+  const uniqueRows = (dbRows as DBQuestionRow[]).filter(row => {
+    if (seenIds.has(row.externalId)) return false;
+    seenIds.add(row.externalId);
+    return true;
+  });
+
+  // Shuffle and split into pools
+  const shuffled = shuffle(uniqueRows);
+  const easyPool = shuffled.filter(q => q.difficulty === 'easy');
+  const mediumPool = shuffled.filter(q => q.difficulty === 'medium');
+  const hardPool = shuffled.filter(q => q.difficulty === 'hard');
+
+  // Pick first question from easy pool (Tier 1 = easy only)
+  const firstRow = easyPool.shift() || mediumPool.shift() || hardPool.shift();
+  if (!firstRow) {
+    throw new Error('No questions available after pool split');
+  }
+
+  const firstQuestion = transformDBQuestions([firstRow], topicMap)[0];
+
+  console.log(
+    `[easy-steps-adaptive] Session created: collection=${targetCollectionId}, ` +
+    `available=${uniqueRows.length} (easy=${easyPool.length + 1}, medium=${mediumPool.length}, hard=${hardPool.length}), ` +
+    `first=${firstRow.difficulty}`
+  );
+
+  return {
+    firstQuestion,
+    candidatePools: { easy: easyPool, medium: mediumPool, hard: hardPool },
+    firstQuestionDbId: firstRow.id,
+  };
 }

@@ -3,7 +3,8 @@ import { sessionManager, Question } from '../services/sessionService.js';
 import { optionalAuth } from '../middleware/auth.js';
 import { updateUserProgression } from '../services/progressionService.js';
 import { storageFactory } from '../config/redis.js';
-import { selectQuestionsForGame, getCollectionMetadata, getFederalCollectionId } from '../services/questionService.js';
+import { selectQuestionsForGame, getCollectionMetadata, getFederalCollectionId, createAdaptiveSession, transformSingleDBQuestion, TOTAL_QUESTIONS } from '../services/questionService.js';
+import { getNextQuestionTier, selectNextAdaptiveQuestion } from '../services/gameModes.js';
 import { recordQuestionTelemetry } from '../services/telemetryService.js';
 import { db } from '../db/index.js';
 import { collections, collectionQuestions, questions } from '../db/schema.js';
@@ -27,6 +28,12 @@ function shuffle<T>(array: T[]): T[] {
 // Helper to strip correctAnswer from questions (prevent client cheating)
 function stripAnswers(questions: Question[]): Omit<Question, 'correctAnswer'>[] {
   return questions.map(({ correctAnswer, ...rest }) => rest);
+}
+
+// Helper to strip correctAnswer from a single question
+function stripAnswer(question: Question): Omit<Question, 'correctAnswer'> {
+  const { correctAnswer, ...rest } = question;
+  return rest;
 }
 
 // Track recent questions per user (last 30 question IDs)
@@ -130,6 +137,53 @@ router.post('/session', optionalAuth, async (req: Request, res: Response) => {
       });
     } else {
       // Normal path: select questions from collection (defaults to Federal Civics)
+      const resolvedMode = gameMode || 'easy-steps';
+
+      if (resolvedMode === 'easy-steps') {
+        // Adaptive path: start with 1 question, select rest dynamically
+        const { firstQuestion, candidatePools, firstQuestionDbId } = await createAdaptiveSession(
+          collectionId ?? null,
+          getRecentQuestionIds(userId)
+        );
+
+        // Look up collection metadata
+        const resolvedCollectionId = collectionId ?? await getFederalCollectionId();
+        const collectionMeta = await getCollectionMetadata(resolvedCollectionId);
+
+        const sessionId = await sessionManager.createSession(
+          userId,
+          [firstQuestion],
+          collectionMeta ? { id: collectionMeta.id, name: collectionMeta.name, slug: collectionMeta.slug } : undefined
+        );
+
+        // Set adaptive state on the session
+        const session = await sessionManager.getSession(sessionId);
+        if (session) {
+          session.adaptiveState = {
+            candidatePools,
+            correctCount: 0,
+            gameMode: 'easy-steps',
+            usedQuestionIds: [firstQuestionDbId],
+          };
+          // Persist the updated session (getSession already refreshes TTL)
+        }
+
+        // Record first question for recent-question exclusion
+        recordPlayedQuestions(userId, [firstQuestion.id]);
+
+        // Return session with 1 question stripped of correctAnswer
+        return res.status(201).json({
+          sessionId,
+          questions: stripAnswers([firstQuestion]),
+          degraded: storageFactory.isDegradedMode(),
+          collectionName: collectionMeta?.name ?? 'Federal Civics',
+          collectionSlug: collectionMeta?.slug ?? 'federal-civics',
+          gameMode: resolvedMode,
+          totalQuestions: TOTAL_QUESTIONS,
+        });
+      }
+
+      // Classic mode: select all questions upfront
       selectedQuestions = await selectQuestionsForGame(
         collectionId ?? null,
         getRecentQuestionIds(userId),
@@ -158,6 +212,7 @@ router.post('/session', optionalAuth, async (req: Request, res: Response) => {
       collectionName: collectionMeta?.name ?? 'Federal Civics',
       collectionSlug: collectionMeta?.slug ?? 'federal-civics',
       gameMode: gameMode || 'easy-steps',
+      totalQuestions: TOTAL_QUESTIONS,
     });
   } catch (error) {
     console.error('Error creating session:', error);
@@ -213,6 +268,75 @@ router.post('/answer', async (req: Request, res: Response) => {
     // Fire-and-forget telemetry -- do not await, do not block response
     recordQuestionTelemetry(questionId, wasCorrect).catch(() => {});
 
+    // Adaptive next question selection
+    let nextQuestionStripped: Omit<Question, 'correctAnswer'> | undefined;
+
+    if (session.adaptiveState) {
+      // Update correct count
+      if (wasCorrect) {
+        session.adaptiveState.correctCount++;
+      }
+
+      const questionNumber = session.answers.length; // answers already includes this one
+      const totalQ = TOTAL_QUESTIONS;
+
+      if (questionNumber < totalQ) {
+        // Determine tier for next question
+        const allowedDifficulties = getNextQuestionTier(
+          session.adaptiveState.correctCount,
+          questionNumber + 1, // next question number (1-indexed)
+          totalQ
+        );
+
+        // Build usedIds set
+        const usedIds = new Set<number>(session.adaptiveState.usedQuestionIds);
+
+        // Pick next question
+        const nextRow = selectNextAdaptiveQuestion(
+          session.adaptiveState.candidatePools,
+          allowedDifficulties,
+          usedIds
+        );
+
+        if (nextRow) {
+          // Transform to Question
+          const nextQ = await transformSingleDBQuestion(nextRow);
+
+          // Push onto session questions (server-side)
+          session.questions.push(nextQ);
+          session.adaptiveState.usedQuestionIds.push(nextRow.id);
+
+          // Record for recent-question exclusion
+          recordPlayedQuestions(session.userId, [nextQ.id]);
+
+          // Strip correctAnswer for client
+          nextQuestionStripped = stripAnswer(nextQ);
+
+          console.log(
+            `[easy-steps-adaptive] Q${questionNumber + 1}: correctCount=${session.adaptiveState.correctCount}, ` +
+            `tier=[${allowedDifficulties.join(',')}], picked=${nextRow.difficulty}`
+          );
+
+          // Log completion summary when picking the final question
+          if (questionNumber + 1 === totalQ) {
+            console.log(
+              `[easy-steps-adaptive] Session complete: difficulties=[${session.questions.map(q => q.difficulty).join(', ')}]`
+            );
+          }
+        } else {
+          console.warn(`[easy-steps-adaptive] Pool exhausted at Q${questionNumber + 1}, no next question available`);
+        }
+      } else {
+        // Game complete - log final summary
+        console.log(
+          `[easy-steps-adaptive] Session complete: difficulties=[${session.questions.map(q => q.difficulty).join(', ')}]`
+        );
+      }
+
+      // Persist updated session (adaptiveState changes)
+      // getSession already refreshed TTL, just need to save
+    }
+
     // Return score with correct answer for client reveal
     res.status(200).json({
       basePoints: clientAnswer.basePoints,
@@ -221,6 +345,7 @@ router.post('/answer', async (req: Request, res: Response) => {
       correct: wasCorrect,
       correctAnswer: question.correctAnswer,
       ...(clientAnswer.wager !== undefined ? { wager: clientAnswer.wager } : {}),
+      ...(nextQuestionStripped ? { nextQuestion: nextQuestionStripped } : {}),
     });
   } catch (error) {
     console.error('Error submitting answer:', error);

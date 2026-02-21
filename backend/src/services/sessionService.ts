@@ -9,6 +9,7 @@ import { SessionStorage } from './storage/SessionStorage.js';
 import { MemoryStorage } from './storage/MemoryStorage.js';
 import { PLAUSIBILITY_THRESHOLDS, getAdjustedThreshold, type PlausibilityDifficulty } from '../config/plausibilityThresholds.js';
 import { User } from '../models/User.js';
+import type { DBQuestionRow } from './gameModes.js';
 
 // Question type matching backend data structure
 export interface Question {
@@ -57,6 +58,17 @@ export interface GameSession {
   collectionId: number | null;    // null = Federal default (backward compat)
   collectionName: string | null;  // e.g. "Federal Civics"
   collectionSlug: string | null;  // e.g. "federal-civics"
+  // Adaptive difficulty state (only set for easy-steps mode)
+  adaptiveState?: {
+    candidatePools: {
+      easy: DBQuestionRow[];
+      medium: DBQuestionRow[];
+      hard: DBQuestionRow[];
+    };
+    correctCount: number;
+    gameMode: string;
+    usedQuestionIds: number[]; // Track DB IDs to prevent duplicates
+  };
 }
 
 // Results returned to client

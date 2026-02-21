@@ -199,3 +199,64 @@ export const gameModes: Record<string, GameModeStrategy> = {
 };
 
 export const DEFAULT_GAME_MODE = 'easy-steps';
+
+/**
+ * Adaptive tier logic: determine allowed difficulty tiers based on cumulative correct count.
+ *
+ * Tier rules:
+ *   correctCount 0-1 (Tier 1): ['easy']
+ *   correctCount 2-3 (Tier 2): ['easy', 'medium']
+ *   correctCount 4-5 (Tier 3): ['medium', 'hard']
+ *   Final question (questionNumber === totalQuestions): ['hard'] always
+ */
+export function getNextQuestionTier(
+  correctCount: number,
+  questionNumber: number,
+  totalQuestions: number
+): string[] {
+  // Final question is always hard
+  if (questionNumber === totalQuestions) {
+    return ['hard'];
+  }
+
+  if (correctCount <= 1) return ['easy'];
+  if (correctCount <= 3) return ['easy', 'medium'];
+  return ['medium', 'hard'];
+}
+
+/**
+ * Pick ONE question from candidate pools for the adaptive flow.
+ *
+ * Tries pools matching allowedDifficulties in order. Falls back to adjacent
+ * difficulties if preferred pools are empty.
+ *
+ * @param candidatePools - Mutable pools keyed by difficulty
+ * @param allowedDifficulties - Preferred difficulties in priority order
+ * @param usedIds - Set of DB IDs already used in this session
+ * @returns The picked question, or undefined if all pools are exhausted
+ */
+export function selectNextAdaptiveQuestion(
+  candidatePools: Record<string, DBQuestionRow[]>,
+  allowedDifficulties: string[],
+  usedIds: Set<number>
+): DBQuestionRow | undefined {
+  // Build ordered list of pools to try: preferred first, then fallbacks
+  const allDifficulties = ['easy', 'medium', 'hard'];
+  const fallbacks = allDifficulties.filter(d => !allowedDifficulties.includes(d));
+  const tryOrder = [...allowedDifficulties, ...fallbacks];
+
+  for (const diff of tryOrder) {
+    const pool = candidatePools[diff];
+    if (!pool) continue;
+
+    while (pool.length > 0) {
+      const candidate = pool.shift()!;
+      if (!usedIds.has(candidate.id)) {
+        usedIds.add(candidate.id);
+        return candidate;
+      }
+    }
+  }
+
+  return undefined;
+}
