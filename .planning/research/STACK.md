@@ -1,501 +1,697 @@
-# Technology Stack — Fremont, CA Collection
+# Technology Stack - Feedback Marks Feature
 
-**Project:** Civic Trivia Championship
-**Research focus:** Stack additions/changes for Fremont collection
-**Researched:** 2026-02-20
-**Confidence:** HIGH
+**Project:** Civic Trivia Championship - Feedback/Flagging System
+**Researched:** 2026-02-21
+**Context:** Subsequent milestone adding player feedback to existing validated stack
 
 ## Executive Summary
 
-**No new stack additions required.** The Fremont, CA collection can be built entirely with the existing community collection pipeline. The established pattern from Bloomington IN and Los Angeles CA applies directly.
+The feedback marks feature requires **minimal new dependencies** because your existing stack already provides most capabilities needed. The primary additions are:
+1. **Database schema extensions** (new tables via Drizzle ORM)
+2. **API rate limiting** for feedback endpoints (new middleware)
+3. **Optional XSS sanitization** for free-text input (optional hardening)
 
-**Key finding:** Fremont reuses California state sources already cached from LA collection, making this the most efficient community collection to date.
+Your existing stack already provides: authentication (JWT), validation (express-validator 7.3.1), database ORM (Drizzle 0.45.1), state management (Zustand), and PostgreSQL on Supabase.
 
----
+## No New Core Dependencies Required
 
-## Existing Stack (Already Validated)
+### Leverage Existing Stack
 
-The current community collection pipeline has all necessary capabilities:
+Your validated stack already handles the feedback feature requirements:
 
-| Component | Technology | Purpose | Status |
-|-----------|------------|---------|--------|
-| **AI Generation** | Claude Sonnet 4.5 via @anthropic-ai/sdk | Locale-specific question generation | ✅ Validated |
-| **RAG Sources** | cheerio + node-fetch | Web scraping for authoritative docs | ✅ Validated |
-| **Content Validation** | Zod 4.x | Question schema validation | ✅ Validated |
-| **Database** | PostgreSQL (Supabase) + Drizzle ORM | Question storage, collections | ✅ Validated |
-| **Concurrency Control** | p-limit | Rate-limited source fetching | ✅ Validated |
-| **Type Safety** | TypeScript 5.x | End-to-end type checking | ✅ Validated |
+| Need | Existing Solution | Why Sufficient |
+|------|------------------|----------------|
+| Authentication | JWT via `authenticateToken` middleware | Feedback requires auth; middleware already implemented |
+| Input validation | express-validator 7.3.1 | Already installed; includes `.trim()`, `.escape()`, `.isLength()` |
+| Database ORM | Drizzle ORM 0.45.1 | Schema extensions fit existing patterns; supports JSONB for notes |
+| Frontend state | Zustand 4.4.7 | Small flagging state (per-question thumbs) fits reducer pattern |
+| API client | Fetch API | Simple POST endpoints don't need axios |
+| Database | PostgreSQL (Supabase) | Already supports required table structure |
 
-All components proven with Bloomington IN and Los Angeles CA collections.
+**Rationale:** Adding new libraries increases bundle size, maintenance burden, and learning curve. Your existing tools handle all core requirements.
 
----
+## Recommended New Dependencies
 
-## What's Needed for Fremont
+### 1. Rate Limiting Middleware (Required)
 
-### 1. New Locale Configuration File
+**Library:** `express-rate-limit`
+**Version:** `^7.4.1` (latest stable as of Feb 2026)
+**Purpose:** Prevent feedback spam from malicious users
 
-**File:** `backend/src/scripts/content-generation/locale-configs/fremont-ca.ts`
+```bash
+npm install express-rate-limit
+```
 
-**Pattern:** Exact copy of `los-angeles-ca.ts` structure with Fremont-specific values.
+**Why this library:**
+- Industry standard with 10M+ weekly downloads
+- Works natively with Express
+- Supports per-user (IP/auth) rate limits
+- Memory store sufficient for single-server setup (already using Upstash Redis for sessions)
+- Follows IETF draft standards for RateLimit headers
 
-**Required fields:**
+**Configuration for feedback endpoints:**
 ```typescript
-export const fremontConfig: LocaleConfig = {
-  locale: 'fremont-ca',
-  name: 'Fremont, California',
-  externalIdPrefix: 'fre',  // NEW
-  collectionSlug: 'fremont-ca',
-  targetQuestions: 100,
-  batchSize: 25,
-  topicCategories: [ /* 8 topic categories */ ],
-  topicDistribution: { /* targets per topic */ },
-  sourceUrls: [ /* authoritative sources */ ]
+import rateLimit from 'express-rate-limit';
+
+// Feedback submission rate limit: 10 flags per 15 minutes per user
+export const feedbackRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 requests per window per user
+  standardHeaders: true, // Return rate limit info in RateLimit-* headers
+  legacyHeaders: false, // Disable X-RateLimit-* headers
+  message: { error: 'Too many feedback submissions. Please try again later.' },
+  keyGenerator: (req) => {
+    // Use authenticated user ID, fall back to IP for guests
+    return req.user?.id?.toString() || req.ip;
+  },
+  skip: (req) => {
+    // Admins bypass rate limits for testing
+    return req.user?.isAdmin === true;
+  }
+});
+```
+
+**Apply to feedback routes:**
+```typescript
+router.post('/feedback/flag', authenticateToken, feedbackRateLimiter, submitFlag);
+router.post('/feedback/elaborate', authenticateToken, feedbackRateLimiter, submitElaboration);
+```
+
+**Alternative considered:** `express-slow-down` (slows requests instead of blocking). **Not chosen** because feedback spam should be blocked, not slowed.
+
+**Sources:**
+- [express-rate-limit npm package](https://www.npmjs.com/package/express-rate-limit)
+- [Rate Limiting in Express.js - Better Stack](https://betterstack.com/community/guides/scaling-nodejs/rate-limiting-express/)
+- [How to Add Rate Limiting to Express APIs - OneUptime](https://oneuptime.com/blog/post/2026-02-02-express-rate-limiting/view)
+
+### 2. XSS Sanitization (Optional but Recommended)
+
+**Current status:** express-validator 7.3.1 includes `.escape()` sanitizer (already installed)
+
+**Recommendation:** Use express-validator's built-in sanitization for feedback text:
+
+```typescript
+import { body, validationResult } from 'express-validator';
+
+// Validation chain for feedback elaboration
+export const validateFeedbackElaboration = [
+  body('flagIds')
+    .isArray({ min: 1 })
+    .withMessage('At least one flag required'),
+  body('flagIds.*')
+    .isInt()
+    .withMessage('Flag IDs must be integers'),
+  body('notes')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('Notes must be 1000 characters or less')
+    .escape() // Escape HTML entities to prevent XSS
+];
+```
+
+**Why NOT add a separate XSS library:**
+- express-validator's `.escape()` converts `<`, `>`, `&`, `'`, `"` to HTML entities
+- Admin UI will display plain text (React automatically escapes in JSX)
+- Feedback notes are never rendered as raw HTML
+- Adding `xss` or `express-xss-sanitizer` is unnecessary complexity
+
+**If you later need rich formatting:**
+- Consider `sanitize-html` for allowlist-based HTML sanitization
+- Not needed for MVP (plain text feedback only)
+
+**Sources:**
+- [express-validator documentation](https://express-validator.github.io/)
+- [Using Express-Validator for Data Validation - Better Stack](https://betterstack.com/community/guides/scaling-nodejs/express-validator-nodejs/)
+- [JavaScript Input Sanitization in Node.js: 2026 Guide](https://copyprogramming.com/howto/javascript-sanitizing-use-input-in-nodejs)
+
+## Database Schema Extensions
+
+### New Tables (Drizzle ORM Schema)
+
+Add to `backend/src/db/schema.ts` in the `civic_trivia` schema:
+
+```typescript
+// Question flags table - tracks player thumbs-down during games
+export const questionFlags = civicTriviaSchema.table('question_flags', {
+  id: serial('id').primaryKey(),
+  questionId: integer('question_id')
+    .notNull()
+    .references(() => questions.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull(), // References public.users (outside schema, no FK constraint)
+  sessionId: text('session_id').notNull(), // Redis session ID for context
+  flaggedAt: timestamp('flagged_at', { withTimezone: true }).defaultNow().notNull(),
+  notes: text('notes'), // Nullable - elaborated later in post-game
+  archived: boolean('archived').notNull().default(false),
+  archivedAt: timestamp('archived_at', { withTimezone: true }),
+  archivedBy: integer('archived_by') // Admin user ID, nullable
+}, (table) => ({
+  questionIdx: index('idx_question_flags_question_id').on(table.questionId),
+  userIdx: index('idx_question_flags_user_id').on(table.userId),
+  archivedIdx: index('idx_question_flags_archived')
+    .on(table.archived)
+    .where(sql`${table.archived} = false`), // Partial index for active flags
+  flaggedAtIdx: index('idx_question_flags_flagged_at').on(table.flaggedAt)
+}));
+
+export type QuestionFlag = typeof questionFlags.$inferSelect;
+export type NewQuestionFlag = typeof questionFlags.$inferInsert;
+```
+
+**Schema design rationale:**
+
+| Decision | Rationale |
+|----------|-----------|
+| No FK to `users` table | Users table is in `public` schema; Drizzle schema is `civic_trivia`. Cross-schema FKs complicate migrations. Use application-level checks instead. |
+| Include `sessionId` | Provides context: what game was played, what questions were seen, when flag occurred. Useful for investigating false positives. |
+| Separate `notes` field | Nullable; populated later in post-game feedback flow. Keeps in-game flagging lightweight (single click). |
+| `archived` + `archivedAt` + `archivedBy` | Soft delete pattern. Admins archive (not delete) bad flags. Preserves audit trail. |
+| Partial index on `archived=false` | Admin flags queue filters to `archived=false`. Partial index speeds this common query. |
+| Index on `flaggedAt` | Supports ordering by most recent flags in admin queue. |
+| Index on `questionId` | Supports "show all flags for this question" in admin detail panel. |
+| Index on `userId` | Future feature: show user's flagging history, detect spammers. |
+
+**Foreign key indexing:** PostgreSQL automatically indexes the FK target (`questions.id`), but the source column (`question_id`) needs explicit indexing for join performance. Drizzle migration will create this automatically from the schema.
+
+**Sources:**
+- [Drizzle ORM PostgreSQL Best Practices Guide (2025)](https://gist.github.com/productdevbook/7c9ce3bbeb96b3fabc3c7c2aa2abc717)
+- [Drizzle ORM - Indexes & Constraints](https://orm.drizzle.team/docs/indexes-constraints)
+- [Should I Create an Index on Foreign Keys in PostgreSQL? - Percona](https://www.percona.com/blog/should-i-create-an-index-on-foreign-keys-in-postgresql/)
+- [Foreign Key Indexing and Performance in PostgreSQL - Cybertec](https://www.cybertec-postgresql.com/en/index-your-foreign-key/)
+
+### No Changes to Existing Tables
+
+**Questions table:** No new columns needed. Flag counts derived via `COUNT(*)` query.
+
+**Users table:** No new columns needed. User stats (`totalGems`, `totalXp`) already exist for future feedback rewards.
+
+**Collections table:** No new columns needed.
+
+## API Endpoint Patterns
+
+### New Endpoints
+
+Add to `backend/src/routes/feedback.ts` (new file):
+
+```typescript
+import { Router } from 'express';
+import { authenticateToken } from '../middleware/auth.js';
+import { feedbackRateLimiter } from '../middleware/rateLimit.js';
+import { submitFlag, submitElaboration } from '../controllers/feedbackController.js';
+import { validateFeedbackElaboration } from '../validators/feedbackValidators.js';
+
+const router = Router();
+
+// POST /api/feedback/flag - Thumbs-down a question during answer reveal
+router.post('/flag',
+  authenticateToken,
+  feedbackRateLimiter,
+  submitFlag
+);
+
+// POST /api/feedback/elaborate - Add notes to multiple flags in post-game
+router.post('/elaborate',
+  authenticateToken,
+  feedbackRateLimiter,
+  validateFeedbackElaboration,
+  submitElaboration
+);
+
+export default router;
+```
+
+### Admin Endpoints
+
+Add to existing `backend/src/routes/admin.ts`:
+
+```typescript
+// GET /api/admin/flags - Get flags queue (paginated, filtered by archived)
+router.get('/flags', getFlagsQueue);
+
+// GET /api/admin/flags/:questionId - Get flags for specific question
+router.get('/flags/:questionId', getFlagsByQuestion);
+
+// PATCH /api/admin/flags/:flagId/archive - Archive a flag
+router.patch('/flags/:flagId/archive', archiveFlag);
+
+// PATCH /api/admin/flags/bulk-archive - Archive multiple flags
+router.patch('/flags/bulk-archive', bulkArchiveFlags);
+```
+
+**Integration with existing routes:**
+- Admin routes already use `authenticateToken + requireAdmin` middleware
+- Feedback routes follow same pattern as game routes (authenticated, rate-limited)
+- No breaking changes to existing endpoints
+
+## Frontend State Management
+
+### Flagging State During Gameplay
+
+**Approach:** Extend existing game reducer (no new Zustand store needed)
+
+```typescript
+// Add to frontend/src/features/game/gameReducer.ts
+
+export type GameAction =
+  | { type: 'SESSION_CREATED'; ... }
+  | { type: 'SELECT_ANSWER'; ... }
+  | { type: 'FLAG_QUESTION'; questionId: string }  // NEW
+  | { type: 'UNFLAG_QUESTION'; questionId: string } // NEW
+  | { type: 'REVEAL_ANSWER'; ... };
+
+export type GameState = {
+  phase: GamePhase;
+  questions: Question[];
+  answers: GameAnswer[];
+  flaggedQuestionIds: Set<string>; // NEW: Track thumbs-down clicks
+  // ... existing fields
 };
-```
 
-**Why no library changes:** Config follows established `LocaleConfig` interface (defined in `bloomington-in.ts`).
+export function gameReducer(state: GameState, action: GameAction): GameState {
+  switch (action.type) {
+    case 'FLAG_QUESTION': {
+      // Only valid during 'revealing' phase (answer revealed, before next question)
+      if (state.phase !== 'revealing') return state;
 
----
+      const newFlags = new Set(state.flaggedQuestionIds);
+      newFlags.add(action.questionId);
+      return { ...state, flaggedQuestionIds: newFlags };
+    }
 
-### 2. Authoritative Source URLs
+    case 'UNFLAG_QUESTION': {
+      // Allow unflagging during 'revealing' phase
+      if (state.phase !== 'revealing') return state;
 
-**Required for `sourceUrls` array in config:**
+      const newFlags = new Set(state.flaggedQuestionIds);
+      newFlags.delete(action.questionId);
+      return { ...state, flaggedQuestionIds: newFlags };
+    }
 
-#### City of Fremont Sources
-```typescript
-// Core city resources (HIGH priority)
-'https://www.fremont.gov',
-'https://www.fremont.gov/government',
-'https://www.fremont.gov/government/mayor-city-council',
-'https://www.fremont.gov/government/about-city-government',
-'https://www.fremont.gov/government/departments',
-
-// City departments (MEDIUM priority)
-'https://www.fremontpolice.gov',
-'https://www.fremont.gov/government/departments/public-works',
-'https://www.fremont.gov/government/departments/community-development',
-
-// Civic participation (MEDIUM priority)
-'https://www.fremont.gov/government/election-information',
-'https://www.fremont.gov/government/watch-or-attend-meetings',
-```
-
-#### Alameda County Sources
-```typescript
-// County government (HIGH priority)
-'https://www.acgov.org',
-'https://bos.alamedacountyca.gov',
-'https://www.acgov.org/government/departments.htm',
-
-// County elections (MEDIUM priority)
-'https://www.acgov.org/rov',  // Registrar of Voters
-```
-
-#### California State Sources (REUSE EXISTING)
-```typescript
-// Already cached from LA collection
-'https://www.ca.gov',
-'https://www.gov.ca.gov',
-'https://leginfo.legislature.ca.gov',
-'https://www.sos.ca.gov/elections',
-```
-
-**Source verification:** All URLs verified functional via WebSearch 2026-02-20.
-
-**Data already exists:** California state sources at `backend/src/scripts/data/sources/california-state/*.txt` from LA collection generation. **No re-fetch required for state sources.**
-
----
-
-### 3. Collection Database Record
-
-**File:** `backend/src/db/seed/collections.ts`
-
-**Addition required:**
-```typescript
-{
-  name: 'Fremont, CA',
-  slug: 'fremont-ca',
-  description: 'Think you know the Heart of the Bay?',
-  localeCode: 'en-US',
-  localeName: 'Fremont, California',
-  iconIdentifier: 'flag-ca',  // Reuse CA flag
-  themeColor: '#0369A1',  // Ocean blue (California standard)
-  isActive: false,  // Admin activates after review
-  sortOrder: 4  // After LA (sortOrder: 3)
+    // ... existing cases
+  }
 }
 ```
 
-**Why no schema changes:** Existing `collections` table has all required fields. Fremont follows LA pattern exactly.
+**Rationale:**
+- Game state is already managed via `useReducer` with `gameReducer`
+- Flagging is ephemeral game state (resets on new game)
+- `Set<string>` provides O(1) toggle/check performance
+- No need for global Zustand store (flags are per-game, not cross-component)
+- Survives `NEXT_QUESTION` transitions (flags persist until game ends)
 
----
+### Post-Game Feedback State
 
-### 4. Topic Categories for Fremont
-
-**Required:** 8 topic categories matching the Bloomington/LA pattern.
-
-**Suggested structure** (follows established pattern):
-
-```typescript
-topicCategories: [
-  {
-    slug: 'city-government',
-    name: 'City Government',
-    description: 'Fremont city government — mayor, city council (7 members), city manager system, and municipal structure'
-  },
-  {
-    slug: 'alameda-county',
-    name: 'Alameda County',
-    description: 'Alameda County government — board of supervisors, county services, and county-level civics'
-  },
-  {
-    slug: 'california-state',
-    name: 'California State Government',
-    description: 'California state government — governor, legislature, and the ballot propositions system'
-  },
-  {
-    slug: 'civic-history',
-    name: 'Civic History',
-    description: 'Fremont founding (1956 unification), five districts, Mission San José, and historical milestones'
-  },
-  {
-    slug: 'local-services',
-    name: 'Local Services',
-    description: 'City utilities, public works, police and fire, parks and recreation, and municipal services'
-  },
-  {
-    slug: 'elections-voting',
-    name: 'Elections & Voting',
-    description: 'Local election process, district-based elections (adopted 2017), and civic participation'
-  },
-  {
-    slug: 'landmarks-culture',
-    name: 'Landmarks & Culture',
-    description: 'Cultural diversity, Silicon Valley tech industry (Tesla), and what makes Fremont unique'
-  },
-  {
-    slug: 'budget-finance',
-    name: 'Budget & Finance',
-    description: 'City budget, tax structure, and how Fremont funds public services'
-  }
-]
-```
-
-**Rationale for structure:**
-- **City government:** Fremont uses council-manager system (unique from Bloomington mayor-council)
-- **County:** Alameda County instead of Monroe/LA County
-- **State:** California (reuse state sources from LA)
-- **History:** 1956 incorporation from 5 districts is notable
-- **Services:** Tesla as largest employer is culturally significant
-- **Elections:** 2017 switch to district-based elections is recent civic history
-- **Culture:** Most diverse large city in CA (62.4% Asian demographic)
-- **Finance:** Standard for 100K+ city
-
----
-
-### 5. Script Integration
-
-**Loader update required:** `backend/src/scripts/content-generation/generate-locale-questions.ts`
-
-**Change:** Add Fremont to `supportedLocales` map (line ~86):
+**Approach:** Local component state in `ResultsScreen.tsx`
 
 ```typescript
-const supportedLocales: Record<string, () => Promise<...>> = {
-  'bloomington-in': () => import('./locale-configs/bloomington-in.js'),
-  'los-angeles-ca': () => import('./locale-configs/los-angeles-ca.js'),
-  'fremont-ca': () => import('./locale-configs/fremont-ca.js'),  // ADD
-};
+// In ResultsScreen.tsx
+const [feedbackNotes, setFeedbackNotes] = useState<Record<string, string>>({});
+const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+// Render feedback form for flagged questions
+{flaggedQuestionIds.map(questionId => (
+  <div key={questionId}>
+    <textarea
+      value={feedbackNotes[questionId] || ''}
+      onChange={(e) => setFeedbackNotes(prev => ({
+        ...prev,
+        [questionId]: e.target.value
+      }))}
+      placeholder="What didn't you like about this question? (optional)"
+      maxLength={1000}
+    />
+  </div>
+))}
 ```
 
-**Why no other script changes:** Generation script is fully parameterized by locale config. No logic changes required.
-
----
+**Rationale:**
+- Feedback elaboration is one-time, post-game action
+- No need to persist across navigations
+- Local state keeps component self-contained
+- `Record<questionId, notes>` maps question to feedback text
 
 ## What NOT to Add
 
-### ❌ No New Libraries Required
+### Libraries Explicitly Rejected
 
-| Consideration | Decision | Reason |
-|---------------|----------|--------|
-| **Different AI model** | NO | Claude Sonnet 4.5 proven for civic content |
-| **Additional validation** | NO | Zod schema covers all question types |
-| **New data sources** | NO | .gov sites work with existing cheerio scraper |
-| **API integrations** | NO | No Fremont-specific APIs needed (static .gov content) |
-| **Database migrations** | NO | Existing schema handles all collections |
-| **Frontend changes** | NO | Collection picker supports unlimited collections |
+| Library | Why Not Needed |
+|---------|---------------|
+| `axios` | Fetch API sufficient for simple POST endpoints. Already using fetch in `gameService.ts`. |
+| `react-hook-form` | Feedback form is simple (1 textarea per question). Controlled inputs sufficient. |
+| `yup` / `zod` (frontend) | No complex client-side validation needed. Backend validates with express-validator. |
+| `xss` / `sanitize-html` | express-validator's `.escape()` sufficient. No rich text rendering. |
+| `rate-limit-redis` | Single-server deployment (Vercel/Fly.io). Memory store sufficient. Redis already used for game sessions, not rate limits. |
+| `helmet` | Already best practice, but not specific to feedback feature. Consider adding globally if not present. |
 
-### ❌ No Special Alameda County APIs
+### Features to Defer
 
-Alameda County (unlike some counties) does not provide:
-- Open data API for civic trivia facts
-- Structured JSON endpoints for government info
-- Real-time council meeting APIs
+**Not in this milestone:**
+- Feedback reputation system (track user accuracy, reward good flags) - requires ML/heuristics
+- Admin bulk actions UI (archive all flags for question) - API ready, UI can wait
+- Email notifications for new flags - requires email service (SendGrid/Postmark)
+- Flag categories ("incorrect answer", "misleading question", "typo") - complicates UI, defer until data shows need
 
-**Conclusion:** Standard web scraping via cheerio is sufficient. Same pattern as Bloomington/LA.
+## Integration Points with Existing Stack
 
-### ❌ No Fremont-Specific Data Sources
+### 1. Authentication Flow
 
-**Considered and rejected:**
-- **Fremont historical society:** Not authoritative for current civic facts
-- **Local news sites:** Less authoritative than .gov sources
-- **Wikipedia:** Not primary source (cite .gov instead)
-- **Community forums:** Not verifiable/authoritative
+```typescript
+// Feedback endpoints use existing auth middleware
+router.post('/feedback/flag', authenticateToken, feedbackRateLimiter, submitFlag);
 
-**Stick to:** .gov domains exclusively for authoritative civic facts.
-
----
-
-## Efficiency Gains from Reuse
-
-### California State Sources (Already Cached)
-
-From LA collection, already have:
-- `california-state/www-ca-gov.txt`
-- `california-state/www-ca-gov-agencies.txt`
-- `california-state/www-sos-ca-gov-elections.txt`
-- `california-state/www-courts-ca-gov.txt`
-
-**Impact:** ~15 questions (15% of collection) can be generated WITHOUT fetching new sources.
-
-**RAG optimization:** Load existing state files + new Fremont/Alameda files for maximum accuracy.
-
-### Prompt Caching (Claude AI)
-
-Anthropic SDK with `cache_control: ephemeral` already implemented in `generate-locale-questions.ts` (lines 171-173).
-
-**Result:** Batch 2-4 generations get ~90% cache hit rate on source documents.
-
-**Cost savings:** ~$2-3 per collection vs $20-25 without caching.
-
----
-
-## Installation & Setup
-
-### No New Dependencies
-
-Current `backend/package.json` already has everything:
-
-```json
-{
-  "devDependencies": {
-    "@anthropic-ai/sdk": "^0.74.0"  // ✅ Has latest
+// Frontend includes JWT token (already implemented)
+const response = await fetch('/api/feedback/flag', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
   },
-  "dependencies": {
-    "cheerio": "^1.2.0",  // ✅ Web scraping
-    "zod": "^4.3.6",      // ✅ Validation
-    "p-limit": "^7.3.0",  // ✅ Concurrency
-    "drizzle-orm": "^0.45.1"  // ✅ Database
-  }
-}
+  body: JSON.stringify({ questionId, sessionId })
+});
 ```
 
-**Action required:** NONE. No `npm install` needed.
+**No changes needed** - JWT auth already works for authenticated endpoints.
 
----
+### 2. Database Connection
+
+```typescript
+// Use existing Drizzle db instance
+import { db } from '../db/index.js';
+import { questionFlags } from '../db/schema.js';
+
+// Insert flag
+await db.insert(questionFlags).values({
+  questionId: parseInt(questionId),
+  userId: req.user.id,
+  sessionId: sessionId,
+  notes: null, // Elaborated later
+  archived: false
+});
+```
+
+**No changes needed** - Drizzle ORM already configured for Supabase PostgreSQL.
+
+### 3. Admin Routes
+
+```typescript
+// Flags routes follow existing admin pattern
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+
+router.use(authenticateToken, requireAdmin); // Applied to all /api/admin/* routes
+
+router.get('/flags', getFlagsQueue);
+```
+
+**No changes needed** - Admin middleware already exists.
+
+### 4. Frontend Game Flow
+
+```
+[QuestionCard]
+  → User clicks answer
+  → dispatch({ type: 'SELECT_ANSWER' })
+  → Transition to 'revealing' phase
+  → [AnswerReveal] renders thumbs-down button (NEW)
+  → User clicks thumbs-down
+  → dispatch({ type: 'FLAG_QUESTION', questionId })
+  → dispatch({ type: 'NEXT_QUESTION' })
+
+[ResultsScreen]
+  → Render flagged questions with textarea (NEW)
+  → User adds notes (optional)
+  → Click "Submit Feedback"
+  → POST /api/feedback/elaborate with flagIds + notes
+```
+
+**Integration:** New components (`ThumbsDownButton`, `FeedbackForm`) fit into existing game flow without breaking changes.
+
+## Migration Strategy
+
+### 1. Database Migration
+
+```bash
+# Generate migration from schema changes
+npm run db:generate
+
+# Review generated SQL in src/db/migrations/
+# Should create question_flags table + indexes
+
+# Apply migration to production
+npm run db:migrate
+```
+
+**Rollback plan:** Drizzle migrations are SQL files. Rollback = drop table + indexes.
+
+### 2. Deployment Sequence
+
+```
+1. Deploy backend with new routes (flags endpoints return 404 initially, safe)
+2. Run database migration (creates question_flags table)
+3. Deploy frontend with thumbs-down button (calls new API)
+4. Monitor logs for errors
+```
+
+**Zero-downtime:** New endpoints don't affect existing game flow. Old clients continue working.
 
 ## Environment Variables
 
-### Required (Already Exists)
-
-From `backend/.env`:
-```bash
-ANTHROPIC_API_KEY=sk-...  # For Claude AI generation
-DATABASE_URL=postgresql://...  # For question storage
-```
-
-### NOT Required
-
-- No Fremont city API keys
-- No Alameda County credentials
-- No special data source access
-
-**Rationale:** All sources are public .gov websites, no authentication needed.
-
----
-
-## Deployment Considerations
-
-### Same Infrastructure as Existing Collections
-
-| Concern | Solution | Status |
-|---------|----------|--------|
-| **Database capacity** | Collections table unlimited | ✅ No limit |
-| **Redis cache** | Collection picker cached list | ✅ Auto-updates |
-| **Image assets** | Reuse CA flag icon | ✅ Already deployed |
-| **API routes** | `/api/collections` supports unlimited | ✅ No changes |
-| **Frontend** | Card-based picker adds automatically | ✅ No changes |
-
-**Conclusion:** Production deployment requires ZERO infrastructure changes.
-
----
-
-## Generation Workflow
-
-### Standard 4-Step Process (Validated)
+### New Required Variables
 
 ```bash
-# 1. Create config file
-# backend/src/scripts/content-generation/locale-configs/fremont-ca.ts
-
-# 2. Fetch authoritative sources (one-time)
-cd backend
-npx tsx src/scripts/content-generation/generate-locale-questions.ts \
-  --locale fremont-ca \
-  --fetch-sources
-
-# 3. Generate questions with Claude AI (4 batches of 25)
-npx tsx src/scripts/content-generation/generate-locale-questions.ts \
-  --locale fremont-ca
-
-# 4. Admin review & activation via admin panel
-# Questions start as status='draft', admin approves to 'active'
+# .env (backend)
+ADMIN_EMAIL=admin@example.com  # Already exists for admin promotion
 ```
 
-**Time estimate:** 15 minutes total (5 min sources + 10 min generation).
+**No new env vars needed** - feedback feature uses existing database, Redis, JWT config.
 
-**Why fast:** California state sources already cached. Only fetch Fremont city + Alameda County sources.
+### Optional Configuration
 
----
+```bash
+# Rate limit overrides (default values shown)
+FEEDBACK_RATE_LIMIT_WINDOW_MS=900000  # 15 minutes
+FEEDBACK_RATE_LIMIT_MAX=10            # 10 requests per window
+```
 
-## Quality Assurance (Existing Tools)
+## Performance Considerations
 
-### Validation Pipeline (Already Built)
+### Database Query Patterns
 
-1. **Zod schema validation** — Runs during generation, rejects malformed questions
-2. **Quality rules engine** — `backend/src/scripts/audit-questions.ts` checks:
-   - Source URL validity (blocking)
-   - Explanation format (advisory)
-   - Partisan language detection (blocking)
-   - Difficulty distribution (advisory)
-3. **Admin review UI** — Manual review before activation
+**Flags queue query** (admin UI):
+```sql
+SELECT
+  qf.id, qf.question_id, qf.user_id, qf.flagged_at, qf.notes,
+  q.text, q.external_id,
+  COUNT(*) OVER (PARTITION BY qf.question_id) as flag_count
+FROM civic_trivia.question_flags qf
+JOIN civic_trivia.questions q ON qf.question_id = q.id
+WHERE qf.archived = false
+ORDER BY qf.flagged_at DESC
+LIMIT 50 OFFSET 0;
+```
 
-**Fremont-specific checks:** None needed. Same rules apply to all locales.
+**Performance:**
+- Partial index on `archived=false` makes WHERE clause fast
+- Index on `flagged_at` supports ORDER BY
+- FK index on `question_id` makes JOIN cheap
+- LIMIT 50 prevents large result sets
 
----
+**Expected load:**
+- Flag submission: ~1-5% of game sessions (most players don't flag)
+- Admin queue access: <10 requests/day
+- No need for caching layer
 
-## Risk Assessment
+### API Response Times
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|------------|
-| **Fremont .gov site structure incompatible** | LOW | Medium | Test fetch-sources script first; cheerio handles 99% of .gov sites |
-| **Alameda County sources insufficient** | LOW | Medium | Supplement with CA state sources (already cached) |
-| **Question quality below standard** | LOW | Low | Same AI model + prompts as LA/Bloomington |
-| **External ID collisions** | NONE | N/A | Prefix 'fre-' guarantees uniqueness |
-| **Database constraints violated** | NONE | N/A | Same schema as existing collections |
+| Endpoint | Expected Latency | Notes |
+|----------|-----------------|-------|
+| POST /feedback/flag | <100ms | Single INSERT query |
+| POST /feedback/elaborate | <200ms | Batch UPDATE (1-10 flags) |
+| GET /admin/flags | <300ms | JOIN + window function, paginated |
+| GET /admin/flags/:id | <100ms | Simple WHERE + JOIN |
 
-**Overall risk:** MINIMAL. This is the 3rd community collection using identical pipeline.
+**Bottlenecks unlikely** - PostgreSQL handles this easily at expected scale (<10k flags total).
 
----
+## Security Considerations
 
-## Confidence Assessment
+### Input Validation
 
-| Area | Confidence | Rationale |
-|------|------------|-----------|
-| **No new libraries needed** | HIGH | All dependencies validated with 2 prior collections |
-| **Source URLs functional** | HIGH | Verified via WebSearch 2026-02-20 |
-| **California state reuse** | HIGH | Files exist in `data/sources/california-state/` |
-| **Config structure** | HIGH | LocaleConfig interface unchanged since inception |
-| **Generation script** | HIGH | Parameterized design requires no code changes |
-| **Database schema** | HIGH | Collections table designed for unlimited locales |
+```typescript
+// Backend validation with express-validator
+body('notes')
+  .optional()
+  .trim()
+  .isLength({ max: 1000 })
+  .escape() // XSS prevention
+```
 
-**Overall confidence:** HIGH
+**Defense in depth:**
+1. Client-side: `maxLength={1000}` on textarea
+2. Server-side: express-validator checks length + escapes HTML
+3. Database: `text` column (no length limit, but app enforces)
+4. Display: React JSX auto-escapes (no `dangerouslySetInnerHTML`)
 
----
+### Rate Limiting
 
-## Comparison: Fremont vs Prior Collections
+**Per-user limits:**
+- 10 flags per 15 minutes (prevents spam bursts)
+- Admins bypass limits (testing, legitimate moderation)
+- Uses user ID for authenticated, IP for anonymous (fallback only; feature requires auth)
 
-| Dimension | Bloomington IN | Los Angeles CA | Fremont CA |
-|-----------|----------------|----------------|------------|
-| **New state sources** | Yes (Indiana) | Yes (California) | No (reuse CA) |
-| **County complexity** | Simple (Monroe) | Complex (15 districts) | Medium (Alameda) |
-| **City gov structure** | Mayor-council | Mayor-council | Council-manager |
-| **Special considerations** | IU integration | Neighborhood councils | District elections (2017) |
-| **Source fetch time** | 5 minutes | 8 minutes | **3 minutes** (reuse state) |
-| **Stack additions** | 0 | 0 | **0** |
+**Why not per-question limits?**
+- Multiple users can legitimately flag the same bad question
+- Per-user limits already prevent individual spam
 
-**Fremont advantage:** Fastest collection to generate due to California state source reuse.
+### Authorization
 
----
+```typescript
+// Only authenticated users can flag
+router.post('/feedback/flag', authenticateToken, ...);
 
-## Alternatives Considered
+// Only admins can access flags queue
+router.get('/admin/flags', authenticateToken, requireAdmin, ...);
 
-### Option 1: Alameda County API (REJECTED)
+// Users cannot archive their own flags (admin-only)
+router.patch('/flags/:id/archive', authenticateToken, requireAdmin, ...);
+```
 
-**Evaluation:** Searched for Alameda County open data APIs.
+**Privilege escalation prevention:**
+- Flag submission records `req.user.id` (can't flag as another user)
+- Archive operations check `req.user.isAdmin` (non-admins get 403)
 
-**Finding:** County provides GIS/property data, not civic trivia facts.
+## Testing Strategy
 
-**Decision:** Stick to web scraping .gov sites (proven pattern).
+### Backend Tests
 
-### Option 2: Context7 for Gov Docs (REJECTED)
+**Unit tests:**
+```typescript
+describe('submitFlag', () => {
+  it('creates flag with authenticated user ID', async () => {
+    const req = { user: { id: 1 }, body: { questionId: '123', sessionId: 'abc' } };
+    await submitFlag(req, res);
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
 
-**Evaluation:** Could Context7 provide government documentation?
+  it('rejects unauthenticated requests', async () => {
+    const req = { user: null, body: { questionId: '123' } };
+    await submitFlag(req, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
 
-**Finding:** Context7 is for library docs (React, TypeScript), not civic institutions.
+  it('enforces rate limits', async () => {
+    // Submit 11 flags rapidly
+    for (let i = 0; i < 11; i++) {
+      await request(app).post('/api/feedback/flag').set('Authorization', token);
+    }
+    expect(lastResponse.status).toBe(429); // Too Many Requests
+  });
+});
+```
 
-**Decision:** RAG with scraped .gov content is correct approach.
+### Frontend Tests
 
-### Option 3: Different AI Model (REJECTED)
+**Component tests:**
+```typescript
+describe('ThumbsDownButton', () => {
+  it('dispatches FLAG_QUESTION on click', () => {
+    render(<ThumbsDownButton questionId="q1" onFlag={mockDispatch} />);
+    fireEvent.click(screen.getByLabelText('Flag this question'));
+    expect(mockDispatch).toHaveBeenCalledWith({ type: 'FLAG_QUESTION', questionId: 'q1' });
+  });
 
-**Evaluation:** Could GPT-4 or local models generate better questions?
+  it('shows unflag button when already flagged', () => {
+    render(<ThumbsDownButton questionId="q1" flagged={true} />);
+    expect(screen.getByText('Unflag')).toBeInTheDocument();
+  });
+});
+```
 
-**Finding:** Claude Sonnet 4.5 already produces high-quality, politically neutral content. Prior collections validated this.
+### Integration Tests
 
-**Decision:** No model change needed.
+**End-to-end flow:**
+1. Play game as authenticated user
+2. Flag question during answer reveal
+3. Complete game
+4. Add notes in post-game feedback
+5. Submit feedback
+6. Login as admin
+7. View flags queue
+8. Archive flag
+9. Verify flag removed from queue
 
----
+## Monitoring & Observability
 
-## Next Steps (After Research)
+### Metrics to Track
 
-1. **Create `fremont-ca.ts` config** — Copy LA structure, update values
-2. **Update generate script loader** — Add 'fremont-ca' to supportedLocales
-3. **Add collection to seed data** — Insert Fremont row in `collections.ts`
-4. **Run db:seed** — Create collection in database
-5. **Fetch sources** — `--fetch-sources` flag (city + county only)
-6. **Generate questions** — Standard 4-batch process
-7. **Admin review** — Activate via admin panel
+```typescript
+// Log feedback events
+console.log('FLAG_SUBMITTED', {
+  userId: req.user.id,
+  questionId,
+  sessionId,
+  timestamp: new Date().toISOString()
+});
 
-**Estimated implementation time:** 2-3 hours (mostly config + source research).
+console.log('FEEDBACK_ELABORATED', {
+  userId: req.user.id,
+  flagCount: flagIds.length,
+  hasNotes: notes !== null,
+  timestamp: new Date().toISOString()
+});
+```
 
----
+**Analytics questions:**
+- How many flags per day? (usage trend)
+- Which questions get flagged most? (quality issues)
+- What % of flags include notes? (elaboration rate)
+- How long until admin archives flags? (moderation latency)
+
+### Error Tracking
+
+**Expected errors:**
+- 429 Too Many Requests (rate limit exceeded) - **not a bug**
+- 401 Unauthorized (user logged out mid-game) - **expected, show login prompt**
+- 404 Question Not Found (flagging deleted question) - **rare, log for investigation**
+
+**Unexpected errors:**
+- 500 Internal Server Error (DB connection failed) - **alert on-call**
+- Foreign key violation (question_id doesn't exist) - **data integrity issue, investigate**
+
+## Summary: Minimal Additions, Maximum Leverage
+
+| Category | New Additions | Reused from Existing Stack |
+|----------|--------------|---------------------------|
+| Backend Dependencies | `express-rate-limit` (1 package) | express-validator, Drizzle ORM, JWT auth, PostgreSQL |
+| Frontend Dependencies | None | Zustand, Fetch API, React hooks |
+| Database Changes | 1 new table (`question_flags`) | Existing users, questions, collections tables |
+| API Routes | 6 new endpoints (2 feedback, 4 admin) | Existing auth, admin middleware |
+| Frontend State | Extend game reducer | Existing useReducer pattern |
+
+**Total new npm dependencies: 1** (`express-rate-limit`)
+
+**Why this is the right approach:**
+- Minimizes technical debt (fewer dependencies to maintain)
+- Faster implementation (leverage existing patterns)
+- Lower risk (reuse battle-tested auth, validation, ORM)
+- Easier testing (no new testing frameworks needed)
+- Better performance (no unnecessary libraries in bundle)
+
+Your existing stack is well-suited for this feature. The feedback system fits naturally into your architecture with minimal additions.
 
 ## Sources
 
-### Fremont City Resources
-- [City of Fremont Official Website](https://www.fremont.gov/)
-- [Mayor & City Council](https://www.fremont.gov/government/mayor-city-council)
-- [About City Government](https://www.fremont.gov/government/about-city-government)
-- [Fremont Police Department](https://www.fremontpolice.gov/)
-- [Election Information](https://www.fremont.gov/government/election-information)
+### Rate Limiting
+- [express-rate-limit npm package](https://www.npmjs.com/package/express-rate-limit)
+- [Rate Limiting in Express.js - Better Stack Community](https://betterstack.com/community/guides/scaling-nodejs/rate-limiting-express/)
+- [How to Add Rate Limiting to Express APIs - OneUptime](https://oneuptime.com/blog/post/2026-02-02-express-rate-limiting/view)
 
-### Alameda County Resources
-- [Alameda County Government](https://www.acgov.org/)
-- [Board of Supervisors](https://bos.alamedacountyca.gov/)
-- [County Agencies & Departments](https://www.acgov.org/government/departments.htm)
+### Input Validation & Sanitization
+- [express-validator documentation](https://express-validator.github.io/)
+- [Using Express-Validator for Data Validation - Better Stack](https://betterstack.com/community/guides/scaling-nodejs/express-validator-nodejs/)
+- [JavaScript Input Sanitization in Node.js: 2026 Guide](https://copyprogramming.com/howto/javascript-sanitizing-use-input-in-nodejs)
 
-### Fremont Context
-- [Fremont, California - Wikipedia](https://en.wikipedia.org/wiki/Fremont,_California)
-- [Fremont Demographics | City of Fremont](https://www.fremont.gov/about/demographics)
-- [Fremont, California - Ballotpedia](https://ballotpedia.org/Fremont,_California)
-
-### Existing Codebase (HIGH confidence)
-- `backend/src/scripts/content-generation/generate-locale-questions.ts` (generation script)
-- `backend/src/scripts/content-generation/locale-configs/bloomington-in.ts` (LocaleConfig interface)
-- `backend/src/scripts/content-generation/locale-configs/los-angeles-ca.ts` (CA pattern)
-- `backend/src/db/seed/collections.ts` (collection definitions)
-- `backend/package.json` (dependency verification)
-
----
-
-## Conclusion
-
-**Stack verdict:** NO NEW TOOLS, LIBRARIES, OR DATA SOURCES NEEDED.
-
-The existing community collection pipeline is a fully parameterized system designed for unlimited locales. Fremont requires:
-- 1 new TypeScript config file (~120 lines)
-- ~10 new source URLs (Fremont city + Alameda County)
-- 1 new collection row in seed data
-- 1 line added to generation script loader
-
-**Key insight:** Fremont is the EASIEST community collection to add because California state sources (15% of questions) are already cached from Los Angeles.
-
-**Recommendation:** Proceed with existing stack. No research, evaluation, or integration of new tools required.
+### Database Best Practices
+- [Drizzle ORM PostgreSQL Best Practices Guide (2025)](https://gist.github.com/productdevbook/7c9ce3bbeb96b3fabc3c7c2aa2abc717)
+- [Drizzle ORM - Indexes & Constraints](https://orm.drizzle.team/docs/indexes-constraints)
+- [Should I Create an Index on Foreign Keys in PostgreSQL? - Percona](https://www.percona.com/blog/should-i-create-an-index-on-foreign-keys-in-postgresql/)
+- [Foreign Key Indexing and Performance in PostgreSQL - Cybertec](https://www.cybertec-postgresql.com/en/index-your-foreign-key/)

@@ -1,689 +1,524 @@
-# Architecture: Fremont, CA Collection Integration
+# Architecture: Feedback Marks Integration
 
-**Domain:** Community Civic Trivia Collection
-**Researched:** 2026-02-20
-**Confidence:** HIGH (verified against existing v1.2/v1.3 collections)
+**Project:** Civic Trivia Championship
+**Feature:** Player Feedback/Flagging System
+**Researched:** 2026-02-21
 
 ## Executive Summary
 
-Adding a Fremont, CA collection follows the well-established community collection pattern introduced in v1.2 (Bloomington IN, Los Angeles CA) and refined in v1.3 (Indiana, California state collections). The architecture is **code-complete and battle-tested** — no new components or infrastructure required.
+The feedback marks feature adds player-driven quality control to the game. Players can flag questions during gameplay, provide optional explanations post-game, and admins review flagged questions through a dedicated interface. This document maps how the feature integrates with existing game flow, session management, and admin UI.
 
-The integration involves:
-1. Creating a locale configuration file
-2. Generating questions via AI with RAG sources
-3. Creating seed data JSON
-4. Adding collection metadata
-5. Adding collection card image
-6. Running seed scripts
+**Core Integration Points:**
+1. **Game Session (Redis)** - Track which questions flagged during play
+2. **Answer Submission** - Extend existing POST /api/game/answer with optional flagged boolean
+3. **Post-Game Summary** - New section in ResultsScreen for flagged questions with text input
+4. **Database** - New question_flags table + flag_count column on questions table
+5. **Admin UI** - Flag count column in QuestionTable + new FlagsReviewPage
 
-**Zero architectural changes.** All infrastructure exists.
+---
 
-## Collection Pipeline Architecture
+## System Context
 
-### Overview
+### Existing Architecture
+
+**Backend (Node.js + Express + TypeScript):**
+- RESTful routes: `/api/game/*`, `/api/admin/*`
+- Session storage: Redis (Upstash) with graceful degradation to MemoryStorage
+- Database: PostgreSQL via Supabase with Drizzle ORM
+- Auth: JWT tokens via middleware (authenticateToken, optionalAuth, requireAdmin)
+- Game flow: POST /session → POST /answer (per question) → GET /results/:sessionId
+
+**Frontend (React 18 + TypeScript + Vite):**
+- Game state: useGameState hook manages phase transitions
+- Game components: GameScreen (answering) → ResultsScreen (post-game review)
+- Admin components: QuestionsPage (table + filters) + QuestionDetailPanel (side panel)
+- Admin routing: /admin/dashboard, /admin/questions, /admin/collections
+
+**Session Management:**
+- GameSession interface stores: questions, answers, userId, collectionId, adaptiveState, plausibilityFlags
+- ServerAnswer interface stores: questionId, selectedOption, timeRemaining, points, flagged (plausibility check)
+- TTL: 1 hour for sessions in Redis
+
+**Admin UI Pattern:**
+- Master-detail: QuestionTable (list) + QuestionDetailPanel (side drawer)
+- URL-driven filters: searchParams manage page, sort, collection, difficulty, status, search
+- Mutations update local state optimistically, refetch on success
+
+---
+
+## Integration Architecture
+
+### Data Flow Overview
 
 ```
-Research → Config → Generation → Export → Seed → Activation
-   │          │         │           │        │         │
-   │          │         │           │        │         └─ Admin review + activate
-   │          │         │           │        └─ seed-community.ts
-   │          │         │           └─ export-community.ts
-   │          │         └─ generate-locale-questions.ts
-   │          └─ locale-configs/fremont-ca.ts
-   └─ Curate authoritative .gov sources
+Player flags question during reveal
+    ↓
+Session tracks flagged questionIds (Redis)
+    ↓
+Post-game summary shows flagged questions
+    ↓
+Player optionally adds text feedback
+    ↓
+Submit feedback → Database (question_flags table)
+    ↓
+Admin sees flag count in QuestionTable
+    ↓
+Admin opens QuestionDetailPanel → sees flag count + link to review
+    ↓
+Admin navigates to FlagsReviewPage → sees all feedback
+    ↓
+Admin archives question directly from flags page
 ```
 
-### Data Flow
+---
 
-```
-1. RESEARCH PHASE
-   Input:  Fremont city/county/state government websites
-   Output: List of authoritative source URLs
-   Tool:   Manual curation
+## Component Integration Map
 
-2. CONFIGURATION PHASE
-   Input:  Topic categories, target counts, source URLs
-   Output: backend/src/scripts/content-generation/locale-configs/fremont-ca.ts
-   Tool:   Manual creation following existing pattern
+### 1. Game Session (Redis/Memory)
 
-3. SOURCE FETCH PHASE
-   Input:  Source URLs from config
-   Output: backend/src/scripts/data/sources/fremont-ca/*.txt
-   Tool:   generate-locale-questions.ts --locale fremont-ca --fetch-sources
-
-4. GENERATION PHASE
-   Input:  Locale config + RAG source documents
-   Output: Draft questions in PostgreSQL (status='draft')
-   Tool:   generate-locale-questions.ts --locale fremont-ca
-   Process:
-     - Loads source documents from data/sources/fremont-ca/
-     - Calls Anthropic API with RAG context
-     - Validates with Zod schema
-     - Seeds to database with status='draft'
-     - Links to collection via collectionId
-
-5. REVIEW PHASE
-   Input:  Draft questions in database
-   Output: Activated questions (status='active')
-   Tool:   Admin review page (/admin/review)
-   Process: Human reviewer activates quality questions
-
-6. EXPORT PHASE
-   Input:  Active questions in database
-   Output: backend/src/data/fremont-ca-questions.json
-   Tool:   export-community.ts (updated with fremont-ca)
-   Purpose: Create portable seed file for production deployment
-
-7. SEED PHASE (Production)
-   Input:  fremont-ca-questions.json
-   Output: Questions seeded in production database
-   Tool:   seed-community.ts (updated with fremont-ca)
-   Process:
-     - Reads JSON data file
-     - Upserts topics
-     - Links topics to collection
-     - Inserts questions
-     - Links questions to collection
-```
-
-## File Structure
-
-### Files to CREATE
-
-| File Path | Purpose | Template |
-|-----------|---------|----------|
-| `backend/src/scripts/content-generation/locale-configs/fremont-ca.ts` | Locale configuration | Copy `los-angeles-ca.ts`, adapt for Fremont |
-| `backend/src/db/seed/fremont-topics.ts` | Topic documentation (reference only) | Copy `los-angeles-topics.ts`, adapt topics |
-| `backend/src/data/fremont-ca-questions.json` | Portable seed data | Generated by export-community.ts |
-| `backend/src/scripts/data/sources/fremont-ca/*.txt` | RAG source documents | Generated by --fetch-sources |
-| `frontend/public/images/collections/fremont-ca.jpg` | Collection card image | Create/source banner image |
-
-### Files to MODIFY
-
-| File Path | Changes Required | Line Reference |
-|-----------|------------------|----------------|
-| `backend/src/db/seed/collections.ts` | Add Fremont collection metadata | After line 35 (after los-angeles-ca) |
-| `backend/src/scripts/content-generation/generate-locale-questions.ts` | Add fremont-ca to supported locales | Lines 85-88 (supportedLocales map) |
-| `backend/src/scripts/export-community.ts` | Add fremont-ca export call | After line 136 (after los-angeles-ca) |
-| `backend/src/db/seed/seed-community.ts` | Add fremont-ca to LOCALES array | Lines 53-56 (LOCALES array) |
-
-### Files UNCHANGED (No modification needed)
-
-- All game routes (collection scoping already exists)
-- All frontend components (collection picker is data-driven)
-- Database schema (supports unlimited collections)
-- Question service (collection filtering built-in)
-- Admin review page (collection-agnostic)
-
-## Component Integration Points
-
-### 1. Collection Metadata (collections.ts)
-
-**Location:** `backend/src/db/seed/collections.ts`
-
-**Add after Los Angeles entry:**
-
+**Current State:**
 ```typescript
-{
-  name: 'Fremont, CA',
-  slug: 'fremont-ca',
-  description: 'Test your knowledge of the City of Fremont!',
-  localeCode: 'en-US',
-  localeName: 'Fremont, California',
-  iconIdentifier: 'flag-ca',
-  themeColor: '#0369A1', // ocean blue - California
-  isActive: false, // Set to true after review
-  sortOrder: 4
+interface GameSession {
+  sessionId: string;
+  userId: string | number;
+  questions: Question[];
+  answers: ServerAnswer[];
+  createdAt: Date;
+  lastActivityTime: Date;
+  progressionAwarded: boolean;
+  plausibilityFlags: number; // Cheat detection counter
+  collectionId: number | null;
+  collectionName: string | null;
+  collectionSlug: string | null;
+  adaptiveState?: { ... };
 }
 ```
 
-**Naming Convention:**
-- `slug`: kebab-case, format `{city}-{state-abbrev}` (e.g., `fremont-ca`)
-- `name`: Display name shown in UI (e.g., `"Fremont, CA"`)
-- `localeName`: Full locale for context (e.g., `"Fremont, California"`)
-
-### 2. Locale Configuration (locale-configs/fremont-ca.ts)
-
-**Location:** `backend/src/scripts/content-generation/locale-configs/fremont-ca.ts`
-
-**Structure:**
-
+**Required Addition:**
 ```typescript
-import type { LocaleConfig } from './bloomington-in.js';
-
-export const fremontConfig: LocaleConfig = {
-  locale: 'fremont-ca',
-  name: 'Fremont, California',
-  externalIdPrefix: 'fre', // 3-letter prefix for question IDs
-  collectionSlug: 'fremont-ca',
-  targetQuestions: 100,
-  batchSize: 25,
-
-  topicCategories: [
-    {
-      slug: 'city-government',
-      name: 'City Government',
-      description: 'Fremont city government — mayor, city council, departments, and municipal services',
-    },
-    // ... 7-8 total topic categories
-  ],
-
-  topicDistribution: {
-    'city-government': 15,
-    'alameda-county': 12,
-    'california-state': 15,
-    // ... sums to ~100
-  },
-
-  sourceUrls: [
-    'https://www.fremont.gov',
-    'https://www.fremont.gov/government/city-council',
-    'https://www.acgov.org', // Alameda County
-    // ... 10-15 authoritative .gov sources
-  ],
-};
+interface GameSession {
+  // ... existing fields
+  feedbackFlags: Set<string>; // questionIds flagged by player
+}
 ```
 
-**Topic Pattern (based on existing collections):**
-- City Government (city council, mayor, departments)
-- County Government (Alameda County in this case)
-- State Government (California state — reuse from LA)
-- Civic History (founding, incorporation, milestones)
-- Local Services (utilities, parks, public safety)
-- Elections & Voting (local election process)
-- Landmarks & Culture (cultural institutions, notable places)
-- Budget & Finance (city budget, taxes)
+**Rationale:**
+- Temporary storage during game (doesn't need to persist beyond session TTL)
+- Allows post-game summary to display which questions were flagged
+- Set prevents duplicate flags if player accidentally toggles twice
 
-### 3. Generate Script Integration
+**Files to Modify:**
+- `C:\Project Test\backend\src\services\sessionService.ts` - Add feedbackFlags field to GameSession interface and initialization
 
-**Location:** `backend/src/scripts/content-generation/generate-locale-questions.ts`
+---
 
-**Modify `supportedLocales` map (lines 85-88):**
+### 2. Answer Reveal Screen (Frontend)
 
+**Current Flow:**
+1. Player answers question → POST /api/game/answer
+2. GameScreen transitions to 'revealing' phase
+3. Shows correct answer, explanation, points earned
+4. Player taps anywhere to advance to next question
+
+**New Flow:**
+1. Player answers question → POST /api/game/answer
+2. GameScreen transitions to 'revealing' phase
+3. Shows correct answer, explanation, points earned
+4. **NEW:** If authenticated, show thumbs-down icon in bottom-left corner
+5. Player can tap thumbs-down to flag question (toggles visual state)
+6. Player taps anywhere else to advance to next question
+
+**Visual Treatment:**
+- Small thumbs-down icon (24x24px), semi-transparent by default
+- Hover: brighten slightly
+- Tapped: fill icon + brief haptic/animation feedback
+- Position: Bottom-left corner, 16px from edges
+- No modal/confirmation needed (low friction)
+
+**Files to Create:**
+- `C:\Project Test\frontend\src\features\game\components\FeedbackButton.tsx`
+
+**Files to Modify:**
+- `C:\Project Test\frontend\src\features\game\components\GameScreen.tsx` - Add flaggedQuestions state + render FeedbackButton
+
+---
+
+### 3. Post-Game Summary (Frontend)
+
+**New Section:** "Flagged Questions" section above answer review accordion
+
+**Flow:**
+1. Game completes → GET /api/game/results/:sessionId (returns flagged question IDs)
+2. ResultsScreen displays score, accuracy, answer review accordion
+3. **NEW:** If any questions flagged, show "Flagged Questions" section
+4. For each flagged question:
+   - Show question text (truncated)
+   - Optional textarea for feedback (placeholder: "What was wrong with this question?")
+   - Character limit: 500 chars
+5. "Submit Feedback" button (only enabled if flags exist)
+6. POST /api/feedback/submit with { sessionId, flags: [{ questionId, feedback }] }
+7. Success → show toast "Feedback submitted, thank you!"
+
+**Files to Create:**
+- `C:\Project Test\frontend\src\features\game\components\FlaggedQuestionsSection.tsx`
+
+**Files to Modify:**
+- `C:\Project Test\frontend\src\features\game\components\ResultsScreen.tsx` - Add flaggedQuestions prop + render section
+- `C:\Project Test\frontend\src\pages\Game.tsx` - Pass flaggedQuestions from GameScreen to ResultsScreen
+
+---
+
+### 4. Backend Session Tracking
+
+**Modified Endpoint: POST /api/game/answer**
+
+Add optional `flagged` boolean to request body:
+```json
+{
+  "sessionId": "uuid",
+  "questionId": "q001",
+  "selectedOption": 2,
+  "timeRemaining": 15,
+  "flagged": true  // NEW (optional)
+}
+```
+
+If flagged=true, add questionId to session.feedbackFlags Set.
+
+**Modified Endpoint: GET /api/game/results/:sessionId**
+
+Add feedbackFlags array to response:
+```json
+{
+  "answers": [...],
+  "totalScore": 1500,
+  "feedbackFlags": ["q001", "q005"]  // NEW
+}
+```
+
+**Files to Modify:**
+- `C:\Project Test\backend\src\routes\game.ts` - Add flagged handling to POST /answer, add feedbackFlags to GET /results response
+- `C:\Project Test\backend\src\services\sessionService.ts` - Add feedbackFlags to GameSession interface
+
+---
+
+### 5. Database Schema
+
+**New Table: `question_flags`**
+```sql
+CREATE TABLE civic_trivia.question_flags (
+  id SERIAL PRIMARY KEY,
+  question_id INTEGER NOT NULL REFERENCES civic_trivia.questions(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  session_id VARCHAR(255), -- Optional: track which game session
+  feedback_text TEXT, -- Optional: player's explanation (max 500 chars validated in app)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- Indexes for admin queries
+CREATE INDEX idx_question_flags_question_id ON civic_trivia.question_flags(question_id);
+CREATE INDEX idx_question_flags_user_id ON civic_trivia.question_flags(user_id);
+CREATE INDEX idx_question_flags_created_at ON civic_trivia.question_flags(created_at DESC);
+
+-- Denormalized flag count on questions table for fast filtering
+ALTER TABLE civic_trivia.questions
+  ADD COLUMN flag_count INTEGER DEFAULT 0 NOT NULL;
+
+-- Trigger to maintain flag_count
+CREATE OR REPLACE FUNCTION update_question_flag_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE civic_trivia.questions
+    SET flag_count = flag_count + 1
+    WHERE id = NEW.question_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE civic_trivia.questions
+    SET flag_count = flag_count - 1
+    WHERE id = OLD.question_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_question_flag_count
+AFTER INSERT OR DELETE ON civic_trivia.question_flags
+FOR EACH ROW
+EXECUTE FUNCTION update_question_flag_count();
+```
+
+**Files to Create:**
+- `C:\Project Test\backend\migrations\XXX-add-question-flags.sql` - Migration script
+
+**Files to Modify:**
+- `C:\Project Test\backend\src\db\schema.ts` - Add questionFlags table + flagCount column to questions
+
+---
+
+### 6. Feedback Submission Endpoint
+
+**New Endpoint: POST /api/feedback/submit**
+- Auth: Required (authenticateToken middleware)
+- Body: `{ sessionId: string, flags: Array<{ questionId: string, feedback?: string }> }`
+- Validation:
+  - Session must exist and belong to authenticated user
+  - questionId must be in session.questions
+  - feedback max length 500 chars
+  - Deduplicate: Don't insert duplicate flag for same user+question
+- Response: `{ success: true, flagsSubmitted: number }`
+
+**Critical Note on Question ID Mapping:**
+- Frontend uses string IDs (e.g., "q001" from Question.id)
+- Database uses numeric IDs (auto-increment serial)
+- Need to map questionId string → numeric DB ID before inserting
+- **Recommended Solution:** Store question DB ID alongside each Question in session during creation
+
+**Files to Create:**
+- `C:\Project Test\backend\src\routes\feedback.ts`
+
+**Files to Modify:**
+- `C:\Project Test\backend\src\server.ts` - Import and mount feedback router
+
+---
+
+### 7. Admin Question Explorer Integration
+
+**Required Changes:**
+1. Add `flag_count` column to QuestionTable
+2. Make `flag_count` sortable
+3. Add flag count visual indicator (red badge if flagCount > 0)
+
+**Files to Modify:**
+- `C:\Project Test\frontend\src\pages\admin\components\QuestionTable.tsx` - Add flagCount column with badge
+- `C:\Project Test\backend\src\routes\admin.ts` - Add flagCount to GET /admin/questions/explore response
+
+---
+
+### 8. Admin Question Detail Panel Integration
+
+**Required Changes:**
+1. Display flag count in header (e.g., "⚠️ 3 flags" badge)
+2. Add "View Flags" button that links to FlagsReviewPage with question filter
+
+**Files to Modify:**
+- `C:\Project Test\frontend\src\pages\admin\components\QuestionDetailPanel.tsx` - Add flag count badge + link
+- `C:\Project Test\backend\src\routes\admin.ts` - Add flagCount to GET /admin/questions/:id/detail response
+
+---
+
+### 9. Admin Flags Review Page (NEW)
+
+**Purpose:** Dedicated page for admins to review flagged questions and player feedback.
+
+**Features:**
+1. Table of all flags, sortable by: created_at (default DESC), question ID, user
+2. Filterable by: question ID (URL param)
+3. Each row shows: question text (truncated), player name, feedback text, timestamp
+4. Action: Archive question button
+
+**URL Structure:**
+- `/admin/flags` - All flags
+- `/admin/flags?question=123` - Flags for specific question
+
+**Files to Create:**
+- `C:\Project Test\frontend\src\pages\admin\FlagsReviewPage.tsx`
+
+**Files to Modify:**
+- `C:\Project Test\frontend\src\App.tsx` - Add route for /admin/flags
+- `C:\Project Test\backend\src\routes\admin.ts` - Add GET /admin/flags endpoint
+
+---
+
+## Build Order Recommendation
+
+**Phase 1: Backend Foundation (Day 1)**
+1. Add `feedbackFlags` field to GameSession interface
+2. Modify POST /api/game/answer to accept `flagged` boolean
+3. Modify GET /api/game/results to return `feedbackFlags` array
+4. Create database migration for question_flags table + flag_count column
+5. Update Drizzle schema
+
+**Phase 2: Frontend Flagging (Day 2)**
+1. Create FeedbackButton component
+2. Add flaggedQuestions state to GameScreen
+3. Render FeedbackButton during reveal phase
+4. Pass flaggedQuestions to ResultsScreen
+
+**Phase 3: Feedback Submission (Day 3)**
+1. Create FlaggedQuestionsSection component
+2. Integrate into ResultsScreen
+3. Create POST /api/feedback/submit endpoint
+4. Wire up frontend submission handler
+5. Resolve question ID mapping issue
+
+**Phase 4: Admin Integration (Day 4)**
+1. Add flag_count to QuestionTable component
+2. Modify GET /api/admin/questions/explore to include flagCount
+3. Add flag count badge to QuestionDetailPanel
+4. Modify GET /api/admin/questions/:id/detail to include flagCount
+
+**Phase 5: Admin Review Page (Day 5)**
+1. Create FlagsReviewPage component
+2. Create GET /api/admin/flags endpoint
+3. Add route to App.tsx
+4. Link from QuestionDetailPanel
+
+**Testing Checkpoints:**
+- After Phase 1: Verify session stores flagged questionIds
+- After Phase 2: Verify frontend can flag questions during gameplay
+- After Phase 3: Verify feedback persists to database
+- After Phase 4: Verify admin sees flag counts
+- After Phase 5: Verify admin can review all feedback
+
+---
+
+## Files Summary
+
+### New Files (5)
+1. `C:\Project Test\frontend\src\features\game\components\FeedbackButton.tsx`
+2. `C:\Project Test\frontend\src\features\game\components\FlaggedQuestionsSection.tsx`
+3. `C:\Project Test\frontend\src\pages\admin\FlagsReviewPage.tsx`
+4. `C:\Project Test\backend\src\routes\feedback.ts`
+5. `C:\Project Test\backend\migrations\XXX-add-question-flags.sql`
+
+### Modified Files (11)
+1. `C:\Project Test\backend\src\services\sessionService.ts` - Add feedbackFlags to GameSession
+2. `C:\Project Test\backend\src\routes\game.ts` - Add flagged handling, return feedbackFlags
+3. `C:\Project Test\backend\src\db\schema.ts` - Add questionFlags table, flagCount column
+4. `C:\Project Test\backend\src\server.ts` - Mount feedback router
+5. `C:\Project Test\frontend\src\features\game\components\GameScreen.tsx` - Add flagging state + button
+6. `C:\Project Test\frontend\src\features\game\components\ResultsScreen.tsx` - Add flagged section
+7. `C:\Project Test\frontend\src\pages\Game.tsx` - Pass flaggedQuestions between components
+8. `C:\Project Test\frontend\src\pages\admin\components\QuestionTable.tsx` - Add flagCount column
+9. `C:\Project Test\frontend\src\pages\admin\components\QuestionDetailPanel.tsx` - Add flag badge + link
+10. `C:\Project Test\frontend\src\App.tsx` - Add /admin/flags route
+11. `C:\Project Test\backend\src\routes\admin.ts` - Add flagCount to queries, add GET /flags endpoint
+
+---
+
+## Key Design Decisions
+
+### Decision 1: Extend POST /answer vs New Endpoint
+
+**Choice:** Extend POST /api/game/answer with optional `flagged` boolean
+
+**Rationale:**
+- Lower frontend complexity (single request during answer submission)
+- Matches mental model: "flag as part of answering"
+- No additional network round-trip
+- Flag state can be toggled during reveal, then sent on next answer submission
+
+**Alternative Considered:** New POST /api/game/flag endpoint
+- Pro: Cleaner separation of concerns
+- Con: Additional HTTP request, more complex frontend state management
+
+### Decision 2: Session Storage vs Direct Database
+
+**Choice:** Store flags in session (Redis) first, persist to database post-game
+
+**Rationale:**
+- Consistent with existing session-based architecture
+- Allows player to change mind (toggle flags during game)
+- Single database write at game end (more efficient)
+- Matches existing pattern for answers
+
+**Alternative Considered:** Write to database immediately on flag
+- Pro: More durable (survives session expiry)
+- Con: More write operations, harder to allow un-flagging
+
+### Decision 3: Denormalized flag_count vs JOIN
+
+**Choice:** Maintain flag_count on questions table via trigger
+
+**Rationale:**
+- Admin QuestionTable query already complex (8 columns)
+- flag_count sortable without JOINing question_flags table
+- Acceptable consistency trade-off (trigger maintains count)
+- Follows existing pattern (encounterCount, correctCount also denormalized)
+
+**Alternative Considered:** Compute flag count in query
+- Pro: No denormalization, always accurate
+- Con: Slower queries, can't sort efficiently on flag count
+
+### Decision 4: Question ID Mapping Strategy
+
+**Challenge:** Frontend uses string IDs ("q001"), database uses numeric IDs (serial)
+
+**Recommended Solution:** Store DB ID in session alongside Question during creation
 ```typescript
-const supportedLocales: Record<string, () => Promise<...>> = {
-  'bloomington-in': () => import('./locale-configs/bloomington-in.js'),
-  'los-angeles-ca': () => import('./locale-configs/los-angeles-ca.js'),
-  'fremont-ca': () => import('./locale-configs/fremont-ca.js'), // ADD THIS
-};
+interface Question {
+  id: string;        // "q001" (for frontend)
+  dbId: number;      // 123 (for database operations)
+  // ... other fields
+}
 ```
 
-**Modify `configKeys` array (lines 99-100):**
+**Rationale:**
+- No additional database lookups on feedback submission
+- Matches how questions are loaded from database into session
+- Clean separation: frontend uses id, backend uses dbId
 
-```typescript
-const configKeys = ['bloomingtonConfig', 'losAngelesConfig', 'fremontConfig']; // ADD fremontConfig
-```
-
-### 4. Export Script Integration
-
-**Location:** `backend/src/scripts/export-community.ts`
-
-**Add export call after line 136:**
-
-```typescript
-await exportCollection('bloomington-in', 'bloomington-in-questions.json');
-await exportCollection('los-angeles-ca', 'los-angeles-ca-questions.json');
-await exportCollection('fremont-ca', 'fremont-ca-questions.json'); // ADD THIS
-```
-
-### 5. Seed Script Integration
-
-**Location:** `backend/src/db/seed/seed-community.ts`
-
-**Modify LOCALES array (lines 53-56):**
-
-```typescript
-const LOCALES = [
-  { slug: 'bloomington-in', file: 'bloomington-in-questions.json' },
-  { slug: 'los-angeles-ca', file: 'los-angeles-ca-questions.json' },
-  { slug: 'fremont-ca', file: 'fremont-ca-questions.json' }, // ADD THIS
-];
-```
-
-### 6. Collection Card Image
-
-**Location:** `frontend/public/images/collections/fremont-ca.jpg`
-
-**Requirements:**
-- Filename MUST match slug: `fremont-ca.jpg`
-- Dimensions: ~800x400px (aspect ratio ~2:1)
-- Content: Recognizable Fremont landmark or California imagery
-- Format: JPG or PNG
-
-**Image Loading:**
-- `CollectionCard.tsx` loads images via: `/images/collections/${collection.slug}.jpg`
-- Falls back to `themeColor` background if image fails to load
-- No code changes needed — purely convention-based
-
-## Build Order (Suggested Phases)
-
-### Phase 1: Configuration & Research
-**Goal:** Create locale config and curate authoritative sources
-
-**Tasks:**
-1. Research Fremont city/county government structure
-2. Identify 10-15 authoritative .gov source URLs
-3. Create `locale-configs/fremont-ca.ts` with 8 topic categories
-4. Define topic distribution targeting ~100 questions
-
-**Output:**
-- `backend/src/scripts/content-generation/locale-configs/fremont-ca.ts`
-- Source URL list ready for RAG fetch
-
-**Dependencies:** None
+**Alternative Considered:** Query DB to map externalId → id
+- Pro: No schema changes
+- Con: N queries per feedback submission (inefficient)
 
 ---
 
-### Phase 2: Source Fetch & Generation
-**Goal:** Generate 100 draft questions with AI + RAG
+## Risk Mitigation
 
-**Tasks:**
-1. Run `generate-locale-questions.ts --locale fremont-ca --fetch-sources`
-   - Fetches and saves source documents to `data/sources/fremont-ca/*.txt`
-2. Run `generate-locale-questions.ts --locale fremont-ca`
-   - Generates 100 questions in 4 batches (25 each)
-   - Seeds to database with `status='draft'`
-3. Create `fremont-topics.ts` reference file (documents generated topics)
+**Risk 1: Session Expiry Before Feedback Submission**
+- **Impact:** Player flags questions but session expires before submitting feedback
+- **Mitigation:** Extend session TTL on GET /results call (refresh to 30 minutes)
+- **Fallback:** Allow feedback submission without session validation (lower security, but better UX)
 
-**Output:**
-- `backend/src/scripts/data/sources/fremont-ca/*.txt` (10-15 files)
-- 100 questions in database with `status='draft'`
-- `backend/src/db/seed/fremont-topics.ts` (documentation)
+**Risk 2: Flag Count Inconsistency**
+- **Impact:** Trigger fails, flag_count becomes stale
+- **Mitigation:** Add database constraint + periodic reconciliation job
+- **Fallback:** Recompute flag_count on admin page load (slower but accurate)
 
-**Dependencies:** Phase 1 complete
+**Risk 3: Spam Flags**
+- **Impact:** Malicious users flag all questions
+- **Mitigation:** Require authentication, rate limit POST /feedback/submit (e.g., max 10 submissions per hour)
+- **Fallback:** Admin review dashboard highlights high-frequency flaggers
 
-**Commands:**
-```bash
-cd backend
-npx tsx src/scripts/content-generation/generate-locale-questions.ts --locale fremont-ca --fetch-sources
-npx tsx src/scripts/content-generation/generate-locale-questions.ts --locale fremont-ca
-```
+**Risk 4: Question ID Mapping Bugs**
+- **Impact:** Feedback submission fails if questionId format mismatch
+- **Mitigation:** Comprehensive validation in POST /feedback/submit
+- **Fallback:** Log errors with full context for debugging
 
 ---
 
-### Phase 3: Review & Activation
-**Goal:** Human review activates quality questions
+## Performance Considerations
 
-**Tasks:**
-1. Review generated questions via admin panel (`/admin/review`)
-2. Activate quality questions (change `status='active'`)
-3. Archive or fix low-quality questions
-4. Ensure difficulty distribution is balanced (30% easy, 40% medium, 30% hard)
+**Read Performance:**
+- QuestionTable query includes flag_count (indexed column, no JOIN needed)
+- Admin flags page JOINs question_flags + questions + users (indexes on all foreign keys)
+- Expected volume: <1000 flags per day, negligible impact
 
-**Output:**
-- 80-100 active questions ready for play
+**Write Performance:**
+- INSERT into question_flags is fast (single row)
+- Trigger updates flag_count synchronously (acceptable for low volume)
+- Session updates in Redis are in-memory (negligible overhead)
 
-**Dependencies:** Phase 2 complete
-
-**Access:** Admin user account required
-
----
-
-### Phase 4: Collection Activation & Export
-**Goal:** Make Fremont collection playable and create portable seed data
-
-**Tasks:**
-1. Add Fremont collection metadata to `collections.ts`
-2. Set `isActive: true` for Fremont collection
-3. Modify `export-community.ts` to include Fremont
-4. Run export script to generate `fremont-ca-questions.json`
-5. Modify `seed-community.ts` to include Fremont
-6. Add collection card image to `frontend/public/images/collections/fremont-ca.jpg`
-
-**Output:**
-- `backend/src/data/fremont-ca-questions.json` (portable seed file)
-- Fremont collection visible in collection picker
-- End-to-end playability
-
-**Dependencies:** Phase 3 complete
-
-**Commands:**
-```bash
-cd backend
-npx tsx src/scripts/export-community.ts
-npm run db:seed:community  # Test seeding
-```
+**Caching:**
+- No caching needed for v1 (low traffic)
+- Future: Cache flag counts in Redis for admin dashboard
 
 ---
 
-### Phase 5: Verification & Testing
-**Goal:** Verify end-to-end functionality
-
-**Tasks:**
-1. Verify collection appears in picker with correct metadata
-2. Play a game using Fremont collection
-3. Verify questions are Fremont-specific
-4. Check difficulty balance
-5. Verify collection card image loads
-6. Test expiration system (if any time-sensitive questions exist)
-
-**Output:**
-- Verified working collection
-- Ready for production deployment
-
-**Dependencies:** Phase 4 complete
-
----
-
-## Architectural Patterns
-
-### Pattern 1: Convention-Based Collection Discovery
-
-**What:** Collections are discovered via database query, not hardcoded
-
-**How it works:**
-```typescript
-// Frontend fetches collections dynamically
-GET /api/game/collections
-→ Returns all isActive=true collections
-
-// Collection picker renders cards data-driven
-{collections.map(c => <CollectionCard collection={c} />)}
-```
-
-**Why it works:**
-- No frontend code changes needed for new collections
-- Collection metadata lives in single source of truth (database)
-- Image loading is convention-based (slug.jpg)
-
-**Fremont integration:** Add metadata to `collections.ts`, set `isActive: true`. Collection appears automatically.
-
----
-
-### Pattern 2: Locale Config as Single Source of Truth
-
-**What:** All generation parameters live in one config file
-
-**How it works:**
-```typescript
-// Config drives everything
-const config = fremontConfig;
-
-// Topic categories → database topics
-ensureLocaleTopics(config.collectionSlug, config.topicCategories);
-
-// Source URLs → RAG documents
-fetchSources(config.sourceUrls, dataDir);
-
-// Distribution → AI prompt
-buildSystemPrompt(config.name, config.topicDistribution);
-```
-
-**Why it works:**
-- One file change enables entire generation pipeline
-- Config is version-controlled and auditable
-- Easy to replicate for new locales
-
-**Fremont integration:** Create `fremont-ca.ts` config. Pipeline handles the rest.
-
----
-
-### Pattern 3: Idempotent Seeding with Conflict Resolution
-
-**What:** Seed scripts can be run multiple times safely
-
-**How it works:**
-```typescript
-// All inserts use onConflictDoNothing
-await db.insert(topics)
-  .values(topicData)
-  .onConflictDoNothing({ target: topics.slug });
-
-await db.insert(questions)
-  .values(questionData)
-  .onConflictDoNothing({ target: questions.externalId });
-```
-
-**Why it works:**
-- Re-running seeds after question updates won't duplicate
-- Production deployments can run seed-community.ts safely
-- Development iteration is friction-free
-
-**Fremont integration:** No special handling needed. Standard seed scripts work.
-
----
-
-### Pattern 4: Two-Stage Seeding (Generate → Export → Seed)
-
-**What:** Local generation → JSON export → production seed
-
-**How it works:**
-```
-1. Local Development:
-   generate-locale-questions.ts → PostgreSQL (draft questions)
-   Admin review → status='active'
-   export-community.ts → fremont-ca-questions.json
-
-2. Production Deployment:
-   seed-community.ts reads fremont-ca-questions.json
-   Seeds questions to production database
-```
-
-**Why it works:**
-- Separates AI generation (expensive, error-prone) from deployment (reliable, fast)
-- JSON file is version-controlled and human-reviewable
-- Production doesn't need Anthropic API access
-
-**Fremont integration:** Generate locally, export JSON, commit to repo, deploy.
-
----
-
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Hardcoding Collection IDs
-
-**What goes wrong:** Referring to Fremont collection by ID instead of slug
-
-**Why it's bad:**
-- IDs are auto-incremented and differ between dev/prod
-- Breaks when seed order changes
-- Not portable across environments
-
-**Instead:**
-```typescript
-// BAD
-const fremontId = 4; // Fragile!
-
-// GOOD
-const [collection] = await db
-  .select({ id: collections.id })
-  .from(collections)
-  .where(eq(collections.slug, 'fremont-ca'))
-  .limit(1);
-```
-
----
-
-### Anti-Pattern 2: Skipping Topic Documentation File
-
-**What goes wrong:** Not creating `fremont-topics.ts` reference file
-
-**Why it's bad:**
-- Loses documentation of what was generated
-- No reference for topic IDs after generation
-- Harder to debug topic-related issues
-
-**Instead:**
-- Create `fremont-topics.ts` AFTER generation completes
-- Document actual topic distribution from generation logs
-- Include generation run metadata (date, question counts, source results)
-
----
-
-### Anti-Pattern 3: Inconsistent Naming Conventions
-
-**What goes wrong:** Using `fremont` instead of `fremont-ca` or `FremontCA` instead of `fremontConfig`
-
-**Why it's bad:**
-- Breaks image loading (`/images/collections/${slug}.jpg`)
-- Breaks slug-based database queries
-- Inconsistent with established pattern
-
-**Convention checklist:**
-- Collection slug: `fremont-ca` (kebab-case, city-state)
-- Config export: `fremontConfig` (camelCase)
-- Config file: `fremont-ca.ts` (matches slug)
-- Data file: `fremont-ca-questions.json` (matches slug)
-- Image file: `fremont-ca.jpg` (matches slug)
-- External ID prefix: `fre` (3-letter, lowercase)
-
----
-
-### Anti-Pattern 4: Generating Questions Without RAG Sources
-
-**What goes wrong:** Running generation without `--fetch-sources` first
-
-**Why it's bad:**
-- AI relies on training data (less accurate, may hallucinate)
-- Questions lack authoritative source citations
-- Lower quality than RAG-enhanced generation
-
-**Instead:**
-```bash
-# ALWAYS fetch sources first
-npx tsx generate-locale-questions.ts --locale fremont-ca --fetch-sources
-
-# THEN generate
-npx tsx generate-locale-questions.ts --locale fremont-ca
-```
-
----
-
-## Integration Checklist
-
-Before declaring Fremont collection complete:
-
-### Configuration Phase
-- [ ] `locale-configs/fremont-ca.ts` created with 8 topic categories
-- [ ] Source URLs curated (10-15 authoritative .gov sites)
-- [ ] Topic distribution sums to ~100 questions
-- [ ] External ID prefix chosen (3-letter, unique, lowercase)
-
-### Generation Phase
-- [ ] RAG sources fetched (`--fetch-sources` succeeded)
-- [ ] 100 questions generated across 4 batches
-- [ ] Zod validation passed for all questions
-- [ ] Questions seeded with `status='draft'`
-- [ ] `fremont-topics.ts` documentation created
-
-### Review Phase
-- [ ] Admin reviewed all draft questions
-- [ ] 80-100 questions activated (`status='active'`)
-- [ ] Difficulty distribution balanced (30/40/30 target)
-- [ ] Time-sensitive questions have `expiresAt` set
-
-### Activation Phase
-- [ ] Collection metadata added to `collections.ts`
-- [ ] `generate-locale-questions.ts` updated with fremont-ca support
-- [ ] `export-community.ts` updated with fremont-ca export
-- [ ] `seed-community.ts` updated with fremont-ca in LOCALES
-- [ ] `fremont-ca-questions.json` generated and committed
-- [ ] Collection card image added (`fremont-ca.jpg`)
-- [ ] Collection set to `isActive: true`
-
-### Verification Phase
-- [ ] Collection appears in picker with correct name/description
-- [ ] Collection card image loads
-- [ ] Game can be started with Fremont collection
-- [ ] Questions are Fremont-specific (not federal or other locale)
-- [ ] Collection name displays during play and on results screen
-- [ ] Admin panel shows Fremont questions
-
----
-
-## Database Schema (Existing — No Changes)
-
-The database schema already supports unlimited collections via many-to-many relationships:
-
-```
-collections (1) ─────< collection_topics (N) >───── (N) topics
-                                                          │
-collections (1) ─────< collection_questions (N) >─── (N) questions
-                                                          │
-                                                    topics (1) ───< questions (N)
-```
-
-**Key tables:**
-- `collections`: Collection metadata (name, slug, description, themeColor, isActive)
-- `topics`: Topic categories (shared across collections)
-- `questions`: Individual questions (linked via collectionQuestions)
-- `collection_topics`: Which topics belong to which collections
-- `collection_questions`: Which questions belong to which collections
-
-**Fremont integration:** No schema changes. Fremont collection is just more rows in existing tables.
-
----
-
-## Source Files Reference
-
-### Verified File Paths (Existing)
-
-| Category | File Path | Purpose |
-|----------|-----------|---------|
-| **Seed Scripts** | `backend/src/db/seed/seed.ts` | Main seed (federal collection) |
-| | `backend/src/db/seed/seed-community.ts` | Community collection seed |
-| | `backend/src/db/seed/collections.ts` | Collection metadata |
-| | `backend/src/db/seed/bloomington-topics.ts` | Bloomington topic reference |
-| | `backend/src/db/seed/los-angeles-topics.ts` | LA topic reference |
-| **Generation** | `backend/src/scripts/content-generation/generate-locale-questions.ts` | AI question generator |
-| | `backend/src/scripts/content-generation/locale-configs/bloomington-in.ts` | Bloomington config |
-| | `backend/src/scripts/content-generation/locale-configs/los-angeles-ca.ts` | LA config |
-| | `backend/src/scripts/content-generation/rag/fetch-sources.ts` | RAG source fetcher |
-| **Export** | `backend/src/scripts/export-community.ts` | Database → JSON exporter |
-| **Data** | `backend/src/data/bloomington-in-questions.json` | Bloomington seed data |
-| | `backend/src/data/los-angeles-ca-questions.json` | LA seed data |
-| **Frontend** | `frontend/src/features/collections/components/CollectionCard.tsx` | Collection card component |
-| | `frontend/src/features/collections/components/CollectionPicker.tsx` | Collection picker |
-| | `frontend/public/images/collections/bloomington-in.jpg` | Bloomington card image |
-| | `frontend/public/images/collections/los-angeles-ca.jpg` | LA card image |
-
----
-
-## Estimated Effort
-
-| Phase | Tasks | Time Estimate |
-|-------|-------|---------------|
-| Phase 1: Configuration & Research | Research Fremont government structure, curate sources, create config | 2-3 hours |
-| Phase 2: Source Fetch & Generation | Fetch sources, run generation (4 batches), create topic reference | 1-2 hours |
-| Phase 3: Review & Activation | Human review of 100 questions, activation decisions | 3-4 hours |
-| Phase 4: Collection Activation & Export | Code updates, export, image sourcing | 1 hour |
-| Phase 5: Verification & Testing | End-to-end testing, bug fixes | 1 hour |
-| **Total** | | **8-11 hours** |
-
-**Note:** Time estimates assume familiarity with the existing pattern. First-time implementation may take longer.
-
----
-
-## Success Criteria
-
-Fremont collection is complete when:
-
-1. **Visible:** Collection appears in picker with name "Fremont, CA" and appropriate description
-2. **Playable:** User can start and complete a game using only Fremont questions
-3. **Accurate:** Questions are Fremont-specific (verifiable against source documents)
-4. **Portable:** `fremont-ca-questions.json` exists and seeds correctly via `db:seed:community`
-5. **Documented:** `fremont-topics.ts` reference file exists with generation metadata
-6. **Branded:** Collection card displays `fremont-ca.jpg` image
-
----
-
-## References
-
-**Existing Collections (Templates):**
-- Bloomington IN: `locale-configs/bloomington-in.ts`, `bloomington-topics.ts`, `bloomington-in-questions.json`
-- Los Angeles CA: `locale-configs/los-angeles-ca.ts`, `los-angeles-topics.ts`, `los-angeles-ca-questions.json`
-
-**Pipeline Documentation:**
-- v1.2 Roadmap: `.planning/milestones/v1.2-ROADMAP.md`
-- Generation Script: `backend/src/scripts/content-generation/generate-locale-questions.ts` (lines 1-80 have usage docs)
-- Seed Script: `backend/src/db/seed/seed-community.ts` (lines 1-12 have usage docs)
-
-**Fremont Government Sources (Starting Point):**
-- City of Fremont: https://www.fremont.gov
-- Fremont City Council: https://www.fremont.gov/government/city-council
-- Alameda County: https://www.acgov.org
-- California State: https://www.ca.gov
-
----
-
-_This architecture document is based on verified code patterns from v1.2 (Bloomington IN, Los Angeles CA) and v1.3 (Indiana, California state collections). All file paths and integration points have been validated against the existing codebase._
+## Success Metrics
+
+**Feature Adoption:**
+- % of games where at least 1 question flagged
+- Average flags per game (when >0)
+- % of flags with feedback text provided
+
+**Quality Impact:**
+- % of flagged questions archived
+- Average time from flag to archive
+- Change in question quality score after addressing flags
+
+**Admin Efficiency:**
+- Time spent on flags review page
+- Flags reviewed per session
+- Archive rate from flags page vs. question explorer
