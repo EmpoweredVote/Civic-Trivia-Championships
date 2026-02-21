@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Header } from '../components/layout/Header';
@@ -7,7 +8,8 @@ import { CollectionPicker } from '../features/collections/components/CollectionP
 export function Dashboard() {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
-  const { collections, selectedId, selectedCollection, loading, select } = useCollections();
+  const { collections, selectedId, loading, select } = useCollections();
+  const [playPressed, setPlayPressed] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -27,9 +29,17 @@ export function Dashboard() {
           <div className="text-center py-2">
             <button
               onClick={() => navigate('/play', { state: { collectionId: selectedId } })}
-              className="px-12 py-4 min-h-[48px] bg-teal-600 hover:bg-teal-500 text-white text-xl font-bold rounded-lg shadow-lg shadow-teal-900/30 transition-all transform hover:scale-105 ring-1 ring-teal-500/20"
+              onPointerDown={() => setPlayPressed(true)}
+              onPointerUp={() => setPlayPressed(false)}
+              onPointerLeave={() => setPlayPressed(false)}
+              className="transition-transform hover:scale-105 active:scale-95"
             >
-              {selectedCollection ? `Play ${selectedCollection.name}` : 'Quick Play'}
+              <img
+                src={playPressed ? '/images/Play_Down.png' : '/images/Play_Up.png'}
+                alt="Play"
+                className="h-16 sm:h-20"
+                draggable={false}
+              />
             </button>
           </div>
 
