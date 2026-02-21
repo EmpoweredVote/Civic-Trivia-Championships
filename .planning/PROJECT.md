@@ -44,7 +44,17 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 
 ### Active
 
-(None — next milestone requirements TBD via `/gsd:new-milestone`)
+**Current Milestone: v1.5 Feedback Marks**
+
+**Goal:** Let authenticated players flag questions they dislike during gameplay, provide optional elaboration post-game, and give admins a review queue to triage flagged content — turning players into quality curators.
+
+**Target features:**
+- Thumbs-down button on answer reveal screen (authenticated players only)
+- Post-game summary shows flagged questions with optional free-text feedback
+- Admin flag count visible on question list + dedicated flags review queue
+- Admin can archive flagged questions directly from review queue
+- Fix broken source.url Learn More links on original 320 questions
+- Add ADMIN_EMAIL environment variable to production backend
 
 ### Out of Scope
 
@@ -149,4 +159,4 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 | Accept 92 questions (below 95 target) | Quality over quantity, all 8 topics represented with minimum 10 each | Good — within acceptable range |
 
 ---
-*Last updated: 2026-02-21 after v1.4 milestone complete*
+*Last updated: 2026-02-21 after v1.5 milestone started*

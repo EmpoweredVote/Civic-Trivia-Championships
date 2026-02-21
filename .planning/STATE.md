@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Make civic learning fun through game show mechanics -- play, not study
-**Current focus:** Planning next milestone
+**Current focus:** v1.5 Feedback Marks
 
 ## Current Position
 
-Phase: 26 of 26 — all milestones complete
-Plan: N/A
-Status: Ready to plan next milestone
-Last activity: 2026-02-21 — Completed quick-018 (adaptive difficulty for easy-steps)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-21 — Milestone v1.5 started
 
-Progress: [████████████████████████] 100% (82/82 plans across all milestones)
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -22,6 +22,7 @@ Progress: [███████████████████████
 - v1.2 (Phases 13-17): Complete - 20/20 requirements delivered
 - v1.3 (Phases 18-22): Complete - 23/23 requirements delivered
 - v1.4 (Phases 23-26): Complete - 19/19 requirements delivered
+- v1.5 (Phases TBD): Defining requirements
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -46,7 +47,6 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [ ] Announce v1.2 Community Collections launch (320 total questions live)
 - [ ] Invite volunteers to GitHub org
 - [ ] Share live URLs with team
-- [ ] Add ADMIN_EMAIL environment variable to production backend
 - [ ] Update Phase 19 audit script to populate violation_count column when saving quality scores
 
 ### Known Tech Debt
@@ -71,9 +71,9 @@ None — all milestones complete. Ready for next milestone planning.
 ## Session Continuity
 
 Last session: 2026-02-21
-Topic: Quick task 018 - adaptive difficulty for easy-steps mode
-Stopped at: Completed quick-018
+Topic: v1.5 Feedback Marks milestone initialization
+Stopped at: Defining requirements
 Resume file: None
 
 ---
-*All planned phases complete. Ready for next milestone planning via `/gsd:new-milestone`.*
+*v1.5 Feedback Marks — defining requirements*
