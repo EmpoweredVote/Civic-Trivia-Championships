@@ -11,11 +11,11 @@ export type ScoreData = {
 
 // Action types for the game state machine
 export type GameAction =
-  | { type: 'SESSION_CREATED'; sessionId: string; questions: Question[]; degraded: boolean; collectionName?: string | null; collectionSlug?: string | null }
+  | { type: 'SESSION_CREATED'; sessionId: string; questions: Question[]; degraded: boolean; collectionName?: string | null; collectionSlug?: string | null; totalQuestions: number }
   | { type: 'SELECT_ANSWER'; optionIndex: number }
   | { type: 'LOCK_ANSWER' }
-  | { type: 'REVEAL_ANSWER'; timeRemaining: number; scoreData: ScoreData }
-  | { type: 'TIMEOUT'; timeRemaining: number; scoreData: ScoreData }
+  | { type: 'REVEAL_ANSWER'; timeRemaining: number; scoreData: ScoreData; nextQuestion?: Question }
+  | { type: 'TIMEOUT'; timeRemaining: number; scoreData: ScoreData; nextQuestion?: Question }
   | { type: 'NEXT_QUESTION' }
   | { type: 'QUIT_GAME' }
   | { type: 'SHOW_FINAL_ANNOUNCEMENT' }
@@ -30,6 +30,7 @@ export type GameAction =
 export const initialGameState: GameState = {
   phase: 'idle',
   questions: [],
+  totalQuestions: 0,
   currentQuestionIndex: 0,
   selectedOption: null,
   answers: [],
@@ -47,7 +48,8 @@ export const initialGameState: GameState = {
 
 // Pure reducer function for game state transitions
 export function gameReducer(state: GameState, action: GameAction): GameState {
-  const finalIndex = state.questions.length - 1;
+  // Use totalQuestions for game flow logic (not questions.length, which grows in adaptive mode)
+  const finalIndex = state.totalQuestions - 1;
 
   switch (action.type) {
     case 'SESSION_CREATED':
@@ -55,6 +57,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         phase: 'answering',
         questions: action.questions,
+        totalQuestions: action.totalQuestions,
         sessionId: action.sessionId,
         currentQuestionIndex: 0,
         selectedOption: null,
@@ -133,6 +136,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         phase: 'revealing',
+        questions: action.nextQuestion
+          ? [...state.questions, action.nextQuestion]
+          : state.questions,
         answers: [...state.answers, answer],
         totalScore: state.totalScore + action.scoreData.totalPoints,
         currentStreak: action.scoreData.correct ? state.currentStreak + 1 : 0,
@@ -167,6 +173,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         phase: 'revealing',
         selectedOption: null,
+        questions: action.nextQuestion
+          ? [...state.questions, action.nextQuestion]
+          : state.questions,
         answers: [...state.answers, answer],
         totalScore: state.totalScore + action.scoreData.totalPoints,
         isTimerPaused: true,
@@ -178,7 +187,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Move to next question or complete
       const nextIndex = state.currentQuestionIndex + 1;
 
-      if (nextIndex >= state.questions.length) {
+      if (nextIndex >= state.totalQuestions) {
         // Game complete
         return {
           ...state,

@@ -22,6 +22,7 @@ export async function createGameSession(collectionId?: number, gameMode?: string
   collectionName: string;
   collectionSlug: string;
   gameMode: string;
+  totalQuestions: number;
 }> {
   const bodyObj: Record<string, unknown> = {};
   if (collectionId !== undefined) bodyObj.collectionId = collectionId;
@@ -35,6 +36,7 @@ export async function createGameSession(collectionId?: number, gameMode?: string
     collectionName?: string;
     collectionSlug?: string;
     gameMode?: string;
+    totalQuestions?: number;
   }>(
     '/api/game/session',
     {
@@ -50,6 +52,7 @@ export async function createGameSession(collectionId?: number, gameMode?: string
     collectionName: response.collectionName ?? 'Federal Civics',
     collectionSlug: response.collectionSlug ?? 'federal-civics',
     gameMode: response.gameMode ?? 'easy-steps',
+    totalQuestions: response.totalQuestions ?? 8,
   };
 }
 
@@ -67,6 +70,7 @@ export async function submitAnswer(
   correct: boolean;
   correctAnswer: number;
   wager?: number;
+  nextQuestion?: Question;
 }> {
   const body: {
     sessionId: string;
@@ -93,6 +97,7 @@ export async function submitAnswer(
     correct: boolean;
     correctAnswer: number;
     wager?: number;
+    nextQuestion?: Question;
   }>('/api/game/answer', {
     method: 'POST',
     body: JSON.stringify(body),

@@ -88,6 +88,7 @@ export type GameResult = {
 export type GameState = {
   phase: GamePhase;
   questions: Question[];
+  totalQuestions: number; // Total expected questions (may differ from questions.length in adaptive mode)
   currentQuestionIndex: number;
   selectedOption: number | null;
   answers: GameAnswer[];

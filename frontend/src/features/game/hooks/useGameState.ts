@@ -41,14 +41,14 @@ export function useGameState(): UseGameStateReturn {
 
   // Derived values
   const currentQuestion = state.questions[state.currentQuestionIndex] || null;
-  const isFinalQuestion = state.currentQuestionIndex === state.questions.length - 1;
+  const isFinalQuestion = state.currentQuestionIndex === state.totalQuestions - 1;
 
   const gameResult: GameResult | null =
     state.phase === 'complete'
       ? {
           answers: state.answers,
           totalCorrect: state.answers.filter((a) => a.correct).length,
-          totalQuestions: state.questions.length,
+          totalQuestions: state.totalQuestions,
           totalScore: state.totalScore,
           totalBasePoints: state.answers.reduce((sum, a) => sum + a.basePoints, 0),
           totalSpeedBonus: state.answers.reduce((sum, a) => sum + a.speedBonus, 0),
@@ -69,7 +69,7 @@ export function useGameState(): UseGameStateReturn {
           progression: progression,
           wagerResult: (() => {
             // Check if final answer has a wager
-            const finalAnswer = state.answers[state.questions.length - 1];
+            const finalAnswer = state.answers[state.totalQuestions - 1];
             if (finalAnswer?.wager !== undefined) {
               return {
                 wagerAmount: finalAnswer.wager,
@@ -85,10 +85,10 @@ export function useGameState(): UseGameStateReturn {
   // Start game by creating a server session
   const startGame = async (collectionId?: number) => {
     try {
-      const { sessionId, questions, degraded, collectionName, collectionSlug } = await createGameSession(collectionId);
+      const { sessionId, questions, degraded, collectionName, collectionSlug, totalQuestions } = await createGameSession(collectionId);
       sessionIdRef.current = sessionId;
       setHasShownTooltip(false); // Reset tooltip flag for new game
-      dispatch({ type: 'SESSION_CREATED', sessionId, questions, degraded, collectionName, collectionSlug });
+      dispatch({ type: 'SESSION_CREATED', sessionId, questions, degraded, collectionName, collectionSlug, totalQuestions });
     } catch (error) {
       console.error('Failed to create game session:', error);
       // Stay in idle phase on error
@@ -108,7 +108,7 @@ export function useGameState(): UseGameStateReturn {
     if (!currentQuestion) return;
 
     // Include wager for final question
-    const wager = state.currentQuestionIndex === state.questions.length - 1 ? state.wagerAmount : undefined;
+    const wager = state.currentQuestionIndex === state.totalQuestions - 1 ? state.wagerAmount : undefined;
 
     try {
       const [serverResponse] = await Promise.all([
@@ -132,6 +132,7 @@ export function useGameState(): UseGameStateReturn {
           correct: serverResponse.correct,
           correctAnswer: serverResponse.correctAnswer,
         },
+        nextQuestion: serverResponse.nextQuestion,
       });
     } catch (error) {
       console.error('Failed to submit answer:', error);
@@ -155,7 +156,7 @@ export function useGameState(): UseGameStateReturn {
     dispatch({ type: 'SELECT_ANSWER', optionIndex });
 
     // For non-final questions, immediately submit (reducer already set phase to 'locked')
-    if (state.currentQuestionIndex !== state.questions.length - 1 && timeRemaining !== undefined) {
+    if (state.currentQuestionIndex !== state.totalQuestions - 1 && timeRemaining !== undefined) {
       submitAndReveal(optionIndex, timeRemaining);
     }
     // For final question, just dispatch (lockAnswer handles submission)
@@ -181,7 +182,7 @@ export function useGameState(): UseGameStateReturn {
     if (!currentQuestion) return;
 
     // Include wager for final question
-    const wager = state.currentQuestionIndex === state.questions.length - 1 ? state.wagerAmount : undefined;
+    const wager = state.currentQuestionIndex === state.totalQuestions - 1 ? state.wagerAmount : undefined;
 
     try {
       const serverResponse = await submitAnswer(
@@ -202,6 +203,7 @@ export function useGameState(): UseGameStateReturn {
           correct: serverResponse.correct,
           correctAnswer: serverResponse.correctAnswer,
         },
+        nextQuestion: serverResponse.nextQuestion,
       });
     } catch (error) {
       console.error('Failed to submit timeout answer:', error);
