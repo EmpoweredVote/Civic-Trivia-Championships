@@ -6,7 +6,7 @@
 - ✅ **v1.1 Production Hardening** - Phases 8-12 (shipped 2026-02-18)
 - ✅ **v1.2 Community Collections** - Phases 13-17 (shipped 2026-02-19)
 - ✅ **v1.3 Question Quality & Admin Tools** - Phases 18-22 (shipped 2026-02-20)
-- 🚧 **v1.4 Fremont, CA Collection** - Phases 23-26 (in progress)
+- ✅ **v1.4 Fremont, CA Collection** - Phases 23-26 (shipped 2026-02-21)
 
 ## Phases
 
@@ -54,11 +54,16 @@ Quality framework and admin tooling to scale question collections — codified q
 
 </details>
 
-### 🚧 v1.4 Fremont, CA Collection (In Progress)
+<details>
+<summary>✅ v1.4 Fremont, CA Collection (Phases 23-26) - SHIPPED 2026-02-21</summary>
 
-**Milestone Goal:** Add a Fremont, CA community collection with ~100 quality questions, proper expiration dates for time-sensitive content, and a skyline banner image — following established patterns from Bloomington and LA.
+Add a Fremont, CA community collection with 92 quality questions, proper expiration dates for time-sensitive content, and a Mission Peak banner image — following established patterns from Bloomington and LA.
 
----
+**Phases:** 23-26
+**Plans:** 6 plans total
+**Requirements delivered:** 19
+
+</details>
 
 ### Phase 23: Collection Setup & Topic Definition
 **Goal**: Fremont collection configuration and topic structure ready for content generation
@@ -133,7 +138,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 26-01-PLAN.md — Deploy, verify all 7 criteria, and finalize v1.4 milestone
+- [x] 26-01-PLAN.md — Deploy, verify all 7 criteria, and finalize v1.4 milestone
 
 ---
 
@@ -147,7 +152,7 @@ Phases execute in numeric order: 23 → 24 → 25 → 26
 | 23. Collection Setup | v1.4 | 1/1 | Complete | 2026-02-21 |
 | 24. Question Generation | v1.4 | 3/3 | Complete | 2026-02-21 |
 | 25. Image & Activation | v1.4 | 1/1 | Complete | 2026-02-21 |
-| 26. Verification | v1.4 | 0/1 | Not started | - |
+| 26. Verification | v1.4 | 1/1 | Complete | 2026-02-21 |
 
 ---
-*Last updated: 2026-02-21 after Phase 26 planning*
+*Last updated: 2026-02-21 after v1.4 milestone completion*
