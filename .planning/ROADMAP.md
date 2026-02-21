@@ -7,6 +7,7 @@
 - ✅ **v1.2 Community Collections** — Phases 13-17 (shipped 2026-02-19)
 - ✅ **v1.3 Question Quality & Admin Tools** — Phases 18-22 (shipped 2026-02-20)
 - ✅ **v1.4 Fremont, CA Collection** — Phases 23-26 (shipped 2026-02-21)
+- 📋 **v1.5 Feedback Marks** — Phases 27-30 (planned)
 
 ## Phases
 
@@ -65,7 +66,97 @@ Add a Fremont, CA community collection with 92 quality questions, proper expirat
 
 </details>
 
+### 📋 v1.5 Feedback Marks (Planned)
+
+**Milestone Goal:** Let authenticated players flag questions they dislike during gameplay, provide optional elaboration post-game, and give admins a review queue to triage flagged content — turning players into quality curators.
+
+#### Phase 27: Backend Foundation & Inline Flagging
+
+**Goal:** Establish flag data collection infrastructure and enable authenticated players to thumbs-down questions during gameplay without interrupting game flow.
+
+**Depends on:** Phase 26 (v1.4 complete)
+
+**Requirements:** FLAG-01, FLAG-02, FLAG-03, FLAG-04, FLAG-05, FLAG-06, INFR-01, INFR-02, INFR-03
+
+**Success Criteria** (what must be TRUE):
+1. Authenticated player can tap thumbs-down button on answer reveal screen and see immediate visual feedback
+2. Anonymous players never see flag button
+3. Player can toggle flag on/off before advancing to next question
+4. Flag data persists to database with user, question, session, and timestamp
+5. Rate limiting prevents spam (max 10 flags per 15 minutes per user)
+6. Flagging never interrupts game flow or affects scoring/timer
+
+**Plans:** TBD
+
+Plans:
+- [ ] 27-01: TBD
+
+#### Phase 28: Progressive Disclosure UI
+
+**Goal:** Collect rich feedback context through post-game elaboration without interrupting gameplay — players see flagged questions after game completion and can optionally provide reasons and text.
+
+**Depends on:** Phase 27
+
+**Requirements:** ELAB-01, ELAB-02, ELAB-03, ELAB-04, ELAB-05, ELAB-06
+
+**Success Criteria** (what must be TRUE):
+1. Post-game summary displays list of questions flagged during that session
+2. Each flagged question shows predefined reason chips (confusing wording, outdated info, wrong answer, not interesting)
+3. Player can select multiple reasons per question without requiring any selection
+4. Player can add optional free-text feedback (max 500 characters) per question
+5. Player can submit all feedback at once with single button tap
+6. Feedback persists to database with user, question, session, reasons array, and text
+
+**Plans:** TBD
+
+Plans:
+- [ ] 28-01: TBD
+
+#### Phase 29: Admin Review Queue
+
+**Goal:** Provide admins with centralized flags review page for triaging flagged content — sorted by flag count with one-click archive action.
+
+**Depends on:** Phase 28
+
+**Requirements:** ADMN-01, ADMN-02, ADMN-03, ADMN-04
+
+**Success Criteria** (what must be TRUE):
+1. Admin can access dedicated flags review page from admin navigation
+2. Review page lists flagged questions sorted by flag count (most flagged first)
+3. Each flagged question shows aggregate flag count plus individual player feedback (reasons and text)
+4. Admin can archive a question directly from the review queue
+5. Archived questions disappear from active question pool immediately
+6. Flag count updates in real-time when admin archives question
+
+**Plans:** TBD
+
+Plans:
+- [ ] 29-01: TBD
+
+#### Phase 30: Admin Integration & Tech Debt
+
+**Goal:** Integrate flag counts into existing admin UI for contextual visibility during question management, plus fix 320 broken Learn More links and add production admin email configuration.
+
+**Depends on:** Phase 29
+
+**Requirements:** ADMN-05, ADMN-06, DEBT-01, DEBT-02
+
+**Success Criteria** (what must be TRUE):
+1. Question table in admin UI shows flag count badge (red if count greater than zero)
+2. Question detail panel displays flag count and "View Flags" link that filters review queue to that question
+3. All 320 original questions have valid HTTPS Learn More links (broken source.url fixed)
+4. ADMIN_EMAIL environment variable exists in production backend for admin promotion workflow
+5. Flag counts appear correctly in question explorer without performance degradation
+
+**Plans:** TBD
+
+Plans:
+- [ ] 30-01: TBD
+
 ## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 27 → 28 → 29 → 30
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -74,8 +165,12 @@ Add a Fremont, CA community collection with 92 quality questions, proper expirat
 | 13-17 | v1.2 | 15/15 | Complete | 2026-02-19 |
 | 18-22 | v1.3 | 17/17 | Complete | 2026-02-20 |
 | 23-26 | v1.4 | 6/6 | Complete | 2026-02-21 |
+| 27. Backend Foundation & Inline Flagging | v1.5 | 0/TBD | Not started | - |
+| 28. Progressive Disclosure UI | v1.5 | 0/TBD | Not started | - |
+| 29. Admin Review Queue | v1.5 | 0/TBD | Not started | - |
+| 30. Admin Integration & Tech Debt | v1.5 | 0/TBD | Not started | - |
 
-**Total:** 5 milestones, 26 phases, 75 plans + 7 quick tasks = 82 total
+**Total:** 6 milestones, 30 phases, 75 plans (previous) + TBD (v1.5) = TBD total
 
 ---
-*Last updated: 2026-02-21 after v1.4 milestone archived*
+*Last updated: 2026-02-21 after v1.5 roadmap created*

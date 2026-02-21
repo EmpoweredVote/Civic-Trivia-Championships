@@ -78,35 +78,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FLAG-01 | TBD | Pending |
-| FLAG-02 | TBD | Pending |
-| FLAG-03 | TBD | Pending |
-| FLAG-04 | TBD | Pending |
-| FLAG-05 | TBD | Pending |
-| FLAG-06 | TBD | Pending |
-| ELAB-01 | TBD | Pending |
-| ELAB-02 | TBD | Pending |
-| ELAB-03 | TBD | Pending |
-| ELAB-04 | TBD | Pending |
-| ELAB-05 | TBD | Pending |
-| ELAB-06 | TBD | Pending |
-| ADMN-01 | TBD | Pending |
-| ADMN-02 | TBD | Pending |
-| ADMN-03 | TBD | Pending |
-| ADMN-04 | TBD | Pending |
-| ADMN-05 | TBD | Pending |
-| ADMN-06 | TBD | Pending |
-| INFR-01 | TBD | Pending |
-| INFR-02 | TBD | Pending |
-| INFR-03 | TBD | Pending |
-| DEBT-01 | TBD | Pending |
-| DEBT-02 | TBD | Pending |
+| FLAG-01 | Phase 27 | Pending |
+| FLAG-02 | Phase 27 | Pending |
+| FLAG-03 | Phase 27 | Pending |
+| FLAG-04 | Phase 27 | Pending |
+| FLAG-05 | Phase 27 | Pending |
+| FLAG-06 | Phase 27 | Pending |
+| ELAB-01 | Phase 28 | Pending |
+| ELAB-02 | Phase 28 | Pending |
+| ELAB-03 | Phase 28 | Pending |
+| ELAB-04 | Phase 28 | Pending |
+| ELAB-05 | Phase 28 | Pending |
+| ELAB-06 | Phase 28 | Pending |
+| ADMN-01 | Phase 29 | Pending |
+| ADMN-02 | Phase 29 | Pending |
+| ADMN-03 | Phase 29 | Pending |
+| ADMN-04 | Phase 29 | Pending |
+| ADMN-05 | Phase 30 | Pending |
+| ADMN-06 | Phase 30 | Pending |
+| INFR-01 | Phase 27 | Pending |
+| INFR-02 | Phase 27 | Pending |
+| INFR-03 | Phase 27 | Pending |
+| DEBT-01 | Phase 30 | Pending |
+| DEBT-02 | Phase 30 | Pending |
 
 **Coverage:**
 - v1.5 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-02-21 after initial definition*
+*Last updated: 2026-02-21 after v1.5 roadmap creation*
