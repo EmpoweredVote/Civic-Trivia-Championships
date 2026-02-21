@@ -69,10 +69,10 @@ Quality framework and admin tooling to scale question collections — codified q
   2. Eight topic categories defined with distribution targets (city government, county government, state government, civic history, local services, elections & voting, landmarks & culture, budget & finance)
   3. Locale config file created with source URLs, disambiguation rules for Mission San Jose, and five-district structure documented
   4. Election schedule verified and documented for time-sensitive question expiration
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 23-01: TBD
+- [ ] 23-01-PLAN.md — Add Fremont collection to seed file and create locale config with topics, distribution, sources, and documentation
 
 ---
 
@@ -142,7 +142,7 @@ Phases execute in numeric order: 23 → 24 → 25 → 26
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 23. Collection Setup | v1.4 | 0/TBD | Not started | - |
+| 23. Collection Setup | v1.4 | 0/1 | Planned | - |
 | 24. Question Generation | v1.4 | 0/TBD | Not started | - |
 | 25. Image & Activation | v1.4 | 0/TBD | Not started | - |
 | 26. Verification | v1.4 | 0/TBD | Not started | - |
