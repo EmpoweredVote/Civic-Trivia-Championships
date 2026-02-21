@@ -38,6 +38,13 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Indiana and California state question collections — v1.3
 - Admin question editing with quality re-scoring and optimistic updates — v1.3
 
+### Active
+
+- [ ] Fremont, CA question collection (~100 questions with sources, expiration dates, learning content)
+- [ ] Fremont topics (city government, Alameda County, California state, civic history, local services, elections, landmarks, budget/finance)
+- [ ] Fremont collection card with skyline banner image
+- [ ] Collection seeded, activated, and playable in production
+
 ### Out of Scope
 
 - Team/multiplayer mode — Phase 2
@@ -56,6 +63,18 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Auto-difficulty calibration — collecting telemetry data, calibrate later
 - Granular admin permissions (editor, reviewer roles) — boolean is_admin sufficient for now
 - Real-time telemetry dashboard — batch/on-demand stats sufficient at current scale
+
+## Context
+
+## Current Milestone: v1.4 Fremont, CA Collection
+
+**Goal:** Add a Fremont, CA community collection with ~100 quality questions, proper expiration dates for time-sensitive content, and a skyline banner image — following established patterns from Bloomington and LA.
+
+**Target features:**
+- Fremont, CA question bank (~100 questions across 8 topic categories)
+- Expiration dates on time-sensitive questions (current officials, budgets, etc.)
+- Skyline collection card image (fremont-ca.jpg)
+- Topics, seed data, and activation following community collection pattern
 
 ## Context
 
@@ -134,4 +153,4 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 | Stable option IDs for drag-and-drop | Options tracked by opt-0/opt-1 ID, not array index, so correct answer follows during reorder | Good — prevents correctAnswer drift |
 
 ---
-*Last updated: 2026-02-20 after v1.3 milestone shipped*
+*Last updated: 2026-02-20 after v1.4 milestone started*

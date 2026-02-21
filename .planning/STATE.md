@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Make civic learning fun through game show mechanics -- play, not study
-**Current focus:** v1.3 shipped — planning next milestone
+**Current focus:** v1.4 Fremont, CA Collection
 
 ## Current Position
 
-Phase: All v1.3 phases complete (18-22)
-Plan: N/A — milestone shipped
-Status: v1.3 milestone archived, ready for next milestone
-Last activity: 2026-02-20 -- Quick task 016 (move timer to top bar, collection title to right column) completed
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-20 — Milestone v1.4 started
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -78,9 +78,9 @@ None — clean slate for next milestone.
 ## Session Continuity
 
 Last session: 2026-02-20
-Topic: Quick task 016 - move timer to top bar, collection title to right column
-Stopped at: Quick task 016 complete
+Topic: Starting v1.4 milestone — Fremont, CA Collection
+Stopped at: Milestone initialization
 Resume file: None
 
 ---
-*Between milestones — run /gsd:new-milestone to start next version*
+*v1.4 in progress — run /gsd:plan-phase 23 to start planning*
