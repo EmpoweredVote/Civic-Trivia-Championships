@@ -16,13 +16,13 @@ export function Button({
   variant = 'primary',
 }: ButtonProps) {
   const baseClasses =
-    'w-full flex justify-center py-2 px-4 min-h-[48px] border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+    'w-full flex justify-center py-2 px-4 min-h-[48px] border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
 
   const variantClasses = {
     primary:
-      'border-transparent text-white bg-teal-600 hover:bg-teal-700 focus:ring-teal-500',
+      'border-transparent text-white bg-teal-600 hover:bg-teal-500 focus:ring-teal-500',
     secondary:
-      'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-teal-500',
+      'border-slate-600 text-slate-300 bg-slate-700 hover:bg-slate-600 focus:ring-teal-500',
   };
 
   return (
