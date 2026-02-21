@@ -61,6 +61,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 None — all milestones complete. Ready for next milestone planning.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 017 | Implement Easy Steps progressive difficulty game mode | 2026-02-21 | 9929989 | [017-easy-steps-progressive-difficulty-mode](./quick/017-easy-steps-progressive-difficulty-mode/) |
+
 ## Session Continuity
 
 Last session: 2026-02-21
