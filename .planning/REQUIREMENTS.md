@@ -15,21 +15,21 @@ Requirements for Fremont, CA Collection. Each maps to roadmap phases.
 
 ### Question Content
 
-- [ ] **QUES-01**: ~100 questions across 8 topic categories with weighted distribution (18-20 each for civic history and landmarks/culture, 8-15 for others)
-- [ ] **QUES-02**: All questions have cited sources with URLs from official or authoritative sources
-- [ ] **QUES-03**: All questions pass quality rules (dinner party test, civic utility, no pure lookup facts, no phone numbers/addresses)
-- [ ] **QUES-04**: Questions have balanced difficulty distribution (easy/medium/hard)
-- [ ] **QUES-05**: Time-sensitive questions (current officials, budget figures) have `expiresAt` timestamps matching term end dates
-- [ ] **QUES-06**: Questions include explanations (1-3 sentences, neutral, informative)
+- [x] **QUES-01**: ~100 questions across 8 topic categories with weighted distribution (18-20 each for civic history and landmarks/culture, 8-15 for others)
+- [x] **QUES-02**: All questions have cited sources with URLs from official or authoritative sources
+- [x] **QUES-03**: All questions pass quality rules (dinner party test, civic utility, no pure lookup facts, no phone numbers/addresses)
+- [x] **QUES-04**: Questions have balanced difficulty distribution (easy/medium/hard)
+- [x] **QUES-05**: Time-sensitive questions (current officials, budget figures) have `expiresAt` timestamps matching term end dates
+- [x] **QUES-06**: Questions include explanations (1-3 sentences, neutral, informative)
 
 ### Fremont-Specific Content Quality
 
-- [ ] **FREM-01**: Mission San Jose questions disambiguate between the 1797 Spanish mission and the modern Fremont district
-- [ ] **FREM-02**: Tesla/NUMMI questions focus on civic angles (economic impact, manufacturing evolution) not pure corporate trivia
-- [ ] **FREM-03**: Five-district consolidation story (1956) represented across multiple questions
-- [ ] **FREM-04**: Little Kabul / Afghan-American community represented with cultural sensitivity
-- [ ] **FREM-05**: Ohlone/Indigenous history treated with appropriate sensitivity
-- [ ] **FREM-06**: Diversity and demographic questions use percentages/trends, not exact population numbers
+- [x] **FREM-01**: Mission San Jose questions disambiguate between the 1797 Spanish mission and the modern Fremont district
+- [x] **FREM-02**: Tesla/NUMMI questions focus on civic angles (economic impact, manufacturing evolution) not pure corporate trivia
+- [x] **FREM-03**: Five-district consolidation story (1956) represented across multiple questions
+- [x] **FREM-04**: Little Kabul / Afghan-American community represented with cultural sensitivity
+- [x] **FREM-05**: Ohlone/Indigenous history treated with appropriate sensitivity
+- [x] **FREM-06**: Diversity and demographic questions use percentages/trends, not exact population numbers
 
 ### Activation & Playability
 
@@ -65,18 +65,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COLL-01 | Phase 23 | Complete |
 | COLL-02 | Phase 23 | Complete |
 | COLL-03 | Phase 25 | Pending |
-| QUES-01 | Phase 24 | Pending |
-| QUES-02 | Phase 24 | Pending |
-| QUES-03 | Phase 24 | Pending |
-| QUES-04 | Phase 24 | Pending |
-| QUES-05 | Phase 24 | Pending |
-| QUES-06 | Phase 24 | Pending |
-| FREM-01 | Phase 24 | Pending |
-| FREM-02 | Phase 24 | Pending |
-| FREM-03 | Phase 24 | Pending |
-| FREM-04 | Phase 24 | Pending |
-| FREM-05 | Phase 24 | Pending |
-| FREM-06 | Phase 24 | Pending |
+| QUES-01 | Phase 24 | Complete |
+| QUES-02 | Phase 24 | Complete |
+| QUES-03 | Phase 24 | Complete |
+| QUES-04 | Phase 24 | Complete |
+| QUES-05 | Phase 24 | Complete |
+| QUES-06 | Phase 24 | Complete |
+| FREM-01 | Phase 24 | Complete |
+| FREM-02 | Phase 24 | Complete |
+| FREM-03 | Phase 24 | Complete |
+| FREM-04 | Phase 24 | Complete |
+| FREM-05 | Phase 24 | Complete |
+| FREM-06 | Phase 24 | Complete |
 | ACTV-01 | Phase 25 | Pending |
 | ACTV-02 | Phase 25 | Pending |
 | ACTV-03 | Phase 26 | Pending |
@@ -89,4 +89,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-21 after Phase 23 complete (COLL-01, COLL-02 delivered)*
+*Last updated: 2026-02-21 after Phase 24 complete (QUES-01 through QUES-06, FREM-01 through FREM-06 delivered)*
