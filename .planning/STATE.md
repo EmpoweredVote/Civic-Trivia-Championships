@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 24 of 26 (Question Generation & Review) — IN PROGRESS
-Plan: 1 of 2 complete
+Plan: 2 of 3 complete
 Status: In progress
-Last activity: 2026-02-21 — Completed 24-01-PLAN.md (Generation Pipeline Configuration)
+Last activity: 2026-02-21 — Completed 24-02-PLAN.md (Generate Fremont Questions with Quality Validation)
 
-Progress: [█████████████████████░░░] 87% (71/82 plans across all milestones)
+Progress: [█████████████████████░░░] 88% (72/82 plans across all milestones)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
 - v1.1 (Phases 8-12): Complete - 12/12 requirements delivered
 - v1.2 (Phases 13-17): Complete - 20/20 requirements delivered
 - v1.3 (Phases 18-22): Complete - 23/23 requirements delivered
-- v1.4 (Phases 23-26): In progress - 3/19 requirements delivered
+- v1.4 (Phases 23-26): In progress - 4/19 requirements delivered
 
 **Deployment Status:**
 - Frontend LIVE: https://civic-trivia-frontend.onrender.com
@@ -33,7 +33,7 @@ Progress: [█████████████████████░░
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 71 (26 v1.0 + 11 v1.1 + 15 v1.2 + 17 v1.3 + 2 v1.4)
+- Total plans completed: 72 (26 v1.0 + 11 v1.1 + 15 v1.2 + 17 v1.3 + 3 v1.4)
 
 ## Accumulated Context
 
@@ -51,6 +51,9 @@ Recent decisions affecting current work:
 - Phase 24-01: Embed quality guidelines in all locale system prompts (not just Fremont) — improves first-pass validation rate, reduces API costs
 - Phase 24-01: Accept 45% RAG source fetch rate for Fremont — common for .gov sites that block scrapers, generation can proceed with available sources
 - Phase 24-01: Locale-specific sensitivity instructions conditional on localeSlug — backward-compatible pattern for future locale customization
+- Phase 24-02: Overshoot factor 1.3 for Fremont — generates ~130 questions, curate to ~100 in review for quality buffer
+- Phase 24-02: Integrate quality validation into generation pipeline — catch violations during generation when AI context is hot, cheaper to regenerate than post-generation fixes
+- Phase 24-02: Run batches individually for API rate limits — 10k tokens/min limit requires 70s pauses between batches on low-tier accounts
 
 ### Pending Todos
 
@@ -70,20 +73,20 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-**Phase 24-02 readiness notes:**
-- Fremont locale fully registered in generation pipeline
-- System prompt includes Fremont-specific sensitivity instructions (Ohlone present-tense, Afghan-American cultural heritage, Tesla civic-only, Mission San Jose disambiguation)
-- Quality guidelines embedded in prompts for improved first-pass validation
-- 9 RAG sources cached (Alameda County, California state, regional transit) — 11 fremont.gov sources failed with HTTP 403 errors
-- May need to manually verify Fremont-specific facts during spot-check review due to thin local source coverage
-- No blockers for question generation in Plan 02
+**Phase 24-03 readiness notes:**
+- 123 draft Fremont questions in database (fre-001 through fre-125, 2 IDs skipped)
+- Quality validation caught 5 questions with blocking violations during generation: 4 fixed and passed on retry, 2 dropped
+- Topic distribution imbalance: civic-history under-represented (14 vs 20 target), elections-voting over-represented (18 vs 10 target)
+- May need to generate 6 supplemental civic-history questions in Plan 03
+- Difficulty distribution close to target: 37% easy, 43% medium, 20% hard (vs 40/40/20 target)
+- No blockers for Plan 03 review and curation
 
 ## Session Continuity
 
 Last session: 2026-02-21
-Topic: Phase 24 Plan 01 execution — Generation pipeline configuration for Fremont
-Stopped at: Completed 24-01-PLAN.md
+Topic: Phase 24 Plan 02 execution — Generate Fremont questions with quality validation
+Stopped at: Completed 24-02-PLAN.md
 Resume file: None
 
 ---
-*Ready for: Phase 24 Plan 02 (Question Generation & Review)*
+*Ready for: Phase 24 Plan 03 (Review, Curation, Finalization)*
