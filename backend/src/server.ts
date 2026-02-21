@@ -16,6 +16,7 @@ import { startExpirationCron } from './cron/startCron.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const ALLOWED_ORIGINS = [FRONTEND_URL, process.env.FRONTEND_URL_ALT].filter(Boolean);
 
 /**
  * Start server with async initialization
@@ -33,7 +34,7 @@ async function startServer() {
 
   // Middleware
   app.use(cors({
-    origin: FRONTEND_URL,
+    origin: ALLOWED_ORIGINS,
     credentials: true
   }));
   app.use(cookieParser());
