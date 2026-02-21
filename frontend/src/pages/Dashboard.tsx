@@ -14,7 +14,7 @@ export function Dashboard() {
       <Header />
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+        <div className="p-6">
           <div className="flex justify-center pt-4 pb-1">
             <img
               src="/images/civic-trivia-championships-logo.png"
