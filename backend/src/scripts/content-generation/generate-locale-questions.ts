@@ -17,7 +17,7 @@ import { mkdirSync } from 'fs';
 import type { MessageParam, ContentBlockParam } from '@anthropic-ai/sdk/resources/messages.js';
 
 import { client, MODEL } from './anthropic-client.js';
-import { BatchSchema, type ValidatedQuestion } from './question-schema.js';
+import { BatchSchema, QuestionSchema, type ValidatedQuestion } from './question-schema.js';
 import { buildSystemPrompt } from './prompts/system-prompt.js';
 import { fetchSources } from './rag/fetch-sources.js';
 import { loadSourceDocuments } from './rag/parse-sources.js';
@@ -445,13 +445,18 @@ Return ONLY a JSON object with a "questions" array containing exactly 1 question
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    const validated = BatchSchema.parse(parsed);
 
-    if (validated.questions.length !== 1) {
-      throw new Error(`Expected 1 question, got ${validated.questions.length}`);
+    // For regeneration, we expect a single question, not a batch
+    // Try to parse as a batch first (with questions array)
+    if (parsed.questions && Array.isArray(parsed.questions)) {
+      if (parsed.questions.length !== 1) {
+        throw new Error(`Expected 1 question, got ${parsed.questions.length}`);
+      }
+      return QuestionSchema.parse(parsed.questions[0]);
     }
 
-    return validated.questions[0];
+    // Otherwise parse as a single question object
+    return QuestionSchema.parse(parsed);
   };
 
   for (const batchIndex of batchesToRun) {
