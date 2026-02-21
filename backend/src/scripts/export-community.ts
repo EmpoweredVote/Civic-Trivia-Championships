@@ -8,6 +8,7 @@
  * Outputs:
  *   src/data/bloomington-in-questions.json
  *   src/data/los-angeles-ca-questions.json
+ *   src/data/fremont-ca-questions.json
  */
 import 'dotenv/config';
 import { writeFileSync } from 'fs';
@@ -21,7 +22,7 @@ import {
   topics,
   collectionTopics,
 } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { pool } from '../config/database.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -99,7 +100,12 @@ async function exportCollection(slug: string, outFile: string) {
     })
     .from(collectionQuestions)
     .innerJoin(questions, eq(collectionQuestions.questionId, questions.id))
-    .where(eq(collectionQuestions.collectionId, collection.id));
+    .where(
+      and(
+        eq(collectionQuestions.collectionId, collection.id),
+        eq(questions.status, 'active')
+      )
+    );
 
   // 4. Map to export format
   const exportedQuestions: ExportedQuestion[] = linkedQuestions
@@ -134,6 +140,7 @@ async function main() {
 
   await exportCollection('bloomington-in', 'bloomington-in-questions.json');
   await exportCollection('los-angeles-ca', 'los-angeles-ca-questions.json');
+  await exportCollection('fremont-ca', 'fremont-ca-questions.json');
 
   console.log('\nDone!');
   await pool.end();

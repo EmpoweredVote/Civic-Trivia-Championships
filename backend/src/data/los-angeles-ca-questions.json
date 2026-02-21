@@ -3,7 +3,32 @@
     {
       "slug": "city-government",
       "name": "City Government",
-      "description": "LA city government — mayor, city council (15 districts), departments, and municipal structure"
+      "description": "Bloomington city government — mayor, city council, departments, and municipal services"
+    },
+    {
+      "slug": "civic-history",
+      "name": "Civic History",
+      "description": "Bloomington founding, key civic events, IU's civic role, and historical milestones"
+    },
+    {
+      "slug": "local-services",
+      "name": "Local Services",
+      "description": "City utilities, parks and recreation, public safety, and municipal services"
+    },
+    {
+      "slug": "elections-voting",
+      "name": "Elections & Voting",
+      "description": "Local election process, voting districts, and civic participation in Bloomington"
+    },
+    {
+      "slug": "landmarks-culture",
+      "name": "Landmarks & Culture",
+      "description": "Cultural institutions, notable places, and what makes Bloomington unique"
+    },
+    {
+      "slug": "budget-finance",
+      "name": "Budget & Finance",
+      "description": "City budget, tax structure, and how Bloomington funds public services"
     },
     {
       "slug": "la-county",
@@ -14,31 +39,6 @@
       "slug": "california-state",
       "name": "California State Government",
       "description": "California state government — governor, legislature, and the ballot propositions system"
-    },
-    {
-      "slug": "civic-history",
-      "name": "Civic History",
-      "description": "LA founding, incorporation, key civic events, growth, and historical milestones"
-    },
-    {
-      "slug": "local-services",
-      "name": "Local Services",
-      "description": "LADWP, Metro transit, LAPD, LAFD, and essential city services"
-    },
-    {
-      "slug": "elections-voting",
-      "name": "Elections & Voting",
-      "description": "Local election process, neighborhood councils, voting districts, and civic participation in LA"
-    },
-    {
-      "slug": "landmarks-culture",
-      "name": "Landmarks & Culture",
-      "description": "Cultural institutions, notable public spaces, and what makes LA unique"
-    },
-    {
-      "slug": "budget-finance",
-      "name": "Budget & Finance",
-      "description": "City budget, tax structure, and how LA funds public services"
     }
   ],
   "questions": [
@@ -575,25 +575,6 @@
       "expiresAt": null
     },
     {
-      "externalId": "lac-029",
-      "text": "In what year did California voters approve Article II of the California Constitution, which allows people to recall elected officials?",
-      "options": [
-        "1879",
-        "1911",
-        "1933",
-        "1964"
-      ],
-      "correctAnswer": 1,
-      "explanation": "According to the California Secretary of State, Article II of the California Constitution was approved by California voters in 1911, allowing people to recall and remove elected officials and justices of the State Supreme Court from office.",
-      "difficulty": "hard",
-      "topicCategory": "civic-history",
-      "source": {
-        "url": "https://www.sos.ca.gov/elections",
-        "name": "California Secretary of State - Elections"
-      },
-      "expiresAt": null
-    },
-    {
       "externalId": "lac-030",
       "text": "What percentage of the United States GDP does California contribute?",
       "options": [
@@ -708,25 +689,6 @@
       "expiresAt": null
     },
     {
-      "externalId": "lac-036",
-      "text": "In what year was the California Secretary of State's Office of Voting Systems Technology Assessment (OVSTA) created?",
-      "options": [
-        "1999",
-        "2002",
-        "2005",
-        "2008"
-      ],
-      "correctAnswer": 2,
-      "explanation": "According to the California Secretary of State, the Office of Voting Systems Technology Assessment (OVSTA) was created in September 2005 and was initially charged with voting system examination, testing, and certification for use in California elections.",
-      "difficulty": "hard",
-      "topicCategory": "civic-history",
-      "source": {
-        "url": "https://www.sos.ca.gov/elections",
-        "name": "California Secretary of State - Elections"
-      },
-      "expiresAt": null
-    },
-    {
       "externalId": "lac-037",
       "text": "What is the name of California's confidential address program for individuals who need to protect their location?",
       "options": [
@@ -799,25 +761,6 @@
       "source": {
         "url": "https://bos.lacounty.gov",
         "name": "Los Angeles County Board of Supervisors"
-      },
-      "expiresAt": null
-    },
-    {
-      "externalId": "lac-041",
-      "text": "In what year was Senate Bill 450 passed, establishing the California Voter's Choice Act?",
-      "options": [
-        "2012",
-        "2014",
-        "2016",
-        "2018"
-      ],
-      "correctAnswer": 2,
-      "explanation": "According to the California Secretary of State, the California Voter's Choice Act (VCA) was established by Senate Bill 450 in 2016, modernizing elections by allowing counties to conduct elections under a model which provides greater flexibility and convenience for voters.",
-      "difficulty": "hard",
-      "topicCategory": "civic-history",
-      "source": {
-        "url": "https://www.sos.ca.gov/elections",
-        "name": "California Secretary of State - Elections"
       },
       "expiresAt": null
     },
@@ -1905,25 +1848,6 @@
       "expiresAt": null
     },
     {
-      "externalId": "lac-099",
-      "text": "In what year did California voters approve the constitutional provision allowing recall of elected officials?",
-      "options": [
-        "1906",
-        "1911",
-        "1918",
-        "1924"
-      ],
-      "correctAnswer": 1,
-      "explanation": "According to www.sos.ca.gov/elections, Article II of the California Constitution, approved by California voters in 1911, allows people to recall and remove elected officials and justices of the State Supreme Court from office.",
-      "difficulty": "hard",
-      "topicCategory": "budget-finance",
-      "source": {
-        "url": "https://www.sos.ca.gov/elections",
-        "name": "California Secretary of State"
-      },
-      "expiresAt": null
-    },
-    {
       "externalId": "lac-100",
       "text": "How many state parks does California have?",
       "options": [
@@ -1939,6 +1863,348 @@
       "source": {
         "url": "https://www.ca.gov",
         "name": "State of California"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-101",
+      "text": "How many members serve on the Los Angeles County Board of Supervisors?",
+      "options": [
+        "3 members",
+        "5 members",
+        "7 members",
+        "9 members"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bos.lacounty.gov, the Board of Supervisors has 5 members who serve as the governing body of Los Angeles County, functioning as both the executive and legislative head of the largest county government in the United States.",
+      "difficulty": "easy",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-102",
+      "text": "What unique dual role does the Los Angeles County Board of Supervisors serve?",
+      "options": [
+        "Judicial and executive head",
+        "Executive and legislative head",
+        "Legislative and judicial head",
+        "Administrative and financial head"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bos.lacounty.gov, the Board of Supervisors has the unique function of serving as both the executive and legislative head of Los Angeles County government.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-103",
+      "text": "Approximately how many people does Los Angeles County government serve?",
+      "options": [
+        "5 million people",
+        "7 million people",
+        "10 million people",
+        "13 million people"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to bos.lacounty.gov, Los Angeles County serves a population of more than 10 million people, making it the largest county government in the United States.",
+      "difficulty": "easy",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-104",
+      "text": "What type of county is Los Angeles County classified as under California law?",
+      "options": [
+        "General law county",
+        "Charter county",
+        "Home rule county",
+        "Special district county"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bos.lacounty.gov, Los Angeles County is a charter county, which gives it specific powers and organizational structure under its own charter rather than operating solely under general state law.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-105",
+      "text": "Which office provides independent oversight and monitoring of the Los Angeles County Sheriff's and Probation Departments?",
+      "options": [
+        "Office of Child Protection",
+        "Office of Inspector General",
+        "Civilian Oversight Commission",
+        "County Equity Oversight Panel"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bos.lacounty.gov, the Office of Inspector General provides independent and comprehensive oversight, monitoring of, and reporting about the Sheriff's and Probation Departments, with a mission to promote transparency and constitutional policing.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-106",
+      "text": "How far back do the official records maintained by the Los Angeles County Board of Supervisors Executive Office date?",
+      "options": [
+        "The 1850s",
+        "The 1880s",
+        "The 1900s",
+        "The 1920s"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to bos.lacounty.gov, the Executive Office maintains official records which date back to the 1850s, preserving nearly two centuries of county governance history.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-107",
+      "text": "Which Los Angeles County office is dedicated to cultivating a fair, resilient, and healthy food system for all county residents?",
+      "options": [
+        "Office of Food Systems",
+        "Department of Public Health",
+        "Agricultural Commissioner",
+        "Community Development Commission"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to bos.lacounty.gov, the LA County Office of Food Systems is dedicated to cultivating a fair, resilient, and healthy food system for all County residents, functioning as an innovation hub that collaborates with stakeholders to address food system challenges.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-108",
+      "text": "What is the primary mission of the Los Angeles County Chief Sustainability Office?",
+      "options": [
+        "Managing county parks and recreation",
+        "Providing policy support for sustainability and equity",
+        "Overseeing water conservation programs",
+        "Regulating building construction standards"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bos.lacounty.gov, the Chief Sustainability Office provides comprehensive and coordinated policy support and guidance for the Board of Supervisors, County Departments, and the region to make communities healthier, more livable, economically stronger, more equitable, more resilient, and more sustainable.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-109",
+      "text": "Which independent body reviews Los Angeles County Policy of Equity investigations and makes recommendations concerning disposition and discipline?",
+      "options": [
+        "Civil Service Commission",
+        "County Equity Oversight Panel",
+        "Human Relations Commission",
+        "Civilian Oversight Commission"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bos.lacounty.gov, the County Equity Oversight Panel is an independent oversight body with the authority and responsibility for reviewing County Policy of Equity investigations and making recommendations to Department Heads concerning disposition and discipline.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-110",
+      "text": "What is the primary charge of the Los Angeles County Office of Child Protection?",
+      "options": [
+        "Operating foster care facilities",
+        "Collaborating to identify problems and develop solutions for child protection",
+        "Providing direct social services to families",
+        "Managing adoption services"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bos.lacounty.gov, the Office of Child Protection works to fulfill the Board of Supervisors' charge of protecting children by collaborating with County agencies, the community, and other entities to identify problems affecting child protection and safety, and developing solutions that will improve how the system serves children and families.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://bos.lacounty.gov",
+        "name": "Los Angeles County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-111",
+      "text": "What percentage of the United States GDP does California contribute?",
+      "options": [
+        "10%",
+        "12%",
+        "15%",
+        "18%"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to ca.gov, California contributes almost 15% to the US GDP, making it the world's fifth-largest economy.",
+      "difficulty": "medium",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.ca.gov",
+        "name": "California State Portal"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-112",
+      "text": "How many national parks does California have, the most of any U.S. state?",
+      "options": [
+        "6 national parks",
+        "9 national parks",
+        "12 national parks",
+        "15 national parks"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to ca.gov, California has 9 national parks, the most of any state in the US, along with 87 state parks and 63 state beaches.",
+      "difficulty": "easy",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.ca.gov",
+        "name": "California State Portal"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-113",
+      "text": "Approximately how many residents call California home?",
+      "options": [
+        "30 million",
+        "35 million",
+        "39 million",
+        "42 million"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to ca.gov, California is home to nearly 40 million residents, with one in four Californians born overseas.",
+      "difficulty": "easy",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.ca.gov",
+        "name": "California State Portal"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-114",
+      "text": "What is the maximum rebate amount available through LADWP's Used Electric Vehicle Rebate Program for qualifying used EVs?",
+      "options": [
+        "$2,000",
+        "$3,000",
+        "$4,000",
+        "$5,000"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to ladwp.com, rebates of up to $4,000 are now available for qualifying used electric vehicles (EVs) purchased within 12 months of application submittal through LADWP's Used Electric Vehicle Rebate Program.",
+      "difficulty": "medium",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.ladwp.com",
+        "name": "Los Angeles Department of Water and Power"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-115",
+      "text": "What is the last day to register to vote for California's June 2, 2026 Primary Election?",
+      "options": [
+        "May 2, 2026",
+        "May 12, 2026",
+        "May 18, 2026",
+        "May 25, 2026"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, the last day to register to vote for the June 2, 2026, Primary Election is May 18, 2026.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": "2026-06-03T00:00:00.000Z"
+    },
+    {
+      "externalId": "lac-116",
+      "text": "At what age can California residents pre-register to vote online?",
+      "options": [
+        "14 years old",
+        "16 years old",
+        "17 years old",
+        "18 years old"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to sos.ca.gov, online pre-registration is available for eligible 16 and 17 year olds, and their registration becomes active once they turn 18 years old.",
+      "difficulty": "easy",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-118",
+      "text": "What is the minimum grade point average required for California high school students to work as student poll workers?",
+      "options": [
+        "2.0 GPA",
+        "2.5 GPA",
+        "3.0 GPA",
+        "3.5 GPA"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to sos.ca.gov, high school students who are U.S. citizens must maintain a 2.5-grade point average, along with having consent from their parent or guardian and the school, to be eligible to work as student poll workers.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "lac-119",
+      "text": "How much can California student poll workers earn for working on Election Day?",
+      "options": [
+        "Between $35 and $100",
+        "Between $50 and $125",
+        "Between $65 and $180",
+        "Between $100 and $250"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, students can earn between $65 and $180 by working as student poll workers on Election Day, providing them with hands-on experience in the election process.",
+      "difficulty": "medium",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
       },
       "expiresAt": null
     }

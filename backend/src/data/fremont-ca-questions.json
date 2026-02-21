@@ -1,0 +1,1794 @@
+{
+  "topics": [
+    {
+      "slug": "city-government",
+      "name": "City Government",
+      "description": "Bloomington city government — mayor, city council, departments, and municipal services"
+    },
+    {
+      "slug": "civic-history",
+      "name": "Civic History",
+      "description": "Bloomington founding, key civic events, IU's civic role, and historical milestones"
+    },
+    {
+      "slug": "local-services",
+      "name": "Local Services",
+      "description": "City utilities, parks and recreation, public safety, and municipal services"
+    },
+    {
+      "slug": "elections-voting",
+      "name": "Elections & Voting",
+      "description": "Local election process, voting districts, and civic participation in Bloomington"
+    },
+    {
+      "slug": "landmarks-culture",
+      "name": "Landmarks & Culture",
+      "description": "Cultural institutions, notable places, and what makes Bloomington unique"
+    },
+    {
+      "slug": "budget-finance",
+      "name": "Budget & Finance",
+      "description": "City budget, tax structure, and how Bloomington funds public services"
+    },
+    {
+      "slug": "california-state",
+      "name": "California State Government",
+      "description": "California state government — governor, legislature, and the ballot propositions system"
+    },
+    {
+      "slug": "alameda-county",
+      "name": "Alameda County & Regional Agencies",
+      "description": "Alameda County government, board of supervisors, BART, AC Transit, and Bay Area regional agencies"
+    }
+  ],
+  "questions": [
+    {
+      "externalId": "fre-001",
+      "text": "How many districts make up Fremont's City Council?",
+      "options": [
+        "4 districts",
+        "5 districts",
+        "6 districts",
+        "7 districts"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to fremont.gov, Fremont's City Council is composed of 6 districts, each represented by one council member elected by voters in that district.",
+      "difficulty": "easy",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-003",
+      "text": "Which Alameda County Supervisor district includes Fremont?",
+      "options": [
+        "District 1",
+        "District 2",
+        "District 3",
+        "District 4"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to acgov.org, Fremont is located in Alameda County Supervisor District 1, currently represented by David Haubert.",
+      "difficulty": "medium",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-004",
+      "text": "What form of city government does Fremont use?",
+      "options": [
+        "Strong mayor system",
+        "Council-manager system",
+        "Commission system",
+        "Town meeting system"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, Fremont operates under a council-manager form of government, where the City Council sets policy and the City Manager handles day-to-day operations.",
+      "difficulty": "medium",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-005",
+      "text": "How long is a term for a Fremont City Council member?",
+      "options": [
+        "2 years",
+        "4 years",
+        "6 years",
+        "8 years"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, Fremont City Council members serve 4-year terms, with elections staggered so that three districts vote in one cycle and three in another.",
+      "difficulty": "easy",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-008",
+      "text": "What is the role of the Alameda County Assessor?",
+      "options": [
+        "Prosecute criminal cases",
+        "Determine property values for tax purposes",
+        "Manage county elections",
+        "Oversee public schools"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to acgov.org, the Alameda County Assessor determines the assessed value of all taxable property in the county for property tax purposes, currently Phong La.",
+      "difficulty": "medium",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-009",
+      "text": "How is the Fremont mayor selected?",
+      "options": [
+        "Directly elected by all Fremont voters",
+        "Appointed by the City Manager",
+        "Rotated among council members annually",
+        "Chosen by the City Council from among its members"
+      ],
+      "correctAnswer": 3,
+      "explanation": "According to fremont.gov, the Fremont mayor is chosen by the City Council from among its six elected members, rather than being directly elected by voters.",
+      "difficulty": "medium",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-012",
+      "text": "Who manages the day-to-day operations of Fremont city government?",
+      "options": [
+        "The Mayor",
+        "The City Manager",
+        "The City Attorney",
+        "The City Clerk"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, under Fremont's council-manager system, the City Manager is responsible for managing the day-to-day operations of city government and implementing policies set by the City Council.",
+      "difficulty": "medium",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-013",
+      "text": "Which BART line serves Fremont?",
+      "options": [
+        "Richmond Line",
+        "Antioch Line",
+        "Berryessa Line",
+        "Warm Springs Line"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to bart.gov, Fremont is served by the Berryessa Line (formerly part of the Fremont Line), with stations including Fremont, Union City, and Warm Springs/South Fremont.",
+      "difficulty": "medium",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://www.bart.gov",
+        "name": "BART"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-014",
+      "text": "What is the minimum voting age to participate in Fremont city elections?",
+      "options": [
+        "16 years old",
+        "17 years old",
+        "18 years old",
+        "21 years old"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, California voters must be 18 years old or older on Election Day to vote in any election, including Fremont city elections.",
+      "difficulty": "easy",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-015",
+      "text": "Who oversees elections in Alameda County?",
+      "options": [
+        "The County Clerk",
+        "The Registrar of Voters",
+        "The County Administrator",
+        "The Secretary of State"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to acvote.alamedacountyca.gov, the Alameda County Registrar of Voters oversees all aspects of elections in the county, including voter registration, ballot preparation, and vote counting.",
+      "difficulty": "easy",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://acvote.alamedacountyca.gov",
+        "name": "Alameda County Registrar of Voters"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-016",
+      "text": "How many votes are required for the Fremont City Council to pass an ordinance?",
+      "options": [
+        "Simple majority (4 votes)",
+        "Two-thirds majority (5 votes)",
+        "Unanimous vote (7 votes)",
+        "Three-fifths majority (5 votes)"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to fremont.gov, the Fremont City Council requires a simple majority vote (4 out of 7 members, including the mayor) to pass most ordinances and resolutions.",
+      "difficulty": "hard",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-017",
+      "text": "What does the Alameda County Auditor-Controller do?",
+      "options": [
+        "Prosecute fraud cases",
+        "Manage county financial records and audits",
+        "Oversee property assessments",
+        "Conduct elections"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to acgov.org, the Alameda County Auditor-Controller manages the county's financial records, conducts audits, and processes payments, currently Melissa Wilk.",
+      "difficulty": "medium",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-018",
+      "text": "When was Fremont officially incorporated as a city?",
+      "options": [
+        "1946",
+        "1956",
+        "1966",
+        "1976"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, Fremont was officially incorporated as a city on January 23, 1956, following the consolidation of five separate towns.",
+      "difficulty": "medium",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-019",
+      "text": "Which elected official manages property tax collection in Alameda County?",
+      "options": [
+        "The Assessor",
+        "The Auditor-Controller",
+        "The Treasurer-Tax Collector",
+        "The County Administrator"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to acgov.org, the Alameda County Treasurer-Tax Collector is responsible for collecting property taxes and managing county investments, currently Henry C. Levy.",
+      "difficulty": "medium",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-022",
+      "text": "What is the role of the Fremont City Clerk?",
+      "options": [
+        "Manage city finances",
+        "Maintain official city records and conduct elections",
+        "Oversee public works projects",
+        "Prosecute city code violations"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, the City Clerk maintains official city records, manages public access to documents, and conducts municipal elections in Fremont.",
+      "difficulty": "medium",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-025",
+      "text": "What is the primary function of the Alameda County Board of Supervisors?",
+      "options": [
+        "Enforce state laws",
+        "Set county policy and approve the county budget",
+        "Manage day-to-day county operations",
+        "Oversee city governments"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to acgov.org, the Alameda County Board of Supervisors serves as the county's legislative body, setting policy and approving the annual county budget.",
+      "difficulty": "medium",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://www.acgov.org",
+        "name": "Alameda County"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-028",
+      "text": "What is the name of California's centralized voter registration database?",
+      "options": [
+        "CalVote",
+        "VoteCal",
+        "VoteTracker",
+        "CalRegistry"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to sos.ca.gov, VoteCal is California's centralized voter registration database that provides benefits to voters and election officials.",
+      "difficulty": "medium",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-032",
+      "text": "When is California's Primary Election scheduled for 2026?",
+      "options": [
+        "March 2, 2026",
+        "May 2, 2026",
+        "June 2, 2026",
+        "August 2, 2026"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, California's Primary Election is scheduled for June 2, 2026, with voter registration closing on May 18, 2026.",
+      "difficulty": "medium",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-033",
+      "text": "What is the minimum grade point average required for California high school students to work as student poll workers?",
+      "options": [
+        "2.0 GPA",
+        "2.5 GPA",
+        "3.0 GPA",
+        "3.5 GPA"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to sos.ca.gov, high school students must maintain a 2.5 grade point average to be eligible to work as student poll workers on Election Day.",
+      "difficulty": "hard",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-034",
+      "text": "Which California elected official oversees the state's election system?",
+      "options": [
+        "Governor",
+        "Lieutenant Governor",
+        "Secretary of State",
+        "Attorney General"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, the California Secretary of State oversees the state's election system, including voter registration and election administration.",
+      "difficulty": "medium",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-035",
+      "text": "What is California's rank among world economies?",
+      "options": [
+        "Third-largest",
+        "Fourth-largest",
+        "Fifth-largest",
+        "Sixth-largest"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to ca.gov, California is the world's fifth-largest economy and contributes almost 15% to the US GDP.",
+      "difficulty": "medium",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://www.ca.gov",
+        "name": "State of California"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-036",
+      "text": "How many national parks does California have?",
+      "options": [
+        "5 national parks",
+        "7 national parks",
+        "9 national parks",
+        "11 national parks"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to ca.gov, California has 9 national parks, the most of any state in the US, along with 87 state parks and 63 state beaches.",
+      "difficulty": "hard",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://www.ca.gov",
+        "name": "State of California"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-037",
+      "text": "What does the California Voter's Choice Act allow counties to do?",
+      "options": [
+        "Eliminate polling places entirely",
+        "Provide greater flexibility in how voters cast ballots",
+        "Require all voting by mail only",
+        "Extend voting periods to two weeks"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to sos.ca.gov, the California Voter's Choice Act allows counties to conduct elections under a model which provides greater flexibility and convenience for voters in choosing how, when, and where to cast their ballot.",
+      "difficulty": "medium",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-038",
+      "text": "Which California state official serves as the President of the State Senate?",
+      "options": [
+        "Governor",
+        "Lieutenant Governor",
+        "Senate Majority Leader",
+        "Secretary of State"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to ca.gov, the Lieutenant Governor serves as the President of the California State Senate, in addition to other constitutional duties.",
+      "difficulty": "hard",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://www.ca.gov",
+        "name": "State of California"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-039",
+      "text": "Which five towns consolidated to form the city of Fremont in 1956?",
+      "options": [
+        "Centerville, Niles, Irvington, Mission San Jose, Warm Springs",
+        "Newark, Union City, Hayward, San Leandro, Castro Valley",
+        "Milpitas, Sunol, Pleasanton, Dublin, Livermore",
+        "Alvarado, Decoto, Russell City, Mount Eden, Fairview"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to Fremont's civic history, the city was formed in 1956 through the consolidation of five distinct communities: Centerville, Niles, Irvington, Mission San Jose, and Warm Springs. This consolidation created what is now California's fourth-largest city by area in the San Francisco Bay Area.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.fremont.gov/about-fremont/history",
+        "name": "City of Fremont Historical Records"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-040",
+      "text": "Which five towns consolidated to form the city of Fremont in 1956?",
+      "options": [
+        "Centerville, Niles, Irvington, Mission San Jose, Warm Springs",
+        "Newark, Union City, Hayward, San Leandro, Castro Valley",
+        "Milpitas, Sunol, Pleasanton, Dublin, Livermore",
+        "Alvarado, Decoto, Russell City, Mount Eden, Fairview"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to Fremont's civic history, the city was formed in 1956 through the consolidation of five distinct communities: Centerville, Niles, Irvington, Mission San Jose, and Warm Springs. This consolidation created what is now California's fourth-largest city by area in the San Francisco Bay Area.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.fremont.gov/about",
+        "name": "City of Fremont Historical Records"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-041",
+      "text": "What year was Mission San Jose de Guadalupe founded?",
+      "options": [
+        "1777",
+        "1787",
+        "1797",
+        "1807"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to historical records, Mission San Jose de Guadalupe, the historic Spanish mission in what is now Fremont, was founded in 1797.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-042",
+      "text": "The Ohlone people have lived in the Fremont area for approximately how long?",
+      "options": [
+        "500 years",
+        "1,000 years",
+        "2,000 years",
+        "Thousands of years"
+      ],
+      "correctAnswer": 3,
+      "explanation": "According to historical and archaeological evidence, Ohlone people have lived in the Fremont area for thousands of years and continue to maintain cultural presence in the region today.",
+      "difficulty": "easy",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-043",
+      "text": "What was the NUMMI plant before Tesla acquired it?",
+      "options": [
+        "A Ford assembly plant",
+        "A General Motors and Toyota joint venture",
+        "A Chrysler manufacturing facility",
+        "A Honda production center"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to industrial history records, NUMMI (New United Motor Manufacturing, Inc.) was a joint venture between General Motors and Toyota before Tesla acquired the facility in 2010.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-044",
+      "text": "What significant change did California's Voter's Choice Act bring to how counties can conduct elections?",
+      "options": [
+        "It allows counties to provide vote centers and mail ballots to all voters",
+        "It requires all voting to be done in person at assigned polling places",
+        "It eliminates early voting in participating counties",
+        "It mandates that all ballots must be cast on Election Day"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to the California Secretary of State, the Voter's Choice Act (established by Senate Bill 450 in 2016) modernizes elections by allowing counties to conduct elections under a model which provides greater flexibility and convenience for voters. This model allows voters to choose how, when, and where to cast their ballot through vote centers and universal vote-by-mail.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State - Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-045",
+      "text": "Which five towns consolidated to form the city of Fremont in 1956?",
+      "options": [
+        "Centerville, Niles, Irvington, Mission San Jose, Warm Springs",
+        "Newark, Union City, Hayward, San Leandro, Castro Valley",
+        "Pleasanton, Dublin, Livermore, Sunol, Niles Canyon",
+        "Milpitas, Alviso, Berryessa, Warm Springs, Mission San Jose"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to Fremont's civic history, the city was formed in 1956 through the consolidation of five distinct communities: Centerville, Niles, Irvington, Mission San Jose, and Warm Springs. This consolidation created what is now California's fourth-largest city by area in the San Francisco Bay Area.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.fremont.gov/about-fremont/history",
+        "name": "City of Fremont History"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-046",
+      "text": "When was the Office of Voting Systems Technology Assessment created in California?",
+      "options": [
+        "September 2001",
+        "September 2003",
+        "September 2005",
+        "September 2007"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, the Office of Voting Systems Technology Assessment (OVSTA) was created in September 2005 to handle voting system examination, testing, and certification.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-047",
+      "text": "What year did California designate High School Voter Education Weeks?",
+      "options": [
+        "The designation has existed since statehood",
+        "The 1990s",
+        "The 2000s",
+        "The designation is ongoing"
+      ],
+      "correctAnswer": 3,
+      "explanation": "According to sos.ca.gov, the California Education Code designates the last two full weeks in April and September as High School Voter Education Weeks, an ongoing designation to promote civic education.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-048",
+      "text": "When did AC Transit celebrate its 65th anniversary?",
+      "options": [
+        "2020",
+        "2022",
+        "2024",
+        "2025"
+      ],
+      "correctAnswer": 3,
+      "explanation": "According to actransit.org, AC Transit celebrated its 65th anniversary in 2025, offering commemorative t-shirts to mark the occasion.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.actransit.org",
+        "name": "AC Transit"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-049",
+      "text": "What year did Alameda County win its first Digital Counties Survey Award?",
+      "options": [
+        "2022",
+        "2023",
+        "2024",
+        "2025"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to acgov.org, Alameda County won the Digital Counties Survey Award in 2024 and again in 2025, making 2025 the second year in a row.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.acgov.org",
+        "name": "Alameda County Government"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-050",
+      "text": "When was Senate Bill 450, which established the California Voter's Choice Act, passed?",
+      "options": [
+        "2012",
+        "2014",
+        "2016",
+        "2018"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, Senate Bill 450, which established the California Voter's Choice Act to modernize elections, was passed in 2016.",
+      "difficulty": "hard",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-055",
+      "text": "Which rapid transit system serves Fremont with multiple stations?",
+      "options": [
+        "BART",
+        "Caltrain",
+        "Amtrak",
+        "ACE"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to bart.gov, BART (Bay Area Rapid Transit) serves Fremont with stations providing regional rail connections throughout the Bay Area.",
+      "difficulty": "easy",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.bart.gov",
+        "name": "BART"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-056",
+      "text": "What is the minimum age to pre-register to vote in California?",
+      "options": [
+        "14 years old",
+        "15 years old",
+        "16 years old",
+        "17 years old"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, California allows eligible 16 and 17 year olds to pre-register to vote online, with their registration becoming active when they turn 18.",
+      "difficulty": "medium",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-057",
+      "text": "Which office manages voter registration and elections in Alameda County?",
+      "options": [
+        "County Clerk",
+        "Registrar of Voters",
+        "County Administrator",
+        "Board of Supervisors"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to acvote.alamedacountyca.gov, the Alameda County Registrar of Voters is responsible for managing voter registration, conducting elections, and maintaining election records.",
+      "difficulty": "medium",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://acvote.alamedacountyca.gov",
+        "name": "Alameda County Registrar of Voters"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-058",
+      "text": "What type of ballot does every active registered California voter receive for statewide elections?",
+      "options": [
+        "Electronic ballot",
+        "Vote-by-mail ballot",
+        "Provisional ballot",
+        "Absentee ballot only if requested"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to sos.ca.gov, all California active registered voters receive a vote-by-mail ballot for statewide elections, which can be returned by mail, at a drop-off location, or at a county elections office.",
+      "difficulty": "medium",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-059",
+      "text": "Who is the current Alameda County Sheriff?",
+      "options": [
+        "Yesenia Sanchez",
+        "Gregory Ahern",
+        "David Haubert",
+        "Phong La"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to acgov.org, Yesenia Sanchez serves as the Alameda County Sheriff/Coroner, an elected position responsible for law enforcement and coroner services.",
+      "difficulty": "hard",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County Elected Officials"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-060",
+      "text": "Which elected official serves as Alameda County Assessor?",
+      "options": [
+        "Henry C. Levy",
+        "Melissa Wilk",
+        "Phong La",
+        "Alysse Castro"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to acgov.org, Phong La serves as the Alameda County Assessor, responsible for determining property values for tax purposes.",
+      "difficulty": "hard",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County Elected Officials"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-061",
+      "text": "What is the deadline to register to vote before a California election?",
+      "options": [
+        "30 days before Election Day",
+        "21 days before Election Day",
+        "15 days before Election Day",
+        "7 days before Election Day"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, the last day to register to vote for California elections is 15 days before Election Day, though Same Day Voter Registration is available as a safety net for those who miss this deadline.",
+      "difficulty": "medium",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-062",
+      "text": "Which office handles property tax collection in Alameda County?",
+      "options": [
+        "County Assessor",
+        "County Auditor",
+        "Treasurer/Tax Collector",
+        "County Administrator"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to acgov.org, the Alameda County Treasurer/Tax Collector, currently Henry C. Levy, is responsible for collecting property taxes and managing county funds.",
+      "difficulty": "medium",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County Elected Officials"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-063",
+      "text": "What is the name of California's centralized voter registration database?",
+      "options": [
+        "CalVote",
+        "VoteCal",
+        "MyVoter",
+        "CARegistry"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to sos.ca.gov, VoteCal is California's centralized voter registration database that allows voters to register, update their information, and check their ballot status.",
+      "difficulty": "hard",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-064",
+      "text": "Who serves as the Alameda County District Attorney?",
+      "options": [
+        "Pamela Price",
+        "Ursula Jones Dickson",
+        "Nancy O'Malley",
+        "Teresa Drenick"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to acgov.org, Ursula Jones Dickson serves as the Alameda County District Attorney, responsible for prosecuting criminal cases in the county.",
+      "difficulty": "hard",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County Elected Officials"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-065",
+      "text": "What is the name of the program that allows voters to register on Election Day in California?",
+      "options": [
+        "Emergency Registration",
+        "Same Day Voter Registration",
+        "Late Registration",
+        "Election Day Registration"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to sos.ca.gov, Same Day Voter Registration (also known as Conditional Voter Registration) is a safety net for Californians who miss the deadline to register or update their voter registration information.",
+      "difficulty": "medium",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-066",
+      "text": "Which elected official serves as Alameda County Auditor/Controller?",
+      "options": [
+        "Henry C. Levy",
+        "Melissa Wilk",
+        "Phong La",
+        "Alysse Castro"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to acgov.org, Melissa Wilk serves as the Alameda County Auditor/Controller, responsible for auditing county finances and maintaining financial records.",
+      "difficulty": "hard",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County Elected Officials"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-067",
+      "text": "When is California's Primary Election scheduled for 2026?",
+      "options": [
+        "March 2, 2026",
+        "May 5, 2026",
+        "June 2, 2026",
+        "August 4, 2026"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, California's Primary Election is scheduled for June 2, 2026, with voter registration closing on May 18, 2026.",
+      "difficulty": "medium",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": "2026-06-03T00:00:00.000Z"
+    },
+    {
+      "externalId": "fre-069",
+      "text": "Who serves as the Alameda County Superintendent of Schools?",
+      "options": [
+        "Alysse Castro",
+        "L.K. Monroe",
+        "Karen Monroe",
+        "Sheila Jordan"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to acgov.org, Alysse Castro serves as the Alameda County Superintendent of Schools, an elected position overseeing educational programs and services.",
+      "difficulty": "hard",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County Elected Officials"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-072",
+      "text": "What is the name of the contactless payment system used on AC Transit and BART?",
+      "options": [
+        "TAP Card",
+        "Clipper",
+        "ORCA",
+        "Ventra"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to actransit.org, Clipper is the Bay Area's contactless payment system used on AC Transit, BART, and other regional transit agencies, with next-generation Clipper now supporting tap-to-pay with credit and debit cards.",
+      "difficulty": "easy",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.actransit.org",
+        "name": "AC Transit"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-073",
+      "text": "How many days after Election Day can a vote-by-mail ballot be received and still be counted in California?",
+      "options": [
+        "3 days",
+        "5 days",
+        "7 days",
+        "10 days"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, vote-by-mail ballots must be postmarked on or before Election Day and received by the county elections office within 7 days after the election to be counted.",
+      "difficulty": "hard",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-074",
+      "text": "Which California state official currently serves as Governor?",
+      "options": [
+        "Gavin Newsom",
+        "Jerry Brown",
+        "Eleni Kounalakis",
+        "Tony Thurmond"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to ca.gov, Gavin Newsom serves as Governor of California, the state's chief executive officer.",
+      "difficulty": "easy",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.ca.gov",
+        "name": "State of California"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-075",
+      "text": "What is the name of the system that allows voters with disabilities to mark their ballot using their own technology?",
+      "options": [
+        "Accessible Vote System",
+        "Remote Accessible Vote-by-Mail",
+        "Digital Ballot Access",
+        "Home Voting Technology"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to sos.ca.gov, Remote Accessible Vote-by-Mail (RAVBM) allows voters to mark their selections using their own compatible technology to vote independently and privately from home.",
+      "difficulty": "hard",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-076",
+      "text": "Which historic district in Fremont is home to the 1797 Spanish mission?",
+      "options": [
+        "Mission San Jose district",
+        "Niles district",
+        "Irvington district",
+        "Centerville district"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to Fremont's historical records, the Mission San Jose district is named after Mission San Jose de Guadalupe, founded in 1797 as one of California's Spanish missions.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov/government/departments/community-services/museum-of-local-history",
+        "name": "Fremont Historical Records"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-077",
+      "text": "How many separate towns consolidated to form the City of Fremont in 1956?",
+      "options": [
+        "Three towns",
+        "Four towns",
+        "Five towns",
+        "Six towns"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to Fremont's incorporation history, five towns consolidated in 1956 to form Fremont: Centerville, Niles, Irvington, Mission San Jose, and Warm Springs.",
+      "difficulty": "medium",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov/about-fremont/history",
+        "name": "City of Fremont History"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-078",
+      "text": "What is the nickname for the Afghan-American cultural district in Fremont?",
+      "options": [
+        "Little Kabul",
+        "Afghan Quarter",
+        "Kabul Corner",
+        "Afghan Village"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to Fremont community records, the Afghan-American cultural district along Fremont Boulevard is known as Little Kabul, reflecting the vibrant Afghan-American community and its cultural contributions to the city.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov/community",
+        "name": "Fremont Community Resources"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-079",
+      "text": "Which indigenous people have lived in the Fremont area for thousands of years?",
+      "options": [
+        "Miwok people",
+        "Ohlone people",
+        "Pomo people",
+        "Yokuts people"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to regional historical records, Ohlone people have lived in the Fremont area for thousands of years and continue to maintain cultural connections to the land today.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov/government/departments/community-services/museum-of-local-history",
+        "name": "Fremont Historical Society"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-080",
+      "text": "Which major automobile manufacturing facility operates in Fremont?",
+      "options": [
+        "Ford Assembly Plant",
+        "Tesla Factory",
+        "General Motors Plant",
+        "Honda Manufacturing"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to Fremont economic development records, the Tesla Factory operates in Fremont, occupying the former NUMMI facility and representing a significant source of employment and tax revenue for the city.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov/business",
+        "name": "Fremont Economic Development"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-081",
+      "text": "What was the name of the joint venture automobile plant that operated in Fremont before Tesla?",
+      "options": [
+        "NUMMI",
+        "AutoAlliance",
+        "Diamond-Star Motors",
+        "CAMI Automotive"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to Fremont's industrial history, NUMMI (New United Motor Manufacturing, Inc.) was the joint venture between General Motors and Toyota that operated in Fremont from 1984 to 2010, before Tesla acquired the facility.",
+      "difficulty": "medium",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov/business/economic-development",
+        "name": "Fremont Economic History"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-082",
+      "text": "Which Fremont district was historically known for its silent film industry in the early 1900s?",
+      "options": [
+        "Centerville district",
+        "Niles district",
+        "Warm Springs district",
+        "Irvington district"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to Fremont historical records, the Niles district was home to Essanay Studios in the early 1900s, where Charlie Chaplin and other silent film stars made movies, establishing Niles as an early Hollywood.",
+      "difficulty": "hard",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov/government/departments/community-services/museum-of-local-history",
+        "name": "Niles Essanay Silent Film Museum"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-083",
+      "text": "How many City Council districts does Fremont have?",
+      "options": [
+        "Four districts",
+        "Five districts",
+        "Six districts",
+        "Seven districts"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to the City of Fremont's governance structure, Fremont has six City Council districts, each represented by one council member elected by voters in that district.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov/government/city-council",
+        "name": "City of Fremont Government"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-084",
+      "text": "Which county is Fremont located in?",
+      "options": [
+        "Santa Clara County",
+        "Alameda County",
+        "Contra Costa County",
+        "San Mateo County"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to acgov.org, Fremont is located in Alameda County, one of the largest counties in the San Francisco Bay Area.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.acgov.org",
+        "name": "Alameda County Government"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-085",
+      "text": "Which Alameda County Supervisor district includes Fremont?",
+      "options": [
+        "District 1",
+        "District 2",
+        "District 3",
+        "District 4"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to acgov.org, Fremont is represented by the Alameda County Board of Supervisors District 1, currently represented by David Haubert.",
+      "difficulty": "medium",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County Board of Supervisors"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-086",
+      "text": "What type of transit service does AC Transit provide to Fremont?",
+      "options": [
+        "Light rail service",
+        "Bus service",
+        "Ferry service",
+        "Commuter rail service"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to actransit.org, AC Transit (Alameda-Contra Costa Transit District) provides bus service throughout Alameda County, including Fremont.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.actransit.org",
+        "name": "AC Transit"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-087",
+      "text": "Which rapid transit system serves Fremont with multiple stations?",
+      "options": [
+        "Caltrain",
+        "VTA Light Rail",
+        "BART",
+        "ACE Train"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to bart.gov, BART (Bay Area Rapid Transit) serves Fremont with stations including Fremont Station and Warm Springs/South Fremont Station, connecting the city to the regional transit network.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.bart.gov",
+        "name": "BART"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-088",
+      "text": "What is the primary role of the Fremont City Manager?",
+      "options": [
+        "Presiding over City Council meetings",
+        "Managing day-to-day city operations",
+        "Representing Fremont in the state legislature",
+        "Serving as the city's chief legal officer"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to Fremont's council-manager form of government, the City Manager is appointed by the City Council to manage day-to-day city operations, implement policies, and oversee city departments.",
+      "difficulty": "medium",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.fremont.gov/government",
+        "name": "City of Fremont Government Structure"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-089",
+      "text": "How are Fremont City Council members elected?",
+      "options": [
+        "All elected at-large by the entire city",
+        "All appointed by the mayor",
+        "Each elected by voters in their specific district",
+        "Half elected at-large, half by district"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to Fremont's electoral system, City Council members are elected by district, meaning each council member is elected by voters within their specific geographic district.",
+      "difficulty": "medium",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.fremont.gov/government/city-clerk/elections",
+        "name": "City of Fremont Elections"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-090",
+      "text": "What is the term length for a Fremont City Council member?",
+      "options": [
+        "2 years",
+        "4 years",
+        "6 years",
+        "8 years"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to Fremont's municipal code, City Council members serve four-year terms, with elections staggered so that not all seats are up for election simultaneously.",
+      "difficulty": "easy",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.fremont.gov/government/city-clerk/municipal-code",
+        "name": "Fremont Municipal Code"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-091",
+      "text": "How is the Fremont Mayor selected?",
+      "options": [
+        "Directly elected by all Fremont voters",
+        "Appointed by the City Manager",
+        "Chosen by the City Council from among its members",
+        "Appointed by the County Board of Supervisors"
+      ],
+      "correctAnswer": 0,
+      "explanation": "According to Fremont's governance structure, the Mayor is directly elected by all Fremont voters in a citywide election, serving as the city's ceremonial leader and presiding over City Council meetings.",
+      "difficulty": "medium",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.fremont.gov/government/city-council",
+        "name": "City of Fremont Government"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-092",
+      "text": "Which department manages Fremont's annual budget process?",
+      "options": [
+        "City Attorney's Office",
+        "City Manager's Office",
+        "City Clerk's Office",
+        "Community Development Department"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to Fremont's administrative structure, the City Manager's Office manages the annual budget process, preparing the proposed budget for City Council review and adoption.",
+      "difficulty": "medium",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.fremont.gov/government/departments/city-manager/budget",
+        "name": "City of Fremont Budget"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-093",
+      "text": "What is Fremont's form of local government?",
+      "options": [
+        "Strong mayor system",
+        "Commission system",
+        "Council-manager system",
+        "Town meeting system"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to Fremont's city charter, Fremont operates under a council-manager system, where an elected City Council sets policy and an appointed City Manager handles day-to-day operations.",
+      "difficulty": "medium",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.fremont.gov/government/city-charter",
+        "name": "City of Fremont Charter"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-094",
+      "text": "Which body has the authority to adopt Fremont's annual city budget?",
+      "options": [
+        "The City Manager",
+        "The Mayor",
+        "The City Council",
+        "Fremont voters through ballot measure"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to Fremont's budget process, the City Council has the authority to review, modify, and adopt the annual city budget, which is proposed by the City Manager.",
+      "difficulty": "easy",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.fremont.gov/government/departments/city-manager/budget",
+        "name": "City of Fremont Budget Process"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-095",
+      "text": "What is the primary source of revenue for Fremont's General Fund?",
+      "options": [
+        "Property taxes",
+        "Sales taxes",
+        "State grants",
+        "Federal funding"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to Fremont's budget documents, sales taxes are the primary source of General Fund revenue, reflecting the city's significant retail and commercial activity.",
+      "difficulty": "hard",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.fremont.gov/government/departments/city-manager/budget",
+        "name": "City of Fremont Budget"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-098",
+      "text": "Where can Fremont residents register to vote?",
+      "options": [
+        "Only at Fremont City Hall",
+        "Only at the Alameda County Registrar of Voters office",
+        "Online through the California Secretary of State or county registrar",
+        "Only in person at designated polling places"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to the California Secretary of State at sos.ca.gov, California residents can register to vote online through registertovote.ca.gov or through their county registrar of voters, making registration accessible and convenient.",
+      "difficulty": "easy",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-099",
+      "text": "What is the minimum age to pre-register to vote in California?",
+      "options": [
+        "15 years old",
+        "16 years old",
+        "17 years old",
+        "18 years old"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to the California Secretary of State at sos.ca.gov, eligible 16 and 17 year olds can pre-register to vote online, with their registration automatically becoming active when they turn 18.",
+      "difficulty": "medium",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State Voter Registration"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-100",
+      "text": "Which office handles voter registration and elections in Alameda County?",
+      "options": [
+        "County Clerk-Recorder",
+        "County Auditor-Controller",
+        "Registrar of Voters",
+        "County Administrator"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to acvote.alamedacountyca.gov, the Alameda County Registrar of Voters is responsible for voter registration, conducting elections, and maintaining election records for all cities in Alameda County, including Fremont.",
+      "difficulty": "easy",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://acvote.alamedacountyca.gov",
+        "name": "Alameda County Registrar of Voters"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-102",
+      "text": "What form of government does Fremont use?",
+      "options": [
+        "Strong mayor system",
+        "Council-manager system",
+        "Commission system",
+        "Town meeting system"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, Fremont operates under a council-manager form of government, where the City Council sets policy and a professional City Manager handles day-to-day operations.",
+      "difficulty": "medium",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-105",
+      "text": "Which Alameda County Supervisor district includes Fremont?",
+      "options": [
+        "District 3",
+        "District 2",
+        "District 1",
+        "District 4"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to acgov.org, Fremont is located in Alameda County Supervisor District 1, currently represented by David Haubert.",
+      "difficulty": "medium",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-110",
+      "text": "When was Mission San Jose de Guadalupe founded in what is now Fremont?",
+      "options": [
+        "1776",
+        "1797",
+        "1812",
+        "1823"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, Mission San Jose de Guadalupe, the historic Spanish mission in what is now the Mission San Jose district of Fremont, was founded in 1797.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-111",
+      "text": "What was the name of the automobile manufacturing plant that operated in Fremont before Tesla?",
+      "options": [
+        "Ford Fremont Assembly",
+        "NUMMI",
+        "GM Fremont Plant",
+        "Chrysler East Bay"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, NUMMI (New United Motor Manufacturing, Inc.) was a joint venture between General Motors and Toyota that operated in Fremont from 1984 to 2010, before Tesla acquired the facility.",
+      "difficulty": "medium",
+      "topicCategory": "civic-history",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-112",
+      "text": "Which historic district in Fremont is known for its connection to silent film production in the early 1900s?",
+      "options": [
+        "Centerville",
+        "Niles",
+        "Irvington",
+        "Warm Springs"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, the Niles district was home to Essanay Studios in the 1910s, where Charlie Chaplin and other silent film stars made movies, making it a significant early Hollywood location.",
+      "difficulty": "hard",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-113",
+      "text": "What cultural district in Fremont celebrates Afghan-American heritage?",
+      "options": [
+        "Little Saigon",
+        "Little Kabul",
+        "Little Tehran",
+        "Little Delhi"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, Fremont's Little Kabul district along Fremont Boulevard is home to a vibrant Afghan-American community with restaurants, markets, and cultural institutions celebrating Afghan heritage.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-115",
+      "text": "How many members serve in the California State Assembly?",
+      "options": [
+        "40 members",
+        "60 members",
+        "80 members",
+        "100 members"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to leginfo.legislature.ca.gov, the California State Assembly consists of 80 members, each representing approximately 500,000 constituents.",
+      "difficulty": "medium",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://leginfo.legislature.ca.gov",
+        "name": "California Legislative Information"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-116",
+      "text": "What is the term length for a California State Senator?",
+      "options": [
+        "2 years",
+        "4 years",
+        "6 years",
+        "8 years"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to leginfo.legislature.ca.gov, California State Senators serve four-year terms, with elections staggered so that half the Senate is up for election every two years.",
+      "difficulty": "medium",
+      "topicCategory": "california-state",
+      "source": {
+        "url": "https://leginfo.legislature.ca.gov",
+        "name": "California Legislative Information"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-117",
+      "text": "Which elected official serves as the chief law enforcement officer for Alameda County?",
+      "options": [
+        "District Attorney",
+        "Sheriff/Coroner",
+        "Attorney General",
+        "Police Chief"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to acgov.org, the Sheriff/Coroner is the elected chief law enforcement officer for Alameda County, currently Yesenia Sanchez, responsible for county jail operations and unincorporated area policing.",
+      "difficulty": "medium",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-118",
+      "text": "Which Alameda County elected official is responsible for property tax assessment?",
+      "options": [
+        "Treasurer/Tax Collector",
+        "Auditor/Controller",
+        "Assessor",
+        "County Clerk"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to acgov.org, the Assessor is the elected official responsible for determining the assessed value of all taxable property in Alameda County, currently Phong La.",
+      "difficulty": "medium",
+      "topicCategory": "alameda-county",
+      "source": {
+        "url": "https://www.acgov.org/government/elected.htm",
+        "name": "Alameda County"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-120",
+      "text": "What is the deadline for a vote-by-mail ballot to be postmarked in California elections?",
+      "options": [
+        "3 days before Election Day",
+        "The day before Election Day",
+        "On or before Election Day",
+        "3 days after Election Day"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to sos.ca.gov, vote-by-mail ballots must be postmarked on or before Election Day and received by the county elections office within 7 days after Election Day to be counted.",
+      "difficulty": "hard",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.sos.ca.gov/elections",
+        "name": "California Secretary of State"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-122",
+      "text": "What is the name of the southernmost BART station, located in Fremont?",
+      "options": [
+        "Fremont Station",
+        "South Fremont Station",
+        "Warm Springs/South Fremont Station",
+        "Mission San Jose Station"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to bart.gov, Warm Springs/South Fremont Station is the southernmost station on the BART system, serving the Warm Springs district of Fremont.",
+      "difficulty": "medium",
+      "topicCategory": "local-services",
+      "source": {
+        "url": "https://www.bart.gov",
+        "name": "BART"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-123",
+      "text": "Which historic Fremont landmark features a restored 1906 railroad depot?",
+      "options": [
+        "Centerville Station",
+        "Niles Depot Museum",
+        "Irvington Station",
+        "Mission San Jose Depot"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, the Niles Depot Museum is housed in a restored 1906 Southern Pacific Railroad depot and showcases the history of the Niles district and early railroading.",
+      "difficulty": "hard",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-124",
+      "text": "What is the name of Fremont's historic downtown district known for antique shops and Victorian architecture?",
+      "options": [
+        "Warm Springs",
+        "Niles",
+        "Centerville",
+        "Mission San Jose"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to fremont.gov, Niles is Fremont's historic downtown district featuring antique shops, Victorian-era buildings, and a charming small-town atmosphere along Niles Boulevard.",
+      "difficulty": "medium",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://www.fremont.gov",
+        "name": "City of Fremont"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "fre-125",
+      "text": "What is California's fiscal year period?",
+      "options": [
+        "January 1 to December 31",
+        "July 1 to June 30",
+        "October 1 to September 30",
+        "April 1 to March 31"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to ca.gov, California's fiscal year runs from July 1 to June 30, which is when the state budget cycle operates and when most local governments align their budgets.",
+      "difficulty": "hard",
+      "topicCategory": "budget-finance",
+      "source": {
+        "url": "https://www.ca.gov",
+        "name": "State of California"
+      },
+      "expiresAt": null
+    }
+  ]
+}

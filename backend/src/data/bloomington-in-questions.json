@@ -138,25 +138,6 @@
       "expiresAt": null
     },
     {
-      "externalId": "bli-006",
-      "text": "In what year was Bloomington incorporated as a city?",
-      "options": [
-        "1818",
-        "1850",
-        "1876",
-        "1900"
-      ],
-      "correctAnswer": 2,
-      "explanation": "According to bloomington.in.gov, Bloomington was incorporated as a town in 1818 and as a city in 1876.",
-      "difficulty": "hard",
-      "topicCategory": "city-government",
-      "source": {
-        "url": "https://bloomington.in.gov/city-council",
-        "name": "City of Bloomington - City Council"
-      },
-      "expiresAt": null
-    },
-    {
       "externalId": "bli-007",
       "text": "How many parks does Bloomington Parks and Recreation manage?",
       "options": [
@@ -339,25 +320,6 @@
       "correctAnswer": 1,
       "explanation": "According to co.monroe.in.us, the Monroe County Council consists of seven members — four elected from districts and three elected at-large — who control county finances and adopt the budget.",
       "difficulty": "medium",
-      "topicCategory": "monroe-county",
-      "source": {
-        "url": "https://www.co.monroe.in.us",
-        "name": "Monroe County Government"
-      },
-      "expiresAt": null
-    },
-    {
-      "externalId": "bli-017",
-      "text": "In what year was Monroe County established?",
-      "options": [
-        "1816",
-        "1818",
-        "1820",
-        "1825"
-      ],
-      "correctAnswer": 1,
-      "explanation": "According to co.monroe.in.us, Monroe County was established by the Indiana General Assembly on November 14, 1818, and was named for President James Monroe.",
-      "difficulty": "hard",
       "topicCategory": "monroe-county",
       "source": {
         "url": "https://www.co.monroe.in.us",
@@ -1373,25 +1335,6 @@
       "expiresAt": null
     },
     {
-      "externalId": "bli-071",
-      "text": "What hours are polling places open on Election Day in Indiana?",
-      "options": [
-        "7:00 AM to 7:00 PM",
-        "6:00 AM to 6:00 PM",
-        "8:00 AM to 8:00 PM",
-        "6:00 AM to 7:00 PM"
-      ],
-      "correctAnswer": 1,
-      "explanation": "According to in.gov, polls in Indiana are open from 6:00 AM to 6:00 PM local time on Election Day.",
-      "difficulty": "easy",
-      "topicCategory": "elections-voting",
-      "source": {
-        "url": "https://www.in.gov/sos/elections",
-        "name": "Indiana Election Division"
-      },
-      "expiresAt": null
-    },
-    {
       "externalId": "bli-072",
       "text": "Which elected official is responsible for maintaining city records and administering city elections in Bloomington?",
       "options": [
@@ -1658,25 +1601,6 @@
       "expiresAt": null
     },
     {
-      "externalId": "bli-086",
-      "text": "What is the street address of the Mayor's Office in Bloomington?",
-      "options": [
-        "220 E Third St",
-        "401 N Morton St Suite 210",
-        "600 E Miller Dr",
-        "401 N Morton St Suite 130"
-      ],
-      "correctAnswer": 1,
-      "explanation": "According to bloomington.in.gov/mayor, the Mayor's Office is located at 401 North Morton Street, Suite 210, Bloomington, Indiana 47404.",
-      "difficulty": "hard",
-      "topicCategory": "landmarks-culture",
-      "source": {
-        "url": "https://bloomington.in.gov/mayor",
-        "name": "City of Bloomington Mayor's Office"
-      },
-      "expiresAt": null
-    },
-    {
       "externalId": "bli-087",
       "text": "Which body reviews and approves city contracts in Bloomington?",
       "options": [
@@ -1939,6 +1863,386 @@
       "source": {
         "url": "https://bloomington.in.gov/mayor",
         "name": "City of Bloomington Mayor's Office"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-101",
+      "text": "How many members serve on the Bloomington Common Council?",
+      "options": [
+        "7 members",
+        "9 members",
+        "11 members",
+        "5 members"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bloomington.in.gov, the Bloomington Common Council is composed of nine (9) members elected from three council districts, with three members elected from each district.",
+      "difficulty": "easy",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://bloomington.in.gov/city-council",
+        "name": "City of Bloomington - City Council"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-102",
+      "text": "When did Kerry Thomson take office as Mayor of Bloomington?",
+      "options": [
+        "January 1, 2023",
+        "January 1, 2024",
+        "November 1, 2023",
+        "January 1, 2025"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bloomington.in.gov, Kerry Thomson was elected Mayor in November 2023 and took office on January 1, 2024, becoming Bloomington's 33rd Mayor.",
+      "difficulty": "easy",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://bloomington.in.gov/mayor",
+        "name": "Mayor Kerry Thomson"
+      },
+      "expiresAt": "2027-12-31T23:59:59.000Z"
+    },
+    {
+      "externalId": "bli-103",
+      "text": "How many council districts is Bloomington divided into for City Council elections?",
+      "options": [
+        "Two districts",
+        "Three districts",
+        "Four districts",
+        "Five districts"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bloomington.in.gov, the City of Bloomington is divided into three council districts, with three council members elected from each district for a total of nine members.",
+      "difficulty": "easy",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://bloomington.in.gov/city-council",
+        "name": "City of Bloomington - City Council"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-104",
+      "text": "What type of government structure does Bloomington operate under?",
+      "options": [
+        "City manager form",
+        "Mayor-council form",
+        "Commission form",
+        "Town meeting form"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bloomington.in.gov, Bloomington operates under a mayor-council form of government, where the Mayor serves as chief executive and the Common Council serves as the legislative branch.",
+      "difficulty": "medium",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://bloomington.in.gov/city-council",
+        "name": "City of Bloomington - City Council"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-105",
+      "text": "Which city department operates Bloomington's water and wastewater services?",
+      "options": [
+        "Public Works Department",
+        "City Utilities",
+        "Environmental Services",
+        "Infrastructure Department"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bloomington.in.gov, City Utilities (CBU) is the department responsible for water and wastewater services in Bloomington, operating treatment plants and managing the city's utility infrastructure.",
+      "difficulty": "medium",
+      "topicCategory": "city-government",
+      "source": {
+        "url": "https://bloomington.in.gov/city-council",
+        "name": "City of Bloomington - City Council"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-106",
+      "text": "What time do polls close on Election Day in Indiana?",
+      "options": [
+        "5:00 PM local time",
+        "6:00 PM local time",
+        "7:00 PM local time",
+        "8:00 PM local time"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to in.gov, polls in Indiana are open from 6:00 AM to 6:00 PM local time on Election Day, giving voters a 12-hour window to cast their ballots.",
+      "difficulty": "easy",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.in.gov/sos/elections",
+        "name": "Indiana Election Division"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-107",
+      "text": "In which years are Bloomington city elections held?",
+      "options": [
+        "Even-numbered years",
+        "Odd-numbered years",
+        "Every four years only",
+        "Presidential election years"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to in.gov, Bloomington city elections occur in odd-numbered years, separate from federal and state elections which are held in even-numbered years.",
+      "difficulty": "medium",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.in.gov/sos/elections",
+        "name": "Indiana Election Division"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-108",
+      "text": "How many days before an election is the voter registration deadline in Indiana?",
+      "options": [
+        "14 days",
+        "21 days",
+        "29 days",
+        "30 days"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to in.gov, the voter registration deadline in Indiana is 29 days before an election, giving election officials time to process registrations and prepare voter rolls.",
+      "difficulty": "medium",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.in.gov/sos/elections",
+        "name": "Indiana Election Division"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-109",
+      "text": "Which office administers elections in Monroe County?",
+      "options": [
+        "Monroe County Auditor",
+        "Monroe County Clerk",
+        "Monroe County Treasurer",
+        "Monroe County Recorder"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to co.monroe.in.us, the Monroe County Clerk maintains court records and administers elections, working with the Indiana Election Division to conduct county elections.",
+      "difficulty": "medium",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.co.monroe.in.us",
+        "name": "Monroe County Government"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-110",
+      "text": "What type of voting system does Monroe County use that allows voters to cast ballots at any location in the county?",
+      "options": [
+        "Precinct voting",
+        "Vote centers",
+        "Mail-in voting",
+        "Early voting stations"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to in.gov, Monroe County offers vote centers, which allow registered voters to vote at any vote center in the county rather than being restricted to a specific precinct polling place.",
+      "difficulty": "hard",
+      "topicCategory": "elections-voting",
+      "source": {
+        "url": "https://www.in.gov/sos/elections",
+        "name": "Indiana Election Division"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-111",
+      "text": "When was Bloomington incorporated as a city?",
+      "options": [
+        "1818",
+        "1850",
+        "1876",
+        "1900"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to bloomington.in.gov, Bloomington was incorporated as a town in 1818 and as a city in 1876, marking its transition to a larger municipal government structure.",
+      "difficulty": "hard",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://bloomington.in.gov/city-council",
+        "name": "City of Bloomington - City Council"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-112",
+      "text": "When was Indiana University established in Bloomington?",
+      "options": [
+        "1816",
+        "1818",
+        "1820",
+        "1825"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to bloomington.in.gov, Indiana University was established in Bloomington in 1820, just two years after the city was incorporated as a town and four years after Indiana became a state.",
+      "difficulty": "medium",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://bloomington.in.gov/city-council",
+        "name": "City of Bloomington - City Council"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-113",
+      "text": "How many parks does Bloomington Parks and Recreation manage?",
+      "options": [
+        "22 parks",
+        "27 parks",
+        "32 parks",
+        "38 parks"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to bloomington.in.gov, Bloomington Parks and Recreation manages 32 parks throughout the city, along with 11 trails, 2 pools, 4 sports complexes, 1 golf course, and 1 ice arena.",
+      "difficulty": "hard",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://bloomington.in.gov/parks",
+        "name": "Parks & Recreation"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-114",
+      "text": "What is Bloomington's approximate population?",
+      "options": [
+        "65,000 residents",
+        "75,000 residents",
+        "85,000 residents",
+        "95,000 residents"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to bloomington.in.gov, Bloomington is home to 85,000 residents and also serves as a home away from home for tens of thousands of Indiana University students and alumni.",
+      "difficulty": "easy",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://bloomington.in.gov",
+        "name": "City of Bloomington"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-115",
+      "text": "How many holes does Bloomington's municipal golf course have?",
+      "options": [
+        "18 holes",
+        "27 holes",
+        "36 holes",
+        "9 holes"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to bloomington.in.gov, Bloomington Parks and Recreation operates a 27-hole golf club with a pro shop, locker rooms, and banquet facility.",
+      "difficulty": "medium",
+      "topicCategory": "landmarks-culture",
+      "source": {
+        "url": "https://bloomington.in.gov/parks",
+        "name": "Parks & Recreation"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-116",
+      "text": "When was Monroe County formed?",
+      "options": [
+        "1816",
+        "1818",
+        "1820",
+        "1825"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to co.monroe.in.us, Monroe County was formed in 1818 by the Indiana General Assembly and named after President James Monroe, with Bloomington established as the county seat.",
+      "difficulty": "medium",
+      "topicCategory": "monroe-county",
+      "source": {
+        "url": "https://www.co.monroe.in.us",
+        "name": "Monroe County Government"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-117",
+      "text": "How many members serve on the Monroe County Council?",
+      "options": [
+        "Five members",
+        "Seven members",
+        "Nine members",
+        "Eleven members"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to co.monroe.in.us, the Monroe County Council consists of seven members — four elected from districts and three elected at-large — who control county finances and adopt the budget.",
+      "difficulty": "medium",
+      "topicCategory": "monroe-county",
+      "source": {
+        "url": "https://www.co.monroe.in.us",
+        "name": "Monroe County Government"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-118",
+      "text": "What is the approximate population of Monroe County?",
+      "options": [
+        "108,000 residents",
+        "128,000 residents",
+        "148,000 residents",
+        "168,000 residents"
+      ],
+      "correctAnswer": 2,
+      "explanation": "According to co.monroe.in.us, Monroe County has a population of approximately 148,000 residents, with Bloomington as the largest city and county seat.",
+      "difficulty": "hard",
+      "topicCategory": "monroe-county",
+      "source": {
+        "url": "https://www.co.monroe.in.us",
+        "name": "Monroe County Government"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-119",
+      "text": "How many members serve on the Monroe County Board of Commissioners?",
+      "options": [
+        "Two commissioners",
+        "Three commissioners",
+        "Five commissioners",
+        "Seven commissioners"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to co.monroe.in.us, the Monroe County Board of Commissioners consists of three members elected from three districts who serve as the chief executive body for the county.",
+      "difficulty": "easy",
+      "topicCategory": "monroe-county",
+      "source": {
+        "url": "https://www.co.monroe.in.us",
+        "name": "Monroe County Government"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "bli-120",
+      "text": "Which elected Monroe County official is responsible for determining property values for tax purposes?",
+      "options": [
+        "County Auditor",
+        "County Assessor",
+        "County Treasurer",
+        "County Recorder"
+      ],
+      "correctAnswer": 1,
+      "explanation": "According to co.monroe.in.us, the County Assessor is the elected official responsible for determining property values for tax purposes, while the Auditor maintains financial records and the Treasurer collects taxes.",
+      "difficulty": "medium",
+      "topicCategory": "monroe-county",
+      "source": {
+        "url": "https://www.co.monroe.in.us",
+        "name": "Monroe County Government"
       },
       "expiresAt": null
     }
