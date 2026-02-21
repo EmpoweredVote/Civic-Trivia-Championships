@@ -62,31 +62,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COLL-01 | TBD | Pending |
-| COLL-02 | TBD | Pending |
-| COLL-03 | TBD | Pending |
-| QUES-01 | TBD | Pending |
-| QUES-02 | TBD | Pending |
-| QUES-03 | TBD | Pending |
-| QUES-04 | TBD | Pending |
-| QUES-05 | TBD | Pending |
-| QUES-06 | TBD | Pending |
-| FREM-01 | TBD | Pending |
-| FREM-02 | TBD | Pending |
-| FREM-03 | TBD | Pending |
-| FREM-04 | TBD | Pending |
-| FREM-05 | TBD | Pending |
-| FREM-06 | TBD | Pending |
-| ACTV-01 | TBD | Pending |
-| ACTV-02 | TBD | Pending |
-| ACTV-03 | TBD | Pending |
-| ACTV-04 | TBD | Pending |
+| COLL-01 | Phase 23 | Pending |
+| COLL-02 | Phase 23 | Pending |
+| COLL-03 | Phase 25 | Pending |
+| QUES-01 | Phase 24 | Pending |
+| QUES-02 | Phase 24 | Pending |
+| QUES-03 | Phase 24 | Pending |
+| QUES-04 | Phase 24 | Pending |
+| QUES-05 | Phase 24 | Pending |
+| QUES-06 | Phase 24 | Pending |
+| FREM-01 | Phase 24 | Pending |
+| FREM-02 | Phase 24 | Pending |
+| FREM-03 | Phase 24 | Pending |
+| FREM-04 | Phase 24 | Pending |
+| FREM-05 | Phase 24 | Pending |
+| FREM-06 | Phase 24 | Pending |
+| ACTV-01 | Phase 25 | Pending |
+| ACTV-02 | Phase 25 | Pending |
+| ACTV-03 | Phase 26 | Pending |
+| ACTV-04 | Phase 26 | Pending |
 
 **Coverage:**
 - v1.4 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 ⚠️
+- Mapped to phases: 19/19 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-20 after initial definition*
+*Last updated: 2026-02-20 after roadmap creation*
