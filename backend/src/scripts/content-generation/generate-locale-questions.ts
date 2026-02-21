@@ -22,6 +22,7 @@ import { buildSystemPrompt } from './prompts/system-prompt.js';
 import { fetchSources } from './rag/fetch-sources.js';
 import { loadSourceDocuments } from './rag/parse-sources.js';
 import type { LocaleConfig } from './locale-configs/bloomington-in.js';
+import { validateAndRetry, createReport, saveReport, type RegenerateFn } from './utils/quality-validation.js';
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
 
@@ -116,7 +117,7 @@ async function generateBatch(
   totalBatches: number,
   sourceDocuments: string[],
   existingExternalIds: Set<string>
-): Promise<ValidatedQuestion[]> {
+): Promise<{ questions: ValidatedQuestion[]; usage: { input: number; output: number; cached: number } }> {
   const batchNumber = batchIndex + 1;
   console.log(`\n--- Batch ${batchNumber}/${totalBatches} ---`);
 
@@ -243,7 +244,30 @@ Generate exactly ${config.batchSize} questions. Return ONLY the JSON object with
   console.log(`  Difficulty: easy=${byDifficulty.easy}, medium=${byDifficulty.medium}, hard=${byDifficulty.hard}`);
   console.log(`  By topic: ${Object.entries(byTopic).map(([t, n]) => `${t}=${n}`).join(', ')}`);
 
-  return validated.questions;
+  return {
+    questions: validated.questions,
+    usage: {
+      input: usage.input_tokens,
+      output: usage.output_tokens,
+      cached: usage.cache_read_input_tokens || 0,
+    },
+  };
+}
+
+// ─── Cost calculation helper ──────────────────────────────────────────────────
+
+/**
+ * Calculate estimated cost for Claude API usage.
+ * Based on Claude 3.5 Sonnet pricing (as of 2024):
+ * - Input: $3 per million tokens
+ * - Output: $15 per million tokens
+ * - Cached input: $0.30 per million tokens (90% discount)
+ */
+function calculateCost(inputTokens: number, outputTokens: number, cachedTokens: number): number {
+  const inputCost = (inputTokens / 1_000_000) * 3.0;
+  const outputCost = (outputTokens / 1_000_000) * 15.0;
+  const cachedCost = (cachedTokens / 1_000_000) * 0.30;
+  return inputCost + outputCost + cachedCost;
 }
 
 // ─── Main orchestrator ────────────────────────────────────────────────────────
@@ -277,8 +301,9 @@ async function main(): Promise<void> {
 
   // Load locale config
   const config = await loadLocaleConfig(args.locale);
+  const actualTarget = Math.ceil(config.targetQuestions * (config.overshootFactor ?? 1.0));
   console.log(`\nConfig: ${config.name}`);
-  console.log(`Target: ${config.targetQuestions} questions in ${Math.ceil(config.targetQuestions / config.batchSize)} batches`);
+  console.log(`Target: ${config.targetQuestions} questions (${actualTarget} with overshoot) in ${Math.ceil(actualTarget / config.batchSize)} batches`);
 
   // Paths
   const dataDir = join(process.cwd(), 'src/scripts/data/sources', args.locale);
@@ -321,20 +346,117 @@ async function main(): Promise<void> {
   // Step 4: Generate questions in batches
   console.log(`\n[Step 4] Generating questions...`);
 
-  const totalBatches = Math.ceil(config.targetQuestions / config.batchSize);
+  const totalBatches = Math.ceil(actualTarget / config.batchSize);
   const batchesToRun = args.batch !== null
     ? [args.batch - 1] // Convert 1-indexed to 0-indexed
     : Array.from({ length: totalBatches }, (_, i) => i);
 
   const allGenerated: ValidatedQuestion[] = [];
+  const allPassed: ValidatedQuestion[] = [];
   const existingIds = new Set<string>();
   let totalSeeded = 0;
   let totalSkipped = 0;
   let totalErrors = 0;
+  let totalValidationAttempts = 0;
+  let totalFailed = 0;
+  const violationsByRule: Record<string, number> = {};
+  const successByAttempt: Record<number, number> = {};
+
+  // Performance tracking for report
+  const performanceStart = Date.now();
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalCachedTokens = 0;
+  let totalApiCalls = 0;
+
+  // Define regenerateFn for quality validation retry loop
+  const regenerateFn: RegenerateFn = async (failedQuestion, violationMessages) => {
+    console.log(`    Regenerating question with feedback...`);
+
+    const userMessage = `This question failed quality validation with the following issues:
+
+${violationMessages}
+
+Please fix the question and return a single question in the same JSON format. The question must:
+- Follow all quality guidelines embedded in the system prompt
+- Address the specific violations listed above
+- Maintain the same external ID: ${failedQuestion.externalId}
+- Stay in the topic category: ${failedQuestion.topicCategory}
+
+Return ONLY a JSON object with a "questions" array containing exactly 1 question.`;
+
+    // Build messages with prompt caching (source documents already cached)
+    const messages: MessageParam[] = [];
+
+    if (sourceDocuments.length > 0) {
+      const sourceContent: ContentBlockParam[] = [
+        {
+          type: 'text',
+          text: `Here are the authoritative source documents for ${config.name}. Use these to ensure factual accuracy:\n\n`,
+        },
+        ...sourceDocuments.map((doc, idx) => ({
+          type: 'text' as const,
+          text: doc,
+          ...(idx === sourceDocuments.length - 1 ? { cache_control: { type: 'ephemeral' as const } } : {}),
+        })),
+        {
+          type: 'text',
+          text: `\n\n${userMessage}`,
+        },
+      ];
+
+      messages.push({ role: 'user', content: sourceContent });
+    } else {
+      messages.push({ role: 'user', content: userMessage });
+    }
+
+    const systemPromptText = buildSystemPrompt(config.name, config.topicDistribution, config.locale);
+
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 8192,
+      temperature: 0,
+      system: systemPromptText,
+      messages,
+    });
+
+    totalApiCalls++;
+
+    const usage = response.usage as {
+      input_tokens: number;
+      output_tokens: number;
+      cache_creation_input_tokens?: number;
+      cache_read_input_tokens?: number;
+    };
+
+    totalInputTokens += usage.input_tokens;
+    totalOutputTokens += usage.output_tokens;
+    if (usage.cache_read_input_tokens) totalCachedTokens += usage.cache_read_input_tokens;
+
+    const contentBlock = response.content[0];
+    if (contentBlock.type !== 'text') {
+      throw new Error(`Unexpected response content type: ${contentBlock.type}`);
+    }
+
+    const responseText = contentBlock.text.trim();
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error(`No JSON object found in response.`);
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    const validated = BatchSchema.parse(parsed);
+
+    if (validated.questions.length !== 1) {
+      throw new Error(`Expected 1 question, got ${validated.questions.length}`);
+    }
+
+    return validated.questions[0];
+  };
 
   for (const batchIndex of batchesToRun) {
     try {
-      const batchQuestions = await generateBatch(
+      const batchResult = await generateBatch(
         config,
         batchIndex,
         totalBatches,
@@ -342,16 +464,44 @@ async function main(): Promise<void> {
         existingIds
       );
 
-      // Track generated IDs to avoid reuse in next batch
-      for (const q of batchQuestions) existingIds.add(q.externalId);
-      allGenerated.push(...batchQuestions);
+      totalApiCalls++;
+      totalInputTokens += batchResult.usage.input;
+      totalOutputTokens += batchResult.usage.output;
+      totalCachedTokens += batchResult.usage.cached;
 
+      // Track generated IDs
+      for (const q of batchResult.questions) existingIds.add(q.externalId);
+      allGenerated.push(...batchResult.questions);
+
+      // Run quality validation with retry loop
+      console.log(`\n  Running quality validation for batch ${batchIndex + 1}...`);
+      const validationResult = await validateAndRetry(batchResult.questions, regenerateFn, {
+        maxRetries: 3,
+        skipUrlCheck: true, // Skip URL checks during generation for speed
+      });
+
+      // Track stats
+      totalValidationAttempts += validationResult.stats.totalAttempts;
+      totalFailed += validationResult.failed.length;
+      for (const [rule, count] of Object.entries(validationResult.stats.violationsByRule)) {
+        violationsByRule[rule] = (violationsByRule[rule] || 0) + count;
+      }
+      for (const [attempt, count] of Object.entries(validationResult.stats.successByAttempt)) {
+        const attemptNum = parseInt(attempt, 10);
+        successByAttempt[attemptNum] = (successByAttempt[attemptNum] || 0) + count;
+      }
+
+      allPassed.push(...validationResult.passed);
+
+      // Seed only questions that passed validation
       if (!args.dryRun && collectionId !== null) {
         const { seedQuestionBatch } = await import('./utils/seed-questions.js');
-        const result = await seedQuestionBatch(batchQuestions, collectionId, topicIdMap);
+        const result = await seedQuestionBatch(validationResult.passed, collectionId, topicIdMap);
         totalSeeded += result.seeded;
         totalSkipped += result.skipped;
       }
+
+      console.log(`  Validation complete: ${validationResult.passed.length} passed, ${validationResult.failed.length} failed`);
 
       // Brief pause between batches to respect rate limits
       if (batchesToRun.indexOf(batchIndex) < batchesToRun.length - 1) {
@@ -367,11 +517,61 @@ async function main(): Promise<void> {
     }
   }
 
+  // Calculate performance metrics
+  const performanceDuration = Date.now() - performanceStart;
+
+  // Difficulty and topic breakdown (use allPassed for accurate seeded stats)
+  const totalByDiff = { easy: 0, medium: 0, hard: 0 };
+  const totalByTopic: Record<string, number> = {};
+  for (const q of allPassed) {
+    totalByDiff[q.difficulty]++;
+    totalByTopic[q.topicCategory] = (totalByTopic[q.topicCategory] ?? 0) + 1;
+  }
+
+  // Create and save generation report
+  if (!args.dryRun) {
+    const report = createReport(
+      config.collectionSlug,
+      {
+        targetQuestions: actualTarget,
+        batchSize: config.batchSize,
+        maxRetries: 3,
+      },
+      {
+        passed: allPassed,
+        failed: [],
+        stats: {
+          totalAttempts: totalValidationAttempts,
+          successByAttempt,
+          violationsByRule,
+        },
+      },
+      {
+        totalDurationMs: performanceDuration,
+        apiCalls: totalApiCalls,
+        tokensUsed: {
+          input: totalInputTokens,
+          output: totalOutputTokens,
+          cached: totalCachedTokens,
+        },
+        estimatedCostUsd: calculateCost(totalInputTokens, totalOutputTokens, totalCachedTokens),
+      },
+      {
+        byDifficulty: totalByDiff,
+        byTopic: totalByTopic,
+      }
+    );
+
+    await saveReport(report);
+  }
+
   // Final summary
   console.log(`\n${'='.repeat(60)}`);
   console.log(`Generation Complete`);
   console.log(`${'='.repeat(60)}`);
   console.log(`Total generated: ${allGenerated.length} questions`);
+  console.log(`Passed validation: ${allPassed.length} questions`);
+  console.log(`Failed validation: ${totalFailed} questions`);
   console.log(`Batches with errors: ${totalErrors}`);
 
   if (!args.dryRun) {
@@ -382,23 +582,33 @@ async function main(): Promise<void> {
     console.log(`\n[DRY RUN] No questions were seeded to database.`);
   }
 
+  // Quality validation summary
+  console.log(`\nQuality Validation:`);
+  console.log(`  Total attempts: ${totalValidationAttempts}`);
+  console.log(`  Success by attempt: ${Object.entries(successByAttempt).map(([a, c]) => `attempt ${a}=${c}`).join(', ')}`);
+  if (Object.keys(violationsByRule).length > 0) {
+    console.log(`  Violations by rule: ${Object.entries(violationsByRule).map(([r, c]) => `${r}=${c}`).join(', ')}`);
+  }
+
   // Difficulty breakdown
-  const totalByDiff = { easy: 0, medium: 0, hard: 0 };
-  const totalByTopic: Record<string, number> = {};
-  for (const q of allGenerated) {
-    totalByDiff[q.difficulty]++;
-    totalByTopic[q.topicCategory] = (totalByTopic[q.topicCategory] ?? 0) + 1;
+  if (allPassed.length > 0) {
+    console.log(`\nDifficulty breakdown:`);
+    console.log(`  Easy:   ${totalByDiff.easy} (${Math.round(totalByDiff.easy / allPassed.length * 100)}%)`);
+    console.log(`  Medium: ${totalByDiff.medium} (${Math.round(totalByDiff.medium / allPassed.length * 100)}%)`);
+    console.log(`  Hard:   ${totalByDiff.hard} (${Math.round(totalByDiff.hard / allPassed.length * 100)}%)`);
+
+    console.log(`\nBy topic:`);
+    for (const [topic, count] of Object.entries(totalByTopic).sort((a, b) => b[1] - a[1])) {
+      console.log(`  ${topic}: ${count}`);
+    }
   }
 
-  console.log(`\nDifficulty breakdown:`);
-  console.log(`  Easy:   ${totalByDiff.easy} (${Math.round(totalByDiff.easy / allGenerated.length * 100)}%)`);
-  console.log(`  Medium: ${totalByDiff.medium} (${Math.round(totalByDiff.medium / allGenerated.length * 100)}%)`);
-  console.log(`  Hard:   ${totalByDiff.hard} (${Math.round(totalByDiff.hard / allGenerated.length * 100)}%)`);
-
-  console.log(`\nBy topic:`);
-  for (const [topic, count] of Object.entries(totalByTopic).sort((a, b) => b[1] - a[1])) {
-    console.log(`  ${topic}: ${count}`);
-  }
+  // Performance summary
+  console.log(`\nPerformance:`);
+  console.log(`  Duration: ${Math.round(performanceDuration / 1000)}s`);
+  console.log(`  API calls: ${totalApiCalls}`);
+  console.log(`  Tokens: ${totalInputTokens} in, ${totalOutputTokens} out, ${totalCachedTokens} cached`);
+  console.log(`  Estimated cost: $${calculateCost(totalInputTokens, totalOutputTokens, totalCachedTokens).toFixed(2)}`);
 }
 
 main().catch((error) => {

@@ -30,6 +30,7 @@ export const fremontConfig: LocaleConfig = {
   collectionSlug: 'fremont-ca',
   targetQuestions: 100,
   batchSize: 25,
+  overshootFactor: 1.3, // Generate ~130, curate to ~100 in review
 
   topicCategories: [
     {

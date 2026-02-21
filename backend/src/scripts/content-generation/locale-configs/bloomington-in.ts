@@ -16,6 +16,7 @@ export interface LocaleConfig {
   collectionSlug: string;
   targetQuestions: number;
   batchSize: number;
+  overshootFactor?: number; // Generate more than target, curate down later. Default 1.0
   topicCategories: TopicCategory[];
   topicDistribution: Record<string, number>;
   sourceUrls: string[];
