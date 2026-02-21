@@ -111,7 +111,7 @@ router.get('/questions', async (_req: Request, res: Response) => {
 // POST /session - Create a new game session
 router.post('/session', optionalAuth, async (req: Request, res: Response) => {
   try {
-    const { questionIds, collectionId } = req.body;
+    const { questionIds, collectionId, gameMode } = req.body;
 
     let selectedQuestions: Question[];
 
@@ -132,7 +132,8 @@ router.post('/session', optionalAuth, async (req: Request, res: Response) => {
       // Normal path: select questions from collection (defaults to Federal Civics)
       selectedQuestions = await selectQuestionsForGame(
         collectionId ?? null,
-        getRecentQuestionIds(userId)
+        getRecentQuestionIds(userId),
+        gameMode
       );
     }
 
@@ -156,6 +157,7 @@ router.post('/session', optionalAuth, async (req: Request, res: Response) => {
       degraded: storageFactory.isDegradedMode(),
       collectionName: collectionMeta?.name ?? 'Federal Civics',
       collectionSlug: collectionMeta?.slug ?? 'federal-civics',
+      gameMode: gameMode || 'easy-steps',
     });
   } catch (error) {
     console.error('Error creating session:', error);

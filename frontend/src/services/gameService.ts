@@ -15,20 +15,26 @@ export async function fetchQuestions(): Promise<Question[]> {
 }
 
 // Create a new game session
-export async function createGameSession(collectionId?: number): Promise<{
+export async function createGameSession(collectionId?: number, gameMode?: string): Promise<{
   sessionId: string;
   questions: Question[];
   degraded: boolean;
   collectionName: string;
   collectionSlug: string;
+  gameMode: string;
 }> {
-  const body = collectionId !== undefined ? JSON.stringify({ collectionId }) : undefined;
+  const bodyObj: Record<string, unknown> = {};
+  if (collectionId !== undefined) bodyObj.collectionId = collectionId;
+  if (gameMode !== undefined) bodyObj.gameMode = gameMode;
+  const body = Object.keys(bodyObj).length > 0 ? JSON.stringify(bodyObj) : undefined;
+
   const response = await apiRequest<{
     sessionId: string;
     questions: Question[];
     degraded?: boolean;
     collectionName?: string;
     collectionSlug?: string;
+    gameMode?: string;
   }>(
     '/api/game/session',
     {
@@ -43,6 +49,7 @@ export async function createGameSession(collectionId?: number): Promise<{
     degraded: response.degraded ?? false,
     collectionName: response.collectionName ?? 'Federal Civics',
     collectionSlug: response.collectionSlug ?? 'federal-civics',
+    gameMode: response.gameMode ?? 'easy-steps',
   };
 }
 
