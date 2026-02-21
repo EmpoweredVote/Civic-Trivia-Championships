@@ -395,10 +395,12 @@ export function GameScreen({
                   {state.collectionName}
                 </div>
               )}
-              <ProgressDots
-                currentIndex={state.currentQuestionIndex}
-                total={state.questions.length}
-              />
+              <div className="hidden md:block">
+                <ProgressDots
+                  currentIndex={state.currentQuestionIndex}
+                  total={state.questions.length}
+                />
+              </div>
               <span className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">
                 Q{state.currentQuestionIndex + 1} of {state.questions.length}
               </span>
