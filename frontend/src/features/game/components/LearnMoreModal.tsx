@@ -53,9 +53,9 @@ export function LearnMoreModal({
   userAnswer,
   correctAnswer,
 }: LearnMoreModalProps) {
-  // Get the icon component for this topic
-  const TopicIconComponent = TOPIC_ICONS[content.topic];
-  const topicLabel = TOPIC_LABELS[content.topic];
+  // Get the icon component for this topic (fallback for community collection topics)
+  const TopicIconComponent = TOPIC_ICONS[content.topic] ?? null;
+  const topicLabel = TOPIC_LABELS[content.topic] ?? content.topic;
 
   // Determine answer-aware opener
   const getOpener = () => {
@@ -131,7 +131,7 @@ export function LearnMoreModal({
               <div className="space-y-4 pr-8">
                 {/* Topic icon and label */}
                 <div className="flex items-center gap-2 text-teal-400">
-                  <TopicIconComponent className="w-5 h-5" />
+                  {TopicIconComponent && <TopicIconComponent className="w-5 h-5" />}
                   <span className="text-sm font-medium">{topicLabel}</span>
                 </div>
 
