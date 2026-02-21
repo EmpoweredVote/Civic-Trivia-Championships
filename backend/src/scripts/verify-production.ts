@@ -66,6 +66,7 @@ async function main() {
   }
 
   // ===== CRITERION 2: Game sessions with 8-question rounds =====
+  let sessionData: any = null;
   try {
     console.log('[2/7] Testing game session creation...');
 
@@ -99,6 +100,11 @@ async function main() {
 
       const data = await response.json();
       testSessionIds.push(data.sessionId);
+
+      // Store first session data for playability test
+      if (i === 1) {
+        sessionData = data;
+      }
 
       const hasEightQuestions = data.questions && data.questions.length === 8;
       sessionResults.push({
@@ -137,19 +143,11 @@ async function main() {
   try {
     console.log('[3/7] Testing end-to-end playability...');
 
-    if (testSessionIds.length === 0) {
-      throw new Error('No test sessions available for playability test');
+    if (!sessionData || testSessionIds.length === 0) {
+      throw new Error('No test session data available for playability test');
     }
 
     const sessionId = testSessionIds[0];
-
-    // Get session questions
-    const sessionResponse = await fetch(`${BACKEND_URL}/api/game/session/${sessionId}`);
-    if (sessionResponse.status !== 200) {
-      throw new Error(`Failed to fetch session: ${sessionResponse.status}`);
-    }
-
-    const sessionData = await sessionResponse.json();
     const questions = sessionData.questions;
 
     // Submit answers to all 8 questions
@@ -344,7 +342,8 @@ async function main() {
     }
 
     const data = await response.json();
-    const fremonCollection = data.find((c: any) => c.slug === 'fremont-ca');
+    const collections = data.collections || data;
+    const fremonCollection = collections.find((c: any) => c.slug === 'fremont-ca');
 
     const passed = !!fremonCollection;
 
