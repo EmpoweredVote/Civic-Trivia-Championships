@@ -37,13 +37,14 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - Question telemetry (encounter/correct counts) with difficulty rates in admin UI — v1.3
 - Indiana and California state question collections — v1.3
 - Admin question editing with quality re-scoring and optimistic updates — v1.3
+- ✓ Fremont, CA question collection (92 questions with sources, expiration dates, learning content) — v1.4
+- ✓ Fremont topics (city government, Alameda County, California state, civic history, local services, elections, landmarks, budget/finance) — v1.4
+- ✓ Fremont collection card with Mission Peak banner image — v1.4
+- ✓ Collection seeded, activated, and playable in production — v1.4
 
 ### Active
 
-- [ ] Fremont, CA question collection (~100 questions with sources, expiration dates, learning content)
-- [ ] Fremont topics (city government, Alameda County, California state, civic history, local services, elections, landmarks, budget/finance)
-- [ ] Fremont collection card with skyline banner image
-- [ ] Collection seeded, activated, and playable in production
+(None — next milestone requirements TBD via `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -66,24 +67,13 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 
 ## Context
 
-## Current Milestone: v1.4 Fremont, CA Collection
-
-**Goal:** Add a Fremont, CA community collection with ~100 quality questions, proper expiration dates for time-sensitive content, and a skyline banner image — following established patterns from Bloomington and LA.
-
-**Target features:**
-- Fremont, CA question bank (~100 questions across 8 topic categories)
-- Expiration dates on time-sensitive questions (current officials, budgets, etc.)
-- Skyline collection card image (fremont-ca.jpg)
-- Topics, seed data, and activation following community collection pattern
-
-## Context
-
-**Current state (v1.3 shipped 2026-02-20):**
-- 547 playable questions across 5 collections (Federal 119, Bloomington IN 116, Los Angeles CA 114, Indiana 100, California 98)
+**Current state (v1.4 shipped 2026-02-21):**
+- 639 playable questions across 6 collections (Federal 119, Bloomington IN 116, Los Angeles CA 114, Indiana 100, California 98, Fremont CA 92)
 - Quality rules engine with 8 rules, blocking/advisory severity, 0-100 scoring
 - Admin UI with question explorer, collection health dashboard, inline editing
-- Quality-gated AI generation pipeline with state and city templates
+- Quality-gated AI generation pipeline with overshoot-and-curate strategy, quality validation retry loop, and cultural sensitivity framework
 - Gameplay telemetry tracking encounter/correct counts per question
+- Production verification script for automated deployment validation
 
 **Question quality philosophy:**
 - "Dinner party test" — would knowing this answer be worth sharing at dinner?
@@ -129,7 +119,7 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 - **Tech stack**: React 18+, TypeScript, Vite, Tailwind, Framer Motion, Node.js, Express, PostgreSQL, Redis, JWT — specified in design doc
 - **Performance**: FCP <1.5s, TTI <3s, bundle <300KB gzipped
 - **Accessibility**: WCAG AA compliance required
-- **Content**: 547 questions across 5 collections (minimum 50 per collection for gameplay)
+- **Content**: 639 questions across 6 collections (minimum 50 per collection for gameplay)
 
 ## Key Decisions
 
@@ -151,6 +141,12 @@ Make civic learning fun through game show mechanics — play, not study. No dark
 | URL validation deferred for legacy content | All 320 original questions have broken source.url links from CMS migration | Debt — needs dedicated URL update pass |
 | State template 40/30/30 topic distribution | Government/civic processes/broader civics avoids "too bureaucratic" feel | Good — balanced content |
 | Stable option IDs for drag-and-drop | Options tracked by opt-0/opt-1 ID, not array index, so correct answer follows during reorder | Good — prevents correctAnswer drift |
+| History + culture heavy distribution for Fremont | Civic-history=20, landmarks-culture=18 (38% total) honors Fremont's unique consolidation story | Good — distinctive content |
+| Overshoot-and-curate generation strategy | Generate 130%, curate to target — provides quality buffer for topic balancing | Good — 92 curated from 123 |
+| Cultural sensitivity framework in prompts | Ohlone present-tense, Afghan-American heritage focus, Tesla civic-only, Mission San Jose disambiguation | Good — human spot-check approved |
+| Quality guidelines in all locale system prompts | Embed Phase 21 quality rules in generation prompts to reduce validation retries | Good — benefits all future generation |
+| Status-filtered question exports | Export only active questions, not drafts — applied to all collections | Good — data integrity improvement |
+| Accept 92 questions (below 95 target) | Quality over quantity, all 8 topics represented with minimum 10 each | Good — within acceptable range |
 
 ---
-*Last updated: 2026-02-20 after v1.4 milestone started*
+*Last updated: 2026-02-21 after v1.4 milestone complete*

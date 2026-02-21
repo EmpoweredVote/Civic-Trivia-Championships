@@ -1,5 +1,31 @@
 # Project Milestones: Civic Trivia Championship
 
+## v1.4 Fremont, CA Collection (Shipped: 2026-02-21)
+
+**Delivered:** Fremont, CA community collection with 92 culturally-validated questions, enhanced AI generation pipeline with quality validation retry loop, and comprehensive production verification.
+
+**Phases completed:** 23-26 (6 plans total)
+
+**Key accomplishments:**
+- Fremont, CA collection with 92 questions across 8 topic categories (city gov, county, state, civic history, services, elections, landmarks, budget)
+- Enhanced AI generation pipeline with overshoot-and-curate strategy, quality validation retry loop, and cultural sensitivity framework
+- Human-reviewed content for Ohlone, Afghan-American, Tesla/NUMMI, and Mission San Jose sensitivity
+- Status-filtered question exports benefiting all collections
+- Mission Peak banner image and full seed-to-production deployment
+- Comprehensive production verification script with all 7 criteria passing
+
+**Stats:**
+- 53 files created/modified
+- ~24,700 lines of TypeScript (cumulative)
+- 4 phases, 6 plans, 19 requirements delivered
+- 2 days from start to ship (2026-02-20 → 2026-02-21)
+
+**Git range:** `feat(23-01)` → `feat(26-01)`
+
+**What's next:** TBD — start with `/gsd:new-milestone`
+
+---
+
 ## v1.3 Question Quality & Admin Tools (Shipped: 2026-02-20)
 
 **Delivered:** Quality framework and admin tooling to scale question collections — codified quality rules, audited and improved existing content, built admin exploration and editing UI, enhanced AI generation pipeline, and added Indiana and California state collections.
