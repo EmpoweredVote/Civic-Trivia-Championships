@@ -35,8 +35,8 @@ Requirements for Fremont, CA Collection. Each maps to roadmap phases.
 
 - [x] **ACTV-01**: Fremont collection seeded to database via community seed script
 - [x] **ACTV-02**: Collection activated (`isActive: true`) and appears in collection picker
-- [ ] **ACTV-03**: Collection has minimum 50 questions (gameplay threshold) — targeting ~100
-- [ ] **ACTV-04**: Game sessions can be created from Fremont collection with 8-question rounds
+- [x] **ACTV-03**: Collection has minimum 50 questions (gameplay threshold) — targeting ~100
+- [x] **ACTV-04**: Game sessions can be created from Fremont collection with 8-question rounds
 
 ## Future Requirements
 
@@ -79,8 +79,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FREM-06 | Phase 24 | Complete |
 | ACTV-01 | Phase 25 | Complete |
 | ACTV-02 | Phase 25 | Complete |
-| ACTV-03 | Phase 26 | Pending |
-| ACTV-04 | Phase 26 | Pending |
+| ACTV-03 | Phase 26 | Complete |
+| ACTV-04 | Phase 26 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 19 total
@@ -89,4 +89,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-21 after Phase 25 complete (COLL-03, ACTV-01, ACTV-02 delivered)*
+*Last updated: 2026-02-21 after Phase 26 complete (ACTV-03, ACTV-04 delivered — all 19/19 v1.4 requirements complete)*
