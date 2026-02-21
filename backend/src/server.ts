@@ -16,7 +16,7 @@ import { startExpirationCron } from './cron/startCron.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const ALLOWED_ORIGINS = [FRONTEND_URL, process.env.FRONTEND_URL_ALT].filter(Boolean);
+const ALLOWED_ORIGINS = [FRONTEND_URL, process.env.FRONTEND_URL_ALT].filter((o): o is string => !!o);
 
 /**
  * Start server with async initialization
