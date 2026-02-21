@@ -332,14 +332,40 @@ export async function selectQuestionsForGame(
       return loadQuestionsFromJSON();
     }
 
+    // Deduplicate DB rows by externalId (safety net against unexpected join duplicates)
+    const seenIds = new Set<string>();
+    const uniqueRows = (dbRows as DBQuestionRow[]).filter(row => {
+      if (seenIds.has(row.externalId)) {
+        console.warn(`Duplicate question detected in query results: ${row.externalId}`);
+        return false;
+      }
+      seenIds.add(row.externalId);
+      return true;
+    });
+
+    console.log(
+      `Question selection: collection=${targetCollectionId}, available=${uniqueRows.length}, excluded=${recentQuestionIds.length}`
+    );
+
     // Apply difficulty selection algorithm
     const selectedRows = applyDifficultySelection(
-      dbRows as DBQuestionRow[],
+      uniqueRows,
       targetCollectionId
     );
 
+    // Final dedup safety check on selected questions
+    const selectedIds = new Set<string>();
+    const dedupedSelected = selectedRows.filter(row => {
+      if (selectedIds.has(row.externalId)) {
+        console.error(`DUPLICATE in final selection: ${row.externalId} "${row.text.substring(0, 60)}..."`);
+        return false;
+      }
+      selectedIds.add(row.externalId);
+      return true;
+    });
+
     // Transform DB rows to Question interface
-    return transformDBQuestions(selectedRows as DBQuestionRow[], topicMap);
+    return transformDBQuestions(dedupedSelected, topicMap);
   } catch (error) {
     console.warn('Database question query failed, falling back to JSON:', error);
     return loadQuestionsFromJSON();
