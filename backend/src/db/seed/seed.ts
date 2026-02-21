@@ -4,7 +4,7 @@ import { collections, topics, collectionTopics, questions, collectionQuestions }
 import { collectionsData } from './collections.js';
 import { topicsData } from './topics.js';
 import { getQuestionInserts } from './questions.js';
-import { sql } from 'drizzle-orm';
+import { sql, inArray } from 'drizzle-orm';
 import { pool } from '../../config/database.js';
 
 async function seed() {
@@ -81,12 +81,16 @@ async function seed() {
       console.log(`  - ${questionsWithLearningContent.length} questions have learning content`);
       console.log(`  - ${insertedQuestions.length - questionsWithLearningContent.length} questions without learning content`);
 
-      // e) Insert collection_questions (link all questions to Federal collection)
+      // e) Insert collection_questions (link federal questions to Federal collection)
       console.log('\nLinking questions to Federal collection...');
 
-      // Get all questions (including already existing)
-      const allQuestions = await tx.select().from(questions);
-      const collectionQuestionsData = allQuestions.map((question) => ({
+      // Only link the federal questions — not all questions in the DB.
+      // Previously this did SELECT * FROM questions, which also grabbed state/community
+      // questions and incorrectly linked them to the Federal collection.
+      const federalExternalIds = questionInserts.map(q => q.externalId);
+      const allFederalQuestions = await tx.select().from(questions)
+        .where(inArray(questions.externalId, federalExternalIds));
+      const collectionQuestionsData = allFederalQuestions.map((question) => ({
         collectionId: federalCollection.id,
         questionId: question.id
       }));
