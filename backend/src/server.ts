@@ -9,6 +9,7 @@ import { router as gameRouter } from './routes/game.js';
 import { router as profileRouter } from './routes/profile.js';
 import { router as healthRouter } from './routes/health.js';
 import { router as adminRouter } from './routes/admin.js';
+import feedbackRouter from './routes/feedback.js';
 import { storageFactory } from './config/redis.js';
 import { initializeSessionManager } from './services/sessionService.js';
 import { startExpirationCron } from './cron/startCron.js';
@@ -57,6 +58,9 @@ async function startServer() {
 
   // Admin routes
   app.use('/api/admin', adminRouter);
+
+  // Feedback routes
+  app.use('/api/feedback', feedbackRouter);
 
   // Start server
   app.listen(PORT, () => {
