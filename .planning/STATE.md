@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 27 of 30 (Backend Foundation & Inline Flagging)
-Plan: 01 of 1 complete
+Plan: 2 of 2 complete
 Status: Phase 27 complete
-Last activity: 2026-02-22 — Completed 27-01-PLAN.md (Backend Foundation)
+Last activity: 2026-02-22 — Completed 27-02-PLAN.md (Inline Flag Button UI)
 
-Progress: [████████████████████░░] 84% (76 plans complete)
+Progress: [████████████████████░░] 85% (77 plans complete)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -34,7 +34,7 @@ Progress: [████████████████████░░] 8
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 76 (26 v1.0 + 11 v1.1 + 15 v1.2 + 17 v1.3 + 6 v1.4 + 1 v1.5)
+- Total plans completed: 77 (26 v1.0 + 11 v1.1 + 15 v1.2 + 17 v1.3 + 6 v1.4 + 2 v1.5)
 - Quick tasks completed: 9
 - Milestones shipped: 5 (v1.0 through v1.4)
 - Total execution time: ~10 days (2026-02-13 → 2026-02-22)
@@ -48,7 +48,7 @@ Progress: [████████████████████░░] 8
 | v1.2 Community Collections | 13-17 | 15 | 2026-02-19 |
 | v1.3 Quality & Admin | 18-22 | 17 | 2026-02-20 |
 | v1.4 Fremont CA | 23-26 | 6 | 2026-02-21 |
-| v1.5 Feedback Marks | 27-30 | 1 | In progress |
+| v1.5 Feedback Marks | 27-30 | 2 | In progress |
 
 **Recent Trend:**
 - Consistent daily milestone delivery
@@ -70,6 +70,8 @@ Recent decisions affecting v1.5 work:
 - Phase 27-01: Rate limiter only on POST /flag, not DELETE — allow unrestricted unflagging (corrective action, not abuse vector)
 - Phase 27-01: Fail-open rate limiting on Redis errors — availability over abuse prevention when Redis unavailable
 - Phase 27-01: Denormalize flag_count on questions table — avoid COUNT(*) queries for performance
+- Phase 27-02: Independent tooltip implementation for FlagButton — CSS hover tooltip instead of LearnMoreTooltip system (avoid tooltip system complexity)
+- Phase 27-02: Optimistic UI updates for flag state — immediate local state change with API rollback on failure for responsive game feel
 
 ### Pending Todos
 
@@ -105,10 +107,10 @@ None. v1.5 leverages existing patterns:
 
 Last session: 2026-02-22
 Topic: Phase 27 Backend Foundation & Inline Flagging execution
-Stopped at: Completed 27-01-PLAN.md - question flagging database schema, API endpoints, and rate limiting infrastructure
+Stopped at: Completed 27-02-PLAN.md - inline flag button with amber toggle animation, optimistic updates, and stopPropagation
 Resume file: None — Phase 27 complete, ready for Phase 28
 
 Next action: `/gsd:plan-phase 28` to create execution plans for Flag Elaboration UI
 
 ---
-*v1.5 Feedback Marks — Phase 27 complete (1/4 phases)*
+*v1.5 Feedback Marks — Phase 27 complete (2/4 phases in milestone)*
