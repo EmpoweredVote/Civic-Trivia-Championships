@@ -86,10 +86,12 @@ Add a Fremont, CA community collection with 92 quality questions, proper expirat
 5. Rate limiting prevents spam (max 10 flags per 15 minutes per user)
 6. Flagging never interrupts game flow or affects scoring/timer
 
-**Plans:** TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 27-01: TBD
+- [ ] 27-01-PLAN.md — Backend infrastructure: database schema, feedback service, rate limiter, API endpoints
+- [ ] 27-02-PLAN.md — Frontend: FlagButton component, GameScreen integration, results screen display
+- [ ] 27-03-PLAN.md — Human verification: end-to-end flagging flow testing
 
 #### Phase 28: Progressive Disclosure UI
 
@@ -165,12 +167,12 @@ Phases execute in numeric order: 27 → 28 → 29 → 30
 | 13-17 | v1.2 | 15/15 | Complete | 2026-02-19 |
 | 18-22 | v1.3 | 17/17 | Complete | 2026-02-20 |
 | 23-26 | v1.4 | 6/6 | Complete | 2026-02-21 |
-| 27. Backend Foundation & Inline Flagging | v1.5 | 0/TBD | Not started | - |
+| 27. Backend Foundation & Inline Flagging | v1.5 | 0/3 | Not started | - |
 | 28. Progressive Disclosure UI | v1.5 | 0/TBD | Not started | - |
 | 29. Admin Review Queue | v1.5 | 0/TBD | Not started | - |
 | 30. Admin Integration & Tech Debt | v1.5 | 0/TBD | Not started | - |
 
-**Total:** 6 milestones, 30 phases, 75 plans (previous) + TBD (v1.5) = TBD total
+**Total:** 6 milestones, 30 phases, 75 plans (previous) + 3 (Phase 27) + TBD (Phases 28-30) = 78+ total
 
 ---
-*Last updated: 2026-02-21 after v1.5 roadmap created*
+*Last updated: 2026-02-21 after Phase 27 planning complete*
