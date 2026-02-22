@@ -193,7 +193,7 @@ export function GameScreen({
     const handleEscapeKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         // Only pause during answering or selected phases (not during reveal, wager, or already paused)
-        if ((state.phase === 'answering' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && !state.isPaused) {
+        if ((state.phase === 'answering' || (state.phase === 'selected' && state.currentQuestionIndex === state.totalQuestions - 1)) && !state.isPaused) {
           pauseGame();
           announce.polite('Game paused');
         }
@@ -223,7 +223,7 @@ export function GameScreen({
 
   // Timer threshold announcements for screen readers
   useEffect(() => {
-    if (state.phase !== 'answering' && !(state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) return;
+    if (state.phase !== 'answering' && !(state.phase === 'selected' && state.currentQuestionIndex === state.totalQuestions - 1)) return;
 
     if (currentTimeRemaining === 10) {
       announce.polite('10 seconds remaining');
@@ -253,7 +253,7 @@ export function GameScreen({
   useEffect(() => {
     if (state.phase === 'answering' && showOptions) {
       if (state.currentQuestionIndex === 0) {
-        announce.polite(`Question 1 of ${state.questions.length}`);
+        announce.polite(`Question 1 of ${state.totalQuestions}`);
       } else if (isFinalQuestion) {
         announce.assertive('Final Question');
       }
@@ -386,7 +386,7 @@ export function GameScreen({
 
             {/* Timer (center - grid guarantees true center, min-h reserves space) */}
             <div className="flex items-center justify-center min-h-[80px]">
-              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
+              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.totalQuestions - 1)) && (
                 <GameTimer
                   key={timerKey}
                   duration={isFinalQuestion ? finalQuestionDuration : questionDuration}
@@ -408,11 +408,11 @@ export function GameScreen({
               <div className="hidden md:block">
                 <ProgressDots
                   currentIndex={state.currentQuestionIndex}
-                  total={state.questions.length}
+                  total={state.totalQuestions}
                 />
               </div>
               <span className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">
-                Q{state.currentQuestionIndex + 1} of {state.questions.length}
+                Q{state.currentQuestionIndex + 1} of {state.totalQuestions}
               </span>
             </div>
           </div>
@@ -475,7 +475,7 @@ export function GameScreen({
               <QuestionCard
                 question={currentQuestion}
                 questionNumber={state.currentQuestionIndex + 1}
-                totalQuestions={state.questions.length}
+                totalQuestions={state.totalQuestions}
               />
 
               {/* Flag button - shown during reveal phase for authenticated users only */}
@@ -492,7 +492,7 @@ export function GameScreen({
 
             {/* Answer grid - revealed after question preview */}
             <AnimatePresence>
-              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.questions.length - 1)) && (
+              {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.totalQuestions - 1)) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -542,7 +542,7 @@ export function GameScreen({
                         className="mt-6 mb-4 px-8 py-3 bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white text-lg font-semibold rounded-lg shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-slate-900 min-h-[48px]"
                         aria-label="Next question"
                       >
-                        {state.currentQuestionIndex < state.questions.length - 1 ? 'Next Question' : 'See Results'}
+                        {state.currentQuestionIndex < state.totalQuestions - 1 ? 'Next Question' : 'See Results'}
                       </motion.button>
                     </div>
                   )}

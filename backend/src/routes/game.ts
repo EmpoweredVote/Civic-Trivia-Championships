@@ -156,7 +156,7 @@ router.post('/session', optionalAuth, async (req: Request, res: Response) => {
           collectionMeta ? { id: collectionMeta.id, name: collectionMeta.name, slug: collectionMeta.slug } : undefined
         );
 
-        // Set adaptive state on the session
+        // Set adaptive state on the session and persist
         const session = await sessionManager.getSession(sessionId);
         if (session) {
           session.adaptiveState = {
@@ -165,7 +165,7 @@ router.post('/session', optionalAuth, async (req: Request, res: Response) => {
             gameMode: 'easy-steps',
             usedQuestionIds: [firstQuestionDbId],
           };
-          // Persist the updated session (getSession already refreshes TTL)
+          await sessionManager.saveSession(session);
         }
 
         // Record first question for recent-question exclusion
@@ -333,8 +333,8 @@ router.post('/answer', async (req: Request, res: Response) => {
         );
       }
 
-      // Persist updated session (adaptiveState changes)
-      // getSession already refreshed TTL, just need to save
+      // Persist updated session (adaptiveState + questions changes)
+      await sessionManager.saveSession(session);
     }
 
     // Return score with correct answer for client reveal

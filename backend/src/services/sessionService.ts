@@ -169,6 +169,15 @@ export class SessionManager {
   }
 
   /**
+   * Persist a session that has been modified after retrieval
+   * Use when mutating session fields (e.g., adaptiveState) outside of submitAnswer
+   * @param session - Modified session to save
+   */
+  async saveSession(session: GameSession): Promise<void> {
+    await this.storage.set(session.sessionId, session, 3600);
+  }
+
+  /**
    * Submit an answer for scoring
    * Validates session, question, and calculates score with plausibility checks
    * @param sessionId - Session ID
@@ -205,16 +214,13 @@ export class SessionManager {
       return existingAnswer;
     }
 
-    // Determine if this is the final question (last question in session)
-    const questionIndex = session.questions.findIndex(q => q.id === questionId);
-    const isFinalQuestion = questionIndex === session.questions.length - 1;
+    // Determine if this is the final question
+    // In adaptive mode, session.questions grows one-at-a-time so .length is unreliable.
+    // The frontend only sends wager (even if 0) for the actual final question.
+    const isFinalQuestion = wager !== undefined;
 
     // Wager validation
     if (wager !== undefined) {
-      // Wager only allowed on final question
-      if (!isFinalQuestion) {
-        throw new Error('Wager only allowed on final question');
-      }
 
       // Validate wager is non-negative
       if (wager < 0) {

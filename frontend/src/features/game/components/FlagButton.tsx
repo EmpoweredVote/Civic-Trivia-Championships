@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion';
-
 interface FlagButtonProps {
   flagged: boolean;          // Current flag state (controlled by parent)
   disabled: boolean;         // True when rate-limited
@@ -43,22 +41,17 @@ export function FlagButton({
           disabled ? 'opacity-50 cursor-not-allowed' : readOnly ? 'cursor-default' : 'hover:opacity-80'
         }`}
       >
-        <motion.svg
-          className={`${iconSize} ${flagged ? 'text-amber-400' : 'text-slate-400'}`}
+        <svg
+          className={`${iconSize} transition-colors duration-200 ${flagged ? 'text-amber-400' : 'text-slate-400'}`}
           viewBox="0 0 24 24"
           fill={flagged ? 'currentColor' : 'none'}
           stroke="currentColor"
           strokeWidth={flagged ? 0 : 2}
           strokeLinecap="round"
           strokeLinejoin="round"
-          animate={{
-            fill: flagged ? 'currentColor' : 'none',
-            strokeWidth: flagged ? 0 : 2,
-          }}
-          transition={{ duration: 0.2 }}
         >
           <path d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
-        </motion.svg>
+        </svg>
       </button>
 
       {/* CSS hover tooltip - only show when not read-only */}
