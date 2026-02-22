@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 27 of 30 (Backend Foundation & Inline Flagging)
-Plan: Ready to plan
-Status: Not started
-Last activity: 2026-02-21 — v1.5 roadmap created, 4 phases identified, 23 requirements mapped
+Plan: 01 of 1 complete
+Status: Phase 27 complete
+Last activity: 2026-02-22 — Completed 27-01-PLAN.md (Backend Foundation)
 
-Progress: [████████████████████░░] 83% (75 plans complete, v1.5 TBD)
+Progress: [████████████████████░░] 84% (76 plans complete)
 
 **Milestone progress:**
 - v1.0 (Phases 1-7): Complete - 50/50 requirements delivered
@@ -34,10 +34,10 @@ Progress: [████████████████████░░] 8
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 75 (26 v1.0 + 11 v1.1 + 15 v1.2 + 17 v1.3 + 6 v1.4)
+- Total plans completed: 76 (26 v1.0 + 11 v1.1 + 15 v1.2 + 17 v1.3 + 6 v1.4 + 1 v1.5)
 - Quick tasks completed: 9
 - Milestones shipped: 5 (v1.0 through v1.4)
-- Total execution time: ~10 days (2026-02-13 → 2026-02-21)
+- Total execution time: ~10 days (2026-02-13 → 2026-02-22)
 
 **By Milestone:**
 
@@ -48,7 +48,7 @@ Progress: [████████████████████░░] 8
 | v1.2 Community Collections | 13-17 | 15 | 2026-02-19 |
 | v1.3 Quality & Admin | 18-22 | 17 | 2026-02-20 |
 | v1.4 Fremont CA | 23-26 | 6 | 2026-02-21 |
-| v1.5 Feedback Marks | 27-30 | TBD | In progress |
+| v1.5 Feedback Marks | 27-30 | 1 | In progress |
 
 **Recent Trend:**
 - Consistent daily milestone delivery
@@ -67,6 +67,9 @@ Recent decisions affecting v1.5 work:
 - Phase 21: Quality guidelines in all locale system prompts — embed quality rules in generation to reduce validation retries
 - Phase 24: Overshoot-and-curate generation strategy — generate 130%, curate to target for quality buffer
 - Phase 26: Accept 92 questions (below 95 target) — quality over quantity principle
+- Phase 27-01: Rate limiter only on POST /flag, not DELETE — allow unrestricted unflagging (corrective action, not abuse vector)
+- Phase 27-01: Fail-open rate limiting on Redis errors — availability over abuse prevention when Redis unavailable
+- Phase 27-01: Denormalize flag_count on questions table — avoid COUNT(*) queries for performance
 
 ### Pending Todos
 
@@ -100,12 +103,12 @@ None. v1.5 leverages existing patterns:
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Topic: v1.5 Feedback Marks roadmap creation
-Stopped at: v1.5 roadmap created, 23 requirements mapped to 4 phases (27-30), files written
-Resume file: None — ready for phase planning
+Last session: 2026-02-22
+Topic: Phase 27 Backend Foundation & Inline Flagging execution
+Stopped at: Completed 27-01-PLAN.md - question flagging database schema, API endpoints, and rate limiting infrastructure
+Resume file: None — Phase 27 complete, ready for Phase 28
 
-Next action: `/gsd:plan-phase 27` to create execution plans for Backend Foundation & Inline Flagging
+Next action: `/gsd:plan-phase 28` to create execution plans for Flag Elaboration UI
 
 ---
-*v1.5 Feedback Marks — roadmap created*
+*v1.5 Feedback Marks — Phase 27 complete (1/4 phases)*
