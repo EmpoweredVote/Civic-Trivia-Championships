@@ -1,4 +1,4 @@
-import { pgSchema, serial, text, integer, boolean, timestamp, jsonb, index, primaryKey } from 'drizzle-orm/pg-core';
+import { pgSchema, serial, text, integer, boolean, timestamp, jsonb, index, primaryKey, unique } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 // Define the civic_trivia schema
@@ -84,7 +84,8 @@ export const questions = civicTriviaSchema.table('questions', {
   encounterCount: integer('encounter_count').notNull().default(0),
   correctCount: integer('correct_count').notNull().default(0),
   qualityScore: integer('quality_score'),
-  violationCount: integer('violation_count')
+  violationCount: integer('violation_count'),
+  flagCount: integer('flag_count').notNull().default(0)
 }, (table) => ({
   topicIdx: index('idx_questions_topic_id').on(table.topicId),
   learningContentIdx: index('idx_questions_learning_content')
@@ -93,7 +94,8 @@ export const questions = civicTriviaSchema.table('questions', {
     .on(table.expiresAt)
     .where(sql`${table.expiresAt} IS NOT NULL`),
   statusIdx: index('idx_questions_status').on(table.status),
-  qualityScoreIdx: index('idx_questions_quality_score').on(table.qualityScore)
+  qualityScoreIdx: index('idx_questions_quality_score').on(table.qualityScore),
+  flagCountIdx: index('idx_questions_flag_count').on(table.flagCount)
 }));
 
 // Collection-Questions junction table
@@ -111,6 +113,22 @@ export const collectionQuestions = civicTriviaSchema.table('collection_questions
   questionIdx: index('idx_collection_questions_question').on(table.questionId)
 }));
 
+// Question Flags table
+export const questionFlags = civicTriviaSchema.table('question_flags', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull(),  // References users table (raw SQL table, not Drizzle-managed)
+  questionId: integer('question_id').notNull().references(() => questions.id),
+  sessionId: text('session_id').notNull(),  // UUID from Redis game session
+  reasons: jsonb('reasons').$type<string[]>(),  // null until Phase 28
+  elaborationText: text('elaboration_text'),  // null until Phase 28
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  userQuestionUnique: unique().on(table.userId, table.questionId),
+  userIdx: index('idx_question_flags_user').on(table.userId),
+  questionIdx: index('idx_question_flags_question').on(table.questionId),
+  createdAtIdx: index('idx_question_flags_created_at').on(table.createdAt),
+}));
+
 // Export TypeScript types
 export type Collection = typeof collections.$inferSelect;
 export type NewCollection = typeof collections.$inferInsert;
@@ -126,3 +144,6 @@ export type NewQuestion = typeof questions.$inferInsert;
 
 export type CollectionQuestion = typeof collectionQuestions.$inferSelect;
 export type NewCollectionQuestion = typeof collectionQuestions.$inferInsert;
+
+export type QuestionFlag = typeof questionFlags.$inferSelect;
+export type NewQuestionFlag = typeof questionFlags.$inferInsert;
