@@ -13,6 +13,7 @@ import { LearnMoreModal } from './LearnMoreModal';
 import { FinalQuestionAnnouncement } from './FinalQuestionAnnouncement';
 import { WagerScreen } from './WagerScreen';
 import { PauseOverlay } from './PauseOverlay';
+import { FlagButton } from './FlagButton';
 import { CelebrationEffects } from '../../../components/animations/CelebrationEffects';
 import { DegradedBanner } from '../../../components/DegradedBanner';
 import { useAuthStore } from '../../../store/authStore';
@@ -41,6 +42,9 @@ interface GameScreenProps {
   isFinalQuestion: boolean;
   pauseGame: () => void;
   resumeGame: () => void;
+  flaggedQuestions: Set<string>;
+  isRateLimited: boolean;
+  onFlagToggle: (questionId: string) => void;
 }
 
 export function GameScreen({
@@ -59,6 +63,9 @@ export function GameScreen({
   isFinalQuestion,
   pauseGame,
   resumeGame,
+  flaggedQuestions,
+  isRateLimited,
+  onFlagToggle,
 }: GameScreenProps) {
 
   const [showTimeoutFlash, setShowTimeoutFlash] = useState(false);
@@ -73,6 +80,9 @@ export function GameScreen({
 
   // Get timer multiplier from auth store (defaults to 1.0)
   const timerMultiplier = useAuthStore((s) => s.timerMultiplier);
+
+  // Check if user is authenticated for flag button visibility
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   // Confetti store for celebrations
   const { fireSmallBurst, fireMediumBurst } = useConfettiStore();
@@ -460,13 +470,24 @@ export function GameScreen({
               </div>
             )}
 
-            {/* Question card - with amber glow for final question */}
-            <div className={isFinalQuestion ? 'border border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.15)] rounded-xl p-1' : ''}>
+            {/* Question card - with amber glow for final question and flag button during reveal */}
+            <div className={`relative ${isFinalQuestion ? 'border border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.15)] rounded-xl p-1' : ''}`}>
               <QuestionCard
                 question={currentQuestion}
                 questionNumber={state.currentQuestionIndex + 1}
                 totalQuestions={state.questions.length}
               />
+
+              {/* Flag button - shown during reveal phase for authenticated users only */}
+              {state.phase === 'revealing' && isAuthenticated && currentQuestion && (
+                <div className="absolute top-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
+                  <FlagButton
+                    flagged={flaggedQuestions.has(currentQuestion.id)}
+                    disabled={isRateLimited}
+                    onToggle={() => onFlagToggle(currentQuestion.id)}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Answer grid - revealed after question preview */}

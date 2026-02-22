@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import type { GameResult, Question, LearningContent } from '../../../types/game';
 import { TOPIC_ICONS, TOPIC_LABELS } from './TopicIcon';
 import { LearnMoreModal } from './LearnMoreModal';
+import { FlagButton } from './FlagButton';
 import { XpIcon } from '../../../components/icons/XpIcon';
 import { GemIcon } from '../../../components/icons/GemIcon';
 import { useConfettiStore } from '../../../store/confettiStore';
@@ -15,9 +16,10 @@ interface ResultsScreenProps {
   collectionName?: string | null;
   onPlayAgain: () => void;
   onHome: () => void;
+  flaggedQuestions?: Set<string>;  // Optional for backward compatibility
 }
 
-export function ResultsScreen({ result, questions, collectionName, onPlayAgain, onHome }: ResultsScreenProps) {
+export function ResultsScreen({ result, questions, collectionName, onPlayAgain, onHome, flaggedQuestions }: ResultsScreenProps) {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
   const [learnMoreQuestion, setLearnMoreQuestion] = useState<{ content: LearningContent; userAnswer: number | null; correctAnswer: number } | null>(null);
   const motionScore = useMotionValue(0);
@@ -471,6 +473,16 @@ export function ResultsScreen({ result, questions, collectionName, onPlayAgain, 
                               </span>
                             );
                           })()}
+                          {/* Flag indicator for flagged questions */}
+                          {flaggedQuestions?.has(question.id) && (
+                            <FlagButton
+                              flagged={true}
+                              disabled={false}
+                              onToggle={() => {}}
+                              readOnly={true}
+                              size="sm"
+                            />
+                          )}
                         </div>
                         <p className="text-white text-base mt-1">{question.text}</p>
                       </div>
