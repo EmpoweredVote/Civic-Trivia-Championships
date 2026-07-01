@@ -26,9 +26,10 @@ export function useCollections(): UseCollectionsReturn {
     apiRequest<{ collections: CollectionSummary[] }>('/api/game/collections')
       .then(({ collections }) => {
         setCollections(collections);
-        // Select: saved if valid, else first collection (lowest sortOrder = Federal Civics default)
+        // Select: saved if valid, else default to the USA/Federal collection (fall back to first)
         const validSaved = savedId && collections.find(c => c.id === savedId);
-        setSelectedId(validSaved ? savedId : null);
+        const defaultCollection = collections.find(c => c.tier === 'federal') ?? collections[0];
+        setSelectedId(validSaved ? savedId : (defaultCollection?.id ?? null));
       })
       .catch((error) => {
         console.error('Failed to fetch collections:', error);
