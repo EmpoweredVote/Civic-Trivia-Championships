@@ -213,7 +213,7 @@ export function AdminLayout() {
         </header>
 
         {/* Page content */}
-        <main style={{ padding: '16px' }} className="lg:p-8">
+        <main style={{ padding: '24px' }}>
           <Outlet />
         </main>
       </div>

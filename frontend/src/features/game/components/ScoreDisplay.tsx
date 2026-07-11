@@ -58,13 +58,13 @@ export function ScoreDisplay({ score, shouldShake, showRedFlash, compact = false
           background: G.hudCard,
           border: `1px solid ${G.hudBorder}`,
           borderRadius: '8px',
-          padding: '8px 16px',
+          padding: 'clamp(8px, 0.8vw, 14px) clamp(16px, 1.6vw, 26px)',
           textAlign: 'center',
-          minWidth: '80px',
+          minWidth: 'clamp(80px, 8vw, 120px)',
         }}>
           <div style={{
             fontFamily: "'Manrope', sans-serif",
-            fontSize: '11px',
+            fontSize: 'clamp(11px, 0.9vw, 14px)',
             fontWeight: 700,
             letterSpacing: '0.08em',
             textTransform: 'uppercase' as const,
@@ -76,7 +76,7 @@ export function ScoreDisplay({ score, shouldShake, showRedFlash, compact = false
           <div style={{
             fontFamily: "'Manrope', sans-serif",
             fontWeight: 700,
-            fontSize: compact ? '22px' : '35px',
+            fontSize: compact ? 'clamp(22px, 2.2vw, 34px)' : 'clamp(35px, 3.5vw, 52px)',
             lineHeight: 1,
             letterSpacing: compact ? '0px' : '-0.5px',
             color: G.ink,

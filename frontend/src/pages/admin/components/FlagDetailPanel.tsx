@@ -305,7 +305,7 @@ export function FlagDetailPanel({
                   leaveFrom="translate-x-0"
                   leaveTo="translate-x-full"
                 >
-                  <Dialog.Panel style={{ pointerEvents: 'auto', width: '100vw', maxWidth: isMobile ? '100%' : '672px' }}>
+                  <Dialog.Panel style={{ pointerEvents: 'auto', width: '100vw', maxWidth: isMobile ? '100%' : 'clamp(672px, 45vw, 960px)' }}>
                     <div style={{ display: 'flex', height: '100%', flexDirection: 'column', backgroundColor: C.paper, borderLeft: `1px solid ${C.rule}` }}>
                       {/* Header */}
                       <div style={{ backgroundColor: '#3D2E22', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>

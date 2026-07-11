@@ -51,7 +51,7 @@ export function CollectionsPage() {
   const activeCollectionsCount = collections.filter(c => c.isActive).length;
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+    <div>
       {/* Page header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(24px, 4vw, 36px)', letterSpacing: '0.06em', color: C.ink, margin: '0 0 8px 0' }}>

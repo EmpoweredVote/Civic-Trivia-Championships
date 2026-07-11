@@ -78,7 +78,7 @@ function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boole
     <div style={{ background: cardBg, borderRadius: 16, padding: '28px', display: 'flex', flexDirection: 'column' as const, gap: 0, height: '100%', boxSizing: 'border-box' as const }}>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: 22, color: titleColor, margin: 0, lineHeight: 1.2 }}>
+        <h2 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: 'clamp(22px, 1.7vw, 30px)', color: titleColor, margin: 0, lineHeight: 1.2 }}>
           Welcome back{displayName ? `, ${displayName.split(' ')[0]}` : ''}!
         </h2>
         <p style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 300, fontSize: 13, color: mutedColor, margin: '4px 0 0' }}>
@@ -188,7 +188,7 @@ function HowItWorksSection({ darkMode }: { darkMode: boolean }) {
   return (
     <div style={{ background: cardBg, borderRadius: 16, padding: '28px 28px 28px', display: 'flex', flexDirection: 'column' as const, justifyContent: 'space-between', gap: 0, height: '100%', boxSizing: 'border-box' as const }}>
       <div>
-        <h2 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: 26, color: titleColor, margin: 0, lineHeight: 1.1 }}>
+        <h2 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: 'clamp(26px, 2vw, 36px)', color: titleColor, margin: 0, lineHeight: 1.1 }}>
           How it works
         </h2>
         <p style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 300, fontSize: 13, color: subtitleColor, margin: '5px 0 0' }}>
@@ -325,7 +325,7 @@ function FeaturedCard({
 
         {/* City name */}
         <h2 style={{
-          fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: 28,
+          fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 2.2vw, 40px)',
           color: darkMode ? '#F1F5F9' : '#0F172A',
           margin: '0 0 8px', lineHeight: 1.05, letterSpacing: '-0.02em',
         }}>
@@ -345,10 +345,10 @@ function FeaturedCard({
         <button
           onClick={onPlay}
           style={{
-            width: '100%', padding: '14px 20px', borderRadius: 12,
+            width: '100%', padding: 'clamp(14px, 1.1vw, 20px) clamp(20px, 1.6vw, 28px)', borderRadius: 12,
             background: '#E8A020', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 16,
+            fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 1.25vw, 22px)',
             color: '#FFFFFF', transition: 'background 0.2s',
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#C87010'; }}
@@ -385,7 +385,7 @@ export function Dashboard() {
       {/* ── Hero ── */}
       <section style={{ padding: '48px 0 44px' }}>
         <div style={{
-          maxWidth: 1280, margin: '0 auto', padding: '0 24px',
+          padding: '0 24px',
           display: 'flex', alignItems: 'flex-start',
           justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: 24,
         }}>
@@ -395,7 +395,7 @@ export function Dashboard() {
               <span style={{
                 display: 'block',
                 fontFamily: "'Manrope', sans-serif", fontWeight: 900,
-                fontSize: 'clamp(44px, 6vw, 80px)',
+                fontSize: 'clamp(44px, 6vw, 108px)',
                 color: darkMode ? '#FFFFFF' : '#0F172A',
                 letterSpacing: '-0.02em', lineHeight: 1.0,
               }}>
@@ -404,7 +404,7 @@ export function Dashboard() {
               <span style={{
                 display: 'block',
                 fontFamily: "'Manrope', sans-serif", fontWeight: 900,
-                fontSize: 'clamp(44px, 6vw, 80px)',
+                fontSize: 'clamp(44px, 6vw, 108px)',
                 color: '#14B8A6',
                 letterSpacing: '-0.02em', lineHeight: 1.0,
               }}>
@@ -439,13 +439,16 @@ export function Dashboard() {
 
       {/* ── How it works + Featured card ── */}
       <section style={{ paddingBottom: 32 }}>
-        <div style={{
-          maxWidth: 1280, margin: '0 auto', padding: '0 24px',
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.4fr)',
-          gap: 20,
-          alignItems: 'stretch',
-        }}>
+        <div
+          className="md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
+          style={{
+            padding: '0 24px',
+            display: 'grid',
+            gridTemplateColumns: '1fr',
+            gap: 20,
+            alignItems: 'stretch',
+          }}
+        >
           {isAuthenticated
             ? <PlayerStatsSection darkMode={darkMode} displayName={displayName} userId={user?.id ?? null} />
             : <HowItWorksSection darkMode={darkMode} />
@@ -456,7 +459,7 @@ export function Dashboard() {
 
       {/* ── All Collections grid ── */}
       <section style={{ paddingBottom: 64 }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ padding: '0 24px' }}>
           <CollectionPicker
             collections={collections}
             selectedId={selectedId}

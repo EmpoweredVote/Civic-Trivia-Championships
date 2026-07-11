@@ -20,7 +20,7 @@ export function ProgressDots({ currentIndex, total = 8 }: ProgressDotsProps) {
         }}>
           <span style={{
             fontFamily: "'Manrope', sans-serif",
-            fontSize: '11px',
+            fontSize: 'clamp(11px, 0.9vw, 14px)',
             fontWeight: 500,
             color: G.inkMuted,
           }}>
@@ -28,7 +28,7 @@ export function ProgressDots({ currentIndex, total = 8 }: ProgressDotsProps) {
           </span>
           <span style={{
             fontFamily: "'Manrope', sans-serif",
-            fontSize: '11px',
+            fontSize: 'clamp(11px, 0.9vw, 14px)',
             fontWeight: 600,
             color: G.inkMuted,
           }}>

@@ -72,13 +72,13 @@ export function CollectionPicker({ collections, selectedId, loading, onSelect }:
 
       {/* Grid */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4">
           {[0, 1, 2, 3, 4, 5].map(i => (
             <GridSkeleton key={i} darkMode={darkMode} />
           ))}
         </div>
       ) : collections.length === 0 ? null : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4">
           {sortCollections(collections).map(c => (
             <CollectionCard
               key={c.id}

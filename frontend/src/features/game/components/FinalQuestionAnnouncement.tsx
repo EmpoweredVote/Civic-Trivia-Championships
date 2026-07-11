@@ -27,7 +27,7 @@ export function FinalQuestionAnnouncement({ show }: FinalQuestionAnnouncementPro
               alt="Final Question"
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ width: '60%', maxWidth: '480px', margin: '0 auto', display: 'block', padding: '0 16px' }}
+              style={{ width: '60%', maxWidth: 'clamp(480px, 40vw, 720px)', margin: '0 auto', display: 'block', padding: '0 16px' }}
             />
           </div>
         </motion.div>

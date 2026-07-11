@@ -109,14 +109,14 @@ export function WagerScreen({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        style={{ maxWidth: '520px', width: '100%' }}
+        style={{ maxWidth: 'clamp(520px, 42vw, 900px)', width: '100%' }}
       >
         {/* Final Question image + category */}
         <div style={{ textAlign: 'center', marginBottom: '12px' }}>
           <img
             src="/images/FinalQuestion_A.png"
             alt="Final Question"
-            style={{ height: '13vh', maxHeight: '110px', objectFit: 'contain', display: 'inline-block', marginBottom: '8px' }}
+            style={{ height: '13vh', maxHeight: 'clamp(110px, 10vw, 160px)', objectFit: 'contain', display: 'inline-block', marginBottom: '8px' }}
           />
           <p style={{
             fontFamily: "'Manrope', sans-serif",
@@ -154,7 +154,7 @@ export function WagerScreen({
           >
             <div style={{
               fontFamily: "'Manrope', sans-serif",
-              fontSize: '40px',
+              fontSize: 'clamp(40px, 3.4vw, 58px)',
               lineHeight: 1,
               fontWeight: 700,
               color: G.ink,
@@ -212,7 +212,7 @@ export function WagerScreen({
               </div>
               <div style={{
                 fontFamily: "'Manrope', sans-serif",
-                fontSize: '36px',
+                fontSize: 'clamp(36px, 3vw, 52px)',
                 fontWeight: 700,
                 lineHeight: 1,
                 color: G.btn,
@@ -331,7 +331,7 @@ export function WagerScreen({
               <span style={{ display: 'inline-flex', alignItems: 'center' }}>
                 <span style={{
                   fontFamily: "'Manrope', sans-serif",
-                  fontSize: '20px',
+                  fontSize: 'clamp(20px, 1.6vw, 28px)',
                   fontWeight: 700,
                   color: G.correct,
                   transition: 'color 0.2s',
@@ -366,7 +366,7 @@ export function WagerScreen({
               }}>If wrong:</span>
               <span style={{
                 fontFamily: "'Manrope', sans-serif",
-                fontSize: '20px',
+                fontSize: 'clamp(20px, 1.6vw, 28px)',
                 fontWeight: 700,
                 color: G.incorrect,
                 transition: 'color 0.2s',
@@ -387,7 +387,7 @@ export function WagerScreen({
             padding: '10px 32px',
             minHeight: '40px',
             fontFamily: "'Manrope', sans-serif",
-            fontSize: '15px',
+            fontSize: 'clamp(15px, 1.1vw, 19px)',
             fontWeight: 600,
             border: wagerAmount === 0 ? `1px solid ${G.questionCardBorder}` : 'none',
             borderRadius: '10px',

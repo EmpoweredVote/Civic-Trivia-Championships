@@ -153,7 +153,7 @@ export function AnswerGrid({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                padding: '10px 14px',
+                padding: 'clamp(10px, 1vw, 16px) clamp(14px, 1.2vw, 20px)',
                 background: btnBg,
                 border: `1.5px solid ${btnBorder}`,
                 borderRadius: '8px',
@@ -161,19 +161,19 @@ export function AnswerGrid({
                 textAlign: 'left',
                 cursor: canSelect ? 'pointer' : 'default',
                 outline: 'none',
-                minHeight: '46px',
+                minHeight: 'clamp(46px, 4vw, 62px)',
                 transition: 'background 0.15s, border-color 0.15s',
               }}
             >
               {/* Letter badge */}
               <div style={{
-                width: '28px', height: '28px',
+                width: 'clamp(28px, 2.2vw, 38px)', height: 'clamp(28px, 2.2vw, 38px)',
                 borderRadius: '6px',
                 background: badgeBg,
                 color: badgeColor,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: "'Manrope', sans-serif",
-                fontSize: '12px',
+                fontSize: 'clamp(12px, 1vw, 16px)',
                 fontWeight: 700,
                 flexShrink: 0,
                 transition: 'background 0.15s, color 0.15s',
@@ -185,7 +185,7 @@ export function AnswerGrid({
               <span style={{
                 fontFamily: "'Manrope', sans-serif",
                 color: G.ink,
-                fontSize: '13px',
+                fontSize: 'clamp(13px, 1.1vw, 18px)',
                 fontWeight: 500,
                 lineHeight: 1.4,
                 flex: 1,
@@ -229,16 +229,16 @@ export function AnswerGrid({
             ref={lockInButtonRef}
             onClick={onLockIn}
             style={{
-              padding: '12px 48px',
+              padding: 'clamp(12px, 1.1vw, 18px) clamp(48px, 4.5vw, 72px)',
               background: G.btn,
               color: G.btnText,
               fontFamily: "'Manrope', sans-serif",
-              fontSize: '16px',
+              fontSize: 'clamp(16px, 1.4vw, 22px)',
               fontWeight: 700,
               border: 'none',
               borderRadius: '50px',
               cursor: 'pointer',
-              minHeight: '48px',
+              minHeight: 'clamp(48px, 4vw, 64px)',
               transition: 'background 0.15s',
             }}
             onMouseEnter={e => (e.currentTarget.style.background = G.btnHover)}
@@ -262,7 +262,7 @@ export function AnswerGrid({
             <div style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               fontFamily: "'Manrope', sans-serif",
-              fontSize: '13px', fontWeight: 600,
+              fontSize: 'clamp(13px, 1vw, 17px)', fontWeight: 600,
               color: G.correct,
               marginBottom: '8px',
             }}>
@@ -278,7 +278,7 @@ export function AnswerGrid({
             <div style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               fontFamily: "'Manrope', sans-serif",
-              fontSize: '13px', fontWeight: 500,
+              fontSize: 'clamp(13px, 1vw, 17px)', fontWeight: 500,
               color: G.incorrect,
               opacity: 0.85,
               marginBottom: '8px',
@@ -300,7 +300,7 @@ export function AnswerGrid({
             <div style={{
               fontFamily: "'Lora', Georgia, serif",
               color: G.explanationText,
-              fontSize: '13px',
+              fontSize: 'clamp(13px, 1vw, 17px)',
               lineHeight: 1.65,
               fontStyle: 'italic',
             }}>

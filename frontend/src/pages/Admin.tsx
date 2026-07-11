@@ -151,7 +151,7 @@ export function Admin() {
     <div style={{ minHeight: '100vh', backgroundColor: C.paper }}>
       <Header />
 
-      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px' }} className="sm:px-6 lg:px-8">
+      <main style={{ maxWidth: 'clamp(1280px, 85vw, 2400px)', margin: '0 auto', padding: '24px 16px' }} className="sm:px-6 lg:px-8">
         <div style={{ border: `1px solid ${C.rule}`, borderRadius: '2px', padding: '24px' }}>
           {/* Page Header */}
           <div style={{ marginBottom: '24px' }}>

@@ -57,7 +57,7 @@ export function Header() {
       borderBottom: `1px solid ${darkMode ? '#21262D' : '#E8EFF4'}`,
       transition: 'background 0.2s, border-color 0.2s',
     }}>
-      <div style={{ maxWidth: '1512px', margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
+      <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
 
           {/* Logo — swaps based on theme */}
           <div className="flex-shrink-0">

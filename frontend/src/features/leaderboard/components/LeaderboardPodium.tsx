@@ -46,7 +46,7 @@ function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: P
       transition={{ duration: 0.35, delay: animationDelay }}
       style={{
         flex: 1,
-        maxWidth: '110px',
+        maxWidth: 'clamp(110px, 9vw, 160px)',
         minWidth: '80px',
         display: 'flex',
         flexDirection: 'column',
@@ -60,7 +60,7 @@ function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: P
       }}
     >
       {/* Medal / rank label */}
-      <span style={{ fontSize: '20px', lineHeight: 1 }}>
+      <span style={{ fontSize: 'clamp(20px, 1.8vw, 30px)', lineHeight: 1 }}>
         {PODIUM_MEDALS[entry.rank] ?? `#${entry.rank}`}
       </span>
 
@@ -85,13 +85,13 @@ function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: P
       <span
         style={{
           fontFamily: "'Lora', Georgia, serif",
-          fontSize: '13px',
+          fontSize: 'clamp(13px, 1vw, 17px)',
           color: isYou ? C.ink : C.muted,
           fontStyle: 'normal',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          maxWidth: '90px',
+          maxWidth: 'clamp(90px, 7.5vw, 130px)',
           textAlign: 'center',
           display: 'block',
           width: '100%',
@@ -117,7 +117,7 @@ function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: P
       <span
         style={{
           fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: '13px',
+          fontSize: 'clamp(13px, 1.1vw, 18px)',
           letterSpacing: '0.06em',
           color: '#E8A020',
         }}

@@ -104,7 +104,7 @@ export function AdminDashboard() {
   };
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+    <div>
       {/* Welcome section */}
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{
@@ -193,7 +193,7 @@ export function AdminDashboard() {
               </div>
               <div style={{
                 fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: '40px',
+                fontSize: 'clamp(40px, 3vw, 50px)',
                 color: C.ink,
                 lineHeight: 1,
               }}>
@@ -214,7 +214,7 @@ export function AdminDashboard() {
               </div>
               <div style={{
                 fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: '40px',
+                fontSize: 'clamp(40px, 3vw, 50px)',
                 color: C.ink,
                 lineHeight: 1,
               }}>
@@ -236,7 +236,7 @@ export function AdminDashboard() {
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                 <div style={{
                   fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: '40px',
+                  fontSize: 'clamp(40px, 3vw, 50px)',
                   color: C.ink,
                   lineHeight: 1,
                 }}>
@@ -268,7 +268,7 @@ export function AdminDashboard() {
               </div>
               <div style={{
                 fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: '40px',
+                fontSize: 'clamp(40px, 3vw, 50px)',
                 color: C.ink,
                 lineHeight: 1,
               }}>
