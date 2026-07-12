@@ -140,24 +140,25 @@ export function ResultsScreen({
     }}>
       <Header />
 
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        maxWidth: '1080px',
-        width: '100%',
-        margin: '0 auto',
-        padding: '16px 20px 40px',
-        gap: '16px',
-        alignItems: 'flex-start',
-        boxSizing: 'border-box',
-      }}>
+      <div
+        className="flex-col md:flex-row items-stretch md:items-start"
+        style={{
+          flex: 1,
+          display: 'flex',
+          width: '100%',
+          padding: '16px 24px 40px',
+          gap: '16px',
+          boxSizing: 'border-box',
+        }}
+      >
 
         {/* ── LEFT PANEL ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}
+          className="w-full md:w-[clamp(320px,24vw,420px)] md:flex-shrink-0"
+          style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
         >
           {/* Score card */}
           <div style={{
@@ -167,9 +168,9 @@ export function ResultsScreen({
             padding: '20px 20px 16px',
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: '36px', lineHeight: 1, marginBottom: '8px' }}>🏆</div>
+            <div style={{ fontSize: 'clamp(36px, 3vw, 52px)', lineHeight: 1, marginBottom: '8px' }}>🏆</div>
             <div style={{
-              fontSize: '11px',
+              fontSize: 'clamp(11px, 0.9vw, 14px)',
               letterSpacing: '0.22em',
               color: G.accent,
               marginBottom: '4px',
@@ -178,7 +179,7 @@ export function ResultsScreen({
             </div>
             <div style={{
               fontFamily: "'Manrope', sans-serif",
-              fontSize: '60px',
+              fontSize: 'clamp(60px, 5vw, 88px)',
               fontWeight: 700,
               lineHeight: 0.95,
               color: isPerfectGame ? G.btn : G.ink,
@@ -350,7 +351,7 @@ export function ResultsScreen({
                 border: 'none',
                 borderRadius: '50px',
                 fontFamily: "'Manrope', sans-serif",
-                fontSize: '16px',
+                fontSize: 'clamp(16px, 1.2vw, 20px)',
                 fontWeight: 700,
                 letterSpacing: '0.12em',
                 cursor: 'pointer',

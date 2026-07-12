@@ -11,7 +11,8 @@ export function QuestionCard({ question, questionNumber, totalQuestions }: Quest
   const { G } = useGameTheme();
   return (
     <div
-      className="flex flex-col items-center max-w-3xl mx-auto w-full px-2 md:px-6"
+      className="flex flex-col items-center mx-auto w-full px-2 md:px-6"
+      style={{ maxWidth: 'clamp(768px, 45vw, 1300px)' }}
       role="region"
       aria-label={`Question ${questionNumber} of ${totalQuestions}`}
     >
@@ -22,12 +23,12 @@ export function QuestionCard({ question, questionNumber, totalQuestions }: Quest
         gap: '10px',
         marginBottom: '10px',
         width: '100%',
-        maxWidth: '360px',
+        maxWidth: 'clamp(360px, 30vw, 480px)',
       }}>
         <div style={{ flex: 1, height: '1px', background: `linear-gradient(to right, transparent, ${G.topicRule})` }} />
         <div style={{
           fontFamily: "'Manrope', sans-serif",
-          fontSize: '11px',
+          fontSize: 'clamp(11px, 0.9vw, 14px)',
           fontWeight: 700,
           letterSpacing: '0.1em',
           textTransform: 'uppercase' as const,
@@ -43,7 +44,7 @@ export function QuestionCard({ question, questionNumber, totalQuestions }: Quest
       <div style={{
         fontFamily: "'Manrope', sans-serif",
         color: G.ink,
-        fontSize: 'clamp(15px, 2vw, 22px)',
+        fontSize: 'clamp(16px, 2.2vw, 32px)',
         fontWeight: 600,
         textAlign: 'center',
         lineHeight: 1.3,

@@ -194,7 +194,7 @@ export function Profile() {
     return (
       <div style={{ minHeight: '100vh', background: C.paper }}>
         <Header />
-        <div style={{ maxWidth: '768px', margin: '0 auto', padding: '24px' }}>
+        <div style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh' }}>
             <div
               className="animate-spin"
@@ -241,7 +241,7 @@ export function Profile() {
         background: C.accent,
         color: '#FFFFFF',
         fontFamily: "'Bebas Neue', sans-serif",
-        fontSize: '18px',
+        fontSize: 'clamp(18px, 1.4vw, 24px)',
         letterSpacing: '0.12em',
         border: 'none',
         borderRadius: '2px',
@@ -277,7 +277,7 @@ export function Profile() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <h1 style={{
                   fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: 'clamp(26px, 6vw, 40px)',
+                  fontSize: 'clamp(26px, 3vw, 56px)',
                   letterSpacing: '0.04em',
                   color: C.ink,
                   margin: 0,
@@ -359,7 +359,7 @@ export function Profile() {
               borderBottom: `1px solid ${C.rule}`,
             }}>
               <div style={{ flex: 1, textAlign: 'center', padding: '14px 8px', borderRight: `1px solid ${C.rule}` }}>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '34px', lineHeight: 1, color: C.amber }}>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(34px, 2.6vw, 48px)', lineHeight: 1, color: C.amber }}>
                   {(() => {
                     const raw = accountData.connected_profile?.xp;
                     const n = typeof raw === 'object' && raw !== null ? (raw.total_xp ?? raw.total) : raw;
@@ -371,7 +371,7 @@ export function Profile() {
                 </div>
               </div>
               <div style={{ flex: 1, textAlign: 'center', padding: '14px 8px' }}>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '34px', lineHeight: 1, color: C.gems }}>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(34px, 2.6vw, 48px)', lineHeight: 1, color: C.gems }}>
                   {(accountData.connected_profile?.gem_balance ?? 0).toLocaleString()}
                 </div>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.18em', fontSize: '10px', color: C.mutedFg, marginTop: '3px' }}>
@@ -425,7 +425,7 @@ export function Profile() {
                 borderRight: i < arr.length - 1 ? `1px solid ${C.rule}` : 'none',
               }}
             >
-              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '36px', lineHeight: 1, color: C.ink }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(36px, 2.8vw, 50px)', lineHeight: 1, color: C.ink }}>
                 {stat.value}
               </div>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.15em', fontSize: '10px', color: C.mutedFg, marginTop: '4px' }}>
@@ -685,7 +685,7 @@ export function Profile() {
   const pageShell = (children: React.ReactNode) => (
     <div style={{ minHeight: '100vh', background: C.paper, fontFamily: "'Lora', Georgia, serif" }}>
       <Header />
-      <div style={{ maxWidth: '768px', margin: '0 auto', padding: '32px 24px 80px' }}>
+      <div style={{ padding: '32px 24px 80px' }}>
         {children}
       </div>
     </div>

@@ -81,7 +81,7 @@ export function Login() {
     <div style={{ minHeight: '100vh', background: C.paper }}>
       <Header />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-      <div style={{ width: '100%', maxWidth: '400px' }}>
+      <div style={{ width: '100%', maxWidth: 'clamp(400px, 30vw, 560px)' }}>
 
         {/* Masthead */}
         <div style={{ textAlign: 'center', marginBottom: '36px' }}>
@@ -93,7 +93,7 @@ export function Login() {
           <h1 style={{
             fontFamily: "'Manrope', sans-serif",
             fontWeight: 700,
-            fontSize: '28px',
+            fontSize: 'clamp(28px, 2.2vw, 40px)',
             color: C.ink,
             margin: '0',
             lineHeight: 1,
@@ -169,14 +169,14 @@ export function Login() {
             disabled={loading}
             style={{
               marginTop: '4px',
-              padding: '14px',
+              padding: 'clamp(14px, 1.1vw, 20px)',
               width: '100%',
-              minHeight: '48px',
+              minHeight: 'clamp(48px, 3.8vw, 64px)',
               background: loading ? C.rule : C.accent,
               color: '#FFFFFF',
               fontFamily: "'Manrope', sans-serif",
               fontWeight: 700,
-              fontSize: '15px',
+              fontSize: 'clamp(15px, 1.2vw, 20px)',
               border: 'none',
               borderRadius: '8px',
               cursor: loading ? 'not-allowed' : 'pointer',

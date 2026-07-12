@@ -121,7 +121,7 @@ export function AdminsPage() {
   }
 
   return (
-    <div style={{ maxWidth: '672px' }}>
+    <div style={{ maxWidth: 'clamp(672px, 55vw, 1100px)' }}>
       <h1 style={{
         fontFamily: "'Bebas Neue', sans-serif",
         fontSize: '28px',

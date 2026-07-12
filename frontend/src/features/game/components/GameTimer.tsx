@@ -52,7 +52,7 @@ export function GameTimer({
               <div
                 style={{
                   fontFamily: "'Manrope', sans-serif",
-                  fontSize: isSmall ? '18px' : '28px',
+                  fontSize: isSmall ? 'clamp(18px, 1.6vw, 24px)' : 'clamp(28px, 2.4vw, 36px)',
                   fontWeight: 700,
                   lineHeight: 1,
                   color,

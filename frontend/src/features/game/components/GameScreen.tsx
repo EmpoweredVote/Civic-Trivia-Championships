@@ -22,6 +22,7 @@ import { useConfettiStore } from '../../../store/confettiStore';
 import { useThemeStore } from '../../../store/themeStore';
 import { useGameTheme } from '../gameTheme';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
+import { useWindowSize } from '../../../hooks/useWindowSize';
 import { announce } from '../../../utils/announce';
 import type { GameState, Question, LearningContent } from '../../../types/game';
 import { XpStrip } from './XpStrip';
@@ -108,6 +109,12 @@ export function GameScreen({
   // Confetti store for celebrations
   const { fireSmallBurst, fireMediumBurst } = useConfettiStore();
   const reducedMotion = useReducedMotion();
+
+  // Scale the timer circle up on wide viewports so it doesn't stay tiny on large screens
+  const { width: viewportWidth } = useWindowSize();
+  const timerScale = Math.min(1.5, Math.max(1, viewportWidth / 1280));
+  const timerSizeFull = Math.round(80 * timerScale);
+  const timerSizeSmall = Math.round(56 * timerScale);
 
   // Calculate adjusted durations based on multiplier
   const questionDuration = Math.round(QUESTION_DURATION * timerMultiplier);
@@ -400,17 +407,17 @@ export function GameScreen({
           <button
             onClick={startGame}
             style={{
-              padding: '16px 48px',
+              padding: 'clamp(16px, 1.4vw, 22px) clamp(48px, 4vw, 68px)',
               background: G.btn,
               color: G.btnText,
               fontFamily: "'Manrope', sans-serif",
-              fontSize: '22px',
+              fontSize: 'clamp(22px, 1.8vw, 30px)',
               fontWeight: 700,
               letterSpacing: '-0.25px',
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer',
-              minHeight: '56px',
+              minHeight: 'clamp(56px, 4.5vw, 72px)',
               transition: 'background 0.15s',
             }}
             onMouseEnter={e => (e.currentTarget.style.background = G.btnHover)}
@@ -489,7 +496,7 @@ export function GameScreen({
       <div className="relative h-full flex flex-col py-2 md:py-4 px-4">
 
         {/* Top HUD — fixed in flow, never moves */}
-        <div className="flex flex-col max-w-[700px] mx-auto w-full flex-shrink-0" style={{ gap: '16px', marginBottom: '32px' }}>
+        <div className="flex flex-col mx-auto w-full flex-shrink-0" style={{ gap: '16px', marginBottom: '32px', maxWidth: 'clamp(700px, 55vw, 1500px)' }}>
           {/* Three-column row: score | timer | question */}
           <div className="grid grid-cols-3 items-center w-full">
 
@@ -506,7 +513,7 @@ export function GameScreen({
             {/* Timer (center) */}
             <div
               className="flex items-center justify-center"
-              style={{ minHeight: state.phase === 'revealing' ? '56px' : '80px' }}
+              style={{ minHeight: state.phase === 'revealing' ? timerSizeSmall : timerSizeFull }}
             >
               {(showOptions || state.phase === 'locked' || state.phase === 'revealing' || (state.phase === 'selected' && state.currentQuestionIndex === state.totalQuestions - 1)) && (
                 <GameTimer
@@ -515,7 +522,7 @@ export function GameScreen({
                   onTimeout={onTimeout}
                   onTimeUpdate={setCurrentTimeRemaining}
                   isPaused={state.isTimerPaused || !showOptions}
-                  size={state.phase === 'revealing' ? 56 : 80}
+                  size={state.phase === 'revealing' ? timerSizeSmall : timerSizeFull}
                 />
               )}
             </div>
@@ -526,13 +533,13 @@ export function GameScreen({
                 background: G.hudCard,
                 border: `1px solid ${G.hudBorder}`,
                 borderRadius: '8px',
-                padding: '8px 16px',
+                padding: 'clamp(8px, 0.8vw, 14px) clamp(16px, 1.6vw, 26px)',
                 textAlign: 'center',
-                minWidth: '80px',
+                minWidth: 'clamp(80px, 8vw, 120px)',
               }}>
                 <div style={{
                   fontFamily: "'Manrope', sans-serif",
-                  fontSize: '11px',
+                  fontSize: 'clamp(11px, 0.9vw, 14px)',
                   fontWeight: 700,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase' as const,
@@ -544,13 +551,13 @@ export function GameScreen({
                 <div style={{
                   fontFamily: "'Manrope', sans-serif",
                   fontWeight: 700,
-                  fontSize: '22px',
+                  fontSize: 'clamp(22px, 2.2vw, 34px)',
                   lineHeight: 1,
                   letterSpacing: '-0.25px',
                   color: G.ink,
                 }}>
                   {state.currentQuestionIndex + 1}
-                  <span style={{ fontSize: '14px', color: G.inkMuted, fontWeight: 500 }}>
+                  <span style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: G.inkMuted, fontWeight: 500 }}>
                     /{state.totalQuestions}
                   </span>
                 </div>
@@ -606,7 +613,7 @@ export function GameScreen({
 
         {/* Question area — takes remaining space, question card centered within */}
         <div className="flex-1 flex flex-col items-center justify-center min-h-0 overflow-y-auto">
-        <div className="max-w-[700px] w-full">
+        <div className="w-full" style={{ maxWidth: 'clamp(700px, 55vw, 1500px)' }}>
 
         {/* Question and answers - with AnimatePresence for transitions */}
         <AnimatePresence mode="wait">
@@ -640,7 +647,7 @@ export function GameScreen({
               background: G.questionCard,
               border: `1px solid ${G.questionCardBorder}`,
               borderRadius: '14px',
-              padding: '24px',
+              padding: 'clamp(24px, 2.2vw, 40px)',
               width: '100%',
               boxShadow: isFinalQuestion ? `0 0 30px ${G.spotlight}` : 'none',
             }}>

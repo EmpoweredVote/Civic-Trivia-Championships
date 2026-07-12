@@ -43,6 +43,9 @@ export function CollectionCard({ collection, isSelected, onSelect }: CollectionC
       style={{
         position: 'relative',
         width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column' as const,
         textAlign: 'left',
         background: 'none',
         padding: 0,
@@ -56,7 +59,7 @@ export function CollectionCard({ collection, isSelected, onSelect }: CollectionC
       }}
     >
       {/* Photo */}
-      <div style={{ position: 'relative', height: 160, overflow: 'hidden', background: collection.themeColor }}>
+      <div style={{ position: 'relative', height: 160, flexShrink: 0, overflow: 'hidden', background: collection.themeColor }}>
         <img
           src={`/images/collections/${collection.slug}.jpg`}
           alt=""
@@ -86,7 +89,7 @@ export function CollectionCard({ collection, isSelected, onSelect }: CollectionC
       </div>
 
       {/* Card body */}
-      <div style={{ background: cardBg, padding: '14px 16px 14px' }}>
+      <div style={{ background: cardBg, padding: '14px 16px 14px', flex: 1, display: 'flex', flexDirection: 'column' as const }}>
         {/* Region */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
           <svg width="10" height="13" viewBox="0 0 10 13" fill="#D4A017" style={{ flexShrink: 0 }}>

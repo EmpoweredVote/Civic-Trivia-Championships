@@ -101,7 +101,7 @@ export function Leaderboard() {
           background: C.accent,
           color: '#FFFFFF',
           fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: '18px',
+          fontSize: 'clamp(18px, 1.4vw, 24px)',
           letterSpacing: '0.12em',
           border: 'none',
           borderRadius: '2px',
@@ -158,8 +158,6 @@ export function Leaderboard() {
 
       <div
         style={{
-          maxWidth: '768px',
-          margin: '0 auto',
           padding: '32px 24px 80px',
         }}
       >
@@ -167,7 +165,7 @@ export function Leaderboard() {
         <h1
           style={{
             fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: '28px',
+            fontSize: 'clamp(28px, 2.2vw, 40px)',
             letterSpacing: '0.1em',
             color: C.ink,
             textAlign: 'center',
