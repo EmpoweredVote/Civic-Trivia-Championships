@@ -31,6 +31,7 @@ function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boole
   const statBg = darkMode ? '#0D1117' : '#F8FAFC';
   const statBorder = darkMode ? '#21262D' : '#E2E8F0';
   const statLabelColor = darkMode ? '#475569' : '#94A3B8';
+  const dividerColor = darkMode ? '#21262D' : '#E2E8F0';
 
   const { xpData, isConnected } = usePlayerXp(userId);
   const [stats, setStats] = useState<ProfileStats | null>(null);
@@ -122,6 +123,20 @@ function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boole
           </div>
         ))}
       </div>
+
+      <div style={{ height: 1, background: dividerColor, margin: '20px 0' }} />
+
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+          <circle cx="8" cy="8" r="7" stroke="#14B8A6" strokeWidth="1.5"/>
+          <path d="M5 8l2.5 2.5L11 5" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: mutedColor, margin: 0, lineHeight: 1.55 }}>
+          Select any collection from the grid below — the featured card updates instantly. Hit{' '}
+          <strong style={{ color: titleColor, fontWeight: 700 }}>Play Now</strong>{' '}
+          when you're ready.
+        </p>
+      </div>
     </div>
   );
 }
@@ -133,6 +148,7 @@ function HowItWorksSection({ darkMode }: { darkMode: boolean }) {
   const stepTitleColor = darkMode ? '#E2E8F0' : '#0F172A';
   const stepDescColor = darkMode ? '#64748B' : '#94A3B8';
   const iconBg = darkMode ? '#0D1117' : '#EFF6FF';
+  const dividerColor = darkMode ? '#21262D' : '#E2E8F0';
 
   const steps = [
     {
@@ -203,6 +219,20 @@ function HowItWorksSection({ darkMode }: { darkMode: boolean }) {
           </div>
         ))}
       </div>
+
+      <div style={{ height: 1, background: dividerColor }} />
+
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 20 }}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+          <circle cx="8" cy="8" r="7" stroke="#14B8A6" strokeWidth="1.5"/>
+          <path d="M5 8l2.5 2.5L11 5" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: stepDescColor, margin: 0, lineHeight: 1.55 }}>
+          Select any collection from the grid below — the featured card updates instantly. Hit{' '}
+          <strong style={{ color: stepTitleColor, fontWeight: 700 }}>Play Now</strong>{' '}
+          when you're ready.
+        </p>
+      </div>
     </div>
   );
 }
@@ -258,7 +288,7 @@ function FeaturedCard({
   return (
     <div style={{ borderRadius: 16, overflow: 'hidden', border: `2px solid ${borderColor}`, background: cardBg, display: 'flex', flexDirection: 'column' as const, height: '100%', boxSizing: 'border-box' as const }}>
       {/* Photo */}
-      <div style={{ position: 'relative', height: 140, background: collection.themeColor, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: 180, background: collection.themeColor, overflow: 'hidden' }}>
         <img
           src={`/images/collections/${collection.slug}.jpg`}
           alt={collection.name}
@@ -306,7 +336,7 @@ function FeaturedCard({
         <p style={{
           fontFamily: "'Manrope', sans-serif", fontWeight: 300, fontSize: 14,
           color: darkMode ? '#64748B' : '#94A3B8',
-          lineHeight: 1.6, margin: '0 0 16px',
+          lineHeight: 1.6, margin: '0 0 20px',
         }}>
           {collection.description}
         </p>
@@ -324,10 +354,12 @@ function FeaturedCard({
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#C87010'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E8A020'; }}
         >
-          <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor">
-            <path d="M1.5 1l11 7-11 7V1z"/>
-          </svg>
-          Play Now
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor">
+              <path d="M1.5 1l11 7-11 7V1z"/>
+            </svg>
+            Play Now
+          </div>
         </button>
       </div>
     </div>
