@@ -3,20 +3,13 @@ import { Avatar } from '../../../components/Avatar';
 import { useTheme } from '../../../hooks/useTheme';
 import type { LeaderboardEntry } from '../types';
 
-const PODIUM_COLORS: Record<number, string> = {
-  1: '#B8860B',
-  2: '#9A9A9A',
-  3: '#8B4513',
-};
-
-const PODIUM_MEDALS: Record<number, string> = {
-  1: '🥇',
-  2: '🥈',
-  3: '🥉',
+const RANK_COLORS: Record<number, string> = {
+  1: '#E8A020',
+  2: '#94A3B8',
+  3: '#D48F63',
 };
 
 const TIER_COLORS = {
-  inform: '#9A9A9A',
   connected: '#03B9D2',
   empowered: '#FF5740',
 };
@@ -35,9 +28,12 @@ interface PodiumCardProps {
 }
 
 function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: PodiumCardProps) {
-  const { C } = useTheme();
-  const podiumColor = PODIUM_COLORS[entry.rank] ?? '#9A9A9A';
-  const tierColor = TIER_COLORS[entry.tier] ?? C.muted;
+  const { darkMode } = useTheme();
+  const cardBg = darkMode ? '#161B22' : '#FFFFFF';
+  const inkColor = darkMode ? '#F1F5F9' : '#0F172A';
+  const mutedColor = darkMode ? '#7C90AC' : '#94A3B8';
+  const rankColor = RANK_COLORS[entry.rank] ?? mutedColor;
+  const tierColor = entry.tier === 'inform' ? mutedColor : TIER_COLORS[entry.tier];
 
   return (
     <motion.div
@@ -46,23 +42,32 @@ function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: P
       transition={{ duration: 0.35, delay: animationDelay }}
       style={{
         flex: 1,
-        maxWidth: 'clamp(110px, 9vw, 160px)',
-        minWidth: '80px',
+        maxWidth: 'clamp(110px, 9vw, 170px)',
+        minWidth: '90px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '12px 8px',
-        background: `${podiumColor}26`,
-        borderTop: `2px solid ${podiumColor}60`,
-        borderRadius: '4px',
-        marginTop: isCenter ? '-12px' : '0',
+        padding: '18px 10px 16px',
+        background: cardBg,
+        border: `2px solid ${isYou ? '#14B8A6' : rankColor}`,
+        borderRadius: '16px',
+        marginTop: isCenter ? '-14px' : '0',
         gap: '6px',
       }}
     >
-      {/* Medal / rank label */}
-      <span style={{ fontSize: 'clamp(20px, 1.8vw, 30px)', lineHeight: 1 }}>
-        {PODIUM_MEDALS[entry.rank] ?? `#${entry.rank}`}
-      </span>
+      {/* Rank badge */}
+      <div
+        style={{
+          width: '26px', height: '26px', borderRadius: '50%',
+          background: `${rankColor}26`, border: `1px solid ${rankColor}80`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '2px',
+        }}
+      >
+        <span style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: '12px', color: rankColor }}>
+          {entry.rank}
+        </span>
+      </div>
 
       {/* Avatar with tier dot */}
       <div style={{ position: 'relative' }}>
@@ -72,11 +77,11 @@ function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: P
             position: 'absolute',
             top: 0,
             right: 0,
-            width: '6px',
-            height: '6px',
+            width: '8px',
+            height: '8px',
             borderRadius: '50%',
             background: tierColor,
-            border: `1px solid ${C.paper}`,
+            border: `1.5px solid ${cardBg}`,
           }}
         />
       </div>
@@ -84,14 +89,14 @@ function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: P
       {/* Username */}
       <span
         style={{
-          fontFamily: "'Lora', Georgia, serif",
-          fontSize: 'clamp(13px, 1vw, 17px)',
-          color: isYou ? C.ink : C.muted,
-          fontStyle: 'normal',
+          fontFamily: "'Manrope', sans-serif",
+          fontWeight: isYou ? 800 : 600,
+          fontSize: 'clamp(12px, 1vw, 14px)',
+          color: isYou ? '#14B8A6' : inkColor,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          maxWidth: 'clamp(90px, 7.5vw, 130px)',
+          maxWidth: 'clamp(90px, 7.5vw, 140px)',
           textAlign: 'center',
           display: 'block',
           width: '100%',
@@ -104,10 +109,11 @@ function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: P
       {/* Level */}
       <span
         style={{
-          fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: '11px',
-          letterSpacing: '0.1em',
-          color: C.muted,
+          fontFamily: "'Manrope', sans-serif",
+          fontWeight: 600,
+          fontSize: '10px',
+          letterSpacing: '0.06em',
+          color: mutedColor,
         }}
       >
         LV {entry.level}
@@ -116,9 +122,9 @@ function PodiumCard({ entry, isCenter, animationDelay, shouldAnimate, isYou }: P
       {/* XP */}
       <span
         style={{
-          fontFamily: "'Bebas Neue', sans-serif",
+          fontFamily: "'Manrope', sans-serif",
+          fontWeight: 800,
           fontSize: 'clamp(13px, 1.1vw, 18px)',
-          letterSpacing: '0.06em',
           color: '#E8A020',
         }}
       >
@@ -151,8 +157,8 @@ export function LeaderboardPodium({ entries, currentUserId }: LeaderboardPodiumP
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'flex-end',
-        gap: '12px',
-        marginBottom: '24px',
+        gap: '14px',
+        marginBottom: '28px',
       }}
     >
       {displayOrder.map(({ entry, isCenter, delay }) => (

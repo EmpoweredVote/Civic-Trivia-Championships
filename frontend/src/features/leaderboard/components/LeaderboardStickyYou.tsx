@@ -9,45 +9,46 @@ interface LeaderboardStickyYouProps {
 }
 
 export function LeaderboardStickyYou({ userRank, isAuthenticated, isInTop25 }: LeaderboardStickyYouProps) {
-  const { C } = useTheme();
+  const { darkMode } = useTheme();
+  const ruleColor = darkMode ? '#21262D' : '#E2E8F0';
+  const inkColor = darkMode ? '#F1F5F9' : '#0F172A';
+  const mutedColor = darkMode ? '#7C90AC' : '#94A3B8';
+
+  const linkStyle = {
+    display: 'inline-block',
+    fontFamily: "'Manrope', sans-serif",
+    fontWeight: 700,
+    fontSize: '13px',
+    color: '#E8A020',
+    textDecoration: 'none',
+    border: '1px solid #E8A020',
+    padding: '9px 22px',
+    borderRadius: '10px',
+  } as const;
 
   // Logged out: sign-in prompt
   if (!isAuthenticated) {
     return (
       <div
         style={{
-          borderTop: `2px solid ${C.rule}`,
+          borderTop: `1px solid ${ruleColor}`,
           marginTop: '16px',
-          padding: '20px 16px',
-          textAlign: 'center',
+          padding: '24px 16px',
+          textAlign: 'center' as const,
         }}
       >
         <p
           style={{
-            fontFamily: "'Lora', Georgia, serif",
-            fontStyle: 'italic',
+            fontFamily: "'Manrope', sans-serif",
             fontSize: '14px',
-            color: C.muted,
-            margin: '0 0 12px',
+            color: mutedColor,
+            margin: '0 0 14px',
           }}
         >
           Want to see where you rank?
         </p>
-        <Link
-          to="/login"
-          style={{
-            display: 'inline-block',
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: '14px',
-            letterSpacing: '0.14em',
-            color: C.accent,
-            textDecoration: 'none',
-            border: `1px solid ${C.accent}`,
-            padding: '8px 20px',
-            borderRadius: '2px',
-          }}
-        >
-          SIGN IN TO SEE YOUR RANK
+        <Link to="/login" style={linkStyle}>
+          Sign in to see your rank
         </Link>
       </div>
     );
@@ -63,7 +64,7 @@ export function LeaderboardStickyYou({ userRank, isAuthenticated, isInTop25 }: L
     return (
       <div
         style={{
-          borderTop: `2px solid ${C.rule}`,
+          borderTop: `1px solid ${ruleColor}`,
           marginTop: '16px',
         }}
       >
@@ -73,19 +74,19 @@ export function LeaderboardStickyYou({ userRank, isAuthenticated, isInTop25 }: L
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            padding: '10px 16px',
-            background: `${C.accent}0D`,
+            padding: '12px 16px',
+            background: 'rgba(20,184,166,0.08)',
+            borderLeft: '3px solid #14B8A6',
           }}
         >
           {/* YOU label */}
           <span
             style={{
-              width: '28px',
-              textAlign: 'right',
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: '12px',
-              letterSpacing: '0.1em',
-              color: C.accent,
+              fontFamily: "'Manrope', sans-serif",
+              fontWeight: 800,
+              fontSize: '11px',
+              letterSpacing: '0.06em',
+              color: '#14B8A6',
               flexShrink: 0,
             }}
           >
@@ -95,10 +96,10 @@ export function LeaderboardStickyYou({ userRank, isAuthenticated, isInTop25 }: L
           {/* Rank number */}
           <span
             style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: '14px',
-              letterSpacing: '0.08em',
-              color: C.muted,
+              fontFamily: "'Manrope', sans-serif",
+              fontWeight: 800,
+              fontSize: '15px',
+              color: mutedColor,
               flexShrink: 0,
             }}
           >
@@ -109,9 +110,10 @@ export function LeaderboardStickyYou({ userRank, isAuthenticated, isInTop25 }: L
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
-                fontFamily: "'Lora', Georgia, serif",
+                fontFamily: "'Manrope', sans-serif",
+                fontWeight: 700,
                 fontSize: '14px',
-                color: C.ink,
+                color: inkColor,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -121,10 +123,11 @@ export function LeaderboardStickyYou({ userRank, isAuthenticated, isInTop25 }: L
             </div>
             <div
               style={{
-                fontFamily: "'Bebas Neue', sans-serif",
+                fontFamily: "'Manrope', sans-serif",
+                fontWeight: 600,
                 fontSize: '11px',
-                letterSpacing: '0.1em',
-                color: C.muted,
+                letterSpacing: '0.04em',
+                color: mutedColor,
               }}
             >
               LV {userRank.level}
@@ -134,9 +137,9 @@ export function LeaderboardStickyYou({ userRank, isAuthenticated, isInTop25 }: L
           {/* XP */}
           <span
             style={{
-              fontFamily: "'Bebas Neue', sans-serif",
+              fontFamily: "'Manrope', sans-serif",
+              fontWeight: 800,
               fontSize: '14px',
-              letterSpacing: '0.06em',
               color: '#E8A020',
               flexShrink: 0,
             }}
@@ -149,12 +152,11 @@ export function LeaderboardStickyYou({ userRank, isAuthenticated, isInTop25 }: L
         {userRank.gap_to_next > 0 && (
           <p
             style={{
-              fontFamily: "'Lora', Georgia, serif",
-              fontStyle: 'italic',
+              fontFamily: "'Manrope', sans-serif",
               fontSize: '12px',
-              color: C.muted,
+              color: mutedColor,
               margin: '8px 16px 0',
-              textAlign: 'right',
+              textAlign: 'right' as const,
             }}
           >
             {userRank.gap_to_next.toLocaleString()} XP to move up
@@ -168,38 +170,24 @@ export function LeaderboardStickyYou({ userRank, isAuthenticated, isInTop25 }: L
   return (
     <div
       style={{
-        borderTop: `2px solid ${C.rule}`,
+        borderTop: `1px solid ${ruleColor}`,
         marginTop: '16px',
-        padding: '20px 16px',
-        textAlign: 'center',
+        padding: '24px 16px',
+        textAlign: 'center' as const,
       }}
     >
       <p
         style={{
-          fontFamily: "'Lora', Georgia, serif",
-          fontStyle: 'italic',
+          fontFamily: "'Manrope', sans-serif",
           fontSize: '14px',
-          color: C.muted,
-          margin: '0 0 12px',
+          color: mutedColor,
+          margin: '0 0 14px',
         }}
       >
         Play a game to appear on the leaderboard!
       </p>
-      <Link
-        to="/play"
-        style={{
-          display: 'inline-block',
-          fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: '14px',
-          letterSpacing: '0.14em',
-          color: C.accent,
-          textDecoration: 'none',
-          border: `1px solid ${C.accent}`,
-          padding: '8px 20px',
-          borderRadius: '2px',
-        }}
-      >
-        PLAY NOW
+      <Link to="/play" style={linkStyle}>
+        Play now
       </Link>
     </div>
   );

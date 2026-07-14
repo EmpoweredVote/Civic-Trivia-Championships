@@ -23,6 +23,7 @@ import { DuplicateReviewPage } from './pages/admin/DuplicateReviewPage';
 import { ElectionsPage } from './pages/admin/ElectionsPage';
 import { AdminsPage } from './pages/admin/AdminsPage';
 import { Leaderboard } from './pages/Leaderboard';
+import { Collections } from './pages/Collections';
 
 // AdminGuard component: allows anyone with admin access (admin_users or a content-admin role)
 function AdminGuard() {
@@ -76,6 +77,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/play" element={<Game />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/collections" element={<Collections />} />
 
             {/* Protected routes — require auth */}
             <Route element={<ProtectedRoute />}>

@@ -12,9 +12,15 @@ import type { LeaderboardTab } from '../features/leaderboard/types';
 
 export function Leaderboard() {
   const navigate = useNavigate();
-  const { C } = useTheme();
+  const { darkMode } = useTheme();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const pageBg = darkMode ? '#0D1117' : '#F0F4F8';
+  const cardBorder = darkMode ? '#21262D' : '#E2E8F0';
+  const headingColor = darkMode ? '#F1F5F9' : '#0F172A';
+  const mutedColor = darkMode ? '#7C90AC' : '#94A3B8';
+  const skeletonBg = darkMode ? '#161B22' : '#E2E8F0';
 
   const [tab, setTab] = useState<LeaderboardTab>('all_time');
   const { data, isLoading, error, refetch } = useLeaderboard(tab, userId);
@@ -22,16 +28,15 @@ export function Leaderboard() {
   // ── Loading state ─────────────────────────────────────────────────────────────
 
   const loadingSkeleton = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '4px' }}>
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
           className="animate-pulse"
           style={{
             height: '52px',
-            background: C.ruleLight,
-            borderRadius: '2px',
-            marginBottom: '4px',
+            background: skeletonBg,
+            borderRadius: '10px',
           }}
         />
       ))}
@@ -41,18 +46,12 @@ export function Leaderboard() {
   // ── Error state ───────────────────────────────────────────────────────────────
 
   const errorState = (
-    <div
-      style={{
-        textAlign: 'center',
-        padding: '48px 0',
-      }}
-    >
+    <div style={{ textAlign: 'center' as const, padding: '48px 0' }}>
       <p
         style={{
-          fontFamily: "'Lora', Georgia, serif",
-          fontStyle: 'italic',
+          fontFamily: "'Manrope', sans-serif",
           fontSize: '15px',
-          color: C.muted,
+          color: mutedColor,
           margin: '0 0 20px',
         }}
       >
@@ -63,17 +62,17 @@ export function Leaderboard() {
         style={{
           padding: '10px 28px',
           background: 'transparent',
-          color: C.muted,
-          fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: '15px',
-          letterSpacing: '0.14em',
-          border: `1px solid ${C.rule}`,
-          borderRadius: '2px',
+          color: mutedColor,
+          fontFamily: "'Manrope', sans-serif",
+          fontWeight: 700,
+          fontSize: '13px',
+          border: `1px solid ${cardBorder}`,
+          borderRadius: '10px',
           cursor: 'pointer',
           minHeight: '40px',
         }}
       >
-        TRY AGAIN
+        Try again
       </button>
     </div>
   );
@@ -81,14 +80,13 @@ export function Leaderboard() {
   // ── Empty state ───────────────────────────────────────────────────────────────
 
   const emptyState = (
-    <div style={{ textAlign: 'center', padding: '48px 0' }}>
+    <div style={{ textAlign: 'center' as const, padding: '48px 0' }}>
       <p
         style={{
-          fontFamily: "'Lora', Georgia, serif",
-          fontStyle: 'italic',
+          fontFamily: "'Manrope', sans-serif",
           fontSize: '15px',
-          color: C.muted,
-          margin: '0 0 8px',
+          color: mutedColor,
+          margin: '0 0 16px',
         }}
       >
         No players yet — be the first!
@@ -96,23 +94,22 @@ export function Leaderboard() {
       <button
         onClick={() => navigate('/play')}
         style={{
-          marginTop: '16px',
-          padding: '14px 36px',
-          background: C.accent,
-          color: '#FFFFFF',
-          fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: 'clamp(18px, 1.4vw, 24px)',
-          letterSpacing: '0.12em',
+          padding: '13px 32px',
+          background: '#E8A020',
+          color: '#0F0D09',
+          fontFamily: "'Manrope', sans-serif",
+          fontWeight: 800,
+          fontSize: 'clamp(15px, 1.2vw, 18px)',
           border: 'none',
-          borderRadius: '2px',
+          borderRadius: '10px',
           cursor: 'pointer',
           minHeight: '48px',
           transition: 'background 0.15s',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = C.accentHover)}
-        onMouseLeave={(e) => (e.currentTarget.style.background = C.accent)}
+        onMouseEnter={(e) => (e.currentTarget.style.background = '#C88010')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = '#E8A020')}
       >
-        PLAY NOW
+        Play Now
       </button>
     </div>
   );
@@ -150,29 +147,24 @@ export function Leaderboard() {
     <div
       style={{
         minHeight: '100vh',
-        background: C.paper,
-        fontFamily: "'Lora', Georgia, serif",
+        background: pageBg,
       }}
     >
       <Header />
 
-      <div
-        style={{
-          padding: '32px 24px 80px',
-        }}
-      >
+      <div style={{ padding: '32px 24px 80px', maxWidth: '860px', margin: '0 auto' }}>
         {/* Page title */}
         <h1
           style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 'clamp(28px, 2.2vw, 40px)',
-            letterSpacing: '0.1em',
-            color: C.ink,
-            textAlign: 'center',
-            margin: '0 0 32px',
+            fontFamily: "'Manrope', sans-serif",
+            fontWeight: 900,
+            fontSize: 'clamp(28px, 2.5vw, 40px)',
+            letterSpacing: '-0.01em',
+            color: headingColor,
+            margin: '0 0 28px',
           }}
         >
-          LEADERBOARD
+          Leaderboard
         </h1>
 
         {/* Tab switcher */}
@@ -200,7 +192,7 @@ export function Leaderboard() {
             gap: '12px',
             marginTop: '40px',
             paddingTop: '24px',
-            borderTop: `1px solid ${C.rule}`,
+            borderTop: `1px solid ${cardBorder}`,
           }}
         >
           <button
@@ -209,45 +201,45 @@ export function Leaderboard() {
               flex: 1,
               padding: '13px',
               background: 'transparent',
-              color: C.muted,
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: '15px',
-              letterSpacing: '0.14em',
-              border: `1px solid ${C.rule}`,
-              borderRadius: '2px',
+              color: mutedColor,
+              fontFamily: "'Manrope', sans-serif",
+              fontWeight: 700,
+              fontSize: '13px',
+              border: `1px solid ${cardBorder}`,
+              borderRadius: '10px',
               cursor: 'pointer',
               minHeight: '44px',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = C.inkLight;
-              e.currentTarget.style.color = C.ink;
+              e.currentTarget.style.borderColor = '#14B8A6';
+              e.currentTarget.style.color = headingColor;
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = C.rule;
-              e.currentTarget.style.color = C.muted;
+              e.currentTarget.style.borderColor = cardBorder;
+              e.currentTarget.style.color = mutedColor;
             }}
           >
-            ← BACK
+            ← Back
           </button>
           <button
             onClick={() => navigate('/play')}
             style={{
               flex: 1,
               padding: '13px',
-              background: C.accent,
-              color: '#FFFFFF',
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: '15px',
-              letterSpacing: '0.14em',
+              background: '#E8A020',
+              color: '#0F0D09',
+              fontFamily: "'Manrope', sans-serif",
+              fontWeight: 800,
+              fontSize: '13px',
               border: 'none',
-              borderRadius: '2px',
+              borderRadius: '10px',
               cursor: 'pointer',
               minHeight: '44px',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = C.accentHover)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = C.accent)}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#C88010')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#E8A020')}
           >
-            PLAY
+            Play
           </button>
         </div>
       </div>

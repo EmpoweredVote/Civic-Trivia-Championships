@@ -22,6 +22,12 @@ interface ResultsScreenProps {
   result: GameResult;
   questions: Question[];
   collectionName?: string | null;
+  /**
+   * Total number of questions available in the played collection's pool.
+   * Used as the denominator for the "Proficiency" stat. When unavailable,
+   * falls back to this game's question count (see `proficiencyTotal` below).
+   */
+  collectionQuestionCount?: number | null;
   onPlayAgain: () => void;
   onHome: () => void;
   flaggedQuestions?: Set<string>;
@@ -34,6 +40,7 @@ export function ResultsScreen({
   result,
   questions,
   collectionName,
+  collectionQuestionCount,
   onPlayAgain,
   onHome,
   flaggedQuestions,
@@ -52,8 +59,15 @@ export function ResultsScreen({
   const motionScore = useMotionValue(0);
   const accordionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const accuracy      = Math.round((result.totalCorrect / result.totalQuestions) * 100);
   const isPerfectGame = result.totalCorrect === result.totalQuestions;
+  // Proficiency = correct answers from this game out of the collection's total question pool.
+  // NOTE: the backend does not yet track *unique* questions a user has ever answered correctly
+  // per collection (player_stats is a lifetime running total across all collections, not
+  // deduplicated by question). Until that tracking exists, this can only reflect this game's
+  // contribution — never a fabricated lifetime figure. Falls back to this game's question count
+  // if the collection's total pool size isn't available.
+  const proficiencyTotal   = collectionQuestionCount && collectionQuestionCount > 0 ? collectionQuestionCount : result.totalQuestions;
+  const proficiencyCorrect = result.totalCorrect;
   const missed        = result.totalQuestions - result.totalCorrect;
   const preWagerScore = result.wagerResult
     ? result.totalScore - (result.wagerResult.won ? result.wagerResult.wagerAmount : -result.wagerResult.wagerAmount)
@@ -146,7 +160,7 @@ export function ResultsScreen({
           flex: 1,
           display: 'flex',
           width: '100%',
-          padding: '16px 24px 40px',
+          padding: '20px 24px 40px',
           gap: '16px',
           boxSizing: 'border-box',
         }}
@@ -235,12 +249,33 @@ export function ResultsScreen({
               padding: '11px 0',
               borderBottom: `1px solid ${G.questionCardBorder}`,
             }}>
-              <span style={{ fontSize: '14px', color: G.inkMuted }}>Accuracy</span>
-              <span style={{
-                fontSize: '14px', fontWeight: 600,
-                color: accuracy === 100 ? G.btn : accuracy >= 70 ? G.correct : G.ink,
-              }}>
-                {accuracy}%
+              <span
+                style={{ fontSize: '14px', color: G.inkMuted, display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                Proficiency
+                <span
+                  title="Correct answers from this game out of the total questions in this collection. Lifetime tracking across games is coming soon."
+                  aria-describedby="proficiency-tooltip"
+                  style={{ display: 'inline-flex', cursor: 'help' }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-5" strokeLinecap="round" />
+                    <circle cx="12" cy="8" r="0.5" fill="currentColor" />
+                  </svg>
+                </span>
+                <span id="proficiency-tooltip" className="sr-only">
+                  Correct answers from this game out of the total questions in this collection. Lifetime tracking across games is coming soon.
+                </span>
+              </span>
+              <span
+                aria-label={`Proficiency: ${proficiencyCorrect} of ${proficiencyTotal} questions`}
+                style={{
+                  fontSize: '14px', fontWeight: 600,
+                  color: isPerfectGame ? G.btn : G.ink,
+                }}
+              >
+                {proficiencyCorrect}/{proficiencyTotal}
               </span>
             </div>
             {result.wagerResult && result.wagerResult.wagerAmount > 0 ? (
@@ -345,15 +380,14 @@ export function ResultsScreen({
               onClick={onPlayAgain}
               style={{
                 display: 'block', width: '100%',
-                padding: '16px',
+                padding: '14px',
                 background: G.btn,
                 color: G.btnText,
                 border: 'none',
-                borderRadius: '50px',
+                borderRadius: '10px',
                 fontFamily: "'Manrope', sans-serif",
-                fontSize: 'clamp(16px, 1.2vw, 20px)',
+                fontSize: '13px',
                 fontWeight: 700,
-                letterSpacing: '0.12em',
                 cursor: 'pointer',
                 marginBottom: '10px',
                 transition: 'background 0.15s',
@@ -361,7 +395,7 @@ export function ResultsScreen({
               onMouseEnter={e => (e.currentTarget.style.background = G.btnHover)}
               onMouseLeave={e => (e.currentTarget.style.background = G.btn)}
             >
-              PLAY AGAIN
+              Play Again
             </button>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
@@ -371,25 +405,24 @@ export function ResultsScreen({
                   padding: '14px',
                   background: 'transparent',
                   color: G.inkMuted,
-                  border: `1px solid ${G.questionCardBorder}`,
-                  borderRadius: '50px',
+                  border: `1px solid ${G.inkMuted}`,
+                  borderRadius: '10px',
                   fontFamily: "'Manrope', sans-serif",
                   fontSize: '13px',
-                  fontWeight: 600,
-                  letterSpacing: '0.14em',
+                  fontWeight: 700,
                   cursor: 'pointer',
                   transition: 'border-color 0.15s, color 0.15s',
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = G.inkMuted;
+                  e.currentTarget.style.borderColor = G.ink;
                   e.currentTarget.style.color = G.ink;
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = G.questionCardBorder;
+                  e.currentTarget.style.borderColor = G.inkMuted;
                   e.currentTarget.style.color = G.inkMuted;
                 }}
               >
-                LEADERBOARD
+                Leaderboard
               </button>
               <button
                 onClick={onHome}
@@ -399,18 +432,18 @@ export function ResultsScreen({
                   flexShrink: 0,
                   background: 'transparent',
                   color: G.inkMuted,
-                  border: `1px solid ${G.questionCardBorder}`,
+                  border: `1px solid ${G.inkMuted}`,
                   borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer',
                   transition: 'border-color 0.15s, color 0.15s',
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = G.inkMuted;
+                  e.currentTarget.style.borderColor = G.ink;
                   e.currentTarget.style.color = G.ink;
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = G.questionCardBorder;
+                  e.currentTarget.style.borderColor = G.inkMuted;
                   e.currentTarget.style.color = G.inkMuted;
                 }}
               >

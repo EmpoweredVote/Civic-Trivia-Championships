@@ -60,7 +60,8 @@ export function WagerScreen({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '16px',
+      padding: '20px 16px',
+      boxSizing: 'border-box',
       fontFamily: "'Manrope', sans-serif",
     }}>
       {/* Theme toggle */}

@@ -33,7 +33,6 @@ export function AnswerGrid({
 
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const lockInButtonRef = useRef<HTMLButtonElement>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const canSelect = isAnswering && !isLocked;
@@ -217,37 +216,6 @@ export function AnswerGrid({
           );
         })}
       </div>
-
-      {/* Lock In button */}
-      {phase === 'selected' && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-center mb-3"
-        >
-          <button
-            ref={lockInButtonRef}
-            onClick={onLockIn}
-            style={{
-              padding: 'clamp(12px, 1.1vw, 18px) clamp(48px, 4.5vw, 72px)',
-              background: G.btn,
-              color: G.btnText,
-              fontFamily: "'Manrope', sans-serif",
-              fontSize: 'clamp(16px, 1.4vw, 22px)',
-              fontWeight: 700,
-              border: 'none',
-              borderRadius: '50px',
-              cursor: 'pointer',
-              minHeight: 'clamp(48px, 4vw, 64px)',
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = G.btnHover)}
-            onMouseLeave={e => (e.currentTarget.style.background = G.btn)}
-          >
-            LOCK IN
-          </button>
-        </motion.div>
-      )}
 
       {/* Reveal section */}
       {isRevealing && (

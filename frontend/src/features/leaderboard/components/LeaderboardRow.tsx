@@ -3,7 +3,6 @@ import { useTheme } from '../../../hooks/useTheme';
 import type { LeaderboardEntry } from '../types';
 
 const TIER_COLORS = {
-  inform: 'muted' as const,
   connected: '#03B9D2',
   empowered: '#FF5740',
 };
@@ -14,12 +13,12 @@ interface LeaderboardRowProps {
 }
 
 export function LeaderboardRow({ entry, isYou }: LeaderboardRowProps) {
-  const { C } = useTheme();
+  const { darkMode } = useTheme();
+  const ruleColor = darkMode ? '#21262D' : '#E2E8F0';
+  const inkColor = darkMode ? '#F1F5F9' : '#0F172A';
+  const mutedColor = darkMode ? '#7C90AC' : '#94A3B8';
 
-  const tierColor =
-    entry.tier === 'inform'
-      ? C.muted
-      : TIER_COLORS[entry.tier];
+  const tierColor = entry.tier === 'inform' ? mutedColor : TIER_COLORS[entry.tier];
 
   return (
     <div
@@ -27,20 +26,21 @@ export function LeaderboardRow({ entry, isYou }: LeaderboardRowProps) {
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        padding: '10px 16px',
-        background: isYou ? `${C.accent}14` : 'transparent',
-        borderBottom: `1px solid ${C.ruleLight}`,
+        padding: '12px 16px',
+        background: isYou ? 'rgba(20,184,166,0.08)' : 'transparent',
+        borderLeft: isYou ? '3px solid #14B8A6' : '3px solid transparent',
+        borderBottom: `1px solid ${ruleColor}`,
       }}
     >
       {/* Rank number */}
       <span
         style={{
-          width: '28px',
+          width: '24px',
           textAlign: 'right',
-          fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: '16px',
-          letterSpacing: '0.08em',
-          color: C.muted,
+          fontFamily: "'Manrope', sans-serif",
+          fontWeight: 800,
+          fontSize: '15px',
+          color: mutedColor,
           flexShrink: 0,
         }}
       >
@@ -65,10 +65,10 @@ export function LeaderboardRow({ entry, isYou }: LeaderboardRowProps) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            fontFamily: "'Lora', Georgia, serif",
+            fontFamily: "'Manrope', sans-serif",
+            fontWeight: isYou ? 700 : 500,
             fontSize: '14px',
-            color: isYou ? C.ink : C.muted,
-            fontStyle: 'normal',
+            color: inkColor,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -78,10 +78,11 @@ export function LeaderboardRow({ entry, isYou }: LeaderboardRowProps) {
         </div>
         <div
           style={{
-            fontFamily: "'Bebas Neue', sans-serif",
+            fontFamily: "'Manrope', sans-serif",
+            fontWeight: 600,
             fontSize: '11px',
-            letterSpacing: '0.1em',
-            color: C.muted,
+            letterSpacing: '0.04em',
+            color: mutedColor,
           }}
         >
           LV {entry.level}
@@ -91,9 +92,9 @@ export function LeaderboardRow({ entry, isYou }: LeaderboardRowProps) {
       {/* Total XP */}
       <span
         style={{
-          fontFamily: "'Bebas Neue', sans-serif",
+          fontFamily: "'Manrope', sans-serif",
+          fontWeight: 800,
           fontSize: '14px',
-          letterSpacing: '0.06em',
           color: '#E8A020',
           flexShrink: 0,
         }}

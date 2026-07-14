@@ -27,10 +27,10 @@ function PinIcon() {
 function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boolean; displayName: string | null; userId: string | null }) {
   const cardBg = darkMode ? '#161B22' : '#FFFFFF';
   const titleColor = darkMode ? '#F1F5F9' : '#0F172A';
-  const mutedColor = darkMode ? '#64748B' : '#94A3B8';
+  const mutedColor = darkMode ? '#7C90AC' : '#94A3B8';
   const statBg = darkMode ? '#0D1117' : '#F8FAFC';
   const statBorder = darkMode ? '#21262D' : '#E2E8F0';
-  const statLabelColor = darkMode ? '#475569' : '#94A3B8';
+  const statLabelColor = darkMode ? '#7487A1' : '#94A3B8';
   const dividerColor = darkMode ? '#21262D' : '#E2E8F0';
 
   const { xpData, isConnected } = usePlayerXp(userId);
@@ -146,7 +146,7 @@ function HowItWorksSection({ darkMode }: { darkMode: boolean }) {
   const titleColor = darkMode ? '#F1F5F9' : '#0F172A';
   const subtitleColor = darkMode ? '#94A3B8' : '#64748B';
   const stepTitleColor = darkMode ? '#E2E8F0' : '#0F172A';
-  const stepDescColor = darkMode ? '#64748B' : '#94A3B8';
+  const stepDescColor = darkMode ? '#7C90AC' : '#94A3B8';
   const iconBg = darkMode ? '#0D1117' : '#EFF6FF';
   const dividerColor = darkMode ? '#21262D' : '#E2E8F0';
 
@@ -275,7 +275,7 @@ function FeaturedCard({
           <div style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 16, color: darkMode ? '#E2E8F0' : '#0F172A', marginBottom: 6 }}>
             Choose a city to play
           </div>
-          <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: darkMode ? '#475569' : '#94A3B8', lineHeight: 1.5 }}>
+          <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: darkMode ? '#7487A1' : '#94A3B8', lineHeight: 1.5 }}>
             Select any collection from the grid below<br/>to see details and start playing.
           </div>
         </div>
@@ -335,7 +335,7 @@ function FeaturedCard({
         {/* Description */}
         <p style={{
           fontFamily: "'Manrope', sans-serif", fontWeight: 300, fontSize: 14,
-          color: darkMode ? '#64748B' : '#94A3B8',
+          color: darkMode ? '#7C90AC' : '#94A3B8',
           lineHeight: 1.6, margin: '0 0 20px',
         }}>
           {collection.description}
@@ -349,9 +349,9 @@ function FeaturedCard({
             background: '#E8A020', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 1.25vw, 22px)',
-            color: '#FFFFFF', transition: 'background 0.2s',
+            color: '#0F0D09', transition: 'background 0.2s',
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#C87010'; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#C88010'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E8A020'; }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -376,6 +376,10 @@ export function Dashboard() {
 
   const handlePlay = () => {
     navigate('/play', { state: { collectionId: selectedId } });
+  };
+
+  const handlePlayCollection = (collectionId: number) => {
+    navigate('/play', { state: { collectionId } });
   };
 
   return (
@@ -423,7 +427,7 @@ export function Dashboard() {
             {!isAuthenticated && (
               <p style={{
                 fontFamily: "'Manrope', sans-serif", fontSize: 14,
-                color: darkMode ? '#475569' : '#94A3B8',
+                color: darkMode ? '#7487A1' : '#94A3B8',
                 margin: '12px 0 0',
               }}>
                 <Link to="/login" style={{ color: '#E8A020', textDecoration: 'none', fontWeight: 600 }}>Sign in</Link>
@@ -440,11 +444,10 @@ export function Dashboard() {
       {/* ── How it works + Featured card ── */}
       <section style={{ paddingBottom: 32 }}>
         <div
-          className="md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
+          className="grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
           style={{
             padding: '0 24px',
             display: 'grid',
-            gridTemplateColumns: '1fr',
             gap: 20,
             alignItems: 'stretch',
           }}
@@ -457,7 +460,7 @@ export function Dashboard() {
         </div>
       </section>
 
-      {/* ── All Collections grid ── */}
+      {/* ── All Collections preview ── */}
       <section style={{ paddingBottom: 64 }}>
         <div style={{ padding: '0 24px' }}>
           <CollectionPicker
@@ -465,6 +468,9 @@ export function Dashboard() {
             selectedId={selectedId}
             loading={loading}
             onSelect={select}
+            onPlay={handlePlayCollection}
+            variant="preview"
+            onSeeMore={() => navigate('/collections')}
           />
         </div>
       </section>

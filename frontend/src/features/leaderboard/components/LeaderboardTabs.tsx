@@ -7,18 +7,21 @@ interface LeaderboardTabsProps {
 }
 
 const TABS: { key: LeaderboardTab; label: string }[] = [
-  { key: 'all_time', label: 'ALL TIME' },
-  { key: 'this_week', label: 'THIS WEEK' },
+  { key: 'all_time', label: 'All Time' },
+  { key: 'this_week', label: 'This Week' },
 ];
 
 export function LeaderboardTabs({ active, onChange }: LeaderboardTabsProps) {
-  const { C } = useTheme();
+  const { darkMode } = useTheme();
+  const ruleColor = darkMode ? '#21262D' : '#E2E8F0';
+  const mutedColor = darkMode ? '#7C90AC' : '#94A3B8';
+  const accentColor = '#14B8A6';
 
   return (
     <div
       style={{
         display: 'flex',
-        borderBottom: `1px solid ${C.rule}`,
+        borderBottom: `1px solid ${ruleColor}`,
         marginBottom: '24px',
       }}
     >
@@ -30,13 +33,14 @@ export function LeaderboardTabs({ active, onChange }: LeaderboardTabsProps) {
             onClick={() => onChange(tab.key)}
             style={{
               padding: '10px 20px',
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: '15px',
-              letterSpacing: '0.16em',
-              color: isActive ? C.accent : C.muted,
+              fontFamily: "'Manrope', sans-serif",
+              fontWeight: 700,
+              fontSize: '14px',
+              letterSpacing: '0.02em',
+              color: isActive ? accentColor : mutedColor,
               background: 'none',
               border: 'none',
-              borderBottom: isActive ? `2px solid ${C.accent}` : '2px solid transparent',
+              borderBottom: isActive ? `2px solid ${accentColor}` : '2px solid transparent',
               cursor: 'pointer',
               marginBottom: '-1px',
               transition: 'color 0.15s',
