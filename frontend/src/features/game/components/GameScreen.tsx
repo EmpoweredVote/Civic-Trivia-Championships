@@ -27,6 +27,7 @@ import { announce } from '../../../utils/announce';
 import type { GameState, Question, LearningContent } from '../../../types/game';
 import { XpStrip } from './XpStrip';
 import { NextStepButton } from './NextStepButton';
+import { LockInButton } from './LockInButton';
 import { ACCOUNTS_WEB_URL } from '../../../services/accountsApi';
 
 const QUESTION_DURATION = 20; // seconds
@@ -493,7 +494,7 @@ export function GameScreen({
       <CelebrationEffects streak={state.currentStreak} />
 
       {/* Main content container */}
-      <div className="relative h-full flex flex-col py-2 md:py-4 px-4">
+      <div className="relative h-full flex flex-col py-5 sm:py-6 md:py-8 px-4 sm:px-6">
 
         {/* Top HUD — fixed in flow, never moves */}
         <div className="flex flex-col mx-auto w-full flex-shrink-0" style={{ gap: '16px', marginBottom: '32px', maxWidth: 'clamp(700px, 55vw, 1500px)' }}>
@@ -722,6 +723,17 @@ export function GameScreen({
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Lock In button — outside card, full width, matches Next Step button styling */}
+            {state.phase === 'selected' && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full"
+              >
+                <LockInButton onLockIn={onLockIn} />
+              </motion.div>
+            )}
 
             {/* Next Step button — outside card, full width */}
             {state.phase === 'revealing' && (

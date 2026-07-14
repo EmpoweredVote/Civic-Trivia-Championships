@@ -91,7 +91,10 @@ export function Header() {
                       fontFamily: "'Bebas Neue', sans-serif",
                       fontSize: '11px',
                       letterSpacing: '0.12em',
-                      color: C.mutedFg,
+                      // C.mutedFg (#666666) fails AA contrast against this dark header
+                      // background (3.01:1, needs 4.5:1) — overridden locally rather
+                      // than changing the shared token used across admin pages.
+                      color: darkMode ? '#94A3B8' : C.mutedFg,
                     }}>
                       LV {xpData.level}
                     </span>
@@ -114,7 +117,7 @@ export function Header() {
                       fontFamily: "'Bebas Neue', sans-serif",
                       fontSize: '10px',
                       letterSpacing: '0.1em',
-                      color: C.mutedFg,
+                      color: darkMode ? '#94A3B8' : C.mutedFg,
                     }}>
                       {xpData.xpInLevel.toLocaleString()} XP
                     </span>
