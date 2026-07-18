@@ -18,7 +18,7 @@ export function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const from = searchParams.get('from');
-  const { C } = useTheme();
+  const { C, darkMode } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,9 +86,11 @@ export function Login() {
         {/* Masthead */}
         <div style={{ textAlign: 'center', marginBottom: '36px' }}>
           <img
-            src="/images/civic-trivia-logo.png"
+            src={darkMode
+              ? '/images/brand/civic-trivia-logo-dark.svg'
+              : '/images/brand/civic-trivia-logo-light.svg'}
             alt="Civic Trivia Championship"
-            style={{ height: '150px', margin: '0 auto 16px' }}
+            style={{ width: 'min(320px, 80%)', height: 'auto', margin: '0 auto 16px' }}
           />
           <h1 style={{
             fontFamily: "'Manrope', sans-serif",

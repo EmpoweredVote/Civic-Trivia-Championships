@@ -396,24 +396,17 @@ export function Dashboard() {
           {/* Left: title */}
           <div>
             <h1 style={{ margin: 0 }}>
-              <span style={{
-                display: 'block',
-                fontFamily: "'Manrope', sans-serif", fontWeight: 900,
-                fontSize: 'clamp(44px, 6vw, 108px)',
-                color: darkMode ? '#FFFFFF' : '#0F172A',
-                letterSpacing: '-0.02em', lineHeight: 1.0,
-              }}>
-                Civic Trivia
-              </span>
-              <span style={{
-                display: 'block',
-                fontFamily: "'Manrope', sans-serif", fontWeight: 900,
-                fontSize: 'clamp(44px, 6vw, 108px)',
-                color: '#14B8A6',
-                letterSpacing: '-0.02em', lineHeight: 1.0,
-              }}>
-                Championship
-              </span>
+              <img
+                src={darkMode
+                  ? '/images/brand/civic-trivia-logo-dark.svg'
+                  : '/images/brand/civic-trivia-logo-light.svg'}
+                alt="Civic Trivia Championship"
+                style={{
+                  display: 'block',
+                  width: 'clamp(300px, 42vw, 720px)',
+                  height: 'auto',
+                }}
+              />
             </h1>
 
             <p style={{
