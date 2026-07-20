@@ -63,13 +63,17 @@ jobs:
       - name: Create branch
         run: git checkout -b "${{ steps.inputs.outputs.branch }}"
 
+      # analytics is consumed by the frontend (frontend/src), which is built
+      # with `npm ci` against frontend/package-lock.json. Bump there — bumping
+      # the root manifest has no effect on the deployed build.
       - name: Update analytics to target version
+        working-directory: frontend
         run: npm install @empoweredvote/analytics@${{ steps.inputs.outputs.version }} --save-exact=false
 
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet package.json package-lock.json; then
+          if git diff --quiet frontend/package.json frontend/package-lock.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -78,7 +82,7 @@ jobs:
       - name: Commit and push
         if: steps.changes.outputs.changed == 'true'
         run: |
-          git add package.json package-lock.json
+          git add frontend/package.json frontend/package-lock.json
           git commit -m "chore: bump @empoweredvote/analytics to ${{ steps.inputs.outputs.version }}"
           git push -u origin "${{ steps.inputs.outputs.branch }}"
 
