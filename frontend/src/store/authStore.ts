@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { identify, reset } from '@empoweredvote/analytics';
 import type { AccountsUser, Tier } from '../types/auth';
 
 interface AuthStore {
@@ -34,7 +35,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isAdmin: false,
   isSuperAdmin: false,
 
-  setAuth: (token: string, user: AccountsUser, extras?: { tier?: Tier; displayName?: string }) =>
+  setAuth: (token: string, user: AccountsUser, extras?: { tier?: Tier; displayName?: string }) => {
+    // Stitch this person across every EV app via the Connected Account UUID
+    // (see @empoweredvote/analytics identity model). Covers every login path
+    // (interactive login, silent restore, token refresh).
+    if (user.id) {
+      identify(user.id);
+    }
     set({
       accessToken: token,
       user,
@@ -43,10 +50,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
       tier: extras?.tier ?? user.tier ?? null,
       tierResolved: true,
       displayName: extras?.displayName ?? null,
-    }),
+    });
+  },
 
   clearAuth: () => {
     localStorage.removeItem('ev_refresh_token');
+    // Drop the PostHog identity so a shared device doesn't blend two people.
+    // Covers every logout path (explicit logout, refresh failure, cross-app sync).
+    reset();
     set({
       accessToken: null,
       user: null,
