@@ -13,8 +13,5 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "@empoweredvote/analytics": "^0.1.3"
   }
 }
