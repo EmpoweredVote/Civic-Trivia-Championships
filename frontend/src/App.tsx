@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { usePostHog } from 'posthog-js/react';
+import { pageview, pageleave } from '@empoweredvote/analytics';
 import { AuthInitializer } from './components/AuthInitializer';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SkipToContent } from './components/accessibility/SkipToContent';
@@ -49,10 +49,9 @@ function SuperAdminGuard() {
 
 function PostHogPageview() {
   const location = useLocation();
-  const posthog = usePostHog();
   useEffect(() => {
-    posthog?.capture('$pageview');
-    return () => { posthog?.capture('$pageleave'); };
+    pageview();
+    return () => { pageleave(); };
   }, [location.pathname]);
   return null;
 }
