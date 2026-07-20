@@ -18,6 +18,12 @@ export function useCollections(): UseCollectionsReturn {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Deep-link pre-selection: an external link (e.g. from Essentials) may open
+    // the Dashboard as `/?collection=<slug>` to land with that collection
+    // pre-selected and its "Play Now" button primed. Takes precedence over the
+    // last-played value; the game does NOT auto-start — the user still presses Play.
+    const paramSlug = new URLSearchParams(window.location.search).get('collection');
+
     // Restore last-played from localStorage
     const saved = localStorage.getItem(STORAGE_KEY);
     const savedId = saved ? parseInt(saved, 10) : null;
@@ -26,10 +32,18 @@ export function useCollections(): UseCollectionsReturn {
     apiRequest<{ collections: CollectionSummary[] }>('/api/game/collections')
       .then(({ collections }) => {
         setCollections(collections);
-        // Select: saved if valid, else default to the USA/Federal collection (fall back to first)
+        // Precedence: ?collection= slug > valid last-played > USA/Federal default > first.
+        const fromParam = paramSlug ? collections.find(c => c.slug === paramSlug) : undefined;
         const validSaved = savedId && collections.find(c => c.id === savedId);
         const defaultCollection = collections.find(c => c.tier === 'federal') ?? collections[0];
-        setSelectedId(validSaved ? savedId : (defaultCollection?.id ?? null));
+
+        if (fromParam) {
+          setSelectedId(fromParam.id);
+          // Persist so the selection survives in-app navigation after arriving via link.
+          localStorage.setItem(STORAGE_KEY, String(fromParam.id));
+        } else {
+          setSelectedId(validSaved ? savedId : (defaultCollection?.id ?? null));
+        }
       })
       .catch((error) => {
         console.error('Failed to fetch collections:', error);
