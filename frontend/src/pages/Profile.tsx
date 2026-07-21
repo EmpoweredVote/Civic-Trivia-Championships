@@ -10,6 +10,7 @@ import type { AccountProfile } from '../types/auth';
 import { useAuthStore } from '../store/authStore';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../services/api';
+import { track } from '@empoweredvote/analytics';
 import { useTheme } from '../hooks/useTheme';
 import type { ColorTokens } from '../hooks/useTheme';
 
@@ -131,6 +132,8 @@ export function Profile() {
         navigate('/login?from=/profile', { replace: true });
         return;
       }
+
+      track('ctc_profile_viewed');
 
       const [triviaResult, accountResult] = await Promise.allSettled([
         fetchTriviaStats(),

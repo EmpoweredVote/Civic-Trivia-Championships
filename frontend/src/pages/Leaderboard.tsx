@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { track } from '@empoweredvote/analytics';
 import { Header } from '../components/layout/Header';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthStore } from '../store/authStore';
@@ -24,6 +25,10 @@ export function Leaderboard() {
 
   const [tab, setTab] = useState<LeaderboardTab>('all_time');
   const { data, isLoading, error, refetch } = useLeaderboard(tab, userId);
+
+  useEffect(() => {
+    track('ctc_leaderboard_viewed');
+  }, []);
 
   // ── Loading state ─────────────────────────────────────────────────────────────
 
