@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { track } from '@empoweredvote/analytics';
 import { ACCOUNTS_WEB_URL } from '../services/accountsApi';
 
 /**
@@ -16,6 +17,7 @@ export function Signup() {
   const redirectUrl = `${window.location.origin}${postSignupPath}`;
 
   useEffect(() => {
+    track('ctc_signup_started');
     window.location.href = `${ACCOUNTS_WEB_URL}/signup?redirect=${encodeURIComponent(redirectUrl)}`;
   }, [redirectUrl]);
 

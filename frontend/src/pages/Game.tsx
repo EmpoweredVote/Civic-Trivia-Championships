@@ -9,6 +9,7 @@ import { useAuthStore } from '../store/authStore';
 import { API_URL } from '../services/api';
 import { usePlayerXp } from '../hooks/usePlayerXp';
 import { XpStrip } from '../features/game/components/XpStrip';
+import { track } from '@empoweredvote/analytics';
 
 export function Game() {
   const navigate = useNavigate();
@@ -100,6 +101,8 @@ export function Game() {
   };
 
   const handleQuit = () => {
+    // Capture answered count before quitGame() resets game state.
+    track('ctc_game_abandoned', { answered: state.answers.length });
     quitGame();
     navigate('/dashboard');
   };

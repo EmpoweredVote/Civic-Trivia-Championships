@@ -4,6 +4,7 @@ import { createGameSession, submitAnswer } from '../../../services/gameService';
 import type { GameState, Question, GameResult, Progression, XpResult } from '../../../types/game';
 import { apiRequest } from '../../../services/api';
 import { useAuthStore } from '../../../store/authStore';
+import { track } from '@empoweredvote/analytics';
 
 // Timing constants
 const SUSPENSE_PAUSE_MS = 375; // Pause after lock-in before reveal (halved for snappier pacing)
@@ -89,6 +90,7 @@ export function useGameState(): UseGameStateReturn {
       sessionIdRef.current = sessionId;
       setHasShownTooltip(false); // Reset tooltip flag for new game
       dispatch({ type: 'SESSION_CREATED', sessionId, questions, degraded, collectionName, collectionSlug, totalQuestions });
+      track('ctc_game_started', { mode: collectionSlug ?? 'quickplay' });
     } catch (error) {
       console.error('Failed to create game session:', error);
       // Stay in idle phase on error
@@ -133,6 +135,10 @@ export function useGameState(): UseGameStateReturn {
           correctAnswer: serverResponse.correctAnswer,
         },
         nextQuestion: serverResponse.nextQuestion,
+      });
+      track('ctc_question_answered', {
+        correct: serverResponse.correct,
+        topic: currentQuestion.topicCategory ?? currentQuestion.topic,
       });
     } catch (error) {
       console.error('Failed to submit answer:', error);
@@ -204,6 +210,10 @@ export function useGameState(): UseGameStateReturn {
           correctAnswer: serverResponse.correctAnswer,
         },
         nextQuestion: serverResponse.nextQuestion,
+      });
+      track('ctc_question_answered', {
+        correct: serverResponse.correct,
+        topic: currentQuestion.topicCategory ?? currentQuestion.topic,
       });
     } catch (error) {
       console.error('Failed to submit timeout answer:', error);
@@ -282,6 +292,12 @@ export function useGameState(): UseGameStateReturn {
   useEffect(() => {
     if (state.phase === 'complete' && sessionIdRef.current) {
       const isAuthenticated = useAuthStore.getState().isAuthenticated;
+
+      track('ctc_game_completed', {
+        score: state.totalScore,
+        correct: state.answers.filter((a) => a.correct).length,
+        total: state.totalQuestions,
+      });
 
       if (isAuthenticated) {
         // Fetch results from server to get progression data
