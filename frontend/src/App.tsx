@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { pageview, pageleave } from '@empoweredvote/analytics';
+import { SiteFooter } from '@empoweredvote/ev-ui';
+import { useTheme } from './hooks/useTheme';
 import { AuthInitializer } from './components/AuthInitializer';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SkipToContent } from './components/accessibility/SkipToContent';
@@ -59,6 +61,7 @@ function PostHogPageview() {
 function App() {
   // Monitor Web Vitals in production
   useWebVitals();
+  const { darkMode } = useTheme();
 
   return (
     <BrowserRouter>
@@ -100,6 +103,7 @@ function App() {
             </Route>
           </Routes>
         </main>
+        <SiteFooter darkMode={darkMode} />
       </AuthInitializer>
     </BrowserRouter>
   );
