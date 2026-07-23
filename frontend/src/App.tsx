@@ -58,6 +58,13 @@ function PostHogPageview() {
   return null;
 }
 
+// Site footer, hidden during gameplay so the game screen stays immersive.
+function AppFooter({ darkMode }: { darkMode: boolean }) {
+  const { pathname } = useLocation();
+  if (pathname.startsWith('/play')) return null;
+  return <SiteFooter darkMode={darkMode} />;
+}
+
 function App() {
   // Monitor Web Vitals in production
   useWebVitals();
@@ -103,7 +110,7 @@ function App() {
             </Route>
           </Routes>
         </main>
-        <SiteFooter darkMode={darkMode} />
+        <AppFooter darkMode={darkMode} />
       </AuthInitializer>
     </BrowserRouter>
   );
