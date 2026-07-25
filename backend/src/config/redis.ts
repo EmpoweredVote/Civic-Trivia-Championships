@@ -120,10 +120,12 @@ export class SessionStorageFactory {
 
   /**
    * Check if Redis connection is healthy
+   * Reads the client's local `isReady` state — issues no Redis command, so this
+   * is safe to call from high-frequency probes like /health.
    * @returns True if Redis connected, false if degraded or not initialized
    */
   isRedisHealthy(): boolean {
-    return !this.degraded && this.redisClient !== null;
+    return !this.degraded && this.redisClient !== null && this.redisClient.isReady === true;
   }
 
   /**

@@ -72,6 +72,12 @@ export class RedisStorage implements SessionStorage {
   /**
    * Count total sessions in storage
    * Uses KEYS pattern (acceptable for MVP - SCAN optimization deferred)
+   *
+   * COST WARNING: each call bills one Upstash command and is O(N) over the
+   * keyspace. Do NOT call this on any path a monitor can poll — a per-request
+   * count() on /health consumed the entire 500k/month free tier in July 2026.
+   * Diagnostics only.
+   *
    * @returns Number of sessions
    */
   async count(): Promise<number> {
