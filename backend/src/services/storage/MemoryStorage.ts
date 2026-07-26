@@ -26,6 +26,27 @@ export class MemoryStorage implements SessionStorage {
   }
 
   /**
+   * Retrieve a session and refresh its expiry.
+   *
+   * Unlike Redis, expiry here is derived from lastActivityTime by cleanup(), so
+   * that field must be bumped on read or an actively-used session would be
+   * reaped after an hour. Map access is free, so there is no cost to doing it.
+   *
+   * @param sessionId - Session ID
+   * @param _ttlSeconds - Unused; cleanup() applies a fixed SESSION_EXPIRY_MS
+   * @returns Session or null if not found
+   */
+  async getAndRefresh(sessionId: string, _ttlSeconds: number): Promise<GameSession | null> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return null;
+    }
+
+    session.lastActivityTime = new Date();
+    return session;
+  }
+
+  /**
    * Store a session with TTL
    * TTL is not enforced at write time - cleanup() handles expiration
    * @param sessionId - Session ID

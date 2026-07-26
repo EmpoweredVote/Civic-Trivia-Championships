@@ -14,6 +14,19 @@ export interface SessionStorage {
   get(sessionId: string): Promise<GameSession | null>;
 
   /**
+   * Retrieve a session and refresh its expiry in a single operation.
+   *
+   * Exists so the hot read path costs one backend round-trip instead of two.
+   * The naive get()-then-set() pattern spent a second Upstash command purely to
+   * persist lastActivityTime, which only MemoryStorage.cleanup() ever reads.
+   *
+   * @param sessionId - Session ID to retrieve
+   * @param ttlSeconds - Expiry to reset on the session
+   * @returns Session or null if not found
+   */
+  getAndRefresh(sessionId: string, ttlSeconds: number): Promise<GameSession | null>;
+
+  /**
    * Store a session with TTL
    * @param sessionId - Session ID
    * @param session - Session data
