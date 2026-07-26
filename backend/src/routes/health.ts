@@ -4,8 +4,29 @@ import { pool } from '../config/database.js';
 
 const router = Router();
 
-router.get('/', async (_req: Request, res: Response) => {
+/**
+ * GET /health/live — liveness probe for Render's platform health check.
+ *
+ * Render polls the configured health check path every 5–10 seconds and does NOT
+ * expose a way to change that interval, so this path must cost nothing: no Redis
+ * command, no Postgres query, no I/O of any kind. If the process can answer this,
+ * it is alive — which is all a platform restart decision needs.
+ *
+ * Point Render's "Health Check Path" setting here. Use GET /health (low frequency,
+ * e.g. UptimeRobot) for dependency status, and /health?verbose=1 for session counts.
+ */
+router.get('/live', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+router.get('/', async (req: Request, res: Response) => {
   const storage = storageFactory.getStorage();
+
+  // sessionCount is opt-in via ?verbose=1. On Redis it costs a KEYS scan, which
+  // Upstash bills as a command — monitors poll this endpoint every few seconds,
+  // so including it by default burned the whole free tier. isRedisHealthy()
+  // reports connection state with no Redis command at all.
+  const verbose = req.query.verbose === '1' || req.query.verbose === 'true';
 
   let dbHealthy = true;
   let dbError: string | undefined;
@@ -27,7 +48,7 @@ router.get('/', async (_req: Request, res: Response) => {
     storage: {
       type: storageFactory.isDegradedMode() ? 'memory' : 'redis',
       healthy: storageFactory.isRedisHealthy(),
-      sessionCount: await storage.count()
+      ...(verbose ? { sessionCount: await storage.count() } : {})
     }
   };
 
