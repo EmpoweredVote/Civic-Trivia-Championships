@@ -46,6 +46,34 @@ export class RedisStorage implements SessionStorage {
   }
 
   /**
+   * Retrieve a session and refresh its TTL in one command.
+   *
+   * GETEX does both in a single round-trip, halving the billed Upstash commands
+   * on the hottest path. lastActivityTime is deliberately not rewritten here:
+   * on Redis, expiry is driven by the key's TTL, and nothing reads that field
+   * (only MemoryStorage.cleanup() does). Paying a second command to update it
+   * would be pure waste.
+   *
+   * @param sessionId - Session ID
+   * @param ttlSeconds - TTL to reset on the key
+   * @returns Session or null if not found
+   */
+  async getAndRefresh(sessionId: string, ttlSeconds: number): Promise<GameSession | null> {
+    const key = this.getKey(sessionId);
+    const data = await this.client.getEx(key, { EX: ttlSeconds });
+
+    if (!data) {
+      return null;
+    }
+
+    const session = JSON.parse(data);
+    session.createdAt = new Date(session.createdAt);
+    session.lastActivityTime = new Date(session.lastActivityTime);
+
+    return session;
+  }
+
+  /**
    * Store a session with TTL
    * Uses SETEX for atomic set+TTL (no race condition)
    * @param sessionId - Session ID

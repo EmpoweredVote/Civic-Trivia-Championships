@@ -167,13 +167,9 @@ export class SessionManager {
    * @returns Session or null if not found
    */
   async getSession(sessionId: string): Promise<GameSession | null> {
-    const session = await this.storage.get(sessionId);
-    if (session) {
-      session.lastActivityTime = new Date();
-      // Refresh TTL on access
-      await this.storage.set(sessionId, session, 3600);
-    }
-    return session || null;
+    // Single round-trip: GETEX on Redis, Map access on memory. Previously a
+    // get() followed by set(), which cost two Upstash commands per read.
+    return await this.storage.getAndRefresh(sessionId, 3600);
   }
 
   /**
