@@ -457,4 +457,28 @@ export const collectionsData: NewCollection[] = [
     isActive: false,
     sortOrder: 38
   },
+  {
+    name: 'Madison, WI',
+    slug: 'madison-wi',
+    description: 'Four lakes, one isthmus — how well do you know Mad City?',
+    localeCode: 'en-US',
+    localeName: 'Madison, Wisconsin',
+    iconIdentifier: 'flag-wi',
+    themeColor: '#1B3A6B',
+    tier: 'city',
+    isActive: false,
+    sortOrder: 39
+  },
+  {
+    name: 'Wisconsin',
+    slug: 'wisconsin',
+    description: "From the Driftless to Door County — prove you're a real Badger.",
+    localeCode: 'en-US',
+    localeName: 'Wisconsin',
+    iconIdentifier: 'state',
+    themeColor: '#7A5C2E',
+    tier: 'state',
+    isActive: false,
+    sortOrder: 40
+  },
 ];
