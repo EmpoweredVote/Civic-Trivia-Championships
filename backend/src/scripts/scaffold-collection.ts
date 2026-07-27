@@ -196,6 +196,24 @@ function validate(args: ParsedArgs): void {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
+ * Escape a value for embedding inside a single-quoted TypeScript string literal.
+ *
+ * Every generated field below is written as '${value}'. Without escaping, an
+ * apostrophe closes the literal early and emits a file that will not compile —
+ * e.g. a "Coeur d'Alene, ID" name, or a tagline like
+ * "prove you're a real Badger". Backslashes are escaped first so the quote
+ * escapes we add are not themselves re-escaped, and newlines are folded because
+ * a raw newline is illegal inside a single-quoted literal.
+ */
+function escapeSingleQuoted(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n');
+}
+
+/**
  * Derive localeName from display name.
  * For cities: expand state abbreviation if present (e.g. "Austin, TX" -> "Austin, Texas")
  * For state/federal tiers or names without comma: use name as-is.
@@ -272,12 +290,12 @@ function step1InsertSeedEntry(args: ParsedArgs, sortOrder: number, localeName: s
   }
 
   const newEntry = `  {
-    name: '${args.name}',
+    name: '${escapeSingleQuoted(args.name!)}',
     slug: '${args.slug}',
-    description: '${description}',
-    localeCode: '${args.localeCode}',
-    localeName: '${localeName}',
-    iconIdentifier: '${iconIdentifier}',
+    description: '${escapeSingleQuoted(description)}',
+    localeCode: '${escapeSingleQuoted(args.localeCode)}',
+    localeName: '${escapeSingleQuoted(localeName)}',
+    iconIdentifier: '${escapeSingleQuoted(iconIdentifier)}',
     themeColor: '${args.theme}',
     tier: '${args.tier}',
     isActive: false,
@@ -302,13 +320,13 @@ function step2CreateLocaleConfig(args: ParsedArgs, configVarName: string): strin
     process.exit(1);
   }
 
-  const nameForTopics = args.name!;
+  const nameForTopics = escapeSingleQuoted(args.name!);
 
   const fileContent = `import type { LocaleConfig } from './bloomington-in.js';
 
 export const ${configVarName}Config: LocaleConfig = {
   locale: '${args.slug}',
-  name: '${args.name}',
+  name: '${escapeSingleQuoted(args.name!)}',
   externalIdPrefix: '${args.prefix}',
   collectionSlug: '${args.slug}',
   targetQuestions: 100,
