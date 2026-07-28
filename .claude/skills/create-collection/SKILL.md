@@ -199,16 +199,32 @@ After writing, verify the file compiles by checking it has no obvious TypeScript
 
 You need the database `id` of the newly seeded collection to insert questions. Use the Supabase MCP:
 
+> **The live schema is `trivia.*` and snake_case.** Tables must be qualified
+> (`trivia.collections`, not `collections`) and columns are `external_id`,
+> `correct_answer`, `expires_at`, `is_active`, `topic_id` — not camelCase.
+
 ```sql
-SELECT id, slug, "isActive" FROM collections WHERE slug = '[slug]';
+SELECT id, slug, is_active FROM trivia.collections WHERE slug = '[slug]';
 ```
 
-Save this ID — you'll use it in every question INSERT.
+Save this ID.
 
-Also fetch the topic IDs if needed:
+**Topics are global, not owned by a collection.** `trivia.topics` has no
+collection column; the link is the `trivia.collection_topics` join table. Create
+your topic rows, then link them:
+
 ```sql
-SELECT id, slug FROM topics WHERE "collectionId" = [collection_id];
+INSERT INTO trivia.topics (name, slug, description, created_at) VALUES
+  ('City Government', '[prefix]-city-government', '...', NOW())
+  -- one row per topic
+ON CONFLICT (slug) DO NOTHING RETURNING id, slug;
+
+INSERT INTO trivia.collection_topics (collection_id, topic_id, created_at)
+SELECT [collection_id], id, NOW() FROM trivia.topics WHERE slug LIKE '[prefix]-%'
+ON CONFLICT DO NOTHING;
 ```
+
+Save the returned topic IDs — every question needs a `topic_id`.
 
 ---
 
@@ -243,11 +259,16 @@ Work through topics one at a time. For each topic, write the target number of qu
 
 Insert questions in batches of 20 using `execute_sql`. Use this template for each batch:
 
+**`trivia.questions` has no collection column.** Questions carry a `topic_id`;
+the collection link is the `trivia.collection_questions` join table, populated
+separately in 6e. The activate script does NOT populate it, and
+`/api/game/collections` joins on it — skip 6e and the collection ships empty.
+
 ```sql
-INSERT INTO questions (
-  "externalId", text, options, "correctAnswer", explanation,
-  difficulty, "topicCategory", source, "expiresAt",
-  status, "collectionId", "createdAt", "updatedAt"
+INSERT INTO trivia.questions (
+  external_id, text, options, correct_answer, explanation,
+  difficulty, topic_id, source, expires_at,
+  status, created_at, updated_at
 ) VALUES
 (
   '[prefix]-001',
@@ -256,11 +277,10 @@ INSERT INTO questions (
   0,
   'According to Wikipedia''s article on [City], ...',
   'easy',
-  'city-government',
+  [topic_id],
   '{"name": "Wikipedia", "url": "https://en.wikipedia.org/wiki/[City]"}',
   NULL,
   'draft',
-  [collection_id],
   NOW(),
   NOW()
 ),
@@ -270,24 +290,84 @@ INSERT INTO questions (
 
 **After each batch insert:** run a quick count check:
 ```sql
-SELECT COUNT(*) FROM questions WHERE "collectionId" = [collection_id] AND status = 'draft';
+SELECT COUNT(*) FROM trivia.questions WHERE external_id LIKE '[prefix]-%';
 ```
 
 Continue until you have 80–100 questions inserted. Aim for at least 85.
 
-### 6d. Expiring question check
+### 6d. Fix answer-position bias — DO NOT SKIP
 
-After inserting all questions, verify the expiring ratio:
+Writing questions one at a time reliably produces `correct_answer = 0` almost
+every time; observed rates have been 78–96%. That makes the collection trivially
+gameable — always picking A scores near-perfect. It is invisible unless you
+measure it.
+
+Check, then rotate to a forced-uniform spread:
+
+```sql
+SELECT correct_answer, COUNT(*) FROM trivia.questions
+WHERE external_id LIKE '[prefix]-%' GROUP BY 1 ORDER BY 1;
+
+WITH numbered AS (
+  SELECT id, options, correct_answer,
+         (row_number() OVER (ORDER BY hashtext(external_id)) - 1)::int % 4 AS target_pos
+  FROM trivia.questions
+  WHERE external_id LIKE '[prefix]-%' AND jsonb_array_length(options) = 4
+),
+calc AS (
+  SELECT id, options, correct_answer, target_pos,
+         ((correct_answer - target_pos) % 4 + 4) % 4 AS k FROM numbered
+),
+rot AS (
+  SELECT id, target_pos,
+    jsonb_build_array(options->((0+k)%4), options->((1+k)%4),
+                      options->((2+k)%4), options->((3+k)%4)) AS new_options
+  FROM calc
+)
+UPDATE trivia.questions q
+SET options = r.new_options, correct_answer = r.target_pos, updated_at = NOW()
+FROM rot r WHERE q.id = r.id;
+```
+
+Then **spot-check that answers survived** — confirm `options ->> correct_answer`
+still returns the right value for several known questions before moving on.
+
+Re-check the difficulty mix the same way; hand-written batches skew medium-heavy,
+so promote the genuinely obvious ones to `easy` to reach roughly 40/40/20.
+
+### 6e. Link questions to the collection — REQUIRED
+
+```sql
+INSERT INTO trivia.collection_questions (collection_id, question_id, created_at)
+SELECT [collection_id], id, NOW() FROM trivia.questions
+WHERE external_id LIKE '[prefix]-%'
+ON CONFLICT DO NOTHING;
+```
+
+### 6f. Expiring question check
+
 ```sql
 SELECT
-  COUNT(*) FILTER (WHERE "expiresAt" IS NOT NULL) AS expiring,
+  COUNT(*) FILTER (WHERE expires_at IS NOT NULL) AS expiring,
   COUNT(*) AS total,
-  ROUND(100.0 * COUNT(*) FILTER (WHERE "expiresAt" IS NOT NULL) / COUNT(*), 1) AS pct
-FROM questions
-WHERE "collectionId" = [collection_id] AND status = 'draft';
+  ROUND(100.0 * COUNT(*) FILTER (WHERE expires_at IS NOT NULL) / COUNT(*), 1) AS pct
+FROM trivia.questions
+WHERE external_id LIKE '[prefix]-%' AND status = 'draft';
 ```
 
 **Target: 15–30% expiring.** If below 15%, write additional officeholder questions (current mayor, council members) and insert them.
+
+**If the city genuinely has too few officeholders, shrink the pool instead of
+padding.** A small at-large council caps how many verifiable current officials
+exist. Bend, OR has a 7-member at-large council and only 13 verifiable
+officeholders, so the collection was sized at 86 questions to clear 15% honestly
+rather than inventing officials or guessing at names. Never manufacture an
+officeholder to hit the ratio — write down the ceiling in the locale config so a
+later run doesn't "fix" it.
+
+Also: if an office is mid-transition (a chief being reappointed, a search under
+way), **omit it** rather than shipping a name that expires immediately, and note
+the omission in the config.
 
 ---
 
@@ -300,6 +380,41 @@ frontend/public/images/collections/[slug].jpg
 
 **City collections:** iconic local landmark (pier, civic hall, notable structure).
 **State collections:** state capitol building (hard rule).
+
+### Source it from the shared EV library first
+
+Empowered Vote hosts curated, licence-checked place banners in a public bucket:
+`https://kxsdzaojfaibhuzmclfq.storage.supabase.co/storage/v1/object/public/politician_photos/`
+— `cities/<slug>.jpg`, `states/<ABBR>.jpg`. Prefer these over hand-picking.
+Caveats: licences vary (they are NOT all CC0), slugs are state-scoped, and the
+real filename may be versioned — check the registry comment block above
+`CURATED_LOCAL` / `STATE_PANORAMAS` in the essentials repo's
+`src/lib/buildingImages.js` (Bend is served from `cities/bend-v2.jpg`, not
+`cities/bend.jpg`). Not every place is covered.
+
+### Licensing — attribution is not optional
+
+CC BY and CC BY-SA require a **visible** credit. Being a nonprofit does not
+exempt you; that is the separate NonCommercial term. Add any credit-requiring
+image to `frontend/src/data/bannerCredits.ts`, which renders at `/credits`, and
+to `frontend/public/images/collections/ATTRIBUTIONS.md`. CC0 and public domain
+need nothing. Prefer CC0 when quality is comparable.
+
+### Size and crop for CTC's box — measure, don't assume
+
+- **Resize to ~1600px wide, roughly q82.** Cards render into a 160–180px-tall
+  box; multi-megabyte banners are pure waste. The folder was once 71MB with a
+  single 15MB file.
+- **CTC crops horizontally, not vertically.** The card is a fixed-height box at
+  card width (~1.1:1 to 1.9:1), so `object-fit: cover` keeps **100% of the
+  height** and only the **middle ~34–59% of the width**. Subjects must be
+  **horizontally centred**; wide panoramas lose their ends. This is the opposite
+  axis from the essentials app, so guidance written for that app does not
+  transfer.
+- **Verify the crop with ffmpeg** before accepting an image:
+  `ffmpeg -i in.jpg -vf "crop=<w*1.081/aspect>:<h>:<x>:0" out.jpg` and look at it.
+- Avoid vintage postcards (printed captions), film scans (dust and scratches),
+  and heavy snow or overcast frames — all have been rejected for this reason.
 
 ### Search approach:
 1. Search for `"[City] [landmark] Wikimedia Commons"` or `"[City landmark] free image"`
@@ -315,13 +430,31 @@ Do NOT skip this step — the activate script will fail without the banner.
 
 ## STEP 8 — Audit and Activate
 
+> ### ⚠ SHIP THE CODE BEFORE YOU ACTIVATE
+>
+> **Activation is a database change and takes effect instantly. The banner ships
+> through git.** Activate first and the card appears in production immediately,
+> pointing at an image that 404s until the frontend redeploys.
+>
+> This happened to Madison, WI and Bend, OR. Milwaukee, WI shipped first and had
+> no gap. Correct order:
+>
+> 1. Audit (8a–8b) and confirm READY.
+> 2. Commit, PR, merge the locale config + banner + seed entry.
+> 3. Wait for the Render deploy and confirm the banner serves **HTTP 200** with a
+>    byte size matching the local file.
+> 4. **Then** run the activate script (8c).
+>
+> Between steps 1 and 4 nothing is user-visible: the collection is
+> `is_active = false` and its questions are `draft`. There is no rush.
+
 ### 8a. Audit
-Run the readiness audit:
+Run the readiness audit — **`--prefix` is required, not optional**:
 ```bash
-cd "C:/Project Test/backend" && npx tsx src/scripts/audit-collection-readiness.ts --slug [slug]
+cd "C:/Project Test/backend" && npx tsx src/scripts/audit-collection-readiness.ts --slug [slug] --prefix [prefix]
 ```
 
-Review the output. If it warns about expiring ratio, go back to Step 6d.
+Review the output. If it warns about expiring ratio, go back to Step 6f.
 If it warns about fewer than 50 questions, you need to write more before activating.
 
 ### 8b. Verify banner exists
@@ -331,7 +464,7 @@ ls "C:/Project Test/frontend/public/images/collections/[slug].jpg"
 
 If missing, do not proceed — handle Step 7 first.
 
-### 8c. Activate (dry run first)
+### 8c. Activate (dry run first) — only after the code is deployed
 ```bash
 cd "C:/Project Test/backend" && npx tsx src/scripts/activate-collection.ts --slug [slug] --prefix [prefix] --dry-run
 ```
@@ -339,6 +472,12 @@ cd "C:/Project Test/backend" && npx tsx src/scripts/activate-collection.ts --slu
 Review the dry-run output. If everything looks correct:
 ```bash
 cd "C:/Project Test/backend" && npx tsx src/scripts/activate-collection.ts --slug [slug] --prefix [prefix]
+```
+
+### 8d. Confirm live
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" "https://civic-trivia-frontend.onrender.com/images/collections/[slug].jpg"
+curl -s "https://civic-trivia-backend.onrender.com/api/game/collections" | grep -c '"slug":"[slug]"'
 ```
 
 ---
@@ -390,10 +529,17 @@ Only after all notes are resolved is the collection ready to push. Do not leave 
 - [ ] No two questions about the same officeholder
 - [ ] Tagline is distinctive — not "Test your X civic knowledge!"
 - [ ] Banner image exists at the correct path
+- [ ] Banner is ~1600px wide, under ~1MB, subject horizontally centred
+- [ ] Banner credit added to `bannerCredits.ts` if the licence requires it
+- [ ] **Correct answers spread roughly evenly across positions 0–3** (measure it)
+- [ ] Difficulty mix is roughly 40/40/20 (measure it — hand-written batches skew medium)
+- [ ] Rows exist in `trivia.collection_questions` (Step 6e)
 - [ ] Expiring ratio is 15–30%
 - [ ] Total active questions ≥ 80
 - [ ] No questions that would belong in a future city collection (if this is a state collection)
+- [ ] Cross-collection overlap checked in BOTH directions against existing sibling collections
 - [ ] All Wikipedia sources are cited by name in explanations
+- [ ] **Code merged and banner confirmed serving before activation**
 
 ---
 
