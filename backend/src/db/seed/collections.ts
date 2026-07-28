@@ -481,4 +481,16 @@ export const collectionsData: NewCollection[] = [
     isActive: false,
     sortOrder: 40
   },
+  {
+    name: 'Bend, OR',
+    slug: 'bend-or',
+    description: 'Mills to mountain bikes — can Bend\'s boomtown stump you?',
+    localeCode: 'en-US',
+    localeName: 'Bend, Oregon',
+    iconIdentifier: 'flag-or',
+    themeColor: '#B4501E',
+    tier: 'city',
+    isActive: false,
+    sortOrder: 41
+  },
 ];
