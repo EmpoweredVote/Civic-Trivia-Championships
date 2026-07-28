@@ -46,7 +46,10 @@ import type { LocaleConfig } from './bloomington-in.js';
  *
  * CURRENT OFFICEHOLDERS:
  * - Mayor: Satya Rhodes-Conway (term ends 2027-04-20)
- * - Common Council President: Sabrina V. Madison, District 17 (term ends 2027-04-20)
+ * - Common Council President: Sabrina Madison, District 17 (term ends 2027-04-20)
+ *   (the city's /council page writes it "Sabrina V. Madison"; the city roster and
+ *   the April 2026 leadership announcement both use "Sabrina Madison", which is
+ *   the form used in content here)
  * - Common Council Vice President: Carmella Glenn, District 18 (term ends 2028-04-18)
  * - MMSD Superintendent: Dr. Joe Gothard (appointed, no fixed term — treated as
  *   expiring on the next board cycle, 2027-04-20)
@@ -116,7 +119,7 @@ export const madisonWiConfig: LocaleConfig = {
       termEnd: '2027-04-20T00:00:00Z',
     },
     {
-      name: 'Sabrina V. Madison',
+      name: 'Sabrina Madison',
       role: 'Common Council President',
       district: 'District 17',
       termEnd: '2027-04-20T00:00:00Z',
