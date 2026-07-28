@@ -251,7 +251,12 @@ async function main(): Promise<void> {
       console.log('\n  Officeholder Coverage:');
 
       const allWithExpiry = await db
-        .select({ text: questions.text, expiresAt: questions.expiresAt })
+        .select({
+          text: questions.text,
+          options: questions.options,
+          correctAnswer: questions.correctAnswer,
+          expiresAt: questions.expiresAt,
+        })
         .from(questions)
         .where(sql`
           ${questions.externalId} LIKE ${prefixPattern}
@@ -259,10 +264,27 @@ async function main(): Promise<void> {
           AND ${questions.expiresAt} IS NOT NULL
         `);
 
+      // A question covers an officeholder if it names them in the question text
+      // OR if they are the correct answer. The second case is the common one and
+      // used to be missed entirely: well-formed officeholder questions read
+      // "Who currently serves as mayor?" and carry the name only in the options,
+      // so matching on text alone reported real coverage as zero.
+      //
+      // A name appearing ONLY as a wrong-answer distractor is deliberately not
+      // counted — that is the opposite of coverage.
+      const namesQuestion = (
+        q: { text: string; options: string[] | null; correctAnswer: number },
+        nameLower: string,
+      ): boolean => {
+        if (q.text.toLowerCase().includes(nameLower)) return true;
+        const answer = q.options?.[q.correctAnswer];
+        return typeof answer === 'string' && answer.toLowerCase().includes(nameLower);
+      };
+
       let zeroCoverageCount = 0;
       for (const official of localeConfig.officeholders) {
         const nameLower = official.name.toLowerCase();
-        const covered = allWithExpiry.filter(q => q.text.toLowerCase().includes(nameLower));
+        const covered = allWithExpiry.filter(q => namesQuestion(q, nameLower));
         const icon = covered.length === 0 ? 'WARNING' : 'OK';
         console.log(`    [${icon}] ${official.role}${official.district ? `, ${official.district}` : ''} — ${official.name}: ${covered.length} question(s)`);
         if (covered.length === 0) zeroCoverageCount++;
