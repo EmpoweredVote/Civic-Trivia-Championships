@@ -293,6 +293,7 @@ function FeaturedCard({
           src={`/images/collections/${collection.slug}.jpg`}
           alt={collection.name}
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          loading="lazy"
         />
 
         {/* Selected badge — top right */}
