@@ -46,6 +46,16 @@ export const BANNER_CREDITS: BannerCredit[] = [
     sharedBucket: true,
   },
   {
+    slug: 'milwaukee-wi',
+    collection: 'Milwaukee, WI',
+    title: 'Milwaukee Art Museum — Quadracci Pavilion at night',
+    author: 'Dori',
+    license: 'CC BY-SA 3.0 US',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/us/deed.en',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Milwaukee_Art_Museum_7043.jpg',
+    attributionRequired: true,
+  },
+  {
     slug: 'wisconsin',
     collection: 'Wisconsin',
     title: 'Wisconsin State Capitol, aerial view',
