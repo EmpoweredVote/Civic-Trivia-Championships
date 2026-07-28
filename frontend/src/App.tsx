@@ -26,6 +26,7 @@ import { ElectionsPage } from './pages/admin/ElectionsPage';
 import { AdminsPage } from './pages/admin/AdminsPage';
 import { Leaderboard } from './pages/Leaderboard';
 import { Collections } from './pages/Collections';
+import { ImageCredits } from './pages/ImageCredits';
 
 // AdminGuard component: allows anyone with admin access (admin_users or a content-admin role)
 function AdminGuard() {
@@ -87,6 +88,7 @@ function App() {
             <Route path="/play" element={<Game />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/collections" element={<Collections />} />
+            <Route path="/credits" element={<ImageCredits />} />
 
             {/* Protected routes — require auth */}
             <Route element={<ProtectedRoute />}>

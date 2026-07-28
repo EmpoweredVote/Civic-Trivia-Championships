@@ -45,6 +45,21 @@ export function Collections() {
             onSelect={select}
             onPlay={handlePlayCollection}
           />
+
+          {/* Banner photography is CC-licensed; some licences require the credit
+              to be visible. Cards are too small for a credit line each. */}
+          <button
+            type="button"
+            onClick={() => navigate('/credits')}
+            style={{
+              display: 'block', marginTop: 28, background: 'none', border: 'none',
+              padding: 0, cursor: 'pointer', fontFamily: "'Manrope', sans-serif",
+              fontSize: 13, fontWeight: 600, color: textColor,
+              textDecoration: 'underline', textUnderlineOffset: 3,
+            }}
+          >
+            Image credits
+          </button>
         </div>
       </section>
     </div>
