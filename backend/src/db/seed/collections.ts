@@ -493,4 +493,16 @@ export const collectionsData: NewCollection[] = [
     isActive: false,
     sortOrder: 41
   },
+  {
+    name: 'Milwaukee, WI',
+    slug: 'milwaukee-wi',
+    description: 'Three towns, one bridge war — how well do you know Brew City?',
+    localeCode: 'en-US',
+    localeName: 'Milwaukee, Wisconsin',
+    iconIdentifier: 'flag-wi',
+    themeColor: '#0F6FA8',
+    tier: 'city',
+    isActive: false,
+    sortOrder: 42
+  },
 ];

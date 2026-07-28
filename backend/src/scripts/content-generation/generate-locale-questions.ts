@@ -133,6 +133,7 @@ async function loadLocaleConfig(locale: string): Promise<LoadedConfig> {
       'madison-wi': () => import('./locale-configs/madison-wi.js') as Promise<{ madisonWiConfig: LocaleConfig }>,
       'wisconsin': () => import('./locale-configs/wisconsin.js') as Promise<{ wisconsinConfig: LocaleConfig }>,
       'bend-or': () => import('./locale-configs/bend-or.js') as Promise<{ bendOrConfig: LocaleConfig }>,
+      'milwaukee-wi': () => import('./locale-configs/milwaukee-wi.js') as Promise<{ milwaukeeWiConfig: LocaleConfig }>,
   };
 
   const loader = supportedLocales[locale];
@@ -142,7 +143,7 @@ async function loadLocaleConfig(locale: string): Promise<LoadedConfig> {
     const module = await loader();
 
     // Extract the config from the module (different export names per file)
-    const configKeys = ['bloomingtonConfig', 'losAngelesConfig', 'fremontConfig', 'norwichConfig', 'cambridgeMaConfig', 'planoTxConfig', 'portlandOrConfig', 'washingtonDcConfig', 'biloxiMsConfig', 'santaMonicaCaConfig', 'indioCaConfig', 'alexandriaLaConfig', 'louisianaConfig', 'springfieldMoConfig', 'stLouisMoConfig', 'missouriConfig', 'arizonaConfig', 'tucsonAzConfig', 'phoenixAzConfig', 'ashevilleNcConfig', 'northCarolinaConfig', 'westMonroeLaConfig', 'newYorkStateConfig', 'queensNyConfig', 'pennsylvaniaConfig', 'philadelphiaPaConfig', 'pittsburghPaConfig', 'warInIranConfig', 'climateAgreementsConfig', 'bainbridgeIslandWaConfig', 'washingtonStateConfig', 'madisonWiConfig', 'wisconsinConfig', 'bendOrConfig'];
+    const configKeys = ['bloomingtonConfig', 'losAngelesConfig', 'fremontConfig', 'norwichConfig', 'cambridgeMaConfig', 'planoTxConfig', 'portlandOrConfig', 'washingtonDcConfig', 'biloxiMsConfig', 'santaMonicaCaConfig', 'indioCaConfig', 'alexandriaLaConfig', 'louisianaConfig', 'springfieldMoConfig', 'stLouisMoConfig', 'missouriConfig', 'arizonaConfig', 'tucsonAzConfig', 'phoenixAzConfig', 'ashevilleNcConfig', 'northCarolinaConfig', 'westMonroeLaConfig', 'newYorkStateConfig', 'queensNyConfig', 'pennsylvaniaConfig', 'philadelphiaPaConfig', 'pittsburghPaConfig', 'warInIranConfig', 'climateAgreementsConfig', 'bainbridgeIslandWaConfig', 'washingtonStateConfig', 'madisonWiConfig', 'wisconsinConfig', 'bendOrConfig', 'milwaukeeWiConfig'];
     for (const key of configKeys) {
       if (module[key]) return { config: module[key] as LocaleConfig };
     }

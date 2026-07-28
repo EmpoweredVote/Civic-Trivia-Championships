@@ -13,6 +13,7 @@ essentials repo's `src/lib/buildingImages.js`.
 | File | Source | Author | License | Notes |
 |------|--------|--------|---------|-------|
 | `madison-wi.jpg` | [Skyline of Madison, Wisconsin (cropped)](https://commons.wikimedia.org/wiki/File:Skyline_of_Madison,_Wisconsin_(cropped).jpg) | John Benson | [CC BY 2.5](https://creativecommons.org/licenses/by/2.5/) | Shared bucket, `cities/madison.jpg`. Credit required. |
+| `milwaukee-wi.jpg` | [Milwaukee Art Museum 7043](https://commons.wikimedia.org/wiki/File:Milwaukee_Art_Museum_7043.jpg) | Dori | [CC BY-SA 3.0 US](https://creativecommons.org/licenses/by-sa/3.0/us/deed.en) | Credit required. ShareAlike — used unmodified apart from downscaling; do not crop or composite without relicensing the result. |
 | `wisconsin.jpg` | [Wisconsin State Capitol Building 6](https://commons.wikimedia.org/wiki/File:Wisconsin_State_Capitol_Building_6.jpg) | Wikideas1 | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) | No obligation. |
 | `bend-or.jpg` | [Downtown Bend - view of Pilot Butte](https://commons.wikimedia.org/wiki/File:Downtown_Bend_-_view_of_Pilot_Butte.jpg) | UpdateNerd | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) | No obligation. |
 
