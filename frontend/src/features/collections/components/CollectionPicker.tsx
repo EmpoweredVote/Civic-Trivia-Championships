@@ -134,7 +134,7 @@ export function CollectionPicker({
   const inputBorder = darkMode ? '#21262D' : '#E2E8F0';
   const inputText = darkMode ? '#F1F5F9' : '#0F172A';
   const placeholderColor = darkMode ? '#7487A1' : '#94A3B8';
-  const accentColor = '#14B8A6';
+  const accentColor = '#00C7B1';
 
   const filtered = filterCollections(collections, query);
   const isPreview = variant === 'preview';
@@ -154,7 +154,7 @@ export function CollectionPicker({
           color: headingColor,
           margin: 0, letterSpacing: '-0.01em',
         }}>
-          All Collections
+          {variant === 'preview' ? 'Featured Collections' : 'All Collections'}
         </h2>
 
         {!loading && collections.length > 0 && isPreview && (
@@ -168,7 +168,7 @@ export function CollectionPicker({
               color: accentColor,
             }}
           >
-            See more
+            Explore
             <ChevronRightIcon color={accentColor} />
           </button>
         )}

@@ -48,7 +48,7 @@ function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boole
       label: 'Games Played',
       value: stats ? stats.gamesPlayed.toLocaleString() : '—',
       icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00C7B1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="5 3 19 12 5 21 5 3"/>
         </svg>
       ),
@@ -57,7 +57,7 @@ function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boole
       label: 'Best Score',
       value: stats ? stats.bestScore.toLocaleString() : '—',
       icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8A020" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD426" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 2h12v6a6 6 0 01-12 0V2zM4 2h2M18 2h2M8 20v-6M16 20v-6M5 20h14"/>
         </svg>
       ),
@@ -91,8 +91,8 @@ function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boole
         <div style={{ marginBottom: 20, padding: '14px 16px', borderRadius: 12, background: statBg, border: `1px solid ${statBorder}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: 11, color: '#14B8A6' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,199,177,0.15)', border: '1px solid rgba(0,199,177,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: 11, color: '#00C7B1' }}>
                   {xpData.level}
                 </span>
               </div>
@@ -103,7 +103,7 @@ function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boole
             </span>
           </div>
           <div style={{ height: 6, background: statBorder, borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${progressPct}%`, background: '#14B8A6', borderRadius: 3, transition: 'width 0.4s ease' }} />
+            <div style={{ height: '100%', width: `${progressPct}%`, background: '#00C7B1', borderRadius: 3, transition: 'width 0.4s ease' }} />
           </div>
           <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: mutedColor, marginTop: 6 }}>
             {(xpData.xpToNextLevel).toLocaleString()} XP to next level
@@ -128,8 +128,8 @@ function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boole
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-          <circle cx="8" cy="8" r="7" stroke="#14B8A6" strokeWidth="1.5"/>
-          <path d="M5 8l2.5 2.5L11 5" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="8" cy="8" r="7" stroke="#00C7B1" strokeWidth="1.5"/>
+          <path d="M5 8l2.5 2.5L11 5" stroke="#00C7B1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: mutedColor, margin: 0, lineHeight: 1.55 }}>
           Select any collection from the grid below — the featured card updates instantly. Hit{' '}
@@ -201,15 +201,15 @@ function HowItWorksSection({ darkMode }: { darkMode: boolean }) {
           <div key={s.num} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
             <div style={{
               width: 42, height: 42, flexShrink: 0, borderRadius: '50%',
-              background: iconBg, border: '1px solid rgba(20,184,166,0.15)',
+              background: iconBg, border: '1px solid rgba(0,199,177,0.15)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#14B8A6',
+              color: '#00C7B1',
             }}>
               {s.icon}
             </div>
             <div style={{ paddingTop: 2 }}>
               <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 14, fontWeight: 700, color: stepTitleColor, lineHeight: 1.2 }}>
-                <span style={{ color: '#14B8A6', fontWeight: 800, fontSize: 12, marginRight: 5 }}>{s.num}</span>
+                <span style={{ color: '#00C7B1', fontWeight: 800, fontSize: 12, marginRight: 5 }}>{s.num}</span>
                 {s.title}
               </div>
               <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: stepDescColor, marginTop: 3, lineHeight: 1.5 }}>
@@ -224,8 +224,8 @@ function HowItWorksSection({ darkMode }: { darkMode: boolean }) {
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 20 }}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-          <circle cx="8" cy="8" r="7" stroke="#14B8A6" strokeWidth="1.5"/>
-          <path d="M5 8l2.5 2.5L11 5" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="8" cy="8" r="7" stroke="#00C7B1" strokeWidth="1.5"/>
+          <path d="M5 8l2.5 2.5L11 5" stroke="#00C7B1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: stepDescColor, margin: 0, lineHeight: 1.55 }}>
           Select any collection from the grid below — the featured card updates instantly. Hit{' '}
@@ -262,9 +262,9 @@ function FeaturedCard({
         <div style={{
           width: 56, height: 56, borderRadius: '50%',
           background: darkMode ? '#0D1117' : '#EFF6FF',
-          border: '1.5px solid rgba(20,184,166,0.2)',
+          border: '1.5px solid rgba(0,199,177,0.2)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#14B8A6',
+          color: '#00C7B1',
         }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/>
@@ -347,13 +347,13 @@ function FeaturedCard({
           onClick={onPlay}
           style={{
             width: '100%', padding: 'clamp(14px, 1.1vw, 20px) clamp(20px, 1.6vw, 28px)', borderRadius: 12,
-            background: '#E8A020', border: 'none', cursor: 'pointer',
+            background: '#FFD426', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 1.25vw, 22px)',
             color: '#0F0D09', transition: 'background 0.2s',
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#C88010'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E8A020'; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#DBB621'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFD426'; }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor">
@@ -424,9 +424,9 @@ export function Dashboard() {
                 color: darkMode ? '#7487A1' : '#94A3B8',
                 margin: '12px 0 0',
               }}>
-                <Link to="/login" style={{ color: '#E8A020', textDecoration: 'none', fontWeight: 600 }}>Sign in</Link>
+                <Link to="/login" style={{ color: '#FFD426', textDecoration: 'none', fontWeight: 600 }}>Sign in</Link>
                 {' '}or{' '}
-                <Link to="/signup" style={{ color: '#E8A020', textDecoration: 'none', fontWeight: 600 }}>create an account</Link>
+                <Link to="/signup" style={{ color: '#FFD426', textDecoration: 'none', fontWeight: 600 }}>create an account</Link>
                 {' '}to track your progress and earn rewards.
               </p>
             )}
