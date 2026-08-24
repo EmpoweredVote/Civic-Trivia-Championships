@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { CollectionSummary } from '../types';
 import { CollectionCard } from './CollectionCard';
 import { useTheme } from '../../../hooks/useTheme';
+import { BobbitCivicFactSitter } from '../../../components/bobbits/BobbitCivicFactSitter';
 
 const TIER_SECTIONS: { tier: CollectionSummary['tier']; label: string }[] = [
   { tier: 'city', label: 'City' },
@@ -133,11 +134,13 @@ export function CollectionPicker({
   const inputBg = darkMode ? '#161B22' : '#FFFFFF';
   const inputBorder = darkMode ? '#21262D' : '#E2E8F0';
   const inputText = darkMode ? '#F1F5F9' : '#0F172A';
-  const placeholderColor = darkMode ? '#7487A1' : '#94A3B8';
-  const accentColor = '#14B8A6';
+  const placeholderColor = darkMode ? '#94A3B8' : '#64748B';
+  const accentColor = darkMode ? '#00C7B1' : '#00657C';
 
   const filtered = filterCollections(collections, query);
   const isPreview = variant === 'preview';
+  // Selection is shown via the card's own highlight/badge, never by moving it — the grid's
+  // order stays put (tier-then-name) whichever collection is selected.
   const previewItems = isPreview ? sortByTierThenName(filtered).slice(0, previewLimit) : filtered;
 
   return (
@@ -164,7 +167,7 @@ export function CollectionPicker({
             style={{
               display: 'flex', alignItems: 'center', gap: 4,
               background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-              fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 13,
+              fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 15,
               color: accentColor,
             }}
           >
@@ -177,12 +180,14 @@ export function CollectionPicker({
       {/* Search */}
       {!loading && collections.length > 0 && (
         <div style={{
+          position: 'relative',
           display: 'flex', alignItems: 'center', gap: 10,
           background: inputBg, border: `1px solid ${inputBorder}`,
           borderRadius: 12, padding: '12px 16px',
           width: '100%', boxSizing: 'border-box' as const,
           marginBottom: 24,
         }}>
+          {isPreview && <BobbitCivicFactSitter darkMode={darkMode} />}
           <SearchIcon color={placeholderColor} />
           <input
             type="text"
@@ -190,11 +195,11 @@ export function CollectionPicker({
             onChange={e => setQuery(e.target.value)}
             placeholder="Search collections by city, state, or name..."
             aria-label="Search collections"
-            className={darkMode ? 'placeholder:text-[#7487A1]' : 'placeholder:text-[#94A3B8]'}
+            className={darkMode ? 'placeholder:text-[#94A3B8]' : 'placeholder:text-[#64748B]'}
             style={{
               flex: 1, minWidth: 0, border: 'none', outline: 'none',
               background: 'transparent', color: inputText,
-              fontFamily: "'Manrope', sans-serif", fontWeight: 500, fontSize: 14,
+              fontFamily: "'Manrope', sans-serif", fontWeight: 400, fontSize: 12,
             }}
           />
           {query && (
