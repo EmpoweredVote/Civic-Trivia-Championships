@@ -76,7 +76,7 @@ router.delete(
   '/flag/:questionId',
   requireAuth,
   param('questionId').isString().notEmpty(),
-  async (req: Request, res: Response) => {
+  async (req: Request<{ questionId: string }>, res: Response) => {
     try {
       // Validate request
       const errors = validationResult(req);
