@@ -376,7 +376,7 @@ router.post('/answer', async (req: Request, res: Response) => {
 });
 
 // GET /results/:sessionId - Get final game results
-router.get('/results/:sessionId', async (req: Request, res: Response) => {
+router.get('/results/:sessionId', async (req: Request<{ sessionId: string }>, res: Response) => {
   try {
     const { sessionId } = req.params;
 

@@ -134,7 +134,7 @@ router.get('/questions', async (req: Request, res: Response) => {
  * POST /questions/:id/renew - Renew an expired question
  * Body: { expiresAt: string } (ISO 8601 date string)
  */
-router.post('/questions/:id/renew', async (req: Request, res: Response) => {
+router.post('/questions/:id/renew', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const questionId = parseInt(req.params.id, 10);
     if (isNaN(questionId)) {
@@ -198,7 +198,7 @@ router.post('/questions/:id/renew', async (req: Request, res: Response) => {
  * Accepts optional body: { verdict?: string }
  * Records verdict and archiving admin's user ID in expirationHistory.
  */
-router.post('/questions/:id/archive', async (req: Request, res: Response) => {
+router.post('/questions/:id/archive', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const questionId = parseInt(req.params.id, 10);
     if (isNaN(questionId)) {
@@ -248,7 +248,7 @@ router.post('/questions/:id/archive', async (req: Request, res: Response) => {
  * Accepts optional body: { verdict?: string }
  * Records verdict and archiving admin's user ID in expirationHistory.
  */
-router.post('/questions/by-external-id/:externalId/archive', async (req: Request, res: Response) => {
+router.post('/questions/by-external-id/:externalId/archive', async (req: Request<{ externalId: string }>, res: Response) => {
   try {
     const { externalId } = req.params;
 
@@ -292,7 +292,7 @@ router.post('/questions/by-external-id/:externalId/archive', async (req: Request
 /**
  * POST /questions/:id/restore - Restore an archived question back to draft
  */
-router.post('/questions/:id/restore', async (req: Request, res: Response) => {
+router.post('/questions/:id/restore', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const questionId = parseInt(req.params.id, 10);
     if (isNaN(questionId)) {
@@ -358,7 +358,7 @@ function mapDifficultyToString(difficulty: number): string {
  * Body: { text, options, correctAnswer, explanation, sourceUrl, difficulty }
  * Returns: { question, qualityDelta: { oldScore, newScore, oldViolations, newViolations, violations } }
  */
-router.put('/questions/:id', async (req: Request, res: Response) => {
+router.put('/questions/:id', async (req: Request<{ id: string }>, res: Response) => {
   try {
     // Parse and validate question ID
     const questionId = parseInt(req.params.id, 10);
@@ -642,7 +642,7 @@ router.get('/questions/explore', async (req: Request, res: Response) => {
  * GET /questions/:id/detail - Get full question details with quality audit
  * Returns full question data + computed quality violations
  */
-router.get('/questions/:id/detail', async (req: Request, res: Response) => {
+router.get('/questions/:id/detail', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const questionId = parseInt(req.params.id, 10);
     if (isNaN(questionId)) {
@@ -994,7 +994,7 @@ router.get('/flags', async (req: Request, res: Response) => {
  * Path param: questionId (numeric question ID)
  * Returns: { question: QuestionDetail, flags: FlagEntry[] }
  */
-router.get('/flags/:questionId/detail', async (req: Request, res: Response) => {
+router.get('/flags/:questionId/detail', async (req: Request<{ questionId: string }>, res: Response) => {
   try {
     const questionId = parseInt(req.params.questionId, 10);
     if (isNaN(questionId)) {
@@ -1083,7 +1083,7 @@ router.get('/flags/:questionId/detail', async (req: Request, res: Response) => {
  * Path param: questionId (numeric question ID)
  * Returns: { success: true }
  */
-router.patch('/flags/:questionId/archive', async (req: Request, res: Response) => {
+router.patch('/flags/:questionId/archive', async (req: Request<{ questionId: string }>, res: Response) => {
   try {
     const questionId = parseInt(req.params.questionId, 10);
     if (isNaN(questionId)) {
@@ -1130,7 +1130,7 @@ router.patch('/flags/:questionId/archive', async (req: Request, res: Response) =
  * Path param: questionId (numeric question ID)
  * Returns: { success: true }
  */
-router.post('/flags/:questionId/dismiss', async (req: Request, res: Response) => {
+router.post('/flags/:questionId/dismiss', async (req: Request<{ questionId: string }>, res: Response) => {
   try {
     const questionId = parseInt(req.params.questionId, 10);
     if (isNaN(questionId)) {
@@ -1177,7 +1177,7 @@ router.post('/flags/:questionId/dismiss', async (req: Request, res: Response) =>
  * Path param: questionId (numeric question ID)
  * Returns: { success: true }
  */
-router.patch('/flags/:questionId/restore', async (req: Request, res: Response) => {
+router.patch('/flags/:questionId/restore', async (req: Request<{ questionId: string }>, res: Response) => {
   try {
     const questionId = parseInt(req.params.questionId, 10);
     if (isNaN(questionId)) {
@@ -1656,7 +1656,7 @@ router.post('/election-races', async (req: Request, res: Response) => {
 
 // POST /election-races/:id/generate — Trigger question generation for an election race
 // Body: { collectionSlug: string, force?: boolean }
-router.post('/election-races/:id/generate', async (req: Request, res: Response) => {
+router.post('/election-races/:id/generate', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const raceId = parseInt(req.params.id, 10);
     if (isNaN(raceId)) {
@@ -1697,7 +1697,7 @@ router.post('/election-races/:id/generate', async (req: Request, res: Response) 
  * GET /election-races/:id/question-count — Return active and draft question counts for a race.
  * Used by the re-generate confirmation modal to show "X active questions will be archived."
  */
-router.get('/election-races/:id/question-count', async (req: Request, res: Response) => {
+router.get('/election-races/:id/question-count', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const raceId = parseInt(req.params.id, 10);
     if (isNaN(raceId)) {
@@ -1734,7 +1734,7 @@ router.get('/election-races/:id/question-count', async (req: Request, res: Respo
  * - 409: FollowupBlockedError (already generated)
  * - 500: generation error
  */
-router.post('/election-races/:id/enter-result', async (req: Request, res: Response) => {
+router.post('/election-races/:id/enter-result', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const raceId = parseInt(req.params.id, 10);
     if (isNaN(raceId)) {
@@ -1781,7 +1781,7 @@ router.post('/election-races/:id/enter-result', async (req: Request, res: Respon
  * Body (optional): { collectionSlug?: string } — overrides the name-based collection lookup.
  * Returns: { questionsCreated, archived, deleted, raceId, jurisdiction, collectionSlug }
  */
-router.post('/election-races/:id/regenerate', async (req: Request, res: Response) => {
+router.post('/election-races/:id/regenerate', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const raceId = parseInt(req.params.id, 10);
     if (isNaN(raceId)) {
@@ -1904,7 +1904,7 @@ router.post('/election-races/:id/regenerate', async (req: Request, res: Response
  * Only updates fields present in body.
  * Returns: { race: updated }
  */
-router.put('/election-races/:id', async (req: Request, res: Response) => {
+router.put('/election-races/:id', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const raceId = parseInt(req.params.id, 10);
     if (isNaN(raceId)) {
@@ -1957,7 +1957,7 @@ router.put('/election-races/:id', async (req: Request, res: Response) => {
  * (schema uses onDelete: 'set null').
  * Returns: { deleted: true }
  */
-router.delete('/election-races/:id', async (req: Request, res: Response) => {
+router.delete('/election-races/:id', async (req: Request<{ id: string }>, res: Response) => {
   try {
     const raceId = parseInt(req.params.id, 10);
     if (isNaN(raceId)) {
@@ -2058,7 +2058,7 @@ router.post('/admins', requireSuperAdmin, async (req: Request, res: Response) =>
  * Super-admins cannot be removed by non-super-admins (enforced by requireSuperAdmin).
  * A super-admin cannot remove themselves.
  */
-router.delete('/admins/:userId', requireSuperAdmin, async (req: Request, res: Response) => {
+router.delete('/admins/:userId', requireSuperAdmin, async (req: Request<{ userId: string }>, res: Response) => {
   try {
     const { userId } = req.params;
 
