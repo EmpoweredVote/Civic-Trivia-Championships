@@ -39,9 +39,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const SOURCE_DATABASE_URL =
   process.env.SOURCE_DATABASE_URL || process.env.DATABASE_URL;
-const SUPABASE_ACCESS_TOKEN =
-  process.env.SUPABASE_ACCESS_TOKEN ||
-  'sbp_78b1e07fcb0cfca5144f7d55677c52acc3486f5c';
+const SUPABASE_ACCESS_TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
 const SUPABASE_PROJECT_REF =
   process.env.SUPABASE_PROJECT_REF || 'kxsdzaojfaibhuzmclfq';
 
