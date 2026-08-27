@@ -127,7 +127,7 @@ export function AnswerGrid({
           return (
             <motion.button
               key={index}
-              ref={el => (buttonRefs.current[index] = el)}
+              ref={el => { buttonRefs.current[index] = el; }}
               onClick={() => canSelect && onSelect(index)}
               onKeyDown={e => handleKeyDown(e, index)}
               onMouseEnter={() => canSelect && setHoveredIndex(index)}

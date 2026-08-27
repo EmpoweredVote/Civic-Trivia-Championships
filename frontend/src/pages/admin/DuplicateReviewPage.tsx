@@ -17,8 +17,8 @@ interface ToastState {
 
 function useUndoToast() {
   const [toast, setToast] = useState<ToastState>({ message: '', clusterId: null, visible: false, countdown: 30 });
-  const timeoutRef = useRef<number>();
-  const countdownRef = useRef<number>();
+  const timeoutRef = useRef<number | undefined>(undefined);
+  const countdownRef = useRef<number | undefined>(undefined);
 
   const showToast = (message: string, clusterId: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);

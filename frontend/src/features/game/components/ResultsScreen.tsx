@@ -514,7 +514,7 @@ export function ResultsScreen({
                   }}
                 >
                   <button
-                    ref={el => (accordionButtonRefs.current[index] = el)}
+                    ref={el => { accordionButtonRefs.current[index] = el; }}
                     onClick={() => toggleQuestion(index)}
                     onKeyDown={e => handleAccordionKeyDown(e, index)}
                     aria-expanded={isExpanded}

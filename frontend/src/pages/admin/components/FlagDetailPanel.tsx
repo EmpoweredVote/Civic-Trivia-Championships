@@ -54,7 +54,7 @@ interface ToastState {
 
 function useUndoToast() {
   const [toast, setToast] = useState<ToastState>({ message: '', undoCallback: null, visible: false });
-  const timeoutRef = useRef<number>();
+  const timeoutRef = useRef<number | undefined>(undefined);
 
   const showToast = (message: string, undoCallback: () => void) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
