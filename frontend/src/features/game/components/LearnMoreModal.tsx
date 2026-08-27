@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { Dialog, DialogPanel } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FocusTrap from 'focus-trap-react';
