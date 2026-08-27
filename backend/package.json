@@ -19,7 +19,7 @@
     "generate-election-questions": "tsx src/scripts/generate-election-questions.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.3",
+    "@supabase/supabase-js": "^2.112.4",
     "cheerio": "^1.2.0",
     "compromise": "^14.16.0",
     "cors": "^2.8.5",
