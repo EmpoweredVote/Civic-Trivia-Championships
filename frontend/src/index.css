@@ -1,6 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+/* Keep the existing JS config so the custom teal palette and content
+   globs resolve exactly as they did under Tailwind 3. */
+@config "../tailwind.config.js";
 
 body, * {
   font-family: 'Manrope', sans-serif;
