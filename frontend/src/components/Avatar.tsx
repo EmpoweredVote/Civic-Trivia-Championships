@@ -89,7 +89,7 @@ export function Avatar({ name, imageUrl, size = 80, onUpload }: AvatarProps) {
 
       {/* Camera/edit icon overlay on hover (only if upload is enabled) */}
       {onUpload && isHovered && (
-        <div className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
           <svg
             className="w-8 h-8 text-white"
             viewBox="0 0 24 24"
