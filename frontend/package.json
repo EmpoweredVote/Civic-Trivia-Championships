@@ -17,10 +17,10 @@
     "@empoweredvote/ev-ui": "^0.10.2",
     "@floating-ui/react": "^0.27.20",
     "@headlessui/react": "^2.2.10",
-    "@react-spring/web": "^9.7.5",
+    "@react-spring/web": "^10.1.2",
     "@tailwindcss/postcss": "^4.3.3",
     "focus-trap-react": "^12.0.3",
-    "framer-motion": "^12.34.0",
+    "framer-motion": "^13.1.1",
     "posthog-js": "^1.418.15",
     "react": "^19.2.8",
     "react-canvas-confetti": "^2.0.7",
@@ -28,8 +28,8 @@
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",
     "serve": "^14.2.4",
-    "web-vitals": "^5.1.0",
-    "zustand": "^4.4.7"
+    "web-vitals": "^6.2.1",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@posthog/rollup-plugin": "^1.5.1",
