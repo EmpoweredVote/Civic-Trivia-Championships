@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { jwtVerify, createRemoteJWKSet } from 'jose';
+import { jwtVerify, createRemoteJWKSet, decodeJwt, type JWTPayload } from 'jose';
 import { supabaseAdmin } from '../config/supabase.js';
 
-// Extend Express Request with Supabase auth properties
+// Extend Express Request with auth properties
 declare global {
   namespace Express {
     interface Request {
-      userId?: string;       // UUID from Supabase JWT sub claim
+      userId?: string;       // Internal UUID — Supabase sub, or external_id on a WorkOS token
       accessToken?: string;  // Raw JWT for downstream use
     }
   }
@@ -17,8 +17,61 @@ const JWKS = createRemoteJWKSet(
   new URL(`${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`)
 );
 
+const SUPABASE_ISSUER = `${process.env.SUPABASE_URL}/auth/v1`;
+
+// WorkOS AuthKit — second accepted issuer during the Supabase → WorkOS
+// migration (ev-accounts decision 0002). WORKOS_CLIENT_ID absent = old
+// behavior, Supabase-only.
+const WORKOS_CLIENT_ID = process.env.WORKOS_CLIENT_ID;
+const WORKOS_ISSUER =
+  process.env.WORKOS_ISSUER ??
+  (WORKOS_CLIENT_ID ? `https://api.workos.com/user_management/${WORKOS_CLIENT_ID}` : null);
+const WORKOS_JWKS_URL =
+  process.env.WORKOS_JWKS_URL ??
+  (WORKOS_CLIENT_ID ? `https://api.workos.com/sso/jwks/${WORKOS_CLIENT_ID}` : null);
+const WORKOS_JWKS = WORKOS_JWKS_URL ? createRemoteJWKSet(new URL(WORKOS_JWKS_URL)) : null;
+
 /**
- * Requires a valid Supabase JWT in the Authorization header.
+ * Verify a token from either issuer and resolve the internal user id.
+ * A WorkOS token carries the internal id in its external_id claim (set at
+ * import/provision time) — the WorkOS sub (user_01…) must never be used as
+ * userId. WorkOS tokens have no aud claim; the dashboard JWT template's
+ * role=authenticated stands in for it. Returns null for anything invalid.
+ */
+async function verifyAccessToken(
+  token: string
+): Promise<{ payload: JWTPayload; userId: string } | null> {
+  let iss: string | undefined;
+  try {
+    iss = decodeJwt(token).iss;
+  } catch {
+    return null;
+  }
+  try {
+    let payload: JWTPayload;
+    let userId: unknown;
+    if (iss === SUPABASE_ISSUER) {
+      ({ payload } = await jwtVerify(token, JWKS, {
+        issuer: SUPABASE_ISSUER,
+        audience: 'authenticated',
+      }));
+      userId = payload.sub;
+    } else if (WORKOS_JWKS !== null && iss === WORKOS_ISSUER) {
+      ({ payload } = await jwtVerify(token, WORKOS_JWKS, { issuer: WORKOS_ISSUER }));
+      if (payload.role !== 'authenticated') return null;
+      userId = payload.external_id; // unlinked accounts don't resolve
+    } else {
+      return null;
+    }
+    if (typeof userId !== 'string' || userId === '') return null;
+    return { payload, userId };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Requires a valid Supabase or WorkOS JWT in the Authorization header.
  * Sets req.userId and req.accessToken on success.
  * Returns 401 if token is missing or invalid.
  */
@@ -33,18 +86,14 @@ export async function requireAuth(
     return;
   }
 
-  try {
-    const { payload } = await jwtVerify(token, JWKS, {
-      issuer: `${process.env.SUPABASE_URL}/auth/v1`,
-      audience: 'authenticated',
-    });
-    req.userId = payload.sub as string;
-    req.accessToken = token;
-    next();
-  } catch {
+  const result = await verifyAccessToken(token);
+  if (!result) {
     res.status(401).json({ error: 'Invalid or expired token' });
     return;
   }
+  req.userId = result.userId;
+  req.accessToken = token;
+  next();
 }
 
 /**
@@ -65,19 +114,16 @@ export async function optionalAuth(
     return;
   }
 
-  try {
-    const { payload } = await jwtVerify(token, JWKS, {
-      issuer: `${process.env.SUPABASE_URL}/auth/v1`,
-      audience: 'authenticated',
-    });
-    req.userId = payload.sub as string;
-    req.accessToken = token;
-    next();
-  } catch {
+  const result = await verifyAccessToken(token);
+  if (!result) {
     // Invalid token — continue as anonymous (no error)
     req.userId = undefined;
     next();
+    return;
   }
+  req.userId = result.userId;
+  req.accessToken = token;
+  next();
 }
 
 /**
