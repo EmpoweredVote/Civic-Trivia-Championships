@@ -46,7 +46,11 @@ export function HowItWorksModal({ isOpen, onClose, darkMode }: HowItWorksModalPr
               <FocusTrap
                 focusTrapOptions={{
                   initialFocus: false,
-                  escapeDeactivates: true,
+                  // `static` hands open/close to the caller, so Dialog does not handle
+                  // Escape itself, and the focus trap swallows the keypress to release
+                  // itself. Close from here instead. Returning true keeps the trap's
+                  // normal Escape behaviour (preventDefault, then deactivate).
+                  escapeDeactivates: () => { onClose(); return true; },
                   clickOutsideDeactivates: true,
                   returnFocusOnDeactivate: true,
                 }}
