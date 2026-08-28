@@ -127,7 +127,7 @@ export function CollectionCard({ collection, isSelected, onSelect, onPlay }: Col
           fontFamily: "'Manrope', sans-serif",
           fontWeight: 800, fontSize: 20,
           color: darkMode ? '#F1F5F9' : '#0F172A',
-          lineHeight: 1.1, marginBottom: 8,
+          lineHeight: 1.3, marginBottom: 8,
           letterSpacing: '-0.01em',
           whiteSpace: 'nowrap' as const,
           overflow: 'hidden',
@@ -140,7 +140,7 @@ export function CollectionCard({ collection, isSelected, onSelect, onPlay }: Col
         <div style={{
           fontFamily: "'Manrope', sans-serif",
           fontWeight: 400, fontSize: 12,
-          color: darkMode ? '#7C90AC' : '#94A3B8',
+          color: darkMode ? '#94A3B8' : '#64748B',
           lineHeight: 1.5,
           display: '-webkit-box',
           WebkitLineClamp: 3,
