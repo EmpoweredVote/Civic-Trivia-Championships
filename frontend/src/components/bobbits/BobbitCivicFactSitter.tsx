@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { ANIMATIONS, CFG, computePose, draw, drawShadow, figColor } from './leremyRig';
 import type { Pose } from './leremyRig';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -35,7 +35,11 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
   const hoverStartAtRef = useRef(0);
   const animate = !useReducedMotion();
   const [hovered, setHovered] = useState(false);
-  const [factIndex, setFactIndex] = useState(0);
+  // Seeded at random and advanced on the way OUT of a reveal, not into one — the description
+  // a screen reader reads on focus is computed from the DOM as it stands when focus lands,
+  // so the fact has to already be committed before the reveal starts.
+  const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * CIVIC_FACTS.length));
+  const factId = useId();
   const { width: viewportWidth } = useWindowSize();
   const isMobile = viewportWidth < 640;
 
@@ -128,7 +132,12 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
     hoverTargetRef.current = v ? 1 : 0;
     if (v) {
       hoverStartAtRef.current = performance.now();
-      setFactIndex(Math.floor(Math.random() * CIVIC_FACTS.length));
+    } else {
+      // Queue the next fact for the next reveal, skipping the one just shown.
+      setFactIndex(prev => {
+        const offset = 1 + Math.floor(Math.random() * (CIVIC_FACTS.length - 1));
+        return (prev + offset) % CIVIC_FACTS.length;
+      });
     }
     setHovered(v);
   };
@@ -145,7 +154,7 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
       onMouseLeave={() => setHover(false)}
     >
       <div
-        role="tooltip"
+        aria-hidden="true"
         style={{
           position: 'absolute', bottom: height + 10, left: '50%',
           transform: `translate(-50%, ${hovered ? '0' : '4px'})`,
@@ -165,11 +174,15 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
       >
         {CIVIC_FACTS[factIndex]}
       </div>
+      {/* The bubble above is aria-hidden because its opacity transition keeps it in the DOM
+          even when invisible. This carries the same text as the canvas's description instead. */}
+      <span id={factId} className="sr-only">{CIVIC_FACTS[factIndex]}</span>
       <canvas
         ref={canvasRef}
         tabIndex={0}
         role="img"
-        aria-label="A Bobbit sitting on the divider, reading — hover for a civic fact"
+        aria-label="A Bobbit sitting on the divider, reading — reveals a civic fact"
+        aria-describedby={factId}
         onFocus={() => setHover(true)}
         onBlur={() => setHover(false)}
         style={{ display: 'block', width: '100%', height, outline: 'none', cursor: 'pointer' }}
