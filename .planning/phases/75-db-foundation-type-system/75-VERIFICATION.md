@@ -6,12 +6,12 @@ must_haves_verified: 9/9
 db_verification_note: "Direct DB queries blocked (raw PostgreSQL TCP port inaccessible). DB assessed via: schema.ts FK structure (tsc clean), SUMMARY confirms information_schema results, DDL matches PLAN exactly."
 ---
 
-# Phase 75: DB Foundation + Type System — Verification Report
+# Phase 75: DB Foundation + Type System â€” Verification Report
 
-**Phase Goal:** The database schema and TypeScript type system are extended to support the International tier — all downstream phases can build without schema migrations.
+**Phase Goal:** The database schema and TypeScript type system are extended to support the International tier â€” all downstream phases can build without schema migrations.
 **Verified:** 2026-04-09T05:49:03Z
 **Status:** PASSED
-**Re-verification:** No — initial verification
+**Re-verification:** No â€” initial verification
 
 ---
 
@@ -90,9 +90,9 @@ Scan of modified files:
 
 Direct DB queries (raw PostgreSQL TCP to aws-0-us-west-1.pooler.supabase.com:5432) timed out from this environment. DB status assessed through three corroborating sources:
 
-1. TypeScript compilation passes — the FK reference .references(() => generationJobs.id) would cause a compile error if generationJobs were not defined; tsc --noEmit exits 0 on both backend and frontend.
-2. SUMMARY documents confirmation — 75-01-SUMMARY.md states verified via information_schema queries and lists specific columns returned.
-3. DDL in PLAN exactly matches schema.ts — SQL in the PLAN task matches column names, types, defaults, and constraints in committed schema.ts (commit 98bfc62).
+1. TypeScript compilation passes â€” the FK reference .references(() => generationJobs.id) would cause a compile error if generationJobs were not defined; tsc --noEmit exits 0 on both backend and frontend.
+2. SUMMARY documents confirmation â€” 75-01-SUMMARY.md states verified via information_schema queries and lists specific columns returned.
+3. DDL in PLAN exactly matches schema.ts â€” SQL in the PLAN task matches column names, types, defaults, and constraints in committed schema.ts (commit 98bfc62).
 
 Independent verification query if needed:
   SELECT column_name, data_type FROM information_schema.columns
