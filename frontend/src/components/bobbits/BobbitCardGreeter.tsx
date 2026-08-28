@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { BobbitCanvas } from './BobbitCanvas';
 import type { BobbitFigureSpec } from './BobbitCanvas';
 import { figColor } from './leremyRig';
@@ -26,9 +27,11 @@ export function BobbitCardGreeter({ darkMode, isMobile }: BobbitCardGreeterProps
   const legClearance = isMobile ? 22 : 26;
   const height = seatFromTop + legClearance;
 
-  const figures: BobbitFigureSpec[] = [
+  // Memoised: BobbitCanvas keys its rAF loop on this array's identity, so a fresh array on
+  // every parent render would restart the animation clock at 0 and make the figure jump.
+  const figures: BobbitFigureSpec[] = useMemo(() => [
     { anim: 'greetseat', color: figColor(0, darkMode), x: 0.5, bottom: legClearance, scale, phase: 0.6 },
-  ];
+  ], [darkMode, legClearance, scale]);
 
   return (
     <div

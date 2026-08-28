@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { BobbitCanvas } from './BobbitCanvas';
 import type { BobbitFigureSpec } from './BobbitCanvas';
 import { figColor } from './leremyRig';
@@ -44,7 +45,10 @@ export function BobbitScene({ darkMode, isMobile }: BobbitSceneProps) {
   const height = isMobile ? 71 : 93;
   const railBottom = isMobile ? 15 : 20;
 
-  const figures: BobbitFigureSpec[] = CAST.map((c) => ({
+  // Memoised: BobbitCanvas keys its rAF loop on this array's identity, so a fresh array on
+  // every parent render (Dashboard re-renders on window resize) would restart the animation
+  // clock at 0 and make the figures visibly jump.
+  const figures: BobbitFigureSpec[] = useMemo(() => CAST.map((c) => ({
     anim: c.anim,
     color: figColor(c.tone, darkMode),
     x: c.x,
@@ -54,7 +58,7 @@ export function BobbitScene({ darkMode, isMobile }: BobbitSceneProps) {
     flip: c.flip,
     phase: c.phase,
     onClick: c.clickable ? () => fireTopRain() : undefined,
-  }));
+  })), [darkMode, railBottom, scale, fireTopRain]);
 
   return (
     <div style={{ position: 'relative', width: '100%', marginTop: isMobile ? 16 : 24, pointerEvents: 'none' }}>
