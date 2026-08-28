@@ -310,6 +310,8 @@ export function BobbitTrophyCarry({ darkMode, isMobile }: BobbitTrophyCarryProps
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
+            // role="button" must swallow Space, otherwise the browser scrolls the page too.
+            e.preventDefault();
             const st = stateRef.current;
             if (st && st.phase === 'walk') { st.phase = 'lowering'; st.phaseStartAt = performance.now(); st.phaseT = 0; }
           }
