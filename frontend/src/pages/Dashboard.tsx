@@ -8,9 +8,14 @@ import { useTheme } from '../hooks/useTheme';
 import { usePlayerXp } from '../hooks/usePlayerXp';
 import { fetchTriviaStats, type ProfileStats } from '../services/profileService';
 import type { CollectionSummary } from '../features/collections/types';
+import { useWindowSize } from '../hooks/useWindowSize';
+import { BobbitScene } from '../components/bobbits/BobbitScene';
+import { BobbitTrophyCarry } from '../components/bobbits/BobbitTrophyCarry';
+import { BobbitCardGreeter } from '../components/bobbits/BobbitCardGreeter';
 
 function getRegion(c: CollectionSummary): string {
-  if (c.localeName) return c.localeName.toUpperCase();
+  // Some localeName values come back as "City, State" — the badge only wants the state.
+  if (c.localeName) return c.localeName.split(',').pop()!.trim().toUpperCase();
   if (c.tier === 'federal') return 'UNITED STATES';
   if (c.tier === 'state') return 'STATE LEVEL';
   return 'LOCAL';
@@ -372,6 +377,8 @@ export function Dashboard() {
   const navigate = useNavigate();
   const { collections, selectedId, selectedCollection, loading, select } = useCollections();
   const { darkMode } = useTheme();
+  const { width } = useWindowSize();
+  const isMobile = width < 640;
 
   const pageBg = darkMode ? '#0D1117' : '#F0F4F8';
 
@@ -431,7 +438,6 @@ export function Dashboard() {
               </p>
             )}
           </div>
-
         </div>
       </section>
 
@@ -450,7 +456,18 @@ export function Dashboard() {
             ? <PlayerStatsSection darkMode={darkMode} displayName={displayName} userId={user?.id ?? null} />
             : <HowItWorksSection darkMode={darkMode} />
           }
-          <FeaturedCard collection={selectedCollection} onPlay={handlePlay} darkMode={darkMode} />
+          <div style={{ position: 'relative' }}>
+            <FeaturedCard collection={selectedCollection} onPlay={handlePlay} darkMode={darkMode} />
+            {!loading && selectedCollection && (
+              <BobbitCardGreeter darkMode={darkMode} isMobile={isMobile} />
+            )}
+          </div>
+        </div>
+
+        {/* Full-bleed edge-to-edge, breaking out of the content column and the section's own
+            padding — the walk-in needs the real viewport edge, not just the content column's. */}
+        <div style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+          <BobbitTrophyCarry darkMode={darkMode} isMobile={isMobile} />
         </div>
       </section>
 
@@ -466,6 +483,7 @@ export function Dashboard() {
             variant="preview"
             onSeeMore={() => navigate('/collections')}
           />
+          <BobbitScene darkMode={darkMode} isMobile={isMobile} />
         </div>
       </section>
     </div>
