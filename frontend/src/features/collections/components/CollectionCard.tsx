@@ -25,19 +25,19 @@ export function CollectionCard({ collection, isSelected, onSelect, onPlay }: Col
 
   const cardBg = darkMode ? '#161B22' : '#FFFFFF';
   const borderColor = isSelected
-    ? '#E8A020'
+    ? '#FFD426'
     : isHovered
-    ? 'rgba(20,184,166,0.4)'
+    ? 'rgba(0,199,177,0.4)'
     : darkMode ? '#21262D' : '#E2E8F0';
   const shadow = isSelected
-    ? '0 0 0 2px #E8A020, 0 8px 24px rgba(232,160,32,0.2)'
+    ? '0 0 0 2px #FFD426, 0 8px 24px rgba(255,212,38,0.2)'
     : isHovered
     ? '0 4px 16px rgba(0,0,0,0.18)'
     : darkMode ? '0 2px 8px rgba(0,0,0,0.25)' : '0 1px 4px rgba(0,0,0,0.08)';
   // The inline boxShadow above always wins over the app's global `*:focus-visible`
   // rule (inline styles beat stylesheet selectors), which would otherwise make
   // keyboard focus invisible on this tile. Layer an explicit focus ring on top.
-  const focusRing = '0 0 0 3px #14B8A6, 0 0 12px rgba(20,184,166,0.5)';
+  const focusRing = '0 0 0 3px #00C7B1, 0 0 12px rgba(0,199,177,0.5)';
   const combinedShadow = isFocused ? `${shadow}, ${focusRing}` : shadow;
 
   return (
@@ -88,13 +88,13 @@ export function CollectionCard({ collection, isSelected, onSelect, onPlay }: Col
         {isSelected && (
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'rgba(232,160,32,0.22)',
+            background: 'rgba(255,212,38,0.22)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <div style={{
               width: 44, height: 44, borderRadius: '50%',
-              background: '#E8A020',
-              boxShadow: '0 0 0 5px rgba(232,160,32,0.28)',
+              background: '#FFD426',
+              boxShadow: '0 0 0 5px rgba(255,212,38,0.28)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -165,15 +165,15 @@ export function CollectionCard({ collection, isSelected, onSelect, onPlay }: Col
               padding: '10px 14px',
               borderRadius: 10,
               border: 'none',
-              background: '#E8A020',
+              background: '#FFD426',
               color: '#0F0D09',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: 13,
               cursor: 'pointer',
               transition: 'background 0.2s',
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#C88010'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#E8A020'; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#DBB621'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#FFD426'; }}
           >
             <svg width="11" height="13" viewBox="0 0 14 16" fill="currentColor">
               <path d="M1.5 1l11 7-11 7V1z" />

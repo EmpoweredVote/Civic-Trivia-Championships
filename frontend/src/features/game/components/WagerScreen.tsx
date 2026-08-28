@@ -112,13 +112,18 @@ export function WagerScreen({
         transition={{ duration: 0.5 }}
         style={{ maxWidth: 'clamp(520px, 42vw, 900px)', width: '100%' }}
       >
-        {/* Final Question image + category */}
+        {/* Final Question heading + category */}
         <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-          <img
-            src="/images/FinalQuestion_A.png"
-            alt="Final Question"
-            style={{ height: '13vh', maxHeight: 'clamp(110px, 10vw, 160px)', objectFit: 'contain', display: 'inline-block', marginBottom: '8px' }}
-          />
+          <p style={{
+            fontFamily: "'Manrope', sans-serif",
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+            fontSize: 'clamp(20px, 2.4vw, 28px)',
+            color: G.accent,
+            margin: '0 0 6px',
+          }}>
+            FINAL QUESTION
+          </p>
           <p style={{
             fontFamily: "'Manrope', sans-serif",
             letterSpacing: '0.22em',

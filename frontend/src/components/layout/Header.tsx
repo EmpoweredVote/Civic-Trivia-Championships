@@ -4,11 +4,58 @@ import { useAuthStore } from '../../store/authStore';
 import { ACCOUNTS_API_URL } from '../../services/accountsApi';
 import { usePlayerXp } from '../../hooks/usePlayerXp';
 import { useTheme } from '../../hooks/useTheme';
+import { HowItWorksModal } from './HowItWorksModal';
+
+function HowToPlayButton({ darkMode, onClick }: { darkMode: boolean; onClick: () => void }) {
+  const [showTip, setShowTip] = useState(false);
+  const idleBg = 'transparent';
+  const hoverBg = darkMode ? '#21262D' : '#EEF4F7';
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={onClick}
+        onMouseEnter={e => { setShowTip(true); e.currentTarget.style.background = hoverBg; }}
+        onMouseLeave={e => { setShowTip(false); e.currentTarget.style.background = idleBg; }}
+        onFocus={() => setShowTip(true)}
+        onBlur={() => setShowTip(false)}
+        aria-label="How to Play"
+        className="flex items-center justify-center transition-colors"
+        style={{
+          color: '#64748B', borderRadius: '50%', width: '40px', height: '40px',
+          background: idleBg, border: 'none', cursor: 'pointer',
+        }}
+      >
+        <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 1 1 5.83 1c-.5 1-2 1.5-2 3" />
+          <line x1="12" y1="17" x2="12" y2="17.01" />
+        </svg>
+      </button>
+      {showTip && (
+        <div
+          role="tooltip"
+          style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            marginTop: '8px', padding: '6px 10px', borderRadius: '6px',
+            background: '#111827', color: '#F1F5F9',
+            fontFamily: "'Manrope', sans-serif", fontSize: '12px', fontWeight: 600,
+            whiteSpace: 'nowrap' as const, pointerEvents: 'none' as const,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)', zIndex: 60,
+          }}
+        >
+          How to Play
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Header() {
   const { user, accessToken, clearAuth, isAuthenticated, displayName, isAdmin } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen]             = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showSignedOutToast, setShowSignedOutToast] = useState(false);
   const menuRef                              = useRef<HTMLDivElement>(null);
   const userId                     = useAuthStore((s) => s.user?.id ?? null);
@@ -108,7 +155,7 @@ export function Header() {
                       <div style={{
                         height: '100%',
                         width: `${progressPercent}%`,
-                        background: '#E8A020',
+                        background: '#FFD426',
                         borderRadius: '2px',
                         transition: 'width 0.4s ease',
                       }} />
@@ -125,22 +172,25 @@ export function Header() {
                 )}
               </div>
 
+              {/* How to Play */}
+              <HowToPlayButton darkMode={darkMode} onClick={() => setShowHowItWorks(true)} />
+
               {/* Dark/Light toggle */}
               <button
                 onClick={toggleDarkMode}
                 className="flex items-center justify-center transition-colors"
                 aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                style={{ color: '#64748B', borderRadius: '50%', width: '36px', height: '36px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                style={{ color: '#64748B', borderRadius: '50%', width: '40px', height: '40px', background: 'transparent', border: 'none', cursor: 'pointer' }}
                 onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 {darkMode ? (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="5" />
                     <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
@@ -152,9 +202,11 @@ export function Header() {
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex items-center justify-center transition-colors"
                   aria-label="Account menu"
-                  style={{ color: '#14B8A6', border: '2px solid #14B8A6', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent' }}
+                  style={{ color: '#64748B', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', border: 'none' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                   </svg>
@@ -204,23 +256,26 @@ export function Header() {
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              {/* How to Play */}
+              <HowToPlayButton darkMode={darkMode} onClick={() => setShowHowItWorks(true)} />
+
               {/* Dark/Light toggle */}
               <button
                 onClick={toggleDarkMode}
                 className="flex items-center justify-center transition-colors"
                 aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                style={{ color: '#64748B', borderRadius: '50%', width: '36px', height: '36px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                style={{ color: '#64748B', borderRadius: '50%', width: '40px', height: '40px', background: 'transparent', border: 'none', cursor: 'pointer' }}
                 onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 {darkMode ? (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="5" />
                     <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
@@ -232,9 +287,11 @@ export function Header() {
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex items-center justify-center transition-colors"
                   aria-label="Account"
-                  style={{ color: '#14B8A6', border: '2px solid #14B8A6', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent' }}
+                  style={{ color: '#64748B', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', border: 'none' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                   </svg>
@@ -297,6 +354,7 @@ export function Header() {
         You've been signed out
       </div>
     )}
+    <HowItWorksModal isOpen={showHowItWorks} onClose={() => setShowHowItWorks(false)} darkMode={darkMode} />
     </>
   );
 }
