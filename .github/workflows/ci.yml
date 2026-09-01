@@ -27,6 +27,20 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      # A green build only proves the bundle compiles. The Vite 8 bump (#79)
+      # built clean and then threw React error #130 on mount, taking the whole
+      # app down while CI stayed green. This loads the built bundle and checks
+      # it actually renders. Kept inside this job so it runs against the
+      # artifact just built, and so the existing required check covers it --
+      # do not rename this job, the master ruleset requires it by name.
+      - name: Install Chromium for smoke test
+        run: npx playwright install --with-deps chromium
+      - name: Smoke test (production bundle mounts)
+        run: |
+          npm start &
+          timeout 60 bash -c 'until curl -sf http://localhost:10000 >/dev/null; do sleep 1; done'
+          npm run smoke
+
   backend:
     name: Backend build (tsc)
     runs-on: ubuntu-latest
