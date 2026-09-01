@@ -4,11 +4,58 @@ import { useAuthStore } from '../../store/authStore';
 import { ACCOUNTS_API_URL } from '../../services/accountsApi';
 import { usePlayerXp } from '../../hooks/usePlayerXp';
 import { useTheme } from '../../hooks/useTheme';
+import { HowItWorksModal } from './HowItWorksModal';
+
+function HowToPlayButton({ darkMode, onClick }: { darkMode: boolean; onClick: () => void }) {
+  const [showTip, setShowTip] = useState(false);
+  const idleBg = 'transparent';
+  const hoverBg = darkMode ? '#21262D' : '#EEF4F7';
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={onClick}
+        onMouseEnter={e => { setShowTip(true); e.currentTarget.style.background = hoverBg; }}
+        onMouseLeave={e => { setShowTip(false); e.currentTarget.style.background = idleBg; }}
+        onFocus={() => setShowTip(true)}
+        onBlur={() => setShowTip(false)}
+        aria-label="How to Play"
+        className="flex items-center justify-center transition-colors"
+        style={{
+          color: '#64748B', borderRadius: '50%', width: '36px', height: '36px',
+          background: idleBg, border: 'none', cursor: 'pointer',
+        }}
+      >
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 1 1 5.83 1c-.5 1-2 1.5-2 3" />
+          <line x1="12" y1="17" x2="12" y2="17.01" />
+        </svg>
+      </button>
+      {showTip && (
+        <div
+          role="tooltip"
+          style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            marginTop: '8px', padding: '6px 10px', borderRadius: '6px',
+            background: '#111827', color: '#F1F5F9',
+            fontFamily: "'Manrope', sans-serif", fontSize: '12px', fontWeight: 600,
+            whiteSpace: 'nowrap' as const, pointerEvents: 'none' as const,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)', zIndex: 60,
+          }}
+        >
+          How to Play
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Header() {
   const { user, accessToken, clearAuth, isAuthenticated, displayName, isAdmin } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen]             = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showSignedOutToast, setShowSignedOutToast] = useState(false);
   const menuRef                              = useRef<HTMLDivElement>(null);
   const userId                     = useAuthStore((s) => s.user?.id ?? null);
@@ -125,6 +172,9 @@ export function Header() {
                 )}
               </div>
 
+              {/* How to Play */}
+              <HowToPlayButton darkMode={darkMode} onClick={() => setShowHowItWorks(true)} />
+
               {/* Dark/Light toggle */}
               <button
                 onClick={toggleDarkMode}
@@ -205,6 +255,9 @@ export function Header() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
+              {/* How to Play */}
+              <HowToPlayButton darkMode={darkMode} onClick={() => setShowHowItWorks(true)} />
+
               {/* Dark/Light toggle */}
               <button
                 onClick={toggleDarkMode}
@@ -297,6 +350,7 @@ export function Header() {
         You've been signed out
       </div>
     )}
+    <HowItWorksModal isOpen={showHowItWorks} onClose={() => setShowHowItWorks(false)} darkMode={darkMode} />
     </>
   );
 }

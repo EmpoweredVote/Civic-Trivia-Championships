@@ -1,17 +1,32 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { Header } from '../components/layout/Header';
 import { useCollections } from '../features/collections/hooks/useCollections';
 import { CollectionPicker } from '../features/collections/components/CollectionPicker';
-import { useTheme } from '../hooks/useTheme';
-import { usePlayerXp } from '../hooks/usePlayerXp';
-import { fetchTriviaStats, type ProfileStats } from '../services/profileService';
 import type { CollectionSummary } from '../features/collections/types';
+import { PillButton } from '../components/ui/PillButton';
+import { useTheme } from '../hooks/useTheme';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { BobbitScene } from '../components/bobbits/BobbitScene';
 import { BobbitTrophyCarry } from '../components/bobbits/BobbitTrophyCarry';
 import { BobbitCardGreeter } from '../components/bobbits/BobbitCardGreeter';
+
+function PinIcon({ color = '#D4A017' }: { color?: string }) {
+  return (
+    <svg width="10" height="13" viewBox="0 0 10 13" fill={color} style={{ flexShrink: 0 }}>
+      <path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 8 5 8s5-4.25 5-8C10 2.24 7.76 0 5 0zm0 6.5A1.5 1.5 0 115 3.5a1.5 1.5 0 010 3z"/>
+    </svg>
+  );
+}
+
+function PlayGlyph({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size * 1.166} viewBox="0 0 14 16" fill="currentColor">
+      <path d="M1.5 1l11 7-11 7V1z"/>
+    </svg>
+  );
+}
 
 function getRegion(c: CollectionSummary): string {
   // Some localeName values come back as "City, State" — the badge only wants the state.
@@ -21,366 +36,20 @@ function getRegion(c: CollectionSummary): string {
   return 'LOCAL';
 }
 
-function PinIcon() {
-  return (
-    <svg width="10" height="13" viewBox="0 0 10 13" fill="#D4A017" style={{ flexShrink: 0 }}>
-      <path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 8 5 8s5-4.25 5-8C10 2.24 7.76 0 5 0zm0 6.5A1.5 1.5 0 115 3.5a1.5 1.5 0 010 3z"/>
-    </svg>
-  );
-}
-
-function PlayerStatsSection({ darkMode, displayName, userId }: { darkMode: boolean; displayName: string | null; userId: string | null }) {
-  const cardBg = darkMode ? '#161B22' : '#FFFFFF';
-  const titleColor = darkMode ? '#F1F5F9' : '#0F172A';
-  const mutedColor = darkMode ? '#7C90AC' : '#94A3B8';
-  const statBg = darkMode ? '#0D1117' : '#F8FAFC';
-  const statBorder = darkMode ? '#21262D' : '#E2E8F0';
-  const statLabelColor = darkMode ? '#7487A1' : '#94A3B8';
-  const dividerColor = darkMode ? '#21262D' : '#E2E8F0';
-
-  const { xpData, isConnected } = usePlayerXp(userId);
-  const [stats, setStats] = useState<ProfileStats | null>(null);
-
-  useEffect(() => {
-    fetchTriviaStats().then(setStats).catch(() => {});
-  }, [userId]);
-
-  const xpNeeded = xpData ? xpData.xpInLevel + xpData.xpToNextLevel : 0;
-  const progressPct = xpNeeded > 0 ? Math.round((xpData!.xpInLevel / xpNeeded) * 100) : 0;
-
-  const statItems = [
-    {
-      label: 'Games Played',
-      value: stats ? stats.gamesPlayed.toLocaleString() : '—',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="5 3 19 12 5 21 5 3"/>
-        </svg>
-      ),
-    },
-    {
-      label: 'Best Score',
-      value: stats ? stats.bestScore.toLocaleString() : '—',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8A020" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 2h12v6a6 6 0 01-12 0V2zM4 2h2M18 2h2M8 20v-6M16 20v-6M5 20h14"/>
-        </svg>
-      ),
-    },
-    {
-      label: 'Accuracy',
-      value: stats ? `${Math.round(stats.overallAccuracy)}%` : '—',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-          <path d="M22 4L12 14.01l-3-3"/>
-        </svg>
-      ),
-    },
-  ];
-
-  return (
-    <div style={{ background: cardBg, borderRadius: 16, padding: '28px', display: 'flex', flexDirection: 'column' as const, gap: 0, height: '100%', boxSizing: 'border-box' as const }}>
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: 'clamp(22px, 1.7vw, 30px)', color: titleColor, margin: 0, lineHeight: 1.2 }}>
-          Welcome back{displayName ? `, ${displayName.split(' ')[0]}` : ''}!
-        </h2>
-        <p style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 300, fontSize: 13, color: mutedColor, margin: '4px 0 0' }}>
-          Here's how you're doing.
-        </p>
-      </div>
-
-      {/* XP Level */}
-      {isConnected && xpData && (
-        <div style={{ marginBottom: 20, padding: '14px 16px', borderRadius: 12, background: statBg, border: `1px solid ${statBorder}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(20,184,166,0.15)', border: '1px solid rgba(20,184,166,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: 11, color: '#14B8A6' }}>
-                  {xpData.level}
-                </span>
-              </div>
-              <span style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 13, color: titleColor }}>Level {xpData.level}</span>
-            </div>
-            <span style={{ fontFamily: "'Manrope', sans-serif", fontSize: 12, color: mutedColor }}>
-              {xpData.xpInLevel.toLocaleString()} / {xpNeeded.toLocaleString()} XP
-            </span>
-          </div>
-          <div style={{ height: 6, background: statBorder, borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${progressPct}%`, background: '#14B8A6', borderRadius: 3, transition: 'width 0.4s ease' }} />
-          </div>
-          <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: mutedColor, marginTop: 6 }}>
-            {(xpData.xpToNextLevel).toLocaleString()} XP to next level
-          </div>
-        </div>
-      )}
-
-      {/* Stat cards */}
-      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10, flex: 1 }}>
-        {statItems.map(s => (
-          <div key={s.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 12, background: statBg, border: `1px solid ${statBorder}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {s.icon}
-              <span style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: statLabelColor, fontWeight: 500 }}>{s.label}</span>
-            </div>
-            <span style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: 20, color: titleColor, letterSpacing: '-0.02em' }}>{s.value}</span>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ height: 1, background: dividerColor, margin: '20px 0' }} />
-
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-          <circle cx="8" cy="8" r="7" stroke="#14B8A6" strokeWidth="1.5"/>
-          <path d="M5 8l2.5 2.5L11 5" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: mutedColor, margin: 0, lineHeight: 1.55 }}>
-          Select any collection from the grid below — the featured card updates instantly. Hit{' '}
-          <strong style={{ color: titleColor, fontWeight: 700 }}>Play Now</strong>{' '}
-          when you're ready.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function HowItWorksSection({ darkMode }: { darkMode: boolean }) {
-  const cardBg = darkMode ? '#161B22' : '#FFFFFF';
-  const titleColor = darkMode ? '#F1F5F9' : '#0F172A';
-  const subtitleColor = darkMode ? '#94A3B8' : '#64748B';
-  const stepTitleColor = darkMode ? '#E2E8F0' : '#0F172A';
-  const stepDescColor = darkMode ? '#7C90AC' : '#94A3B8';
-  const iconBg = darkMode ? '#0D1117' : '#EFF6FF';
-  const dividerColor = darkMode ? '#21262D' : '#E2E8F0';
-
-  const steps = [
-    {
-      num: '01',
-      title: 'Choose a collection',
-      desc: 'Pick any city or national collection from the grid below.',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
-          <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-        </svg>
-      ),
-    },
-    {
-      num: '02',
-      title: 'Learn your community',
-      desc: 'Answer questions about local history, government, and civics.',
-      icon: (
-        <svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/>
-          <circle cx="12" cy="10" r="3"/>
-        </svg>
-      ),
-    },
-    {
-      num: '03',
-      title: 'Earn your score',
-      desc: 'Track progress, replay collections, and climb the leaderboard.',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 2h12v6a6 6 0 01-12 0V2zM4 2h2M18 2h2M8 20v-6M16 20v-6M5 20h14"/>
-        </svg>
-      ),
-    },
-  ];
-
-  return (
-    <div style={{ background: cardBg, borderRadius: 16, padding: '28px 28px 28px', display: 'flex', flexDirection: 'column' as const, justifyContent: 'space-between', gap: 0, height: '100%', boxSizing: 'border-box' as const }}>
-      <div>
-        <h2 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: 'clamp(26px, 2vw, 36px)', color: titleColor, margin: 0, lineHeight: 1.1 }}>
-          How it works
-        </h2>
-        <p style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 300, fontSize: 13, color: subtitleColor, margin: '5px 0 0' }}>
-          Three steps to civic mastery.
-        </p>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 26, margin: '24px 0' }}>
-        {steps.map(s => (
-          <div key={s.num} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-            <div style={{
-              width: 42, height: 42, flexShrink: 0, borderRadius: '50%',
-              background: iconBg, border: '1px solid rgba(20,184,166,0.15)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#14B8A6',
-            }}>
-              {s.icon}
-            </div>
-            <div style={{ paddingTop: 2 }}>
-              <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 14, fontWeight: 700, color: stepTitleColor, lineHeight: 1.2 }}>
-                <span style={{ color: '#14B8A6', fontWeight: 800, fontSize: 12, marginRight: 5 }}>{s.num}</span>
-                {s.title}
-              </div>
-              <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: stepDescColor, marginTop: 3, lineHeight: 1.5 }}>
-                {s.desc}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ height: 1, background: dividerColor }} />
-
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 20 }}>
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-          <circle cx="8" cy="8" r="7" stroke="#14B8A6" strokeWidth="1.5"/>
-          <path d="M5 8l2.5 2.5L11 5" stroke="#14B8A6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: stepDescColor, margin: 0, lineHeight: 1.55 }}>
-          Select any collection from the grid below — the featured card updates instantly. Hit{' '}
-          <strong style={{ color: stepTitleColor, fontWeight: 700 }}>Play Now</strong>{' '}
-          when you're ready.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function FeaturedCard({
-  collection,
-  onPlay,
-  darkMode,
-}: {
-  collection: CollectionSummary | undefined;
-  onPlay: () => void;
-  darkMode: boolean;
-}) {
-  const cardBg = darkMode ? '#161B22' : '#FFFFFF';
-  const borderColor = darkMode ? '#21262D' : '#E2E8F0';
-
-  if (!collection) {
-    return (
-      <div style={{
-        borderRadius: 16, background: cardBg,
-        border: `2px dashed ${borderColor}`,
-        minHeight: 360,
-        display: 'flex', flexDirection: 'column' as const,
-        alignItems: 'center', justifyContent: 'center',
-        gap: 12, padding: 32,
-      }}>
-        <div style={{
-          width: 56, height: 56, borderRadius: '50%',
-          background: darkMode ? '#0D1117' : '#EFF6FF',
-          border: '1.5px solid rgba(20,184,166,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#14B8A6',
-        }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/>
-            <circle cx="12" cy="10" r="3"/>
-          </svg>
-        </div>
-        <div style={{ textAlign: 'center' as const }}>
-          <div style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 16, color: darkMode ? '#E2E8F0' : '#0F172A', marginBottom: 6 }}>
-            Choose a city to play
-          </div>
-          <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: darkMode ? '#7487A1' : '#94A3B8', lineHeight: 1.5 }}>
-            Select any collection from the grid below<br/>to see details and start playing.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const region = getRegion(collection);
-
-  return (
-    <div style={{ borderRadius: 16, overflow: 'hidden', border: `2px solid ${borderColor}`, background: cardBg, display: 'flex', flexDirection: 'column' as const, height: '100%', boxSizing: 'border-box' as const }}>
-      {/* Photo */}
-      <div style={{ position: 'relative', height: 180, background: collection.themeColor, overflow: 'hidden' }}>
-        <img
-          src={`/images/collections/${collection.slug}.jpg`}
-          alt={collection.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          loading="lazy"
-        />
-
-        {/* Selected badge — top right */}
-        <div style={{
-          position: 'absolute', top: 12, right: 12,
-          padding: '4px 12px', borderRadius: 20,
-          background: 'rgba(15,23,42,0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', gap: 6,
-          fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 12, color: '#F1F5F9',
-        }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22C55E', display: 'inline-block' }} />
-          Selected
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ padding: '16px 20px 20px', display: 'flex', flexDirection: 'column' as const, flex: 1 }}>
-        {/* Region */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <PinIcon />
-          <span style={{
-            fontFamily: "'Manrope', sans-serif",
-            fontWeight: 700, fontSize: 11,
-            letterSpacing: '0.12em', color: '#D4A017',
-            textTransform: 'uppercase' as const,
-          }}>
-            {region}
-          </span>
-        </div>
-
-        {/* City name */}
-        <h2 style={{
-          fontFamily: "'Manrope', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 2.2vw, 40px)',
-          color: darkMode ? '#F1F5F9' : '#0F172A',
-          margin: '0 0 8px', lineHeight: 1.05, letterSpacing: '-0.02em',
-        }}>
-          {collection.name}
-        </h2>
-
-        {/* Description */}
-        <p style={{
-          fontFamily: "'Manrope', sans-serif", fontWeight: 300, fontSize: 14,
-          color: darkMode ? '#7C90AC' : '#94A3B8',
-          lineHeight: 1.6, margin: '0 0 20px',
-        }}>
-          {collection.description}
-        </p>
-
-        {/* Play Now */}
-        <button
-          onClick={onPlay}
-          style={{
-            width: '100%', padding: 'clamp(14px, 1.1vw, 20px) clamp(20px, 1.6vw, 28px)', borderRadius: 12,
-            background: '#E8A020', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 'clamp(16px, 1.25vw, 22px)',
-            color: '#0F0D09', transition: 'background 0.2s',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#C88010'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E8A020'; }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor">
-              <path d="M1.5 1l11 7-11 7V1z"/>
-            </svg>
-            Play Now
-          </div>
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function Dashboard() {
-  const { isAuthenticated, displayName, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const { collections, selectedId, selectedCollection, loading, select } = useCollections();
   const { darkMode } = useTheme();
   const { width } = useWindowSize();
+
+  // Side-by-side from 1024px up (desktop + landscape tablet); stacked below.
+  const isDesktop = width >= 1024;
   const isMobile = width < 640;
 
+  // Plain flat background in both modes — no ambient effects.
   const pageBg = darkMode ? '#0D1117' : '#F0F4F8';
+  const mutedColor = darkMode ? '#7487A1' : '#5B6B7F';
 
   const handlePlay = () => {
     navigate('/play', { state: { collectionId: selectedId } });
@@ -395,69 +64,104 @@ export function Dashboard() {
       <Header />
 
       {/* ── Hero ── */}
-      <section style={{ padding: '48px 0 44px' }}>
-        <div style={{
-          padding: '0 24px',
-          display: 'flex', alignItems: 'flex-start',
-          justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: 24,
-        }}>
-          {/* Left: title */}
-          <div>
-            <h1 style={{ margin: 0 }}>
-              <img
-                src={darkMode
-                  ? '/images/brand/civic-trivia-logo-dark.svg'
-                  : '/images/brand/civic-trivia-logo-light.svg'}
-                alt="Civic Trivia Championship"
-                style={{
-                  display: 'block',
-                  width: 'clamp(300px, 42vw, 720px)',
-                  height: 'auto',
-                }}
-              />
-            </h1>
+      <section
+        style={{
+          position: 'relative', overflow: 'hidden',
+          padding: isMobile ? '28px 20px 32px' : '40px 24px 36px',
+        }}
+      >
+        <div
+          style={{
+            position: 'relative',
+            width: '100%', maxWidth: 1240, margin: '0 auto',
+            display: 'grid',
+            // The featured collection gets the wider track so it reads as the focal point.
+            gridTemplateColumns: isDesktop ? 'minmax(0, 0.9fr) minmax(0, 1.1fr)' : 'minmax(0, 1fr)',
+            gap: isDesktop ? 48 : 28,
+            alignItems: 'center',
+          }}
+        >
+          {/* ── Left: identity + pitch ── */}
+          <div style={{
+            display: 'flex', flexDirection: 'column' as const,
+            alignItems: isDesktop ? 'flex-start' : 'center',
+            textAlign: isDesktop ? ('left' as const) : ('center' as const),
+          }}>
+            <img
+              src={darkMode
+                ? '/images/brand/civic-trivia-logo-dark.svg'
+                : '/images/brand/civic-trivia-logo-light.svg'}
+              alt="Civic Trivia Championship"
+              style={{
+                height: isDesktop ? 'clamp(64px, 7vw, 116px)' : 'clamp(56px, 14vw, 96px)',
+                width: 'auto', maxWidth: '100%',
+              }}
+            />
 
             <p style={{
-              fontFamily: "'Manrope', sans-serif", fontWeight: 300, fontSize: 16,
-              color: darkMode ? '#94A3B8' : '#64748B',
-              maxWidth: 440, lineHeight: 1.6, margin: '16px 0 0',
+              fontFamily: "'Manrope', sans-serif", fontWeight: 300, fontSize: isMobile ? 15 : 16,
+              color: darkMode ? '#94A3B8' : '#4B5768',
+              maxWidth: 480, lineHeight: 1.6, margin: '18px 0 0',
             }}>
-              Test your civic knowledge through local, state, and national trivia collections.
+              Challenge your civic knowledge across local, state, and national collections. Climb the leaderboard. Earn your place.
             </p>
+
+            {/* Change collection — the empty-state card owns this affordance when nothing is picked */}
+            {selectedCollection && (
+              <button
+                onClick={() => navigate('/collections')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: 0, margin: '20px 0 0',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontFamily: "'Manrope', sans-serif", fontWeight: 600, fontSize: 15,
+                  color: darkMode ? '#00C7B1' : '#00657C', transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = darkMode ? '#5EEAD4' : '#00849E'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = darkMode ? '#00C7B1' : '#00657C'; }}
+              >
+                Change Collection
+                <svg width="8" height="12" viewBox="0 0 8 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 1l5 5-5 5"/>
+                </svg>
+              </button>
+            )}
 
             {!isAuthenticated && (
               <p style={{
                 fontFamily: "'Manrope', sans-serif", fontSize: 14,
-                color: darkMode ? '#7487A1' : '#94A3B8',
-                margin: '12px 0 0',
+                color: mutedColor, maxWidth: 480,
+                margin: '18px 0 0', lineHeight: 1.6,
               }}>
-                <Link to="/login" style={{ color: '#E8A020', textDecoration: 'none', fontWeight: 600 }}>Sign in</Link>
+                <Link to="/login" style={{ color: darkMode ? '#00C7B1' : '#00657C', textDecoration: 'none', fontWeight: 600 }}>Sign in</Link>
                 {' '}or{' '}
-                <Link to="/signup" style={{ color: '#E8A020', textDecoration: 'none', fontWeight: 600 }}>create an account</Link>
+                <Link to="/signup" style={{ color: darkMode ? '#00C7B1' : '#00657C', textDecoration: 'none', fontWeight: 600 }}>create an account</Link>
                 {' '}to track your progress and earn rewards.
               </p>
             )}
           </div>
-        </div>
-      </section>
 
-      {/* ── How it works + Featured card ── */}
-      <section style={{ paddingBottom: 32 }}>
-        <div
-          className="grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
-          style={{
-            padding: '0 24px',
-            display: 'grid',
-            gap: 20,
-            alignItems: 'stretch',
-          }}
-        >
-          {isAuthenticated
-            ? <PlayerStatsSection darkMode={darkMode} displayName={displayName} userId={user?.id ?? null} />
-            : <HowItWorksSection darkMode={darkMode} />
-          }
-          <div style={{ position: 'relative' }}>
-            <FeaturedCard collection={selectedCollection} onPlay={handlePlay} darkMode={darkMode} />
+          {/* ── Right: the selected collection ── */}
+          <div style={{ position: 'relative', width: '100%', maxWidth: isDesktop ? 'none' : 560, margin: isDesktop ? 0 : '0 auto' }}>
+            {loading ? (
+              <FeaturedSkeleton darkMode={darkMode} isMobile={isMobile} />
+            ) : selectedCollection ? (
+              <FeaturedCollection
+                collection={selectedCollection}
+                darkMode={darkMode}
+                isMobile={isMobile}
+                isDesktop={isDesktop}
+                // No source exists for completed-question progress — see CollectionProgress.
+                progress={null}
+                onPlay={handlePlay}
+              />
+            ) : (
+              <EmptyFeatured
+                darkMode={darkMode}
+                isMobile={isMobile}
+                onExplore={() => navigate('/collections')}
+              />
+            )}
             {!loading && selectedCollection && (
               <BobbitCardGreeter darkMode={darkMode} isMobile={isMobile} />
             )}
@@ -472,7 +176,7 @@ export function Dashboard() {
       </section>
 
       {/* ── All Collections preview ── */}
-      <section style={{ paddingBottom: 64 }}>
+      <section id="all-collections" style={{ paddingBottom: 64, scrollMarginTop: 24 }}>
         <div style={{ padding: '0 24px' }}>
           <CollectionPicker
             collections={collections}
@@ -486,6 +190,337 @@ export function Dashboard() {
           <BobbitScene darkMode={darkMode} isMobile={isMobile} />
         </div>
       </section>
+    </div>
+  );
+}
+
+/* ─────────────────────────  Featured collection card  ───────────────────────── */
+
+function cardShell(darkMode: boolean) {
+  return {
+    borderRadius: 20,
+    overflow: 'hidden',
+    border: `1px solid ${darkMode ? '#21262D' : '#E2E8F0'}`,
+    background: darkMode ? '#161B22' : '#FFFFFF',
+    boxShadow: darkMode
+      ? '0 14px 40px rgba(0,0,0,0.42)'
+      : 'none',
+  };
+}
+
+/**
+ * Image height is capped in `vh` so the card — and therefore the Play button —
+ * stays above the fold on short laptop viewports, while still reading as a large
+ * feature image on roomier screens.
+ */
+function imageHeight(isMobile: boolean): string {
+  return isMobile ? 'clamp(170px, 36vw, 240px)' : 'clamp(180px, 26vh, 280px)';
+}
+
+/**
+ * Completed-question progress for one collection.
+ *
+ * NOTHING IN THE PROJECT CAN SUPPLY THIS TODAY, so `FeaturedCollection` is always
+ * called with `progress={null}` and renders its no-data fallback. The card is wired
+ * end-to-end so a real source only has to fill this shape:
+ *   - `trivia.player_stats` is a lifetime aggregate with no collection dimension.
+ *   - No table records which questions a user has answered (no `user_questions`).
+ *   - Game sessions live in Redis keyed by session id, and `POST /api/game/session`
+ *     only ever creates a new one — there is no "my unfinished session" lookup.
+ * `/api/users/profile/xp/history` has a `collectionSlug` per game, but its
+ * `correctAnswers` double-counts replayed questions, so it cannot yield "N of M
+ * completed" without deduplication the backend does not do.
+ */
+interface CollectionProgress {
+  completed: number;
+  total: number;
+}
+
+function FeaturedCollection({
+  collection, darkMode, isMobile, isDesktop, progress, onPlay,
+}: {
+  collection: CollectionSummary;
+  darkMode: boolean;
+  isMobile: boolean;
+  isDesktop: boolean;
+  progress: CollectionProgress | null;
+  onPlay: () => void;
+}) {
+  // 4 of the 41 collections ship without a photo, so a large image needs a real fallback.
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => { setImageFailed(false); }, [collection.slug]);
+
+  // Everything sits on the photo now, not a solid panel, so body text uses one
+  // light-on-photo palette rather than a dark/light pair tuned for a panel bg.
+  const bodyColor = 'rgba(255,255,255,0.8)';
+  const metaColor = 'rgba(255,255,255,0.7)';
+
+  const hasProgress = !!progress && progress.total > 0;
+  const isResuming = hasProgress && progress.completed > 0;
+  const headingId = `featured-${collection.slug}`;
+
+  return (
+    <div style={{ ...cardShell(darkMode), position: 'relative' as const }}>
+      {/* ── Photo layer: fills the whole card. Its height is driven by the
+          content column below, not the other way around. ── */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        // Doubles as the loading backdrop for the heavier photos and as the fallback fill.
+        background: collection.themeColor,
+        overflow: 'hidden',
+      }}>
+        {!imageFailed && (
+          <img
+            src={`/images/collections/${collection.slug}.jpg`}
+            // Decorative: the location name is announced by the heading below.
+            alt=""
+            onError={() => setImageFailed(true)}
+            decoding="async"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        )}
+
+        {imageFailed && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: `linear-gradient(135deg, ${collection.themeColor} 0%, rgba(0,0,0,0.5) 100%)`,
+          }}>
+            <PinIcon color="rgba(255,255,255,0.5)" />
+          </div>
+        )}
+      </div>
+
+      {/* Scrim: bright up top so the photo still reads as a photo, dark enough
+          by the bottom to hold every line of body text at AA. */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none' as const,
+        background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.12) 32%, rgba(0,0,0,0.52) 56%, rgba(0,0,0,0.78) 100%)',
+      }} />
+
+      {/* Selected pill — this card only ever renders the currently-selected collection */}
+      <div style={{
+        position: 'absolute', left: isMobile ? 18 : 24, top: isMobile ? 14 : 18,
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '6px 12px',
+        borderRadius: 999,
+        background: 'rgba(20,24,32,0.45)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.2)',
+      }}>
+        <span aria-hidden="true" style={{
+          width: 7, height: 7, borderRadius: '50%', background: '#22C55E', flexShrink: 0,
+        }} />
+        <span style={{
+          fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 12,
+          letterSpacing: '0.02em', color: '#FFFFFF',
+        }}>
+          Selected
+        </span>
+      </div>
+
+      {/* ── Content column: normal flow, so its height (plus the clear photo
+          reveal above it) is what sizes the card and therefore the photo. ── */}
+      <div style={{
+        position: 'relative',
+        // Top value is the reveal zone: same height the image used to have on
+        // its own, so the upper photo stays fully visible before text starts.
+        padding: isMobile ? `${imageHeight(isMobile)} 18px 16px` : `${imageHeight(isMobile)} 24px 20px`,
+        display: 'flex', flexDirection: 'column' as const, gap: 12,
+      }}>
+        {/* Name over the photo — ties the place to the collection at a glance */}
+        <h2
+          id={headingId}
+          style={{
+            margin: 0,
+            fontFamily: "'Manrope', sans-serif", fontWeight: 900,
+            fontSize: isMobile ? 26 : isDesktop ? 36 : 30,
+            lineHeight: 1.08, letterSpacing: '-0.025em',
+            color: '#FFFFFF',
+            textShadow: '0 2px 14px rgba(0,0,0,0.55)',
+          }}
+        >
+          {collection.name}
+        </h2>
+
+        {/* Locale */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 5, minWidth: 0,
+          fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 12,
+        }}>
+          <PinIcon color="#F0C24B" />
+          <span style={{
+            color: '#F0C24B', letterSpacing: '0.06em', textTransform: 'uppercase' as const,
+            whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
+            {getRegion(collection)}
+          </span>
+        </div>
+
+        <p style={{
+          fontFamily: "'Manrope', sans-serif", fontWeight: 400, fontSize: isMobile ? 13 : 14,
+          color: bodyColor, lineHeight: 1.5, margin: 0,
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical' as const,
+          overflow: 'hidden',
+        }}>
+          {collection.description}
+        </p>
+
+        {hasProgress ? (
+          <CollectionProgressMeter
+            completed={progress.completed}
+            total={progress.total}
+            darkMode={darkMode}
+            label={`${collection.name} progress`}
+          />
+        ) : (
+          /* Fallback: state the total honestly rather than render an empty/faked bar. */
+          <div style={{
+            fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 12,
+            color: metaColor,
+          }}>
+            {collection.questionCount} questions ready to play
+          </div>
+        )}
+
+        <PillButton
+          onClick={onPlay}
+          aria-label={`${isResuming ? 'Continue playing' : 'Play now'} — ${collection.name}`}
+          className="focus-ring-primary"
+          style={{ width: '100%', fontWeight: 800 }}
+        >
+          <PlayGlyph />
+          {isResuming ? 'Continue Playing' : 'Play Now'}
+        </PillButton>
+      </div>
+    </div>
+  );
+}
+
+function CollectionProgressMeter({
+  completed, total, darkMode, label,
+}: {
+  completed: number;
+  total: number;
+  darkMode: boolean;
+  label: string;
+}) {
+  const done = Math.max(0, Math.min(completed, total));
+  const pct = Math.round((done / total) * 100);
+  const trackColor = darkMode ? '#21262D' : '#E2E8F0';
+  const labelColor = darkMode ? '#8B9CB3' : '#64748B';
+
+  return (
+    <div>
+      <div style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
+        marginBottom: 7,
+        fontFamily: "'Manrope', sans-serif", fontSize: 12,
+      }}>
+        <span style={{ fontWeight: 700, color: labelColor }}>
+          {done} of {total} completed
+        </span>
+        <span style={{ fontWeight: 800, color: '#00C7B1' }}>{pct}%</span>
+      </div>
+
+      <div
+        role="progressbar"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-valuenow={done}
+        aria-valuetext={`${done} of ${total} questions completed`}
+        style={{
+          height: 7, borderRadius: 999, background: trackColor, overflow: 'hidden',
+        }}
+      >
+        <div style={{
+          width: `${pct}%`, height: '100%', borderRadius: 999,
+          background: 'linear-gradient(90deg, #00C7B1 0%, #5EEAD4 100%)',
+          transition: 'width 0.35s ease-out',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function EmptyFeatured({
+  darkMode, isMobile, onExplore,
+}: {
+  darkMode: boolean;
+  isMobile: boolean;
+  onExplore: () => void;
+}) {
+  const titleColor = darkMode ? '#F1F5F9' : '#0F172A';
+  const bodyColor = darkMode ? '#7C90AC' : '#94A3B8';
+
+  return (
+    <div style={{
+      ...cardShell(darkMode),
+      border: `1px dashed ${darkMode ? '#2B3440' : '#CBD5E1'}`,
+      boxShadow: 'none',
+      display: 'flex', flexDirection: 'column' as const,
+      alignItems: 'center', justifyContent: 'center', textAlign: 'center' as const,
+      // Roughly matches the populated card so the hero does not jump on selection.
+      minHeight: isMobile ? 280 : 'clamp(300px, 44vh, 420px)',
+      padding: isMobile ? '28px 22px' : '32px 36px',
+    }}>
+      <div style={{
+        width: 52, height: 52, borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: darkMode ? 'rgba(0,199,177,0.1)' : 'rgba(0,199,177,0.12)',
+        border: `1px solid ${darkMode ? 'rgba(0,199,177,0.3)' : 'rgba(0,199,177,0.35)'}`,
+        marginBottom: 16,
+      }}>
+        <PinIcon color="#00C7B1" />
+      </div>
+
+      <h2 style={{
+        fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: isMobile ? 19 : 22,
+        color: titleColor, margin: '0 0 8px', letterSpacing: '-0.01em',
+      }}>
+        No collection selected
+      </h2>
+
+      <p style={{
+        fontFamily: "'Manrope', sans-serif", fontWeight: 400, fontSize: 14,
+        color: bodyColor, lineHeight: 1.6, margin: '0 0 20px', maxWidth: 320,
+      }}>
+        Pick a city, state, or national collection to get started.
+      </p>
+
+      <PillButton onClick={onExplore} className="focus-ring-primary" style={{ fontWeight: 800 }}>
+        Explore Collections
+        <svg width="8" height="12" viewBox="0 0 8 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1 1l5 5-5 5"/>
+        </svg>
+      </PillButton>
+    </div>
+  );
+}
+
+function FeaturedSkeleton({ darkMode, isMobile }: { darkMode: boolean; isMobile: boolean }) {
+  const block = darkMode ? '#21262D' : '#E2E8F0';
+  const imageBlock = darkMode ? '#1B2027' : '#DDE5EE';
+
+  return (
+    <div style={cardShell(darkMode)} aria-hidden="true">
+      <div style={{ height: imageHeight(isMobile), background: imageBlock }} />
+      <div style={{
+        padding: isMobile ? '14px 18px 16px' : '16px 24px 20px',
+        display: 'flex', flexDirection: 'column' as const, gap: 12,
+      }}>
+        <div style={{ height: 10, width: '58%', background: block, borderRadius: 6 }} />
+        <div>
+          <div style={{ height: 10, width: '100%', background: block, borderRadius: 6, marginBottom: 7 }} />
+          <div style={{ height: 10, width: '72%', background: block, borderRadius: 6 }} />
+        </div>
+        <div style={{ height: 10, width: '40%', background: block, borderRadius: 6 }} />
+        <div style={{ height: 48, width: '100%', background: block, borderRadius: 999 }} />
+      </div>
     </div>
   );
 }
