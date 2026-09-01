@@ -22,7 +22,7 @@ function HowToPlayButton({ darkMode, onClick }: { darkMode: boolean; onClick: ()
         aria-label="How to Play"
         className="flex items-center justify-center transition-colors"
         style={{
-          color: '#64748B', borderRadius: '50%', width: '40px', height: '40px',
+          color: '#14B8A6', borderRadius: '50%', width: '40px', height: '40px',
           background: idleBg, border: 'none', cursor: 'pointer',
         }}
       >
@@ -180,7 +180,7 @@ export function Header() {
                 onClick={toggleDarkMode}
                 className="flex items-center justify-center transition-colors"
                 aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                style={{ color: '#64748B', borderRadius: '50%', width: '40px', height: '40px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                style={{ color: '#14B8A6', borderRadius: '50%', width: '40px', height: '40px', background: 'transparent', border: 'none', cursor: 'pointer' }}
                 onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
@@ -202,7 +202,7 @@ export function Header() {
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex items-center justify-center transition-colors"
                   aria-label="Account menu"
-                  style={{ color: '#64748B', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', border: 'none' }}
+                  style={{ color: '#14B8A6', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', border: 'none' }}
                   onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
@@ -265,7 +265,7 @@ export function Header() {
                 onClick={toggleDarkMode}
                 className="flex items-center justify-center transition-colors"
                 aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                style={{ color: '#64748B', borderRadius: '50%', width: '40px', height: '40px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                style={{ color: '#14B8A6', borderRadius: '50%', width: '40px', height: '40px', background: 'transparent', border: 'none', cursor: 'pointer' }}
                 onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
@@ -287,7 +287,7 @@ export function Header() {
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex items-center justify-center transition-colors"
                   aria-label="Account"
-                  style={{ color: '#64748B', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', border: 'none' }}
+                  style={{ color: '#14B8A6', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', border: 'none' }}
                   onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
