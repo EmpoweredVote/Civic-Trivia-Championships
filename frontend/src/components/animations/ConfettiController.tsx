@@ -1,8 +1,14 @@
 import { useEffect, useRef } from 'react';
-import ReactCanvasConfetti from 'react-canvas-confetti';
+// canvas-confetti directly, not the react-canvas-confetti wrapper. That wrapper is
+// CJS-only (`exports.default = fn`, no "module"/"exports" field); Vite 8's optimizer
+// resolved its default to the module namespace object, so <ReactCanvasConfetti/> became
+// <{default: fn}/> and React threw error #130 on mount — the whole app died behind the
+// error boundary while the build stayed green. canvas-confetti ships a real ESM build
+// (dist/confetti.module.mjs), so there is no interop guess to get wrong. The wrapper only
+// ever rendered a <canvas> and called create() on it, which is what this does inline.
+import confetti from 'canvas-confetti';
 import { useConfettiStore } from '../../store/confettiStore';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
-import type confetti from 'canvas-confetti';
 
 // Conductor class to control confetti animations
 class ConfettiConductor {
@@ -107,28 +113,35 @@ class ConfettiConductor {
 export function ConfettiController() {
   const reducedMotion = useReducedMotion();
   const { setConductor } = useConfettiStore();
-  const conductorRef = useRef<ConfettiConductor | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    // Null whenever reduced motion is on — nothing is rendered to attach to.
+    if (!canvas) return;
+
+    // Same globals the wrapper used: resize:true keeps the canvas matched to the
+    // viewport, useWorker:false keeps rendering on the main thread.
+    const instance = confetti.create(canvas, { resize: true, useWorker: false });
+    setConductor(new ConfettiConductor(instance));
+
     return () => {
-      // Cleanup conductor on unmount
+      instance.reset();
       setConductor(null);
     };
-  }, [setConductor]);
+    // reducedMotion is a dep so toggling it tears down or re-creates the instance;
+    // the old wrapper only ever wired this up on first mount.
+  }, [setConductor, reducedMotion]);
 
   // Don't render canvas if reduced motion is preferred
   if (reducedMotion) {
     return null;
   }
 
-  const handleInit = ({ confetti }: { confetti: confetti.CreateTypes }) => {
-    conductorRef.current = new ConfettiConductor(confetti);
-    setConductor(conductorRef.current);
-  };
-
   return (
-    <ReactCanvasConfetti
-      onInit={handleInit}
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
       style={{
         position: 'fixed',
         pointerEvents: 'none',
