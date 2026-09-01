@@ -10,18 +10,24 @@
  *
  * Loads the built app in headless Chromium and asserts it actually rendered.
  *
- * Usage: npm run smoke          (expects a server already on SMOKE_URL)
- *        SMOKE_URL=... npm run smoke
+ * Usage: npm run smoke     (expects a server already serving on SMOKE_URL)
+ *        SMOKE_URL=https://ctc.empowered.vote/ SMOKE_ALLOW_EXTERNAL=1 npm run smoke
  */
 import { chromium } from 'playwright';
 
-const URL = process.env.SMOKE_URL || 'http://localhost:10000/';
+const TARGET = process.env.SMOKE_URL || 'http://localhost:10000/';
 const TIMEOUT = Number(process.env.SMOKE_TIMEOUT || 20000);
 
-// The app renders as much of itself as it can without a backend, so the whole
-// check runs offline: anything not served by the local static server is
-// aborted. Keeps CI hermetic and stops it from calling production on every run.
-const isLocal = (url) => url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1');
+// The app renders as much of itself as it can without a backend, so by default
+// only the target's own origin is allowed and everything else is aborted. That
+// keeps CI hermetic and stops it from calling production on every run, and it
+// works for any SMOKE_URL rather than assuming localhost.
+//
+// SMOKE_ALLOW_EXTERNAL=1 lifts the block, for pointing this at a real deployment
+// where you want the actual API exercised too.
+const ORIGIN = new URL(TARGET).origin;
+const ALLOW_EXTERNAL = process.env.SMOKE_ALLOW_EXTERNAL === '1';
+const isAllowed = (url) => ALLOW_EXTERNAL || url.startsWith(ORIGIN);
 
 const fail = (msg, extra) => {
   console.error(`\n  SMOKE FAILED: ${msg}`);
@@ -34,7 +40,7 @@ const context = await browser.newContext({ viewport: { width: 1280, height: 900 
 const page = await context.newPage();
 
 await page.route('**/*', (route) =>
-  isLocal(route.request().url()) ? route.continue() : route.abort()
+  isAllowed(route.request().url()) ? route.continue() : route.abort()
 );
 
 // Uncaught exceptions only. Console errors are not a failure signal here: with
@@ -45,9 +51,9 @@ page.on('pageerror', (e) => crashes.push(e.stack || e.message));
 let ok = true;
 
 try {
-  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: TIMEOUT });
+  await page.goto(TARGET, { waitUntil: 'domcontentloaded', timeout: TIMEOUT });
 } catch (e) {
-  fail(`could not load ${URL}`, e.message);
+  fail(`could not load ${TARGET}`, e.message);
   await browser.close();
   process.exit(1);
 }
@@ -90,8 +96,8 @@ if (crashes.length) {
 await browser.close();
 
 if (ok) {
-  console.log(`  smoke OK — app mounted at ${URL} (#root: ${rootLen} chars)`);
+  console.log(`  smoke OK — app mounted at ${TARGET} (#root: ${rootLen} chars)`);
 } else {
-  console.error(`\n  The bundle built but did not run. Load ${URL} in a browser to see it.`);
+  console.error(`\n  The bundle built but did not run. Load ${TARGET} in a browser to see it.`);
   process.exit(1);
 }
