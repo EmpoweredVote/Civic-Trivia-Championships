@@ -34,7 +34,6 @@ export function BobbitScene({ darkMode, isMobile }: BobbitSceneProps) {
   const prefersReducedMotion = useReducedMotion();
   const animate = !prefersReducedMotion;
 
-  const railColor = darkMode ? 'rgba(148,163,184,0.28)' : 'rgba(100,116,139,0.28)';
   const fireTopRain = useConfettiStore(s => s.fireTopRain);
 
   // height/railBottom keep enough clearance above (raised arms) and below (the sit/read
@@ -58,15 +57,6 @@ export function BobbitScene({ darkMode, isMobile }: BobbitSceneProps) {
 
   return (
     <div style={{ position: 'relative', width: '100%', marginTop: isMobile ? 16 : 24, pointerEvents: 'none' }}>
-      {/* rail */}
-      <div
-        style={{
-          position: 'absolute', left: 0, right: 0, bottom: railBottom,
-          height: 1.5,
-          background: `linear-gradient(90deg, transparent 0%, ${railColor} 12%, ${railColor} 88%, transparent 100%)`,
-        }}
-      />
-
       <BobbitCanvas figures={figures} height={height} animate={animate} />
     </div>
   );

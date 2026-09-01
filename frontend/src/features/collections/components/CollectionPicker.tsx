@@ -157,7 +157,7 @@ export function CollectionPicker({
           color: headingColor,
           margin: 0, letterSpacing: '-0.01em',
         }}>
-          All Collections
+          Featured Collections
         </h2>
 
         {!loading && collections.length > 0 && isPreview && (
@@ -171,7 +171,7 @@ export function CollectionPicker({
               color: accentColor,
             }}
           >
-            See more
+            Explore
             <ChevronRightIcon color={accentColor} />
           </button>
         )}

@@ -22,11 +22,12 @@ function HowToPlayButton({ darkMode, onClick }: { darkMode: boolean; onClick: ()
         aria-label="How to Play"
         className="flex items-center justify-center transition-colors"
         style={{
-          color: '#64748B', borderRadius: '50%', width: '36px', height: '36px',
-          background: idleBg, border: 'none', cursor: 'pointer',
+          color: '#14B8A6', borderRadius: '50%', width: '42px', height: '42px', boxSizing: 'border-box' as const,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: idleBg, cursor: 'pointer',
         }}
       >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
           <path d="M9.09 9a3 3 0 1 1 5.83 1c-.5 1-2 1.5-2 3" />
           <line x1="12" y1="17" x2="12" y2="17.01" />
@@ -180,17 +181,17 @@ export function Header() {
                 onClick={toggleDarkMode}
                 className="flex items-center justify-center transition-colors"
                 aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                style={{ color: '#64748B', borderRadius: '50%', width: '36px', height: '36px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                style={{ color: '#14B8A6', borderRadius: '50%', width: '42px', height: '42px', boxSizing: 'border-box' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'pointer' }}
                 onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 {darkMode ? (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="5" />
                     <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
@@ -202,9 +203,9 @@ export function Header() {
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex items-center justify-center transition-colors"
                   aria-label="Account menu"
-                  style={{ color: '#14B8A6', border: '2px solid #14B8A6', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent' }}
+                  style={{ color: '#14B8A6', borderRadius: '50%', width: '42px', height: '42px', boxSizing: 'border-box' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent' }}
                 >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                   </svg>
@@ -263,17 +264,17 @@ export function Header() {
                 onClick={toggleDarkMode}
                 className="flex items-center justify-center transition-colors"
                 aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                style={{ color: '#64748B', borderRadius: '50%', width: '36px', height: '36px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                style={{ color: '#14B8A6', borderRadius: '50%', width: '42px', height: '42px', boxSizing: 'border-box' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'pointer' }}
                 onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#21262D' : '#EEF4F7')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 {darkMode ? (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="5" />
                     <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
@@ -285,9 +286,9 @@ export function Header() {
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex items-center justify-center transition-colors"
                   aria-label="Account"
-                  style={{ color: '#14B8A6', border: '2px solid #14B8A6', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent' }}
+                  style={{ color: '#14B8A6', borderRadius: '50%', width: '42px', height: '42px', boxSizing: 'border-box' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent' }}
                 >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                   </svg>

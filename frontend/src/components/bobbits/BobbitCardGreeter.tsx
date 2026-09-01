@@ -34,7 +34,7 @@ export function BobbitCardGreeter({ darkMode, isMobile }: BobbitCardGreeterProps
     <div
       aria-hidden="true"
       style={{
-        position: 'absolute', top: -seatFromTop, right: isMobile ? 14 : 26,
+        position: 'absolute', top: -seatFromTop, left: isMobile ? 14 : 26,
         width, height, pointerEvents: 'none', zIndex: 2,
       }}
     >
