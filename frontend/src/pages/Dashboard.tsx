@@ -66,8 +66,8 @@ export function Dashboard() {
       {/* ── Hero ── */}
       <section
         style={{
-          position: 'relative', overflow: 'hidden',
-          padding: isMobile ? '28px 20px 32px' : '40px 24px 36px',
+          position: 'relative',
+          padding: isMobile ? '52px 20px 32px' : '72px 24px 36px',
         }}
       >
         <div
@@ -105,27 +105,6 @@ export function Dashboard() {
             }}>
               Challenge your civic knowledge across local, state, and national collections. Climb the leaderboard. Earn your place.
             </p>
-
-            {/* Change collection — the empty-state card owns this affordance when nothing is picked */}
-            {selectedCollection && (
-              <button
-                onClick={() => navigate('/collections')}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: 0, margin: '20px 0 0',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontFamily: "'Manrope', sans-serif", fontWeight: 600, fontSize: 15,
-                  color: darkMode ? '#00C7B1' : '#00657C', transition: 'color 0.2s',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = darkMode ? '#5EEAD4' : '#00849E'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = darkMode ? '#00C7B1' : '#00657C'; }}
-              >
-                Change Collection
-                <svg width="8" height="12" viewBox="0 0 8 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 1l5 5-5 5"/>
-                </svg>
-              </button>
-            )}
 
             {!isAuthenticated && (
               <p style={{
@@ -187,9 +166,15 @@ export function Dashboard() {
             variant="preview"
             onSeeMore={() => navigate('/collections')}
           />
-          <BobbitScene darkMode={darkMode} isMobile={isMobile} />
         </div>
       </section>
+
+      {/* Dancing pair rests on the site footer below (rendered by the page shell right
+          after Dashboard) — negative margin pulls the footer up under their feet, and
+          the positioned stacking context keeps them painted above it. */}
+      <div style={{ position: 'relative', zIndex: 1, marginBottom: isMobile ? -15 : -20 }}>
+        <BobbitScene darkMode={darkMode} isMobile={isMobile} />
+      </div>
     </div>
   );
 }
@@ -214,7 +199,7 @@ function cardShell(darkMode: boolean) {
  * feature image on roomier screens.
  */
 function imageHeight(isMobile: boolean): string {
-  return isMobile ? 'clamp(170px, 36vw, 240px)' : 'clamp(180px, 26vh, 280px)';
+  return isMobile ? 'clamp(200px, 42vw, 280px)' : 'clamp(220px, 32vh, 340px)';
 }
 
 /**
@@ -253,7 +238,6 @@ function FeaturedCollection({
   // Everything sits on the photo now, not a solid panel, so body text uses one
   // light-on-photo palette rather than a dark/light pair tuned for a panel bg.
   const bodyColor = 'rgba(255,255,255,0.8)';
-  const metaColor = 'rgba(255,255,255,0.7)';
 
   const hasProgress = !!progress && progress.total > 0;
   const isResuming = hasProgress && progress.completed > 0;
@@ -291,16 +275,16 @@ function FeaturedCollection({
         )}
       </div>
 
-      {/* Scrim: bright up top so the photo still reads as a photo, dark enough
-          by the bottom to hold every line of body text at AA. */}
+      {/* Scrim: light — the photo stays clearly visible, just dark enough at the
+          very bottom to hold the overlaid text at AA. */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none' as const,
-        background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.12) 32%, rgba(0,0,0,0.52) 56%, rgba(0,0,0,0.78) 100%)',
+        background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.02) 40%, rgba(0,0,0,0.4) 68%, rgba(0,0,0,0.85) 100%)',
       }} />
 
       {/* Selected pill — this card only ever renders the currently-selected collection */}
       <div style={{
-        position: 'absolute', left: isMobile ? 18 : 24, top: isMobile ? 14 : 18,
+        position: 'absolute', right: isMobile ? 18 : 24, top: isMobile ? 14 : 18,
         display: 'flex', alignItems: 'center', gap: 6,
         padding: '6px 12px',
         borderRadius: 999,
@@ -320,128 +304,68 @@ function FeaturedCollection({
         </span>
       </div>
 
-      {/* ── Content column: normal flow, so its height (plus the clear photo
-          reveal above it) is what sizes the card and therefore the photo. ── */}
+      {/* ── Content row: normal flow, so its height (plus the clear photo
+          reveal above it) is what sizes the card and therefore the photo. Text
+          sits on the left, the Play button beside it on the right. ── */}
       <div style={{
         position: 'relative',
         // Top value is the reveal zone: same height the image used to have on
         // its own, so the upper photo stays fully visible before text starts.
         padding: isMobile ? `${imageHeight(isMobile)} 18px 16px` : `${imageHeight(isMobile)} 24px 20px`,
-        display: 'flex', flexDirection: 'column' as const, gap: 12,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+        flexWrap: 'nowrap' as const, gap: isMobile ? 12 : 20,
       }}>
-        {/* Name over the photo — ties the place to the collection at a glance */}
-        <h2
-          id={headingId}
-          style={{
-            margin: 0,
-            fontFamily: "'Manrope', sans-serif", fontWeight: 900,
-            fontSize: isMobile ? 26 : isDesktop ? 36 : 30,
-            lineHeight: 1.08, letterSpacing: '-0.025em',
-            color: '#FFFFFF',
-            textShadow: '0 2px 14px rgba(0,0,0,0.55)',
-          }}
-        >
-          {collection.name}
-        </h2>
-
-        {/* Locale */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 5, minWidth: 0,
-          fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 12,
-        }}>
-          <PinIcon color="#F0C24B" />
-          <span style={{
-            color: '#F0C24B', letterSpacing: '0.06em', textTransform: 'uppercase' as const,
-            whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {getRegion(collection)}
-          </span>
-        </div>
-
-        <p style={{
-          fontFamily: "'Manrope', sans-serif", fontWeight: 400, fontSize: isMobile ? 13 : 14,
-          color: bodyColor, lineHeight: 1.5, margin: 0,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical' as const,
-          overflow: 'hidden',
-        }}>
-          {collection.description}
-        </p>
-
-        {hasProgress ? (
-          <CollectionProgressMeter
-            completed={progress.completed}
-            total={progress.total}
-            darkMode={darkMode}
-            label={`${collection.name} progress`}
-          />
-        ) : (
-          /* Fallback: state the total honestly rather than render an empty/faked bar. */
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, minWidth: 0, flex: 1 }}>
+          {/* Locale */}
           <div style={{
+            display: 'flex', alignItems: 'center', gap: 5, minWidth: 0,
             fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 12,
-            color: metaColor,
           }}>
-            {collection.questionCount} questions ready to play
+            <PinIcon color="#F0C24B" />
+            <span style={{
+              color: '#F0C24B', letterSpacing: '0.06em', textTransform: 'uppercase' as const,
+              whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {getRegion(collection)}
+            </span>
           </div>
-        )}
+
+          {/* Name over the photo — ties the place to the collection at a glance */}
+          <h2
+            id={headingId}
+            style={{
+              margin: 0,
+              fontFamily: "'Manrope', sans-serif", fontWeight: 900,
+              fontSize: isMobile ? 26 : isDesktop ? 36 : 30,
+              lineHeight: 1.08, letterSpacing: '-0.025em',
+              color: '#FFFFFF',
+              textShadow: '0 2px 14px rgba(0,0,0,0.55)',
+            }}
+          >
+            {collection.name}
+          </h2>
+
+          <p style={{
+            fontFamily: "'Manrope', sans-serif", fontWeight: 400, fontSize: isMobile ? 13 : 14,
+            color: bodyColor, lineHeight: 1.5, margin: 0,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical' as const,
+            overflow: 'hidden',
+          }}>
+            {collection.description}
+          </p>
+        </div>
 
         <PillButton
           onClick={onPlay}
           aria-label={`${isResuming ? 'Continue playing' : 'Play now'} — ${collection.name}`}
           className="focus-ring-primary"
-          style={{ width: '100%', fontWeight: 800 }}
+          style={{ flexShrink: 0, width: 'auto', fontWeight: 800 }}
         >
           <PlayGlyph />
           {isResuming ? 'Continue Playing' : 'Play Now'}
         </PillButton>
-      </div>
-    </div>
-  );
-}
-
-function CollectionProgressMeter({
-  completed, total, darkMode, label,
-}: {
-  completed: number;
-  total: number;
-  darkMode: boolean;
-  label: string;
-}) {
-  const done = Math.max(0, Math.min(completed, total));
-  const pct = Math.round((done / total) * 100);
-  const trackColor = darkMode ? '#21262D' : '#E2E8F0';
-  const labelColor = darkMode ? '#8B9CB3' : '#64748B';
-
-  return (
-    <div>
-      <div style={{
-        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
-        marginBottom: 7,
-        fontFamily: "'Manrope', sans-serif", fontSize: 12,
-      }}>
-        <span style={{ fontWeight: 700, color: labelColor }}>
-          {done} of {total} completed
-        </span>
-        <span style={{ fontWeight: 800, color: '#00C7B1' }}>{pct}%</span>
-      </div>
-
-      <div
-        role="progressbar"
-        aria-label={label}
-        aria-valuemin={0}
-        aria-valuemax={total}
-        aria-valuenow={done}
-        aria-valuetext={`${done} of ${total} questions completed`}
-        style={{
-          height: 7, borderRadius: 999, background: trackColor, overflow: 'hidden',
-        }}
-      >
-        <div style={{
-          width: `${pct}%`, height: '100%', borderRadius: 999,
-          background: 'linear-gradient(90deg, #00C7B1 0%, #5EEAD4 100%)',
-          transition: 'width 0.35s ease-out',
-        }} />
       </div>
     </div>
   );
