@@ -1,7 +1,7 @@
 // Load environment variables FIRST
 import './env.js';
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { router as gameRouter } from './routes/game.js';
 import { router as profileRouter } from './routes/profile.js';
@@ -17,6 +17,19 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const ALLOWED_ORIGINS = [FRONTEND_URL, process.env.FRONTEND_URL_ALT].filter((o): o is string => !!o);
+
+/**
+ * Whether a caller with this Origin may read our responses.
+ *
+ * No Origin header means a non-browser caller (server-to-server, curl, Render's
+ * health probe). CORS does not govern those, so they pass.
+ */
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+  // Any localhost origin in development (Vite picks a new port when one is taken)
+  if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return true;
+  return ALLOWED_ORIGINS.includes(origin);
+}
 
 /**
  * Start server with async initialization
@@ -40,17 +53,25 @@ async function startServer() {
 
   // Middleware
   app.use(cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (server-to-server, curl, etc.)
-      if (!origin) return callback(null, true);
-      // Allow any localhost origin in development (Vite port changes)
-      if (origin.match(/^https?:\/\/localhost(:\d+)?$/)) return callback(null, true);
-      // Allow configured origins
-      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-      callback(new Error('Not allowed by CORS'));
-    },
+    // Signal a disallowed origin by omitting the CORS headers — the mechanism the
+    // spec actually uses — rather than passing an Error. The Error fell through to
+    // Express's default handler, so a rejected preflight answered 500, which reads
+    // as "the API is broken" rather than "that origin is not allowed".
+    origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
     credentials: true
   }));
+
+  // cors() only omits the headers; it still calls next(), and simple requests
+  // (GET, form-encoded POST) skip preflight altogether. Reject here so a
+  // disallowed origin never reaches a route handler — the protection the thrown
+  // Error used to provide — but with a status that says what happened.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (!isAllowedOrigin(req.headers.origin)) {
+      res.status(403).json({ error: 'Origin not allowed' });
+      return;
+    }
+    next();
+  });
   app.use(express.json());
 
   // Health check endpoint
