@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && cp -r src/data dist/ && mkdir -p dist/db/seed && cp src/db/seed/sources.json dist/db/seed/",
+    "build": "tsc && node scripts/copy-build-assets.mjs",
     "start": "node --dns-result-order=ipv4first dist/server.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit push",
