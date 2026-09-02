@@ -1,13 +1,22 @@
 name: Post-deploy smoke
 
-# Render auto-deploys on every commit to master and gives GitHub no signal when
-# it has finished. This waits for the new bundle to appear on the live site, then
-# loads it in a real browser and asserts the app mounts.
+# Render auto-deploys on commits to master and gives GitHub no signal when it has
+# finished, so nothing verified that what actually shipped runs. The Vite 8 outage
+# (#79, reverted in b5321df) was found by hand; this is meant to find the next one.
 #
-# It exists because a green `tsc && vite build` is not evidence the app runs: the
-# Vite 8 bump (#79) built clean and then threw React error #130 on mount, so every
-# page rendered as the error boundary while CI stayed green. That outage was found
-# by hand. This finds the next one.
+# It waits for both services to answer, then loads the live site in real Chromium
+# and asserts the app mounted with the real API behind it.
+#
+# Why there is no "wait for the new frontend bundle" step: the static site has
+# rootDir: frontend, and Render skips a build when nothing under it changed. Most
+# commits here are backend-only, so there is often no new frontend deploy to wait
+# for — yet those commits can still break the live site (30079b7 changed CORS,
+# which is exactly how the deployed frontend reaches its API). Keying the check to
+# a bundle change would have skipped the commits most able to break production.
+#
+# Matching the served bundle against a locally built one does not work either:
+# Render builds with env vars that only exist in its dashboard, so its bundle hash
+# differs from CI's for identical source.
 
 on:
   push:
@@ -21,6 +30,7 @@ concurrency:
 
 env:
   PROD_URL: https://ctc.empowered.vote/
+  API_HEALTH: https://civic-trivia-backend.onrender.com/health/live
 
 jobs:
   smoke:
@@ -38,67 +48,58 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - run: npm ci
-
-      # Built here only to learn the content hash this commit produces, so the
-      # wait below can tell "prod is serving THIS commit" from "prod is still
-      # serving the previous one". Both this and Render build on Linux with the
-      # same lockfile, so the hashes line up.
-      - name: Build to learn this commit's bundle hash
-        run: npm run build
-
       - run: npx playwright install --with-deps chromium
 
-      - name: Wait for Render to serve this commit
+      - name: Wait for both services to answer
         id: wait
         run: |
-          bundle_of() {
-            curl -sf -H 'Cache-Control: no-cache' "${PROD_URL}?cb=$(date +%s)" 2>/dev/null \
-              | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1
-          }
-
-          expected=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' dist/index.html | head -1)
-          initial=$(bundle_of || true)
-          echo "expected from this commit : ${expected:-<none>}"
-          echo "live at workflow start    : ${initial:-<unreachable>}"
-
-          # ~10 minutes. Render frontend deploys land in well under a minute; the
-          # headroom is for a queued or retried build.
-          for i in $(seq 1 40); do
-            live=$(bundle_of || true)
-            if [ -n "$live" ] && [ "$live" = "$expected" ]; then
-              echo "matched this commit's bundle after $((i*15))s"
-              echo "confirmed=exact" >> "$GITHUB_OUTPUT"
-              exit 0
+          # Setup above already takes a couple of minutes and Render deploys land
+          # in well under one, so this is usually satisfied on the first poll. The
+          # headroom covers a queued build or a backend restart.
+          ok=""
+          for i in $(seq 1 24); do   # 24 * 10s = 4 min
+            front=$(curl -s -o /dev/null -w '%{http_code}' "${PROD_URL}?cb=$(date +%s)" || echo 000)
+            api=$(curl -s -o /dev/null -w '%{http_code}' "${API_HEALTH}" || echo 000)
+            if [ "$front" = "200" ] && [ "$api" = "200" ]; then
+              echo "both up after $((i*10))s (frontend=$front api=$api)"
+              ok=1
+              break
             fi
-            if [ -n "$live" ] && [ -n "$initial" ] && [ "$live" != "$initial" ]; then
-              echo "bundle changed ($initial -> $live) after $((i*15))s"
-              echo "confirmed=changed" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            sleep 15
+            echo "  waiting: frontend=$front api=$api"
+            sleep 10
           done
 
-          # Deliberately not a failure. The smoke test below is the assertion; this
-          # step only syncs with the deploy. Failing here would turn a slow deploy,
-          # or a rebuild that happens to emit an identical bundle, into a red run
-          # that means nothing — and a check that cries wolf gets ignored.
-          echo "::warning::Could not confirm the new bundle within 10m (live=${live:-unreachable}, expected=${expected:-unknown}). Smoking whatever prod is serving."
-          echo "confirmed=unconfirmed" >> "$GITHUB_OUTPUT"
+          # Not a hard failure: the smoke step below is the assertion, and it will
+          # fail loudly with real detail if the site is genuinely down. Failing here
+          # would just report "curl got a non-200" with less information.
+          if [ -z "$ok" ]; then
+            echo "::warning::Services did not both return 200 within 4m (frontend=$front api=$api). Smoking anyway."
+          fi
+
+          served=$(curl -s -H 'Cache-Control: no-cache' "${PROD_URL}?cb=$(date +%s)" \
+            | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1)
+          echo "serving: ${served:-unknown}"
+          echo "served=${served:-unknown}" >> "$GITHUB_OUTPUT"
 
       - name: Smoke production
         env:
           SMOKE_URL: ${{ env.PROD_URL }}
           # Let the real API through: on a deployed site the point is to prove the
-          # whole chain works, not just that the bundle mounts. This is what caught
-          # that the CORS change had not broken the live frontend's own origin.
+          # whole chain works, not just that the bundle parses. This mode is what
+          # confirmed the CORS change in 30079b7 had not broken the live
+          # frontend's own origin.
           SMOKE_ALLOW_EXTERNAL: '1'
         run: npm run smoke
 
       - name: Report
         if: always()
         run: |
-          echo "### Prod smoke — ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- target: ${PROD_URL}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- deploy sync: \`${{ steps.wait.outputs.confirmed }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- commit: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Prod smoke — ${{ job.status }}"
+            echo ""
+            echo "- target: ${PROD_URL}"
+            echo "- bundle served: \`${{ steps.wait.outputs.served }}\`"
+            echo "- commit pushed: \`${{ github.sha }}\`"
+            echo ""
+            echo "_The served bundle is whatever Render currently hosts; it only changes when a commit touches \`frontend/\`._"
+          } >> "$GITHUB_STEP_SUMMARY"
