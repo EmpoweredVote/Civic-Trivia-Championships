@@ -19,7 +19,7 @@ affects: [26-verification]
 
 # Tech tracking
 tech-stack:
-  added: [sharp (dev dependency)]
+  added: [sharp (dev dependency) — REMOVED 2026-09-02 in bb3c4b0, see note below]
   patterns: [status-filtered exports, community seed registration]
 
 key-files:
@@ -75,6 +75,13 @@ Each task was committed atomically:
 - `backend/src/data/los-angeles-ca-questions.json` - Re-exported with status filter (114 questions, unchanged)
 - `backend/package.json` - Added sharp as dev dependency
 - `backend/package-lock.json` - sharp installation
+
+> **Superseded 2026-09-02 — sharp has been removed (`bb3c4b0`).**
+> It was installed here to resize one banner image via a temporary script and
+> was never imported by committed code: `git log -S"from 'sharp'" -- backend/`
+> returns no commits. It sat in `backend/package.json` as an unused native
+> dependency until it was dropped (`backend/node_modules` 207M → 178M).
+> This record is left as-is; sharp is **not** part of the current tech stack.
 
 ## Decisions Made
 - Mission Peak from Lake Elizabeth chosen as banner image (public domain from Wikimedia Commons) — user requested skyline-style view over initial generic cityscape

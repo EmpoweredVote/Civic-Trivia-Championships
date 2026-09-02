@@ -50,6 +50,10 @@ npm install multer@^2.0.0 file-type express-rate-limit
 # npm install sharp  # Optional, only if implementing server-side resize
 ```
 
+> **Note (2026-09-02):** this optional path was never taken. sharp is not a
+> project dependency — it was added in phase 25 for a one-off image resize and
+> removed in `bb3c4b0` after `git log -S` confirmed nothing ever imported it.
+
 ## Architecture Patterns
 
 ### Recommended Database Schema Extension

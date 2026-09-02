@@ -44,6 +44,10 @@ The established tools for this domain are already in the codebase.
 npm install sharp --save-dev
 ```
 
+> **Note (2026-09-02):** sharp was installed from this step but never imported by
+> committed code, and was removed in `bb3c4b0`. It is not a project dependency.
+> For a one-off banner resize, add it temporarily and uninstall afterwards.
+
 ## Architecture Patterns
 
 ### Existing Project Structure
