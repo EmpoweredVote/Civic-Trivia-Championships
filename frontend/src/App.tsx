@@ -27,6 +27,7 @@ import { AdminsPage } from './pages/admin/AdminsPage';
 import { Leaderboard } from './pages/Leaderboard';
 import { Collections } from './pages/Collections';
 import { ImageCredits } from './pages/ImageCredits';
+import { PerfLab } from './pages/PerfLab';   // THROWAWAY: stage 2 perf spike, delete with the route below
 
 // AdminGuard component: allows anyone with admin access (admin_users or a content-admin role)
 function AdminGuard() {
@@ -89,6 +90,8 @@ function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/collections" element={<Collections />} />
             <Route path="/credits" element={<ImageCredits />} />
+            {/* THROWAWAY: stage 2 perf spike harness. Delete before merging. */}
+            <Route path="/perf-lab" element={<PerfLab />} />
 
             {/* Protected routes — require auth */}
             <Route element={<ProtectedRoute />}>
