@@ -9,7 +9,14 @@ export interface FieldFigure {
   id: string;
   anim: string;
   color: string;
+  /** Absolute px in field space. Ignored when `xFrac` is set. */
   x: number;
+  /**
+   * 0-1 fraction of the field's measured width, resolved to `x` each frame. Use this for
+   * figures that should stay put proportionally as the container resizes -- the old
+   * BobbitCanvas took fractions, and a rail spanning 100% of a responsive column needs them.
+   */
+  xFrac?: number;
   /** px from the field's top to this figure's ground-contact line (feet, or seat when seated). */
   groundY: number;
   scale: number;
@@ -37,6 +44,12 @@ const SEATED = new Set(['sit', 'read', 'greetseat', 'witsend']);
 
 export function pelvisOffset(anim: string): number {
   return SEATED.has(anim) ? 8 : 112;
+}
+
+/** Resolves `xFrac` against a measured field width, leaving plain `x` figures untouched. */
+export function resolveX(figures: FieldFigure[], width: number): FieldFigure[] {
+  if (!figures.some(f => f.xFrac !== undefined)) return figures;
+  return figures.map(f => (f.xFrac === undefined ? f : { ...f, x: f.xFrac * width }));
 }
 
 /**

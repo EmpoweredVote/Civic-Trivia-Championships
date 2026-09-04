@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { CFG, computePose, draw, drawShadow, drawSmoke } from './leremyRig';
 import { ALL_ANIMATIONS } from './rigExtras';
-import { pelvisOffset, sortByDepth, figureBounds } from './fieldGeometry';
+import { pelvisOffset, sortByDepth, figureBounds, resolveX } from './fieldGeometry';
 import type { FieldFigure } from './fieldGeometry';
 import { figureAtPoint } from './hitTest';
 import { greetReduce, isGreeting, greetClock } from './greetReducer';
@@ -37,6 +37,8 @@ interface BobitFieldProps {
    * must not install a document-level mousemove handler.
    */
   interactive?: boolean;
+  /** Left-click on a figure. Uses the same ink test as hover, so clicks land on ink only. */
+  onFigureClick?: (figure: FieldFigure) => void;
   className?: string;
   style?: CSSProperties;
 }
@@ -49,7 +51,7 @@ const DPR_CAP = 1.5;
 const INK_PAD = 6;
 
 export function BobitField({
-  figures, height, animate = true, interactive = false, className, style,
+  figures, height, animate = true, interactive = false, onFigureClick, className, style,
 }: BobitFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scratchRef = useRef<HTMLCanvasElement | null>(null);
@@ -71,8 +73,14 @@ export function BobitField({
   const stunClockRef = useRef(0);
   // Published by the render effect so the pointer handlers can hit-test with real ink.
   const probeRef = useRef<((f: FieldFigure, x: number, y: number) => boolean) | null>(null);
+  // Kept in a ref so changing the handler does not tear down and rebuild every listener.
+  const clickRef = useRef(onFigureClick);
+  // Figures with xFrac resolved against the measured width. Pointer handlers read THIS, not
+  // figuresRef, or a hit test would use unresolved fractional x values as pixels.
+  const resolvedRef = useRef<FieldFigure[]>(figures);
 
   useEffect(() => { figuresRef.current = figures; }, [figures]);
+  useEffect(() => { clickRef.current = onFigureClick; }, [onFigureClick]);
 
   const prefersReducedMotion = useReducedMotion();
   const running = animate && !prefersReducedMotion;
@@ -176,7 +184,8 @@ export function BobitField({
     const renderFrame = (t: number, dt: number) => {
       clockRef.current = t;
       const w = widthRef.current;
-      const all = figuresRef.current;
+      const all = resolveX(figuresRef.current, w);
+      resolvedRef.current = all;
       const poof = poofRef.current;
 
       // Resolve hover before drawing, so a greeting figure is painted greeting this frame.
@@ -281,12 +290,21 @@ export function BobitField({
     };
 
     const poofableAt = (x: number, y: number) => {
-      const candidates = figuresRef.current.filter(f => f.poofable !== false);
+      const candidates = resolvedRef.current.filter(f => f.poofable !== false);
       const probe = probeRef.current;
       // Ink, not bounding box. Grabbing a figure you were not actually pointing at is the
       // one mistake this gesture cannot afford -- it destroys something.
       if (!probe) return null;
       return figureAtPoint(candidates, x, y, probe);
+    };
+
+    const onClick = (e: MouseEvent) => {
+      const handler = clickRef.current;
+      const probe = probeRef.current;
+      if (!handler || !probe || poofRef.current.phase !== 'idle') return;
+      const p = local(e.clientX, e.clientY);
+      const hit = figureAtPoint(resolvedRef.current, p.x, p.y, probe);
+      if (hit) handler(hit);
     };
 
     const onMove = (e: MouseEvent) => { pointerRef.current = local(e.clientX, e.clientY); };
@@ -356,6 +374,7 @@ export function BobitField({
       gestureRef.current = r.state; apply(r.emit);
     }, 60);
 
+    canvas.addEventListener('click', onClick);
     canvas.addEventListener('mousemove', onMove);
     canvas.addEventListener('mouseleave', onLeave);
     canvas.addEventListener('mousedown', onDown);
@@ -372,6 +391,7 @@ export function BobitField({
 
     return () => {
       window.clearInterval(armPoll);
+      canvas.removeEventListener('click', onClick);
       canvas.removeEventListener('mousemove', onMove);
       canvas.removeEventListener('mouseleave', onLeave);
       canvas.removeEventListener('mousedown', onDown);
@@ -394,6 +414,7 @@ export function BobitField({
       style={{
         display: 'block', width: '100%', height,
         pointerEvents: interactive ? 'auto' : 'none',
+        cursor: interactive && onFigureClick ? 'pointer' : undefined,
         touchAction: interactive ? 'pan-y' : undefined,
         ...style,
       }}

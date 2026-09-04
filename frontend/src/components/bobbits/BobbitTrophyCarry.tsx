@@ -45,6 +45,20 @@ interface BobbitTrophyCarryProps {
   isMobile: boolean;
 }
 
+/**
+ * NOTE: this component deliberately keeps its own canvas rather than rendering through
+ * BobitField.
+ *
+ * BobitField is a decorative crowd renderer: one aria-hidden canvas, figures identified by
+ * animation key. This component is neither decorative nor a crowd -- it is a labelled,
+ * focusable control (role/tabIndex/keyboard handling) driving a bespoke choreography the
+ * animation-key model cannot express. Moving it onto the field would mean either losing its
+ * accessibility contract or bolting per-figure escape hatches onto the field until it stopped
+ * being a crowd renderer.
+ *
+ * The cost of staying is one extra rAF for one scene, which the crowd performance work does
+ * not care about. Revisit if this ever needs to share state with the crowd.
+ */
 export function BobbitTrophyCarry({ darkMode, isMobile }: BobbitTrophyCarryProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const widthRef = useRef(0);
