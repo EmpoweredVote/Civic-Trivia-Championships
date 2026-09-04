@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { BobbitCanvas } from './BobbitCanvas';
 import type { BobbitFigureSpec } from './BobbitCanvas';
-import { figColor } from './leremyRig';
+import { figColor } from './rigExtras';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface BobbitCardGreeterProps {

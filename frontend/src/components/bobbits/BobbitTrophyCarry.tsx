@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import {
-  ANIMATIONS, CFG, computePose, draw, drawShadow, drawTrophy, heaveBend, figColor,
+  ANIMATIONS, CFG, computePose, draw, drawShadow, heaveBend,
 } from './leremyRig';
+import { drawTrophy, figColor } from './rigExtras';
 import type { Pose } from './leremyRig';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 

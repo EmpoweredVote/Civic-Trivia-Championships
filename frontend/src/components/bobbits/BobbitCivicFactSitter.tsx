@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { ANIMATIONS, CFG, computePose, draw, drawShadow, figColor } from './leremyRig';
+import { ANIMATIONS, CFG, computePose, draw, drawShadow } from './leremyRig';
+import { figColor } from './rigExtras';
 import type { Pose } from './leremyRig';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useWindowSize } from '../../hooks/useWindowSize';
