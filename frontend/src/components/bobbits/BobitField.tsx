@@ -11,6 +11,8 @@ import { poofReduce, POOF_IDLE, POOF_HOLD, POOF_BURST } from './poofReducer';
 import type { PoofState, PoofEvent } from './poofReducer';
 import { gestureReduce, GESTURE_IDLE, shouldSuppressContextMenu } from './pointerGestures';
 import { armFlee, fleeAdvance, allGone } from './fleeReducer';
+import { bubbleReduce } from './dialogue/bubbleReducer';
+import type { BubbleState } from './dialogue/bubbleReducer';
 import type { FleeState } from './fleeReducer';
 import type { GestureState } from './pointerGestures';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -39,6 +41,8 @@ interface BobitFieldProps {
   interactive?: boolean;
   /** Left-click on a figure. Uses the same ink test as hover, so clicks land on ink only. */
   onFigureClick?: (figure: FieldFigure) => void;
+  /** Speech bubbles to show, keyed by figure id. Lifetimes are managed by the field. */
+  bubbles?: Record<string, string>;
   className?: string;
   style?: CSSProperties;
 }
@@ -51,7 +55,7 @@ const DPR_CAP = 1.5;
 const INK_PAD = 6;
 
 export function BobitField({
-  figures, height, animate = true, interactive = false, onFigureClick, className, style,
+  figures, height, animate = true, interactive = false, onFigureClick, bubbles, className, style,
 }: BobitFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scratchRef = useRef<HTMLCanvasElement | null>(null);
@@ -78,9 +82,27 @@ export function BobitField({
   // Figures with xFrac resolved against the measured width. Pointer handlers read THIS, not
   // figuresRef, or a hit test would use unresolved fractional x values as pixels.
   const resolvedRef = useRef<FieldFigure[]>(figures);
+  const bubbleRef = useRef<BubbleState>({});
 
   useEffect(() => { figuresRef.current = figures; }, [figures]);
   useEffect(() => { clickRef.current = onFigureClick; }, [onFigureClick]);
+
+  // Opening resets a bubble's lifetime, so only genuinely new or changed text re-arms it --
+  // otherwise a parent re-render would hold every bubble open forever.
+  useEffect(() => {
+    const want = bubbles || {};
+    for (const id of Object.keys(want)) {
+      const live = bubbleRef.current[id];
+      if (!live || live.text !== want[id]) {
+        bubbleRef.current = bubbleReduce(bubbleRef.current, { type: 'open', id, text: want[id] }, 0);
+      }
+    }
+    for (const id of Object.keys(bubbleRef.current)) {
+      if (!(id in want)) {
+        bubbleRef.current = bubbleReduce(bubbleRef.current, { type: 'dismiss', id }, 0);
+      }
+    }
+  }, [bubbles]);
 
   const prefersReducedMotion = useReducedMotion();
   const running = animate && !prefersReducedMotion;
@@ -201,6 +223,14 @@ export function BobitField({
       if (poof.phase !== 'idle') poofRef.current = poofReduce(poof, { type: 'tick', dt });
       const now = poofRef.current;
 
+      bubbleRef.current = bubbleReduce(bubbleRef.current, { type: 'tick' }, dt);
+      // Everything shuts up at the burst. ev-figures.js calls dismissBubbles() here for a
+      // reason worth keeping: a bubble closed any other way leaves a dangling handle on its
+      // Bobit and he never goes back to what he was doing.
+      if (now.phase === 'poof' && poof.phase !== 'poof') {
+        bubbleRef.current = bubbleReduce(bubbleRef.current, { type: 'dismissAll' }, 0);
+      }
+
       // The room arms once, on entering 'fleeing'.
       if (now.phase === 'fleeing' && poof.phase !== 'fleeing') {
         fleeRef.current = armFlee(all, now.victimId, w);
@@ -241,6 +271,12 @@ export function BobitField({
         );
       }
       if (!frozen) stunClockRef.current = t;
+
+      for (const f of all) {
+        const b = bubbleRef.current[f.id];
+        if (!b || fleeRef.current[f.id]) continue;
+        drawBubble(ctx, f, b.text, b.ttl);
+      }
 
       drawPoofSmoke(ctx, now, all);
     };
@@ -456,4 +492,86 @@ function drawPoofSmoke(ctx: CanvasRenderingContext2D, poof: PoofState, figures: 
     const b = Math.min(1, poof.t / POOF_BURST);
     drawSmoke(ctx, anchor.x, anchor.y - 10, 58 + b * 70, 1 - b, seed, poof.t);
   }
+}
+
+/**
+ * A speech bubble above a figure's head, drawn in the field canvas.
+ *
+ * Canvas rather than DOM, unlike ev-quotes.js: the field is already an aria-hidden decorative
+ * surface, so there is no accessible text to lose, and keeping bubbles in the same canvas
+ * means they inherit the depth sort and the poof's dismissal for free.
+ *
+ * Fades out over the last second rather than vanishing, so an expiring bubble reads as the
+ * speaker finishing rather than being cut off.
+ */
+function drawBubble(
+  ctx: CanvasRenderingContext2D, f: FieldFigure, text: string, ttl: number,
+) {
+  const FONT_PX = 12;
+  const PAD_X = 9;
+  const PAD_Y = 7;
+  const RADIUS = 8;
+  const TAIL = 7;
+  const MAX_W = 190;
+
+  ctx.save();
+  ctx.font = `600 ${FONT_PX}px 'Manrope', system-ui, sans-serif`;
+  ctx.textBaseline = 'top';
+
+  // Wrap to MAX_W. Short lines are the norm, so a simple greedy pass is enough.
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let line = '';
+  for (const w of words) {
+    const candidate = line ? `${line} ${w}` : w;
+    if (ctx.measureText(candidate).width > MAX_W - PAD_X * 2 && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+
+  const textW = Math.max(...lines.map(l => ctx.measureText(l).width));
+  const boxW = textW + PAD_X * 2;
+  const lineH = FONT_PX * 1.35;
+  const boxH = lines.length * lineH + PAD_Y * 2;
+
+  const bounds = figureBounds(f);
+  const cx = f.x;
+  const bottom = bounds.top - 6;          // just above the head
+  const top = bottom - boxH;
+  const left = cx - boxW / 2;
+
+  ctx.globalAlpha = Math.min(1, ttl);      // fade through the final second
+
+  ctx.beginPath();
+  ctx.moveTo(left + RADIUS, top);
+  ctx.arcTo(left + boxW, top, left + boxW, top + boxH, RADIUS);
+  ctx.arcTo(left + boxW, top + boxH, left, top + boxH, RADIUS);
+  ctx.arcTo(left, top + boxH, left, top, RADIUS);
+  ctx.arcTo(left, top, left + boxW, top, RADIUS);
+  ctx.closePath();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.strokeStyle = 'rgba(23,43,77,0.18)';
+  ctx.lineWidth = 1.2;
+  ctx.fill();
+  ctx.stroke();
+
+  // Tail, pointing down at the speaker.
+  ctx.beginPath();
+  ctx.moveTo(cx - TAIL, bottom - 1);
+  ctx.lineTo(cx, bottom + TAIL);
+  ctx.lineTo(cx + TAIL, bottom - 1);
+  ctx.closePath();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+
+  ctx.fillStyle = '#172B4D';
+  lines.forEach((l, i) => {
+    ctx.fillText(l, cx - textW / 2, top + PAD_Y + i * lineH);
+  });
+
+  ctx.restore();
 }
