@@ -10,6 +10,8 @@ import type { GreetState } from './greetReducer';
 import { poofReduce, POOF_IDLE, POOF_HOLD, POOF_BURST } from './poofReducer';
 import type { PoofState, PoofEvent } from './poofReducer';
 import { gestureReduce, GESTURE_IDLE, shouldSuppressContextMenu } from './pointerGestures';
+import { armFlee, fleeAdvance, allGone } from './fleeReducer';
+import type { FleeState } from './fleeReducer';
 import type { GestureState } from './pointerGestures';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
@@ -64,6 +66,9 @@ export function BobitField({
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
   const widthRef = useRef(0);
   const clockRef = useRef(0);
+  const fleeRef = useRef<FleeState>({});
+  // Frozen at the last pre-stun frame, so the room holds its pose rather than resetting to t=0.
+  const stunClockRef = useRef(0);
   // Published by the render effect so the pointer handlers can hit-test with real ink.
   const probeRef = useRef<((f: FieldFigure, x: number, y: number) => boolean) | null>(null);
 
@@ -185,19 +190,50 @@ export function BobitField({
       greetRef.current = greetReduce(greetRef.current, hoveredRef.current, dt);
 
       if (poof.phase !== 'idle') poofRef.current = poofReduce(poof, { type: 'tick', dt });
+      const now = poofRef.current;
+
+      // The room arms once, on entering 'fleeing'.
+      if (now.phase === 'fleeing' && poof.phase !== 'fleeing') {
+        fleeRef.current = armFlee(all, now.victimId, w);
+      }
+      if (now.phase === 'fleeing') {
+        fleeRef.current = fleeAdvance(fleeRef.current, dt, w);
+        if (allGone(fleeRef.current)) {
+          poofRef.current = poofReduce(poofRef.current, { type: 'allGone' });
+        }
+      }
 
       ctx.clearRect(0, 0, w, height);
 
+      // Nothing survives the exodus: the page stays empty until reload, as on the landing page.
+      if (poofRef.current.phase === 'cleared') return;
+
       // The victim leaves the field the instant the burst fires; the smoke holds his spot.
-      const victim = poofRef.current.victimId;
-      const taken = poofRef.current.taken;
-      const visible = taken ? all.filter(f => f.id !== victim) : all;
+      const visible = now.taken ? all.filter(f => f.id !== now.victimId) : all;
+
+      // The stun pins everybody at dt = 0 for its full second. Deliberately a hard freeze:
+      // in ev-figures.js the dropped props are the only thing moving through it, and that
+      // stillness is what sells the shock.
+      const frozen = now.phase === 'stunned';
 
       for (const f of sortByDepth(visible)) {
-        paint(ctx, f, t, isGreeting(greetRef.current, f.id), greetClock(greetRef.current, f.id));
+        const run = fleeRef.current[f.id];
+        if (run) {
+          if (run.gone) continue;
+          paint(ctx, { ...f, x: run.x, anim: 'scurry', flip: run.dir > 0 }, t, false, 0);
+          continue;
+        }
+        paint(
+          ctx,
+          f,
+          frozen ? stunClockRef.current : t,
+          !frozen && isGreeting(greetRef.current, f.id),
+          greetClock(greetRef.current, f.id),
+        );
       }
+      if (!frozen) stunClockRef.current = t;
 
-      drawPoofSmoke(ctx, poofRef.current, all);
+      drawPoofSmoke(ctx, now, all);
     };
 
     if (!running) {
