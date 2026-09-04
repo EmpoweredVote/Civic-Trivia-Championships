@@ -14,9 +14,21 @@ const router = Router();
  *
  * Point Render's "Health Check Path" setting here. Use GET /health (low frequency,
  * e.g. UptimeRobot) for dependency status, and /health?verbose=1 for session counts.
+ *
+ * `commit` is the SHA this instance is running, from RENDER_GIT_COMMIT (set
+ * automatically by Render at build and runtime). It is a plain env read — no I/O —
+ * so it does not violate the rule above. The post-deploy smoke workflow polls this
+ * to tell "the new deploy is live" from "the old one is still answering"; without
+ * it the only signals were process uptime and the frontend bundle hash, neither of
+ * which identifies a commit. Deliberately here rather than on GET /health, which
+ * runs a Postgres SELECT 1 and must not be polled in a loop.
  */
 router.get('/live', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    commit: process.env.RENDER_GIT_COMMIT ?? null,
+  });
 });
 
 router.get('/', async (req: Request, res: Response) => {
