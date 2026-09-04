@@ -97,13 +97,17 @@ jobs:
           front_ok=$([ "$want_front" = "true" ] && echo no || echo skipped)
           back_ok=$([  "$want_back"  = "true" ] && echo no || echo skipped)
 
-          # ~6 min. Deploys have consistently landed in 30-90s; the headroom is
-          # for a queued build.
+          # ~15 min. Deploys usually land in 30-90s, but the first run of this
+          # check gave up at 6m while the frontend deploy took 10m48s in a queue —
+          # a red run caused by the window, not by a bad deploy. The smoke below is
+          # the assertion and this step only synchronises with the deploy, so
+          # waiting too long merely delays the signal while waiting too little
+          # invents failures. Err long.
           #
           # Written as if-blocks, not `[ ... ] && ...` chains: the step runs under
           # `bash -e`, where a chain whose first test fails returns non-zero as the
           # last command of the list and kills the step.
-          for i in $(seq 1 36); do
+          for i in $(seq 1 90); do
             if [ "$front_ok" = "no" ] && [ "$(front_commit)" = "$sha" ]; then
               front_ok=yes
               echo "frontend live at $sha after $((i*10))s"
@@ -126,7 +130,7 @@ jobs:
           # land. Failing is correct: smoking the previous build would pass and
           # report false assurance, which is the exact gap this check closes.
           if [ "$front_ok" = "no" ] || [ "$back_ok" = "no" ]; then
-            echo "::error::Deploy not confirmed within 6m (frontend=$front_ok backend=$back_ok, expected $sha). Prod may still be serving the previous build — check Render."
+            echo "::error::Deploy not confirmed within 15m (frontend=$front_ok backend=$back_ok, expected $sha). Prod may still be serving the previous build — check Render."
             exit 1
           fi
 
