@@ -1,5 +1,5 @@
-import { figureBounds, sortByDepth } from './bobitField';
-import type { FieldFigure } from './bobitField';
+import { figureBounds, sortByDepth } from './fieldGeometry';
+import type { FieldFigure } from './fieldGeometry';
 
 /**
  * Confirms the point lands on painted ink for this specific figure.

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { figureAtPoint, boundsCandidates } from '../hitTest';
-import type { FieldFigure } from '../bobitField';
+import type { FieldFigure } from '../fieldGeometry';
 
 const fig = (over: Partial<FieldFigure> = {}): FieldFigure => ({
   id: 'a', anim: 'standstill', color: '#000', x: 0, groundY: 100, scale: 1, ...over,
