@@ -594,68 +594,712 @@ export function drawShadow(ctx: CanvasRenderingContext2D, cx: number, groundY: n
   ctx.restore();
 }
 
+export interface AnimVars { hand?: 'R' | 'L'; hz?: number; }
+
 export interface Animation {
-  frame(t: number, v?: { hand?: 'L' | 'R'; hz?: number }): Pose;
+  label: string;
+  mood: string;
+  frame(t: number, v?: AnimVars): Pose;
+  /**
+   * Prop and staging flags. A consumer reads these to decide what to pass in DrawOpts and
+   * how to place the figure -- `seated` poses sit on a ledge, `rope` hangs in mid-air with
+   * no ground contact at all. Kept on the animation rather than the caller so a pose brings
+   * its own staging with it.
+   */
+  seated?: boolean;
+  rope?: boolean;
+  book?: boolean;
+  swirl?: boolean;
+  laptop?: boolean;
+  mega?: boolean;
+  phone?: boolean;
+  chair?: boolean;
+  desk?: boolean;
+  cane?: boolean;
+  paddle?: boolean;
+  arm?: 'R' | 'L';
 }
 
-/** Curated subset of the marketing site's ~35 poses — the ones that fit a trivia landing scene. */
-export const ANIMATIONS: Record<string, Animation> = {
-  standstill: {
-    frame(t) {
+export interface GaitOpts {
+  label: string;
+  mood: string;
+  /** Walk cycles per second. */
+  speed: number;
+  stride: number;
+  hunch: number;
+  knee: number;
+  arm: number;
+  bob: number;
+  head: number;
+}
+
+/** Duration of the toddler fall-and-recover sequence (the fall + scold animations). */
+const SEQ_FALL = 4.5;
+
+// lateral gait generator: legs scissor front/back in profile, hunch carries the upper body
+export function makeGait(g: GaitOpts): Animation {
+  return {
+    label: g.label, mood: g.mood,
+    frame(t: number) {
       const p = clonePose(REST);
-      p.bob = wave(t, 0.3) * 1.5;
-      p.headTilt = wave(t, 0.08) * 6;
+      const sw = Math.sin(t * g.speed * Math.PI);
+      p.bob = -Math.abs(sw) * g.bob + 2;
+      p.lean = -2;
+      p.hunch = g.hunch + wave(t, g.speed / 4) * 3;
+      p.headTilt = g.head + wave(t, g.speed / 2) * 3;
+      p.legRU = sw * g.stride;
+      p.legLU = -sw * g.stride;
+      p.legRF = p.legRU - Math.max(0, sw) * g.knee;   // knee bends as leg swings forward
+      p.legLF = p.legLU - Math.max(0, -sw) * g.knee;
+      p.armRU = 4 - sw * g.arm; p.armRF = 2 - sw * g.arm * 0.6;
+      p.armLU = -4 + sw * g.arm; p.armLF = -2 + sw * g.arm * 0.6;
+      return p;
+    },
+  };
+}
+
+export const ANIMATIONS: Record<string, Animation> = {
+  bored: {
+    label: "Bored", mood: "…is this still loading?",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const br = wave(t, 0.28);              // slow breathing
+      p.bob = br * 3 + 2;
+      p.headTilt = 12 + wave(t, 0.18) * 6;   // head lolls to the side
+      p.lean = wave(t, 0.13) * 2;
+      p.armRU = 13 + br * 3; p.armRF = 9 + br * 2;
+      p.armLU = -13 - br * 2; p.armLF = -9 - br * 2;
+      const shift = wave(t, 0.13);
+      p.legRU = 7 + shift * 3; p.legLU = -7 + shift * 3;   // idle weight-shift
       return p;
     },
   },
   friendly: {
-    frame(t) {
+    label: "Friendly wave", mood: "hey there! 👋",
+    frame(t: number) {
       const p = clonePose(REST);
       p.bob = wave(t, 0.9) * 2.5 + 1;
       p.headTilt = -6 + wave(t, 0.9) * 3;
+      // right arm up and waving (up-and-out to the right)
       p.armRU = 150;
       p.armRF = 152 + wave(t, 1.6) * 24;
       p.armLU = -18; p.armLF = -14;
       return p;
     },
   },
+  present: {
+    label: "Presenting", mood: "…and THAT's the plan.",
+    frame(t: number) {
+      const p = clonePose(REST);
+      p.lean = -3;
+      p.bob = wave(t, 0.5) * 2;
+      p.headTilt = -6;
+      // right arm extended, pointing out toward the content
+      p.armRU = 88 + wave(t, 0.5) * 6;
+      p.armRF = 94 + wave(t, 0.5) * 8;
+      // left hand on hip (elbow out, hand back toward waist)
+      p.armLU = -52; p.armLF = 132;
+      return p;
+    },
+  },
+  shrug: {
+    label: "Shrug", mood: "don't ask me ¯\\_(ツ)_/¯",
+    frame(t: number) {
+      const p = clonePose(REST);
+      // shrug pulse every ~3.5s: up, hold a beat, drop
+      const c = ((t % 3.5) + 3.5) % 3.5;
+      const sh = Math.min(1, Math.max(0, c / 0.5)) * Math.min(1, Math.max(0, (2.2 - c) / 0.6));
+      p.bob = 2 - sh * 4;
+      p.hunch = -3 - sh * 4;
+      p.headTilt = wave(t, 0.2) * 4 + sh * 12;   // head cocks with the shrug
+      // elbows pin to the sides, forearms swing out palms-up
+      p.armRU = 15 + sh * 30; p.armRF = 11 + sh * 130;
+      p.armLU = -15 - sh * 30; p.armLF = -11 - sh * 130;
+      return p;
+    },
+  },
+  confused: {
+    label: "Confused", mood: "wait… what does this button do?",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const br = wave(t, 0.3);
+      p.bob = br * 2;
+      p.lean = -2;
+      p.hunch = -5;
+      p.headTilt = -10 + wave(t, 0.12) * 8;      // puzzling side to side
+      // scratching the crown: elbow flared WAY out, forearm folded back over the head
+      p.armRU = 122 + wave(t, 0.25) * 4;
+      p.armRF = 218 + wave(t, 2.2) * 9;          // scratch-scratch wiggle
+      // left hand on hip
+      p.armLU = -52; p.armLF = 132;
+      // weight on one leg
+      p.legRU = 4; p.legLU = -14; p.legLF = -8;
+      return p;
+    },
+  },
+  spent: {
+    label: "Spent", mood: "that… was a LOT of research", swirl: true,
+    frame(t: number) {
+      // strong still silhouette, minimal motion: doubled over,
+      // hands braced on the thighs, catching breath
+      const p = clonePose(REST);
+      const br = wave(t, 0.25);                  // slow heavy breathing only
+      p.lean = 5;
+      p.hunch = -(44 + br * 3);                  // deep forward fold
+      p.headTilt = -8 + br * 2;                  // head hanging
+      p.bob = 4 + br * 1.5;
+      // arms straight down, hands braced on the thighs
+      p.armRU = 58; p.armRF = 26;
+      p.armLU = 46; p.armLF = 18;
+      // knees buckled
+      p.legRU = 14; p.legRF = -20;
+      p.legLU = -4; p.legLF = -16;
+      return p;
+    },
+  },
+  notlistening: {
+    label: "Not listening", mood: "la la la, can't hear you",
+    frame(t: number) {
+      // strong still: both hands clamped over the ears, elbows flared wide.
+      // Motion is just breathing + an occasional emphatic head shake.
+      const p = clonePose(REST);
+      const br = wave(t, 0.28);
+      p.bob = 1 + br * 1.5;
+      p.hunch = -4;
+      // head shake burst every ~3.2s
+      const c = ((t % 3.2) + 3.2) % 3.2;
+      const win = c < 0.9 ? Math.sin(Math.PI * c / 0.9) : 0;
+      p.headTilt = Math.sin(t * 22) * 10 * win;
+      // hands ON the ears: elbows flared out horizontally, forearms folded
+      // tightly back in so the hands press the sides of the head
+      p.armRU = 105 + br * 2; p.armRF = 194;
+      p.armLU = -105 - br * 2; p.armLF = -194;
+      // planted stance
+      p.legRU = 10; p.legLU = -10;
+      return p;
+    },
+  },
+  witsend: {
+    label: "Wits' end", mood: "you have GOT to be kidding me", seated: true, chair: true, desk: true,
+    frame(t: number) {
+      // profile: reclined back in an office chair at a desk, slumped away from
+      // the monitor. Every few seconds a hand drags down the face. At wits' end.
+      const p = clonePose(REST);
+      const br = wave(t, 0.3);
+      p.lean = 2;
+      p.hunch = 22 + br * 2;                    // reclined back into the chair
+      p.bob = 2 + br * 1.2;
+      // hand-drag-down-the-face gesture every ~6s
+      const c = ((t % 6) + 6) % 6;
+      const drag = c < 2.2 ? Math.sin(Math.PI * (c / 2.2)) : 0;   // 0 -> 1 -> 0
+      p.headTilt = 24 + br * 3 - drag * 12;     // head thrown back, dips as the hand covers it
+      // right arm limp on the armrest, sweeps up to the face during the drag
+      p.armRU = 26 + br * 2 + drag * 122;
+      p.armRF = 14 + drag * 150;
+      // left arm hangs limp
+      p.armLU = -30 - br * 2; p.armLF = -18;
+      // legs out under the desk, lazy alternating foot bounce
+      p.legRU = 82; p.legRF = 18 + wave(t, 0.5) * 4;
+      p.legLU = 74; p.legLF = 10 + wave(t, 0.5, Math.PI) * 4;
+      return p;
+    },
+  },
+  exhausted: {
+    label: "Exhausted", mood: "I. Am. So. Tired.",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const br = wave(t, 0.35);              // heavy slow breathing
+      p.lean = 15 + br * 3;
+      p.bob = br * 5 + 6;
+      p.headTilt = 26 + br * 5;              // head hangs
+      // arms dangle heavily
+      p.armRU = 8 + br * 4; p.armRF = 6 + br * 3;
+      p.armLU = -8 - br * 4; p.armLF = -6 - br * 3;
+      // knees slightly buckled
+      p.legRU = 9; p.legRF = -3; p.legLU = -9; p.legLF = 3;
+      return p;
+    },
+  },
+  sassy: {
+    label: "Sassy", mood: "oh, we're doing THIS?",
+    frame(t: number) {
+      const p = clonePose(REST);
+      p.lean = -6;
+      p.bob = wave(t, 0.7) * 2;
+      p.headTilt = -16 + wave(t, 0.7) * 3;
+      // left hand firmly on hip
+      p.armLU = -52; p.armLF = 132;
+      // right arm gestures dismissively now and then
+      const g = Math.max(0, wave(t, 0.4));
+      p.armRU = 30 + g * 34;
+      p.armRF = 24 + g * 54 + wave(t, 1.2) * 10;
+      // cocked hip: weight on right leg, left leg kicked out
+      p.legRU = 4; p.legLU = -18; p.legLF = -12;
+      return p;
+    },
+  },
+  // ── gait explorer: lateral walks, pitched FORWARD (negative hunch = toward travel) ──
+  stroll:  makeGait({ label: "Stroll", mood: "just moseying…", speed: 2.0, stride: 24, hunch: -7, knee: 30, arm: 14, bob: 3, head: -5 }),
+  shuffle: makeGait({ label: "Shuffle", mood: "five more minutes…", speed: 1.5, stride: 10, hunch: -12, knee: 12, arm: 5, bob: 1.5, head: -9 }),
+  strut:   makeGait({ label: "Strut", mood: "yeah, I own this ledge.", speed: 2.2, stride: 30, hunch: -5, knee: 34, arm: 26, bob: 4, head: -6 }),
+  scurry:  makeGait({ label: "Scurry", mood: "late late late late", speed: 4.6, stride: 15, hunch: -16, knee: 26, arm: 8, bob: 2, head: -7 }),
+  march:   makeGait({ label: "March", mood: "hup, two, three, four", speed: 2.4, stride: 34, hunch: -2, knee: 6, arm: 30, bob: 5, head: 0 }),
+  sneak:   makeGait({ label: "Sneak", mood: "shhh… nobody saw that", speed: 1.3, stride: 22, hunch: -22, knee: 52, arm: 10, bob: 6, head: -11 }),
+  trudge:  makeGait({ label: "Trudge", mood: "why is this site SO long", speed: 1.1, stride: 13, hunch: -16, knee: 16, arm: 6, bob: 5, head: -15 }),
+  carry: (() => {
+    const g = makeGait({ label: "Carrying", mood: "beam coming through!", speed: 1.8, stride: 18, hunch: -14, knee: 22, arm: 0, bob: 2.5, head: -6 });
+    const base = g.frame;
+    g.frame = (t) => { const p = base(t); p.armRU = 16; p.armRF = 6; p.armLU = -16; p.armLF = -6; return p; };
+    return g;
+  })(),
+  // Hauling something far too big for two people: the beam crew's Fallacy Finders button is a
+  // ~340x102 slab, wider than four of them and taller than any. Everything here is `carry` pushed
+  // toward strain — shorter steps, folded deeper, arms hanging nearly straight so the hands sit as
+  // low as the rig reaches, the head lifted relative to the fold (so he is not simply staring at
+  // his shoes), and a small sag each time the weight lands on a foot.
+  //
+  // `head: 8` is relative to a spine already folded 26 forward, so the head still reads net-forward
+  // in world space. That is the intent: hunched over the load, not craning over it.
+  //
+  // Note the speed: the crew walks this load FASTER than the ball or the line, not slower. It
+  // covers part of the .meta-row on the way past, and pace is the only thing that keeps that brief.
+  // So the strain has to live entirely in the pose — which reads truer anyway. Someone hustling
+  // under a load too heavy for them, rather than someone crawling.
+  hefty: (() => {
+    const g = makeGait({ label: "Heavy haul", mood: "…who ordered the big one?", speed: 1.5, stride: 11, hunch: -26, knee: 16, arm: 0, bob: 2, head: 8 });
+    const base = g.frame;
+    g.frame = (t) => {
+      const p = base(t);
+      p.armRU = 2; p.armRF = 1; p.armLU = -2; p.armLF = -1;   // straight down: lowest hands the rig gives
+      // A sag onto the weight-bearing leg. Bounded, because makeGait leaves the planted (rear) leg
+      // fully straight — `legRF = legRU - max(0, sw) * knee` zeroes the knee bend on that side — so
+      // there is no slack to absorb a pelvis drop and the foot goes through the floor instead.
+      // Measured lowest ink below the floor line at the crew's S = 0.32, where every shipped gait
+      // already sits at 2px because of the round cap on the foot:
+      //     sag  0 -> 2px    8 -> 3px    16 -> 6px
+      //     sag  4 -> 2px   11 -> 4px    24 -> 8px
+      // 8 is the most weight available for 1px past the house baseline.
+      const plant = Math.max(0, -Math.sin(t * 1.5 * Math.PI));
+      p.bob += plant * 8;
+      p.lean = -4;                                            // braced back a touch against the load
+      return p;
+    };
+    return g;
+  })(),
+  climb: {
+    label: "Climb", mood: "up we go…",
+    frame(t: number) {
+      const p = clonePose(REST);
+      // spiderman wall-climb: limbs spread wide, moving one at a time —
+      // right hand → left foot → left hand → right foot
+      const step = (ph: number) => {
+        const x = (((t * 0.55 + ph) % 1) + 1) % 1;
+        return x < 0.2 ? (1 - Math.cos((x / 0.2) * Math.PI)) / 2 : 1 - (x - 0.2) / 0.8;
+      };
+      const rh = step(0), lf = step(0.25), lh = step(0.5), rf = step(0.75);
+      p.hunch = -10;
+      p.headTilt = 16;                         // eyes on the next hold
+      p.bob = -(rh + lf + lh + rf) * 1.6;
+      // arms out on wide diagonals, each ratcheting up on its beat
+      p.armRU = 108 + rh * 52; p.armRF = 124 + rh * 50;
+      p.armLU = -108 - lh * 52; p.armLF = -124 - lh * 50;
+      // frog-wide legs, knee climbing on its beat
+      p.legRU = 34 + rf * 26;
+      p.legRF = p.legRU - 46 - rf * 16;
+      p.legLU = -34 - lf * 26;
+      p.legLF = p.legLU + 46 + lf * 16;
+      return p;
+    },
+  },
+  rope: {
+    label: "Rope climb", mood: "hand over hand…", rope: true,
+    frame(t: number) {
+      const p = clonePose(REST);
+      const sw = Math.sin(t * 1.3 * Math.PI);   // hand-over-hand alternation
+      p.hunch = -6;
+      p.headTilt = 14;                          // looking up the rope
+      p.bob = -Math.abs(sw) * 7;                // body hitches up on each pull
+      p.lean = sw * 2;                          // slight sway
+      // both hands overhead on the rope, alternating grips
+      p.armRU = 168 + sw * 12; p.armRF = 176 + sw * 8;
+      p.armLU = -168 + sw * 12; p.armLF = -176 + sw * 8;
+      // legs wrapped: knees bent, ankles pinching the rope
+      p.legRU = 22 + sw * 6; p.legRF = p.legRU - 68;
+      p.legLU = -14 - sw * 6; p.legLF = p.legLU + 62;
+      return p;
+    },
+  },
+  peek: {
+    label: "Peeking over", mood: "how far down IS that…",
+    frame(t: number) {
+      const p = clonePose(REST);
+      // careful lean-out every ~5s: creep in, hold, pull back
+      const c = ((t % 5) + 5) % 5;
+      const pk = Math.min(1, Math.max(0, c / 1.2)) * Math.min(1, Math.max(0, (4.2 - c) / 0.8));
+      p.bob = pk * 2;
+      p.hunch = -(10 + pk * 26);                // craning forward over the edge
+      p.headTilt = -(8 + pk * 14) + wave(t, 2.5) * pk * 2;  // looking down, tiny wobble
+      // arms trail behind for counterbalance
+      p.armRU = -18 - pk * 40; p.armRF = -14 - pk * 30;
+      p.armLU = -26 - pk * 45; p.armLF = -20 - pk * 35;
+      // front foot toes the edge, back leg planted
+      p.legRU = 14 + pk * 6; p.legRF = 8;
+      p.legLU = -16 - pk * 10; p.legLF = -6;
+      return p;
+    },
+  },
+  jump: {
+    label: "Jump", mood: "wheee!",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const T = 1.6, ph = (((t % T) + T) % T) / T;
+      const e = (a: number, b: number, x: number) => Math.min(1, Math.max(0, (x - a) / (b - a)));
+      const crouch = e(0.05, 0.3, ph) - e(0.38, 0.52, ph);   // wind up, then release
+      const airT = e(0.38, 0.92, ph);
+      const air = Math.sin(Math.PI * airT);                   // airborne arc
+      const land = Math.sin(Math.PI * e(0.9, 1.0, ph));       // landing absorb
+      p.bob = crouch * 14 - air * 48 + land * 6;
+      p.hunch = -8 + crouch * -14 + air * 6 - land * 6;
+      p.headTilt = crouch * -6 + air * 10;
+      // arms swing back on crouch, throw up in the air
+      p.armRU = 15 + crouch * 35 - air * 155; p.armRF = 10 + crouch * 20 - air * 150;
+      p.armLU = -15 - crouch * 35 + air * 155; p.armLF = -10 - crouch * 20 + air * 150;
+      // asymmetric tuck — lead leg pulls high, trail leg stays long (no heel-click)
+      p.legRU = 8 + crouch * 30 + air * 46; p.legRF = 4 - crouch * 55 - air * 80 - land * 16;
+      p.legLU = -8 - crouch * 30 + air * 14; p.legLF = -4 + crouch * 55 + air * 32 + land * 16;
+      return p;
+    },
+  },
   sit: {
-    frame(t) {
+    label: "Hanging out", mood: "nice view up here", seated: true,
+    frame(t: number) {
       const p = clonePose(REST);
       const br = wave(t, 0.3);
       p.lean = 3;
-      p.hunch = -(8 + br * 2);
+      p.hunch = -(8 + br * 2);                 // relaxed round back (forward)
       p.bob = br * 1.5;
+      // bored + curious: slow scan, occasional lean-in peek over the edge
       const peek = Math.max(0, wave(t, 0.07, 1)) ** 6;
       p.hunch -= peek * 18;
       p.headTilt = wave(t, 0.09) * 16 + peek * 12;
       p.armRU = 26 + br * 2; p.armRF = 10;
       p.armLU = -22 - br * 2; p.armLF = -8;
+      // seated: thighs out front, shins dangling, lazy alternating kick
       p.legRU = 82; p.legRF = 6 + wave(t, 0.45) * 14;
       p.legLU = 74; p.legLF = 4 + wave(t, 0.45, Math.PI) * 14;
       return p;
     },
   },
   read: {
-    frame(t) {
+    label: "Reading", mood: "just one more chapter…", seated: true, book: true,
+    frame(t: number) {
       const p = clonePose(REST);
       const br = wave(t, 0.28);
       p.lean = 4;
-      p.hunch = -(22 + br * 3);
+      p.hunch = -(22 + br * 3);               // curled FORWARD over the book
       p.bob = br * 1.5;
-      p.headTilt = -(12 + br * 2);
+      p.headTilt = -(12 + br * 2);            // eyes down on the page
+      // page-flip twitch every few seconds
       const flip = Math.max(0, wave(t, 0.18)) ** 10;
+      // relaxed asymmetric hold in front of the curled body
       p.armRU = 62 + br * 2; p.armRF = 132 + flip * 26;
       p.armLU = 42 - br * 2; p.armLF = 108 + br * 3;
+      // seated, one lazy bounce
       p.legRU = 78; p.legRF = 12 + wave(t, 0.3) * 6;
       p.legLU = 70; p.legLF = 5;
       return p;
     },
   },
-  // cheer/offer/ponder are layered on top of `present` in the source (var base = A.present),
-  // inheriting its lean/bob/hand-on-hip before overriding specific fields — not built from REST.
+  holdannoyed: {
+    label: "Holding (annoyed)", mood: "you CANNOT be serious",
+    frame(t: number) {
+      // still gripping his end of the line, head swiveling in exasperation
+      // between the slacker and you
+      const p = clonePose(REST);
+      const look = Math.min(1, t / 0.35);
+      p.bob = 0.5;
+      p.armRU = 16; p.armRF = 6;
+      p.armLU = -16; p.armLF = -6;
+      p.headTilt = wave(t, 0.5) * 20 * look;
+      p.hunch = -4 * look;
+      p.legRU = 9; p.legLU = -9;
+      return p;
+    },
+  },
+  annoyed: {
+    label: "Annoyed", mood: "seriously? we're CARRYING here",
+    frame(t: number) {
+      // exasperated partner: both hands on hips, head swiveling
+      // between the slacker and you
+      const p = clonePose(REST);
+      const look = Math.min(1, t / 0.35);
+      p.bob = 1;
+      p.hunch = -6 * look;
+      p.headTilt = wave(t, 0.4) * 16 * look;
+      p.armRU = 15 + 37 * look; p.armRF = 11 - 143 * look;
+      p.armLU = -15 - 37 * look; p.armLF = -11 + 143 * look;
+      return p;
+    },
+  },
+  greet: {
+    label: "Greet", mood: "oh! hi there",
+    // v = { hand:'R'|'L', hz } lets each figure wave with a different hand / speed
+    frame(t: number, v: AnimVars = {}) {
+      v = v || {};
+      const hz = v.hz || 1.6;
+      const p = clonePose(REST);
+      const look = Math.min(1, t / 0.35);
+      p.bob = 1 + wave(t, 0.9) * 1.5;
+      p.hunch = -4 * look;
+      p.headTilt = -12 * look + wave(t, 0.5) * 3;
+      const wv = Math.min(1, Math.max(0, (t - 0.55) / 0.3));
+      const osc = t > 0.9 ? wave(t, hz) * 24 : 0;
+      if (v.hand === 'L') { p.armLU = -15 - 137 * wv; p.armLF = -11 - 143 * wv - osc; }
+      else { p.armRU = 15 + 137 * wv; p.armRF = 11 + 143 * wv + osc; }
+      return p;
+    },
+  },
+  greetseat: {
+    label: "Greet (seated)", mood: "oh! hi there", seated: true,
+    frame(t: number, v: AnimVars = {}) {
+      v = v || {};
+      const hz = v.hz || 1.6;
+      const p = clonePose(REST);
+      const look = Math.min(1, t / 0.35);
+      p.bob = wave(t, 0.9) * 1.2;
+      p.hunch = -6 * look;
+      p.headTilt = -16 * look + wave(t, 0.5) * 3;
+      const wv = Math.min(1, Math.max(0, (t - 0.55) / 0.3));
+      const osc = t > 0.9 ? wave(t, hz) * 24 : 0;
+      if (v.hand === 'L') { p.armLU = -26 - 126 * wv; p.armLF = -10 - 144 * wv - osc; p.armRU = 22; p.armRF = 8; }
+      else { p.armRU = 26 + 126 * wv; p.armRF = 10 + 144 * wv + osc; p.armLU = -22; p.armLF = -8; }
+      p.legRU = 82; p.legRF = 10;
+      p.legLU = 74; p.legLF = 6;
+      return p;
+    },
+  },
+  standstill: {
+    label: "Standing by", mood: "\u2026",
+    frame(t: number) {
+      const p = clonePose(REST);
+      p.bob = wave(t, 0.3) * 1.5;
+      p.headTilt = wave(t, 0.08) * 6;
+      return p;
+    },
+  },
+  paddleball: {
+    label: "Paddleball", mood: "boing\u2026 boing\u2026 boing", paddle: true,
+    // the ball's bounce (drawPaddleball) uses the SAME t, so the taps line up
+    frame(t: number) {
+      const p = clonePose(REST);
+      const tap = Math.abs(Math.sin(t * 1.5 * Math.PI));   // 0 at each tap, 1 between
+      const hit = 1 - tap;                                  // spikes to 1 on the tap
+      p.lean = 3;
+      p.bob = 1 + hit * 2;                                  // tiny dip on each tap
+      p.headTilt = -6 - hit * 4;                            // watching the ball, nods on the tap
+      // right arm holds the paddle out in front, giving little upward taps
+      p.armRU = 92 - hit * 8; p.armRF = 44 - hit * 10;
+      // left arm relaxed at the side
+      p.armLU = -14; p.armLF = -12;
+      return p;
+    },
+  },
+  toddle: {
+    label: "Toddle", mood: "wobble wobble!",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const sw = wave(t, 1.5);                    // quick little steps
+      p.bob = -Math.abs(sw) * 5 + 2;
+      p.lean = sw * 5;                            // big side-to-side sway
+      p.hunch = -6;
+      p.headTilt = -2 + sw * 3;
+      p.legRU = sw * 16; p.legLU = -sw * 16;
+      p.legRF = p.legRU - Math.max(0, sw) * 22;
+      p.legLF = p.legLU - Math.max(0, -sw) * 22;
+      p.armRU = 42 + sw * 8; p.armRF = 22;        // arms out for balance
+      p.armLU = -42 - sw * 8; p.armLF = -22;
+      return p;
+    },
+  },
+  elder: {
+    label: "Elder", mood: "back in my day\u2026", cane: true,
+    frame(t: number) {
+      // Cane held vertical (a planted 3rd leg). The hand stays steady; the body
+      // HEAVES down onto the cane each stride and hunches to bear its weight.
+      const p = clonePose(REST);
+      const s = wave(t, 0.5);                       // slow step cycle
+      const w = Math.abs(s);                        // weight-bearing, peaks mid-stride
+      p.hunch = -42 - w * 8;                        // deeply stooped over the cane
+      p.headTilt = -14;                             // head hangs forward
+      p.lean = 5 + s * 3;                           // rocks over the cane
+      p.bob = 1 + w * 15;                           // pronounced hitch onto the cane
+      p.legRU = s * 9; p.legLU = -s * 9;            // short shuffle steps
+      p.legRF = p.legRU - Math.max(0, s) * 7;
+      p.legLF = p.legLU - Math.max(0, -s) * 7;
+      p.armRU = 66; p.armRF = 34;                   // cane hand reaches well forward, clear of his legs
+      p.armLU = -12; p.armLF = -8;                  // free arm hangs
+      return p;
+    },
+  },
+  elderangry: {
+    label: "Elder (angry)", mood: "get off my lawn!", cane: true,
+    frame(t: number) {
+      const p = clonePose(REST);
+      p.hunch = -18;                              // straightens up to tell you off
+      p.headTilt = -4 + wave(t, 0.7) * 4;         // glaring up at you
+      p.lean = 2;
+      p.legRU = 10; p.legLU = -12; p.legLF = -6;  // planted stance
+      const shake = wave(t, 1.1);                 // BIG, SLOW cane swings
+      p.armRU = 140 + shake * 30;
+      p.armRF = 118 + shake * 46;
+      p.armLU = -18; p.armLF = -10;
+      return p;
+    },
+  },
+  fall: {
+    label: "Fell down", mood: "whoops!", seated: true,
+    // t = elapsed seconds of the ~4.5s fall-and-recover sequence (SEQ_FALL)
+    frame(t: number) {
+      const p = clonePose(REST);
+      if (t < SEQ_FALL - 0.9) {
+        // sitting on the ground \u2014 gentle, slow (no fast flailing)
+        p.lean = 6; p.hunch = 8;
+        p.headTilt = 8 + wave(t, 0.7) * 4;
+        p.legRU = 70; p.legRF = 12; p.legLU = 58; p.legLF = 8;   // sprawled out front
+        p.armRU = 50 + wave(t, 0.7) * 4; p.armRF = 26;
+        p.armLU = -50 - wave(t, 0.7) * 4; p.armLF = -24;
+      } else {
+        // being stood back up by the parent
+        const k = Math.min(1, (t - (SEQ_FALL - 0.9)) / 0.9);
+        p.lean = 6 * (1 - k);
+        p.hunch = 8 * (1 - k) - 4 * k;
+        p.headTilt = 8 * (1 - k);
+        p.legRU = 70 * (1 - k) + 8 * k; p.legRF = 12 * (1 - k) + 3 * k;
+        p.legLU = 58 * (1 - k) - 8 * k; p.legLF = 8 * (1 - k) - 3 * k;
+        p.armRU = 50 * (1 - k) + 120 * k; p.armLU = -50 * (1 - k) - 120 * k;   // arms lift as he's raised
+        p.armRF = 26; p.armLF = -24;
+      }
+      return p;
+    },
+  },
+  scold: {
+    label: "Come on, kid", mood: "up you get\u2026",
+    // t = elapsed of the same ~4.5s sequence: gesture -> swoop down -> lift
+    frame(t: number) {
+      const p = clonePose(REST);
+      if (t < 1.8) {
+        // "come on, man" \u2014 arm flung out to the side, exasperated head shake
+        const br = wave(t, 0.6);
+        p.lean = -3;
+        p.headTilt = -6 + wave(t, 0.8) * 5;
+        p.armRU = 96 + br * 5; p.armRF = 100 + br * 8;   // arm out and away
+        p.armLU = -18; p.armLF = -12;
+      } else if (t < SEQ_FALL - 0.9) {
+        // swoop DOWN toward the kid \u2014 bend over, reach down
+        const k = Math.min(1, (t - 1.8) / (SEQ_FALL - 0.9 - 1.8));
+        p.hunch = -46 * k; p.lean = 8 * k; p.headTilt = -20 * k; p.bob = 8 * k;
+        p.armRU = 15 + 58 * k; p.armRF = 11 + 34 * k;
+        p.armLU = -15 - 58 * k; p.armLF = -11 - 34 * k;
+      } else {
+        // stand back up, lifting the kid
+        const k = Math.min(1, (t - (SEQ_FALL - 0.9)) / 0.9);
+        p.hunch = -46 * (1 - k); p.lean = 8 * (1 - k); p.headTilt = -20 * (1 - k); p.bob = 8 * (1 - k);
+        p.armRU = 73; p.armRF = 45; p.armLU = -73; p.armLF = -45;   // arms forward, holding him up
+      }
+      return p;
+    },
+  },
+  toddlemarch: {
+    label: "Stiff toddle", mood: "wheee \u2014 whoa!",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const sw = wave(t, 1.3);
+      p.bob = -Math.abs(sw) * 3 + 2;
+      p.lean = sw * 7;                          // big wobble, about to topple
+      p.hunch = -4;
+      p.headTilt = -2 + sw * 4;
+      p.legRU = sw * 20; p.legLU = -sw * 20;    // STIFF legs, barely any knee bend
+      p.legRF = p.legRU * 0.2; p.legLF = p.legLU * 0.2;
+      p.armRU = 72 + sw * 10; p.armRF = 30;     // arms flared out wide for balance
+      p.armLU = -72 - sw * 10; p.armLF = -30;
+      return p;
+    },
+  },
+  presentup: {
+    label: "Presenting (up)", mood: "ta-da — check this one out!",
+    frame(t: number) {
+      // proud host pointing up at the feature above him; hand-on-hip, excited bounce
+      const p = clonePose(REST);
+      p.lean = -3;
+      p.bob = 1 + wave(t, 1.1) * 2;                 // proud little bounce
+      p.headTilt = -14;                             // looking up at it
+      p.armRU = 158 + wave(t, 1.1) * 4;             // right arm up-and-out, pointing
+      p.armRF = 150 + wave(t, 1.1) * 4;
+      p.armLU = -52; p.armLF = 132;                 // left hand on hip
+      return p;
+    },
+  },
+  heave: {
+    label: "Pick it up", mood: "…annd, lift.",
+    frame(t: number) {   // straight-back hinge: folds deep at the hips so the HEAD drops toward the line
+      const p = clonePose(REST);
+      const bend = Math.sin(Math.min(1, t / 1.2) * Math.PI);  // 0 -> 1 (crouch) -> 0
+      p.hunch = -42 * bend;                 // deep forward fold — the head bobs well down
+      p.bob = 10 * bend;
+      p.headTilt = -18 * bend;
+      p.legRU = 10 * bend; p.legRF = 8 * bend;      // legs stay nearly straight & PLANTED (shins ~down, 0°=down)
+      p.legLU = -10 * bend; p.legLF = -8 * bend;
+      p.armRU = 16 + 44 * bend; p.armRF = 6 + 34 * bend;     // reach down to the line, then lift back to carry
+      p.armLU = -16 - 44 * bend; p.armLF = -6 - 34 * bend;
+      return p;
+    },
+  },
+  heave2: {
+    label: "Pick it up (squat)", mood: "…annd, lift.",
+    frame(t: number) {   // knee-bending SQUAT: pelvis sinks, but shins stay near-vertical so the feet stay down
+      const p = clonePose(REST);
+      const bend = Math.sin(Math.min(1, t / 1.2) * Math.PI);  // 0 -> 1 (squat) -> 0
+      p.hunch = -14 * bend;                 // back fairly upright
+      p.bob = 22 * bend;                    // pelvis drops into the squat
+      p.headTilt = -12 * bend;
+      p.legRU = 38 * bend; p.legRF = 10 * bend;     // knee juts forward, shin stays ~down → foot PLANTED
+      p.legLU = -38 * bend; p.legLF = -10 * bend;   // (staggered lifting stance)
+      p.armRU = 30 * bend; p.armRF = 18 + 26 * bend;
+      p.armLU = -30 * bend; p.armLF = -18 - 26 * bend;
+      return p;
+    },
+  },
+  painhop: {
+    label: "Ow, my foot", mood: "OW ow ow!",
+    frame(t: number) {
+      const p = clonePose(REST);
+      // hop height varies: a slow envelope plus the odd extra-big hop, so it isn't a metronome
+      const hop = Math.abs(Math.sin(t * 3.5 * Math.PI));
+      const env = 0.68 + 0.32 * Math.sin(t * 0.9 + 0.5);          // slow rise/fall in bounciness
+      const bigHop = Math.pow(Math.max(0, Math.sin(t * 0.6)), 4); // occasional exaggerated leap
+      const h = hop * env + bigHop * 0.55;
+      p.bob = -h * 14 + 2;
+      p.lean = 8 + Math.sin(t * 2.3) * 5;                         // lurches side to side as he hops
+      p.hunch = -6 + Math.sin(t * 1.7) * 3;
+      p.headTilt = -22 + Math.sin(t * 3.1) * 9;                   // head winces/bobs, sometimes glancing up
+      const wig = Math.sin(t * 5.5) * 5;                          // the clutched foot jiggles
+      p.legRU = 46 + Math.sin(t * 2.1) * 6; p.legRF = -82 + wig;  // hurt foot yanked up
+      p.legLU = -6 + h * 4; p.legLF = -3;                         // good leg pumps with each hop
+      p.armRU = 40 + wig * 0.6; p.armRF = 98;                     // hands clutch the foot, jostling
+      p.armLU = -40 - wig * 0.6; p.armLF = -98;
+      return p;
+    },
+  },
+};
+
+ANIMATIONS.walk = ANIMATIONS.stroll;   // scene walker + old references
+
+// CTC-only poses. NOTE: these move to rigExtras.ts in the next commit; they live here
+// for now so the existing components keep compiling mid-port.
+Object.assign(ANIMATIONS, {
   cheer: {
-    frame(t) {
+    label: "Cheer", mood: "yes! got it!",
+    frame(t: number) {
       const p = ANIMATIONS.present.frame(t);
       const s = wave(t, 1.05);
       p.armRU = 150 + s * 6; p.armRF = 150 + s * 9;
@@ -669,7 +1313,8 @@ export const ANIMATIONS: Record<string, Animation> = {
   // but the whole body sways and steps side to side with a bouncy beat, and the arms pump
   // out of sync with each other, so it reads as dancing rather than a held celebration pose.
   dance: {
-    frame(t) {
+    label: "Dance", mood: "five for five, baby",
+    frame(t: number) {
       const p = clonePose(REST);
       const sway = wave(t, 1.1);
       const pumpR = wave(t, 2.2);
@@ -689,55 +1334,9 @@ export const ANIMATIONS: Record<string, Animation> = {
       return p;
     },
   },
-  greet: {
-    frame(t, v) {
-      v = v || {};
-      const hz = v.hz || 1.6;
-      const p = clonePose(REST);
-      const look = Math.min(1, t / 0.35);
-      p.bob = 1 + wave(t, 0.9) * 1.5;
-      p.hunch = -4 * look;
-      p.headTilt = -12 * look + wave(t, 0.5) * 3;
-      const wv = Math.min(1, Math.max(0, (t - 0.55) / 0.3));
-      const osc = t > 0.9 ? wave(t, hz) * 24 : 0;
-      if (v.hand === 'L') { p.armLU = -15 - 137 * wv; p.armLF = -11 - 143 * wv - osc; }
-      else { p.armRU = 15 + 137 * wv; p.armRF = 11 + 143 * wv + osc; }
-      return p;
-    },
-  },
-  // Seated variant of greet — sitting on an edge with legs dangling, waving hello.
-  greetseat: {
-    frame(t, v) {
-      v = v || {};
-      const hz = v.hz || 1.6;
-      const p = clonePose(REST);
-      const look = Math.min(1, t / 0.35);
-      p.bob = wave(t, 0.9) * 1.2;
-      p.hunch = -6 * look;
-      p.headTilt = -16 * look + wave(t, 0.5) * 3;
-      const wv = Math.min(1, Math.max(0, (t - 0.55) / 0.3));
-      const osc = t > 0.9 ? wave(t, hz) * 24 : 0;
-      if (v.hand === 'L') { p.armLU = -26 - 126 * wv; p.armLF = -10 - 144 * wv - osc; p.armRU = 22; p.armRF = 8; }
-      else { p.armRU = 26 + 126 * wv; p.armRF = 10 + 144 * wv + osc; p.armLU = -22; p.armLF = -8; }
-      p.legRU = 82; p.legRF = 10;
-      p.legLU = 74; p.legLF = 6;
-      return p;
-    },
-  },
-  present: {
-    frame(t) {
-      const p = clonePose(REST);
-      p.lean = -3;
-      p.bob = wave(t, 0.5) * 2;
-      p.headTilt = -6;
-      p.armRU = 88 + wave(t, 0.5) * 6;
-      p.armRF = 94 + wave(t, 0.5) * 8;
-      p.armLU = -52; p.armLF = 132;
-      return p;
-    },
-  },
   offer: {
-    frame(t) {
+    label: "Offer", mood: "pick a collection, any collection",
+    frame(t: number) {
       const p = ANIMATIONS.present.frame(t);
       const s = wave(t, 0.7);
       p.armRU = 78 + s * 3; p.armRF = 92 + s * 3;
@@ -746,7 +1345,8 @@ export const ANIMATIONS: Record<string, Animation> = {
     },
   },
   ponder: {
-    frame(t) {
+    label: "Ponder", mood: "hmm… is it the mayor or the council?",
+    frame(t: number) {
       const p = ANIMATIONS.present.frame(t);
       const s = wave(t, 0.45);
       p.armRU = 34; p.armRF = -162 + s * 3;
@@ -755,59 +1355,9 @@ export const ANIMATIONS: Record<string, Animation> = {
       return p;
     },
   },
-  // Lateral walk cycle: legs scissor front/back in profile, hunch carries the upper body.
-  // Ported from makeGait() in leremy-rig.js — same sine-driven stride/knee-bend math.
-  stroll: makeGait({ speed: 2.0, stride: 24, hunch: -7, knee: 30, arm: 14, bob: 3, head: -5 }),
-  // Same gait, arms locked low and fixed (hands occupied holding something between two carriers).
-  carry: (() => {
-    const g = makeGait({ speed: 1.8, stride: 18, hunch: -14, knee: 22, arm: 0, bob: 2.5, head: -6 });
-    const base = g.frame;
-    return { frame: (t: number) => { const p = base(t); p.armRU = 16; p.armRF = 6; p.armLU = -16; p.armLF = -6; return p; } };
-  })(),
-  // Straight-back hinge: folds deep at the hips so the reach goes down toward hand height,
-  // then straightens back up. bend (see heaveBend) goes 0 -> 1 over t:[0,0.6], 1 -> 0 over
-  // t:[0.6,1.2] — callers drive t directly to control which half of the motion plays.
-  heave: {
-    frame(t) {
-      const p = clonePose(REST);
-      const bend = heaveBend(t);
-      p.hunch = -42 * bend;
-      p.bob = 10 * bend;
-      p.headTilt = -18 * bend;
-      p.legRU = 10 * bend; p.legRF = 8 * bend;
-      p.legLU = -10 * bend; p.legLF = -8 * bend;
-      p.armRU = 16 + 44 * bend; p.armRF = 6 + 34 * bend;
-      p.armLU = -16 - 44 * bend; p.armLF = -6 - 34 * bend;
-      return p;
-    },
-  },
-};
+});
 
 /** The bend fraction (0 = upright, 1 = fully folded) `heave` reaches at a given t. */
 export function heaveBend(t: number): number {
   return Math.sin(Math.min(1, t / 1.2) * Math.PI);
-}
-
-interface GaitParams {
-  speed: number; stride: number; hunch: number; knee: number; arm: number; bob: number; head: number;
-}
-
-function makeGait(g: GaitParams): Animation {
-  return {
-    frame(t) {
-      const p = clonePose(REST);
-      const sw = Math.sin(t * g.speed * Math.PI);
-      p.bob = -Math.abs(sw) * g.bob + 2;
-      p.lean = -2;
-      p.hunch = g.hunch + wave(t, g.speed / 4) * 3;
-      p.headTilt = g.head + wave(t, g.speed / 2) * 3;
-      p.legRU = sw * g.stride;
-      p.legLU = -sw * g.stride;
-      p.legRF = p.legRU - Math.max(0, sw) * g.knee;
-      p.legLF = p.legLU - Math.max(0, -sw) * g.knee;
-      p.armRU = 4 - sw * g.arm; p.armRF = 2 - sw * g.arm * 0.6;
-      p.armLU = -4 + sw * g.arm; p.armLF = -2 + sw * g.arm * 0.6;
-      return p;
-    },
-  };
 }
