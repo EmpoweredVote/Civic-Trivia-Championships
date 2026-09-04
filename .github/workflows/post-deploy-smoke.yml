@@ -9,19 +9,29 @@ name: Post-deploy smoke
 # #130 on mount, so every page rendered as the error boundary while CI stayed
 # green. That outage was found by hand.
 #
-# Confirming the deploy needs each service to advertise its commit, because
-# nothing else identifies one:
-#   - process uptime says a restart happened, not which build restarted
-#   - the frontend bundle hash is not comparable to a CI build, since Render
-#     builds with dashboard-only env vars (CI produced index-CVOqwpXo.js while
-#     prod served index-Dhz6HpDW.js for the same source)
-# So the backend reports RENDER_GIT_COMMIT on /health/live and the frontend emits
-# it to /build-info.json at build time. No Render API key required.
+# FRONTEND is confirmed by commit, because nothing else identifies a build:
+# process uptime says a restart happened but not which build restarted, and the
+# bundle hash is not comparable to a CI build since Render builds with
+# dashboard-only env vars (CI produced index-CVOqwpXo.js while prod served
+# index-Dhz6HpDW.js for identical source). So the frontend build emits
+# RENDER_GIT_COMMIT to /build-info.json and this polls until it matches.
 #
-# Only services the push actually touched are checked. The static site has
-# rootDir: frontend and Render skips a build when nothing under it changed, so a
-# backend-only commit legitimately leaves the frontend on an older SHA — waiting
-# for it would hang forever.
+# BACKEND cannot be confirmed by commit from this repo, and deliberately is not.
+# Production CTC requests are served by the ev-accounts *engine*, which mounts a
+# copy of CTC's routers at api.empowered.vote/ctc — see
+# HANDOFF-engine-consolidation-VQ-CTC.md. Two consequences:
+#   - any SHA that engine reports is an ev-accounts SHA, never one of ours
+#   - its copy predates this repo's commit marker, so /ctc/health/live answers
+#     {status, uptime} with no commit field at all
+# The old dedicated civic-trivia-backend service this workflow used to point at
+# is suspended and serves no traffic, so checking it proved nothing. The backend
+# half is therefore a health check: is the API production actually uses
+# answering? That is the honest question this repo can ask about the backend.
+#
+# Only the frontend is commit-checked, and only when the push touched it. The
+# static site has rootDir: frontend and Render skips a build when nothing under
+# it changed, so a backend-or-docs-only commit legitimately leaves the frontend
+# on an older SHA — waiting for it would hang forever.
 
 on:
   push:
@@ -35,7 +45,9 @@ concurrency:
 
 env:
   PROD_URL: https://ctc.empowered.vote
-  API_BASE: https://civic-trivia-backend.onrender.com
+  # The engine, not the retired civic-trivia-backend service. This is the base
+  # the deployed bundle actually calls.
+  API_BASE: https://api.empowered.vote/ctc
 
 jobs:
   smoke:
@@ -88,14 +100,21 @@ jobs:
         run: |
           sha="${{ github.sha }}"
           want_front="${{ steps.changed.outputs.frontend }}"
-          want_back="${{ steps.changed.outputs.backend }}"
+          touched_back="${{ steps.changed.outputs.backend }}"
 
           front_commit() { curl -sf -H 'Cache-Control: no-cache' \
             "${PROD_URL}/build-info.json?cb=$(date +%s)" 2>/dev/null | jq -r '.commit // empty'; }
-          back_commit()  { curl -sf "${API_BASE}/health/live" 2>/dev/null | jq -r '.commit // empty'; }
+          # Health, not commit — see the BACKEND note at the top of this file.
+          api_status()   { curl -s -o /dev/null -w '%{http_code}' "${API_BASE}/health/live" 2>/dev/null || echo 000; }
 
           front_ok=$([ "$want_front" = "true" ] && echo no || echo skipped)
-          back_ok=$([  "$want_back"  = "true" ] && echo no || echo skipped)
+          back_ok=no   # always checked: any deploy can break the API the app calls
+
+          # backend/ in this repo no longer reaches production — the engine serves
+          # its own copy. Say so rather than implying this run verified it.
+          if [ "$touched_back" = "true" ]; then
+            echo "::warning::This push changed backend/, but production CTC is served by the ev-accounts engine's copy of these routers. Nothing here deploys it — port the change to ev-accounts. See HANDOFF-engine-consolidation-VQ-CTC.md."
+          fi
 
           # ~15 min. Deploys usually land in 30-90s, but the first run of this
           # check gave up at 6m while the frontend deploy took 10m48s in a queue —
@@ -112,9 +131,9 @@ jobs:
               front_ok=yes
               echo "frontend live at $sha after $((i*10))s"
             fi
-            if [ "$back_ok" = "no" ] && [ "$(back_commit)" = "$sha" ]; then
+            if [ "$back_ok" = "no" ] && [ "$(api_status)" = "200" ]; then
               back_ok=yes
-              echo "backend live at $sha after $((i*10))s"
+              echo "API healthy at ${API_BASE} after $((i*10))s"
             fi
             if [ "$front_ok" != "no" ] && [ "$back_ok" != "no" ]; then
               break
@@ -126,11 +145,17 @@ jobs:
           echo "back_state=$back_ok"   >> "$GITHUB_OUTPUT"
           echo "result: frontend=$front_ok backend=$back_ok"
 
-          # A changed service that never reports this SHA means the deploy did not
+          # A changed frontend that never reports this SHA means the deploy did not
           # land. Failing is correct: smoking the previous build would pass and
           # report false assurance, which is the exact gap this check closes.
-          if [ "$front_ok" = "no" ] || [ "$back_ok" = "no" ]; then
-            echo "::error::Deploy not confirmed within 15m (frontend=$front_ok backend=$back_ok, expected $sha). Prod may still be serving the previous build — check Render."
+          if [ "$front_ok" = "no" ]; then
+            echo "::error::Frontend deploy not confirmed within 15m (expected $sha). Prod may still be serving the previous build — check Render."
+            exit 1
+          fi
+          # The API the app calls never answered 200. The smoke below would show
+          # only a symptom (a near-empty page), so name the cause here.
+          if [ "$back_ok" = "no" ]; then
+            echo "::error::${API_BASE}/health/live never returned 200 within 15m. The engine serving CTC is down or unreachable."
             exit 1
           fi
 
@@ -153,8 +178,9 @@ jobs:
             echo "| | |"
             echo "|---|---|"
             echo "| commit | \`${{ github.sha }}\` |"
-            echo "| frontend | ${{ steps.wait.outputs.front_state }} |"
-            echo "| backend | ${{ steps.wait.outputs.back_state }} |"
+            echo "| frontend (commit confirmed) | ${{ steps.wait.outputs.front_state }} |"
+            echo "| API health (\`${API_BASE}\`) | ${{ steps.wait.outputs.back_state }} |"
             echo ""
-            echo "_\`skipped\` means the push touched nothing in that service, so Render did not redeploy it._"
+            echo "_Frontend \`skipped\` means the push touched nothing under \`frontend/\`, so Render did not redeploy it._"
+            echo "_The API is health-checked, not commit-checked: production CTC is served by the ev-accounts engine's copy of these routers, so no SHA from this repo ever appears there. See \`HANDOFF-engine-consolidation-VQ-CTC.md\`._"
           } >> "$GITHUB_STEP_SUMMARY"
