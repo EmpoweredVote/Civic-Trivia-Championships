@@ -82,9 +82,20 @@ plain figure. That frees the segments to be grouped by line width instead of by 
 - one path for the torso (`torsoW`)
 - one fill for the head
 
-Four canvas calls instead of fifteen. Implemented as `drawBatched()` in `poseCache.ts` on the
-spike branch, and worth about **+37% on desktop and +33% on a mid phone** over the current
-path.
+Four canvas calls instead of fifteen, worth about **+37% on desktop and +33% on a mid phone**
+over the current path.
+
+**Correction to a claim made in this document's first version.** I described the batched path
+as producing identical pixels. It does not, and the difference was then measured rather than
+assumed: `draw()` overlaps two round-capped capsules at each knee and elbow, while the batched
+path draws one polyline with a round *join* there. Across all 46 animations at five times
+each, about **15% of a figure's edge pixels change, by a mean of 6-10 of 255** (worst single
+channel 128). Rendered side by side at 3x the shipping size the two are indistinguishable, and
+at the size figures actually ship -- roughly 30px tall -- it is far below perception. If
+anything the joined path is marginally cleaner, since two overlapping capsules
+double-composite their antialiased edges where they meet and a join does not.
+
+The right claim is *visually indistinguishable*, not *identical*.
 
 It beats the tile cache at every device class while being roughly 40 lines with no warm-up
 cost, no memory growth, no per-colour/scale/flip tile explosion, and no phase quantisation.
