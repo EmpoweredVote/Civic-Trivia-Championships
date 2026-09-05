@@ -43,6 +43,16 @@ interface BobitFieldProps {
   onFigureClick?: (figure: FieldFigure) => void;
   /** Speech bubbles to show, keyed by figure id. Lifetimes are managed by the field. */
   bubbles?: Record<string, string>;
+  /**
+   * Per-frame figure source. When present this is called once per frame and replaces
+   * `figures` for that frame.
+   *
+   * The crowd's figures change every frame -- newcomers walk in, the celebration tier swaps
+   * poses, a victim rises -- and a React prop cannot carry that without re-rendering sixty
+   * times a second. This keeps the choreography inside the existing rAF loop and React out
+   * of the per-frame path entirely.
+   */
+  figuresFor?: (t: number, dt: number) => FieldFigure[];
   className?: string;
   style?: CSSProperties;
 }
@@ -55,7 +65,8 @@ const DPR_CAP = 1.5;
 const INK_PAD = 6;
 
 export function BobitField({
-  figures, height, animate = true, interactive = false, onFigureClick, bubbles, className, style,
+  figures, height, animate = true, interactive = false, onFigureClick, bubbles, figuresFor,
+  className, style,
 }: BobitFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scratchRef = useRef<HTMLCanvasElement | null>(null);
@@ -79,6 +90,8 @@ export function BobitField({
   const probeRef = useRef<((f: FieldFigure, x: number, y: number) => boolean) | null>(null);
   // Kept in a ref so changing the handler does not tear down and rebuild every listener.
   const clickRef = useRef(onFigureClick);
+  // Same reason as clickRef: swapping the callback must not tear down the animation loop.
+  const figuresForRef = useRef(figuresFor);
   // Figures with xFrac resolved against the measured width. Pointer handlers read THIS, not
   // figuresRef, or a hit test would use unresolved fractional x values as pixels.
   const resolvedRef = useRef<FieldFigure[]>(figures);
@@ -86,6 +99,7 @@ export function BobitField({
 
   useEffect(() => { figuresRef.current = figures; }, [figures]);
   useEffect(() => { clickRef.current = onFigureClick; }, [onFigureClick]);
+  useEffect(() => { figuresForRef.current = figuresFor; }, [figuresFor]);
 
   // Opening resets a bubble's lifetime, so only genuinely new or changed text re-arms it --
   // otherwise a parent re-render would hold every bubble open forever.
@@ -212,7 +226,10 @@ export function BobitField({
     const renderFrame = (t: number, dt: number) => {
       clockRef.current = t;
       const w = widthRef.current;
-      const all = resolveX(figuresRef.current, w);
+      const source = figuresForRef.current
+        ? figuresForRef.current(t, dt)
+        : figuresRef.current;
+      const all = resolveX(source, w);
       resolvedRef.current = all;
       const poof = poofRef.current;
 
