@@ -38,7 +38,15 @@ export function overflowCount(state: CrowdState): number {
 export function crowdFigures(
   state: CrowdState, _t: number, band: CrowdBand, darkMode: boolean,
 ): FieldFigure[] {
-  const ordered = slotOrder(state.residents);
+  // Slots are laid out over the residents PLUS whoever is currently being lost, so the room
+  // does not close ranks the instant he bursts. Everyone keeps the spot he had, and the gap
+  // reads as one particular person missing rather than as a smaller crowd -- which is the
+  // whole point of the sequence. The room compacts only once the loss clears.
+  const ordered = slotOrder(
+    state.loss && !state.residents.includes(state.loss.id)
+      ? [...state.residents, state.loss.id]
+      : state.residents,
+  );
   const shown = ordered.slice(0, CROWD_CAP);
   const total = shown.length;
 
@@ -54,6 +62,9 @@ export function crowdFigures(
     const pos = slotPosition(i, total, band);
     const arriving = state.arriving[id] !== undefined;
     const victim = state.loss?.id === id;
+
+    // He holds his slot but stops being drawn the moment the burst takes him.
+    if (victim && !state.residents.includes(id)) continue;
 
     let anim: string;
     if (victim) anim = 'fall';                      // limp, being lifted
