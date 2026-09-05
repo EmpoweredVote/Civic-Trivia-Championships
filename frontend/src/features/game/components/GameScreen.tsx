@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKeyPress } from '../hooks/useKeyPress';
 import { GameTimer } from './GameTimer';
@@ -17,6 +17,7 @@ import { FlagButton } from './FlagButton';
 import { AdminArchiveButton } from './AdminArchiveButton';
 import { CelebrationEffects } from '../../../components/animations/CelebrationEffects';
 import { DegradedBanner } from '../../../components/DegradedBanner';
+import { CollectionCrowd } from '../../collection/CollectionCrowd';
 import { useAuthStore } from '../../../store/authStore';
 import { useConfettiStore } from '../../../store/confettiStore';
 import { useThemeStore } from '../../../store/themeStore';
@@ -116,6 +117,8 @@ export function GameScreen({
   const timerScale = Math.min(1.5, Math.max(1, viewportWidth / 1280));
   const timerSizeFull = Math.round(80 * timerScale);
   const timerSizeSmall = Math.round(56 * timerScale);
+  // Same breakpoint BobbitCivicFactSitter uses to pick a bobit scale.
+  const isMobile = viewportWidth < 640;
 
   // Calculate adjusted durations based on multiplier
   const questionDuration = Math.round(QUESTION_DURATION * timerMultiplier);
@@ -323,6 +326,23 @@ export function GameScreen({
   // Keyboard shortcut for Learn More (only during reveal when content exists)
   const canOpenLearnMore = state.phase === 'revealing' && !!learningContent && !isLearnMoreOpen;
   useKeyPress('l', handleOpenLearnMore, canOpenLearnMore);
+
+  // The crowd reacts to the most recent revealed answer. A fresh object identity each time an
+  // answer lands is what makes the effect fire again for a question seen in an earlier match.
+  const lastAnswer = useMemo(() => {
+    const a = state.answers[state.answers.length - 1];
+    if (!a) return null;
+    return { questionId: a.questionId, correct: a.correct, streak: state.currentStreak };
+  }, [state.answers, state.currentStreak]);
+
+  // A clean sweep, checked on the last reveal rather than at phase 'complete': Game.tsx swaps
+  // in ResultsScreen the moment the phase turns, so this component is already gone by then and
+  // a 'complete' gate would never fire. The last reveal is also where it belongs -- the
+  // fireworks land over the crowd that just filled up.
+  const finished5of5 =
+    state.answers.length === state.totalQuestions &&
+    state.answers.every(a => a.correct);
+
 
   // Handle timeout with flash message
   const onTimeout = () => {
@@ -757,6 +777,19 @@ export function GameScreen({
 
         </div>{/* end max-w-[700px] */}
         </div>{/* end question area */}
+
+        {/* The collection crowd. In flow, never an overlay: it must not cover the question or
+            any answer option. flex-shrink-0 keeps the band its full height and lets the
+            content column above it take the compression instead. */}
+        <div className="mx-auto w-full flex-shrink-0" style={{ maxWidth: 'clamp(700px, 55vw, 1500px)' }}>
+          <CollectionCrowd
+            slug={state.collectionSlug}
+            darkMode={darkMode}
+            isMobile={isMobile}
+            lastAnswer={lastAnswer}
+            finished5of5={finished5of5}
+          />
+        </div>
       </div>
 
       {/* Learn More modal - rendered outside main content */}
