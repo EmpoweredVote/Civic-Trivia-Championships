@@ -468,6 +468,86 @@ export function drawQuizCard(ctx: CanvasRenderingContext2D, x: number, y: number
 }
 
 /**
+ * Batched figure draw: a quarter of the canvas calls, visually indistinguishable output.
+ *
+ * `draw()` issues a beginPath/moveTo/lineTo/stroke per limb segment -- about fifteen canvas
+ * calls per figure per frame. The Stage 2 spike measured the crowd as bound by that call
+ * count rather than by fill: shrinking figures barely moved the cost, which is not how a
+ * fill-bound cost behaves.
+ *
+ * A bobit is drawn in exactly ONE colour, so the painter's order `draw()` maintains -- back
+ * leg, back arm, torso, front leg, front arm, head -- has no visible effect on a plain
+ * figure. Overlapping strokes of the same colour are indistinguishable in any order. That
+ * frees the segments to be grouped by line width instead of by body part: one path for the
+ * legs, one for the arms, one for the torso, one fill for the head. Four calls.
+ *
+ * Worth about +37% population on desktop and +33% on a mid-tier phone, and it beat a
+ * pre-rendered pose-tile cache at every device class while being a fraction of the code.
+ *
+ * NOT pixel-identical, and the difference was measured rather than assumed. `draw()` overlaps
+ * two round-capped capsules at each knee and elbow; this draws one polyline with a round
+ * JOIN there. The coverage differs slightly, so about 15% of a figure's edge pixels change by
+ * a mean of ~6-10 of 255. Rendered side by side at 3x the shipping size the two are
+ * indistinguishable, and at the size figures actually ship (~30px tall) it is far below
+ * perception. If anything the joined path is marginally cleaner: two overlapping capsules
+ * double-composite their antialiased edges where they meet, and a join does not.
+ *
+ * ONLY valid for a plain monochrome figure. Anything carrying a prop or a second colour --
+ * the trophy pair, witsend's desk, elder's cane -- must still go through `draw()`, where the
+ * ordering genuinely matters because the prop is a different colour. `canBatch()` is the
+ * predicate; callers should use it rather than deciding for themselves.
+ */
+export function drawBatched(
+  ctx: CanvasRenderingContext2D,
+  j: Joints,
+  cfg = CFG,
+  color = '#172B4D',
+) {
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+
+  // legs
+  ctx.lineWidth = cfg.legW;
+  ctx.beginPath();
+  ctx.moveTo(j.hipL.x, j.hipL.y); ctx.lineTo(j.kL.x, j.kL.y); ctx.lineTo(j.fL.x, j.fL.y);
+  ctx.moveTo(j.hipR.x, j.hipR.y); ctx.lineTo(j.kR.x, j.kR.y); ctx.lineTo(j.fR.x, j.fR.y);
+  ctx.stroke();
+
+  // arms
+  ctx.lineWidth = cfg.armW;
+  ctx.beginPath();
+  ctx.moveTo(j.sL.x, j.sL.y); ctx.lineTo(j.eL.x, j.eL.y); ctx.lineTo(j.hL.x, j.hL.y);
+  ctx.moveTo(j.sR.x, j.sR.y); ctx.lineTo(j.eR.x, j.eR.y); ctx.lineTo(j.hR.x, j.hR.y);
+  ctx.stroke();
+
+  // torso
+  ctx.lineWidth = cfg.torsoW;
+  ctx.beginPath();
+  ctx.moveTo(j.P.x, j.P.y);
+  ctx.quadraticCurveTo(j.M.x, j.M.y, j.shoulderC.x, j.shoulderC.y);
+  ctx.stroke();
+
+  // head
+  ctx.beginPath();
+  ctx.arc(j.H.x, j.H.y, cfg.R, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/**
+ * Whether these draw options describe a plain monochrome figure, and can therefore take the
+ * batched path. Every prop flag disqualifies it: props are drawn in their own colours and
+ * over or under specific limbs, so their ordering is load-bearing.
+ */
+export function canBatch(opts: DrawOpts = {}): boolean {
+  return !(
+    opts.mega || opts.book || opts.phone || opts.swirl || opts.laptop ||
+    opts.chair || opts.desk || opts.cane || opts.paddle || opts.card || opts.arm
+  );
+}
+
+/**
  * A puff of smoke: soft grey blobs scattered around (x, y), growing with `spread` and fading
  * with `alpha`. One function serves both the slow build-up under a doomed Bobit and the burst
  * when he goes — only spread and alpha differ. The scatter is derived from `seed` rather than

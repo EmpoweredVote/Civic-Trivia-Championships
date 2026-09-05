@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
-import { CFG, computePose, draw, drawShadow, drawSmoke } from './leremyRig';
+import { CFG, computePose, draw, drawBatched, canBatch, drawShadow, drawSmoke } from './leremyRig';
 import { ALL_ANIMATIONS } from './rigExtras';
 import { pelvisOffset, sortByDepth, figureBounds, resolveX } from './fieldGeometry';
 import type { FieldFigure } from './fieldGeometry';
@@ -139,10 +139,7 @@ export function BobitField({
       const groundY = f.groundY;
       if (f.shadow !== false) drawShadow(c, f.x, groundY, 16 * f.scale);
 
-      c.save();
-      c.translate(f.x, groundY - pelvisOffset(animKey) * f.scale);
-      c.scale(f.flip ? -f.scale : f.scale, f.scale);
-      draw(c, computePose(pose, CFG, { x: 0, y: 0 }), CFG, {
+      const opts = {
         color: f.color,
         time: t,
         ...(anim.book ? { book: true } : {}),
@@ -155,7 +152,16 @@ export function BobitField({
         ...(anim.mega ? { mega: true } : {}),
         ...(anim.arm ? { arm: anim.arm } : {}),
         ...f.props,
-      });
+      };
+
+      c.save();
+      c.translate(f.x, groundY - pelvisOffset(animKey) * f.scale);
+      c.scale(f.flip ? -f.scale : f.scale, f.scale);
+      const joints = computePose(pose, CFG, { x: 0, y: 0 });
+      // A plain figure takes the batched path: same pixels, four canvas calls instead of
+      // fifteen. Anything with a prop keeps the ordered path, where the ordering matters.
+      if (canBatch(opts)) drawBatched(c, joints, CFG, f.color);
+      else draw(c, joints, CFG, opts);
       c.restore();
     };
 
