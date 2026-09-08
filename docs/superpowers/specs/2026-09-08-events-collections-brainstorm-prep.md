@@ -126,7 +126,14 @@ Methodology caveat: the detector counts any question whose four options all cont
 
 ### Remediation progress and the recipe
 
-**Done:** Pittsburgh, PA (27 questions) and Asheville, NC (27) — both now 7/7/7/6 on value rank and even on display position. **Remaining: ~1,100.** Next worst by bias, then by size: Massachusetts (23 numeric, 0% at extremes), California (21, 0%), Washington DC (58), Phoenix AZ (40).
+**Done:** Pittsburgh, PA (27 questions) and Asheville, NC (27) — both now 7/7/7/6 on value rank and even on display position. **Remaining: ~1,100.** Next worst by bias, then by size: Washington DC (58), Phoenix AZ (40).
+
+**Pass 1 done, pass 2 outstanding:** Massachusetts and California (2026-09-08). Value rank went 0/6/8/0 → **4/3/3/4** (MA, 57.1% at an extreme) and 0/8/7/0 → **4/4/3/4** (CA, 53.3%), 20 questions rewritten, correct value preserved on every one and verified by diff before the write. Both were at 0.0% before. Their **display-position** pass is still owed — see the position finding below, which is why it was not run blind.
+
+Two things worth keeping from that pass:
+
+- **Sort the options ascending and rank becomes position.** For a magnitude question displayed in ascending order, value rank *is* display position, so a uniform rank distribution delivers a uniform position distribution for free — one edit fixes both, and the options still read cleanly. This is strictly better than rank-then-rotate, which un-sorts the series.
+- **Singular/plural silently drops a question out of the audit.** `unitOf("1 year")` is `year` and `unitOf("2 years")` is `years`, so a `1 year` option makes `units.size === 2` and `magnitudeRank` returns null. That is why `mas-006/056/057/089` and `cas-003` are excluded — they are ordinary term-length questions, not edge cases. Repairing a bracket by reaching for `1 year` as the low distractor removes the question from the metric instead of fixing it. Nine of MA's 23 numeric questions are excluded this way; the audit's denominator is smaller than it looks.
 
 The recipe, per collection, is two passes — **both are needed**, and neither alone leaves a clean collection:
 
@@ -139,6 +146,37 @@ The recipe, per collection, is two passes — **both are needed**, and neither a
 - **Mixed units cannot be value-compared.** `ashnc-073` offered "$500 million" against "$3 billion" — extraction sorts `500` above `6`. Normalise the units as a content repair. This also means the **54.2% project-wide figure is understated**, since mixed-unit questions were mis-ranked in the original survey.
 
 Also constrained by hand rather than formula: bounded series like "4 out of 5" cannot reach rank 1, because too few values exist above the answer.
+
+## Project-wide finding: answer-position collapse (found 2026-09-08)
+
+Found while pulling the display-position baseline for the Massachusetts/California bracketing fix. **This is worse than the bracketing bias and it is live in production.**
+
+Options are stored in `trivia.questions.options` and served in stored order. `correct_answer` is stripped by `stripAnswers()` before the payload goes out, but nothing shuffles the options themselves — verified in both `backend/src/routes/game.ts` and the canonical `ev-accounts/backend/src/trivia/routes/game.ts`. Only *questions* are shuffled (`questionService.ts`, `gameModes.ts`), never the options within one. **So the stored index is the position the player sees.**
+
+Across 42 collections, the correct answer's stored position:
+
+| Collection | A | B | C | D | Best blind guess |
+|---|---|---|---|---|---|
+| Missouri | 91 | 0 | 0 | 0 | **100.0%** |
+| St. Louis, MO | 92 | 0 | 0 | 0 | **100.0%** |
+| New York | 87 | 0 | 0 | 0 | **100.0%** |
+| Louisiana | 93 | 0 | 1 | 0 | **98.9%** |
+| Springfield, MO | 93 | 1 | 0 | 0 | **98.9%** |
+| Plano, TX | 63 | 21 | 0 | 1 | 74.1% |
+| North Carolina | 67 | 9 | 15 | 0 | 73.6% |
+| United States (Federal) | 3 | 83 | 23 | 4 | 73.5% |
+
+**In five collections — 457 active questions — the first option is always the right one.** "Always pick A" wins every game in Missouri, St. Louis and New York. Federal, the collection every player sees, sits at 73.5% on "always pick B".
+
+Only six collections are near uniform (Pittsburgh, Bend, Milwaukee, Asheville, Madison, Wisconsin — 25.5–30.0%); those are the ones a 6d rotation has actually been run against. **Twenty-two collections are above 45%.** The unweighted picture: a player who learns one letter per collection beats most of the bank without reading a single question.
+
+Why this hid: the 6d rotation is a per-collection manual step, and the collections it was run on are exactly the collections that look fine. Nothing asserts it. `audit-collection-readiness.ts` gained a *value-rank* check on 2026-09-08 but still has no *position* check, so a 91-of-91-at-A collection passes the audit silently.
+
+Notes for whoever fixes it:
+
+- Rotation is safe on prose options but **un-sorts a numeric series**, so magnitude questions want the sort-ascending-and-rebracket treatment from the section above instead. The two passes have to be applied to disjoint sets.
+- The five 100%-at-A collections cannot be repaired by rotation alone in the way the others can: with every answer at A, any rotation is a pure permutation of a degenerate distribution, which is fine — but it means their *value* ranks were never examined either. Expect them to need both passes.
+- This deserves an audit assertion of its own (position histogram, same 30%-style threshold as the value-rank check) so it cannot regress silently again. Without it the fix decays the moment new questions land.
 
 ## Related work already banked
 
