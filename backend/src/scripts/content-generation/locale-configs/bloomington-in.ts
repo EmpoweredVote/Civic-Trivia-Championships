@@ -136,4 +136,47 @@ export const bloomingtonConfig: LocaleConfig = {
     // Indiana Election Division
     'https://www.in.gov/sos/elections',
   ],
+
+  /**
+   * Current officeholders, for generating expiring current-officeholder questions.
+   *
+   * Verified 2026-09-08 against the city's own pages (bloomington.in.gov/council and
+   * /offices) and the BPD page — not from memory or inference. Bloomington had no
+   * officeholder list at all before this, which is why its expiring-question ratio sat
+   * at 5.4% against a 15-30% target: the generator had nothing to write these from.
+   *
+   * All eleven elected terms run concurrently from 2024-01-01 and end 2027-12-31 —
+   * Indiana holds municipal elections in odd years, so the next Bloomington municipal
+   * election is 2027, NOT 2026. (A prior generated pack assumed a 2026 mayoral race and
+   * produced fifteen questions on a race that does not exist; those were archived
+   * 2026-09-08. Do not reintroduce that premise.)
+   *
+   * DELIBERATELY NOT ENCODED: Isak Nti Asare is Council President, Sydney Zulich Vice
+   * President and Courtney Daily Parliamentarian as of 2026-09-08. Those titles are held
+   * by seat holders but rotate independently of the four-year seat term, so encoding them
+   * as `role` would generate questions that read as valid until 2027 while going stale far
+   * sooner. If leadership questions are wanted, give them their own entries with a term
+   * end matching the leadership year, not the seat.
+   */
+  officeholders: [
+    { name: 'Kerry Thomson', role: 'Mayor', termEnd: '2027-12-31T00:00:00Z' },
+    { name: 'Nicole Bolden', role: 'City Clerk', termEnd: '2027-12-31T00:00:00Z' },
+
+    // Six district seats, numbered I-VI on the city's own pages.
+    { name: 'Isabel Piedmont-Smith', role: 'Common Council Member', district: 'District I', termEnd: '2027-12-31T00:00:00Z' },
+    { name: 'Kate Rosenbarger', role: 'Common Council Member', district: 'District II', termEnd: '2027-12-31T00:00:00Z' },
+    { name: 'Hopi Stosberg', role: 'Common Council Member', district: 'District III', termEnd: '2027-12-31T00:00:00Z' },
+    { name: 'Dave Rollo', role: 'Common Council Member', district: 'District IV', termEnd: '2027-12-31T00:00:00Z' },
+    { name: 'Courtney Daily', role: 'Common Council Member', district: 'District V', termEnd: '2027-12-31T00:00:00Z' },
+    { name: 'Sydney Zulich', role: 'Common Council Member', district: 'District VI', termEnd: '2027-12-31T00:00:00Z' },
+
+    // Three at-large seats.
+    { name: 'Isak Nti Asare', role: 'Common Council Member', district: 'At-Large', termEnd: '2027-12-31T00:00:00Z' },
+    { name: 'Matt Flaherty', role: 'Common Council Member', district: 'At-Large', termEnd: '2027-12-31T00:00:00Z' },
+    { name: 'Andy Ruff', role: 'Common Council Member', district: 'At-Large', termEnd: '2027-12-31T00:00:00Z' },
+
+    // Appointed, not elected — no fixed term. The date is a re-verification horizon
+    // aligned to the elected cycle, not a term expiry.
+    { name: 'Michael Diekhoff', role: 'Chief of Police', termEnd: '2027-12-31T00:00:00Z' },
+  ],
 };
