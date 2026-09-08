@@ -121,6 +121,59 @@ async function tryLoadLocaleConfig(slug: string): Promise<LocaleConfig | null> {
   return null;
 }
 
+// ─── Distractor bracketing ────────────────────────────────────────────────────
+/**
+ * Where the correct value ranks among four numeric options (1 = smallest offered,
+ * 4 = largest), or null when the options are not a comparable magnitude series.
+ *
+ * Why this check exists: a survey on 2026-09-08 found the generator writes the true
+ * value then pads it with two smaller and one larger distractor, near-universally.
+ * Across 1,154 numeric questions -- 31% of the active bank -- the answer was third of
+ * four 54.2% of the time and at either extreme only 14%, against a 50% baseline.
+ * "Sort the numbers, take the third" scored 54% project-wide and 96% in Pittsburgh.
+ *
+ * This is deliberately NOT a qualityRules rule. Those are per-question, and a single
+ * question whose answer sits in the middle is perfectly fine -- the defect only exists
+ * as a distribution across a collection, so it belongs in a collection-level audit.
+ *
+ * Note the answer-position rotation (step 6d of the create-collection skill) does NOT
+ * fix this and actively hides it: rotation changes where options are displayed, so the
+ * position histogram comes out uniform while the value-rank exploit survives intact for
+ * anyone who sorts the numbers. Both checks are needed.
+ */
+export function magnitudeRank(options: string[], correctIndex: number): number | null {
+  if (options.length !== 4) return null;
+  if (correctIndex < 0 || correctIndex > 3) return null;
+
+  // A prose date is not a magnitude. "December 5, 1791" and "July 4, 1776" extract to
+  // 51791 and 41776, which sorts them backwards. Found in asheville-nc.
+  const MONTHS =
+    /\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i;
+  if (options.some((o) => MONTHS.test(o))) return null;
+
+  // Options must share a unit, or they cannot be compared. "$500 million" against
+  // "$3 billion" extracts to 500 vs 3 -- backwards. Found in asheville-nc.
+  const unitOf = (o: string) =>
+    (o.replace(/[0-9][0-9,.]*/g, ' ').match(/[a-z%$+]+/gi) || [])
+      .join(' ')
+      .toLowerCase()
+      .trim();
+  const units = new Set(options.map(unitOf));
+  if (units.size > 1) return null;
+
+  const valueOf = (o: string): number | null => {
+    const m = o.match(/[0-9][0-9,]*(\.[0-9]+)?/);
+    if (!m) return null;
+    const n = Number(m[0].replace(/,/g, ''));
+    return Number.isFinite(n) ? n : null;
+  };
+  const values = options.map(valueOf);
+  if (values.some((v) => v === null)) return null;
+
+  const correct = values[correctIndex] as number;
+  return (values as number[]).filter((v) => v < correct).length + 1;
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -292,6 +345,59 @@ async function main(): Promise<void> {
 
     // ─── Officeholder coverage check (non-blocking) ──────────────────────────
     const localeConfig = await tryLoadLocaleConfig(slug);
+    // ── Distractor bracketing ────────────────────────────────────────────────
+    const optionRows = await db
+      .select({ options: questions.options, correctAnswer: questions.correctAnswer })
+      .from(questions)
+      .where(sql`${inCollection} AND ${questions.status} IN ('draft', 'active')`);
+
+    const rankCounts = [0, 0, 0, 0];
+    let magnitudeTotal = 0;
+    for (const row of optionRows) {
+      const opts = (row.options as string[] | null) ?? [];
+      const rk = magnitudeRank(opts, row.correctAnswer);
+      if (rk === null) continue;
+      magnitudeTotal++;
+      rankCounts[rk - 1]++;
+    }
+
+    if (magnitudeTotal >= 8) {
+      const atExtreme = rankCounts[0] + rankCounts[3];
+      const pctExtreme = (100 * atExtreme) / magnitudeTotal;
+      const worst = Math.max(...rankCounts);
+      const pctWorst = (100 * worst) / magnitudeTotal;
+
+      console.log('\n  Distractor Bracketing (numeric questions):');
+      console.log(`    Magnitude questions: ${magnitudeTotal}`);
+      console.log(
+        `    Answer is smallest/2nd/3rd/largest of four: ` +
+          `${rankCounts[0]} / ${rankCounts[1]} / ${rankCounts[2]} / ${rankCounts[3]}`
+      );
+      console.log(
+        `    At an extreme: ${pctExtreme.toFixed(1)}% (healthy ~50%)  |  ` +
+          `best single guess: ${pctWorst.toFixed(1)}% (random 25%)`
+      );
+
+      // 30% is deliberately lenient against the 50% ideal -- small collections are
+      // lumpy, and this should fire on a real pattern, not on noise.
+      if (pctExtreme < 30) {
+        console.log(
+          `\n  WARNING: only ${pctExtreme.toFixed(1)}% of numeric answers are the ` +
+            `smallest or largest option offered (healthy ~50%).`
+        );
+        console.log(
+          '  Distractors are bracketing the true value, so "sort the numbers and pick ' +
+            `the ${rankCounts.indexOf(worst) + 1}${['st', 'nd', 'rd', 'th'][rankCounts.indexOf(worst)]}" ` +
+            `scores ${pctWorst.toFixed(1)}% without any knowledge.`
+        );
+        console.log(
+          '  Fix by redesigning distractors so the answer sometimes sits entirely above ' +
+            'or below them (for "9 members", offer 9/11/13/15, not 5/7/9/11).'
+        );
+        console.log('  Rotating answer POSITIONS does not fix this and masks it.');
+      }
+    }
+
     if (localeConfig?.officeholders && localeConfig.officeholders.length > 0) {
       console.log('\n  Officeholder Coverage:');
 
