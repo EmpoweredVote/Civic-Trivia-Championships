@@ -97,6 +97,33 @@ Not proposals — open questions the audit raised.
 6. **Dedup across days is unsolved.** Findings 2's contradictions are a correctness bug in the live pool right now, independent of any framing policy.
 7. **Renaming United States.** Chris reads it as American History / American Judicial History. Does it split, or get renamed?
 
+## Project-wide finding: distractor bracketing (found 2026-09-08)
+
+Not events-specific, but it belongs with the rules discussion because it is exactly the kind of thing a rules engine can check and a human reviewer cannot see.
+
+For questions whose four options are all numeric, the correct value's **rank among the four offered** is:
+
+| Rank of correct value | Share | Expected |
+|---|---|---|
+| Smallest | 4.5% | 25% |
+| Second | 31.8% | 25% |
+| **Third** | **54.2%** | 25% |
+| Largest | 9.5% | 25% |
+
+**1,154 questions — 31% of the active bank.** The generator writes the true value then pads it with two smaller and one larger distractor, near-universally. "Sort the numbers, take the third" scores **54% project-wide**; **96% in Pittsburgh, PA** (27 of 28). Massachusetts and California have *zero* questions where the answer is the smallest or largest of the four.
+
+Pittsburgh, ascending, correct value third every time: `7,8,9,11` · `2,3,4,6 years` · `1758,1776,1794,1816` · `1732,1745,1754,1763` · `1958,1965,1974,1981` · `75,100,150,200 feet` · `12,24,36,50 acres`.
+
+**The existing 6d rotation masks this.** Rotation changes where options are *displayed*, so the answer-position histogram comes out uniform (Bloomington: 15/14/14/14 after a rotation on 2026-09-08) while the value-rank exploit survives untouched. The documented anti-bias procedure fixes the symptom it measures and is blind to the bigger one.
+
+Rotation cannot fix it — the bias is in the *values chosen*, so it needs distractors that sometimes sit entirely above or entirely below the true value (for "9 members", offer `9/11/13/15`, not `5/7/9/11`).
+
+Two checkable rules fall out, both cheap:
+- **Per question:** flag when the correct value is never at an extreme across a collection's numeric questions.
+- **Per collection:** assert the rank distribution is roughly uniform, the same way 6d asserts it for display position.
+
+Methodology caveat: the detector counts any question whose four options all contain a digit, which catches label-style options like "District 1 / District 2 / District 4 / District 8" where the numbers are names rather than magnitudes. Rare enough not to move the numbers, but a real rule would need to exclude them.
+
 ## Related work already banked
 
 - `elc-1-011` (Bloomington, archived 2026-09-08) made a named individual's "Republican party activism" the **correct answer** — the same failure class as 3b/3c, from the election-detection cron rather than the news pipeline. Whatever guard gets designed should cover both generators.
