@@ -16,7 +16,7 @@
 
 import 'dotenv/config';
 import { db } from '../db/index.js';
-import { questions, collections } from '../db/schema.js';
+import { questions, collections, collectionQuestions } from '../db/schema.js';
 import { eq, sql } from 'drizzle-orm';
 import type { LocaleConfig } from './content-generation/locale-configs/bloomington-in.js';
 
@@ -81,9 +81,12 @@ function validate(args: ParsedArgs): void {
     errors.push('--slug is required and must be non-empty');
   }
 
-  if (!args.prefix) {
-    errors.push('--prefix is required');
-  } else if (!/^[a-z]{2,5}$/.test(args.prefix)) {
+  // --prefix is ADVISORY as of 2026-09-08. Auditing by prefix measured the wrong
+  // set: it counted questions carrying a prefix rather than the collection's own,
+  // so it reached into other collections on a collision and ignored a collection's
+  // remaining questions whenever it used more than one prefix. Bloomington IN has
+  // three; auditing it by the documented prefix missed 37 of its 157 questions.
+  if (args.prefix && !/^[a-z]{2,5}$/.test(args.prefix)) {
     errors.push(`--prefix "${args.prefix}" must match /^[a-z]{2,5}$/ (2–5 lowercase letters)`);
   }
 
@@ -131,8 +134,7 @@ async function main(): Promise<void> {
   validate(args);
 
   const slug = args.slug!;
-  const prefix = args.prefix!;
-  const prefixPattern = prefix + '-%';
+  const prefix = args.prefix;   // advisory only — see validate()
   const ninetyDaysFromNow = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
 
   try {
@@ -154,12 +156,55 @@ async function main(): Promise<void> {
       console.warn(`Warning: Collection "${collection.name}" (${slug}) is already active.`);
     }
 
+    // Every count below is scoped to THIS collection's linked questions. Membership
+    // is the join table, never the external-id prefix — a prefix identifies neither
+    // a collection nor all of one.
+    const inCollection = sql`EXISTS (
+      SELECT 1 FROM trivia.collection_questions cq
+      WHERE cq.question_id = ${questions.id} AND cq.collection_id = ${collection.id}
+    )`;
+
+    // Nothing linked means the link step was skipped, and every number below would
+    // be a truthful-looking zero. Refuse to render a verdict on an empty set.
+    const [linkedResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(collectionQuestions)
+      .where(eq(collectionQuestions.collectionId, collection.id));
+
+    if ((linkedResult?.count ?? 0) === 0) {
+      console.error(`Error: Collection "${collection.name}" (${slug}) has no linked questions.`);
+      console.error('There is nothing to audit. Link its questions first');
+      console.error('(create-collection SKILL.md, step 6e), then re-run.');
+      process.exit(1);
+    }
+
+    // Report the prefixes this collection actually spans, and cross-check the
+    // advisory one so a stale invocation is visible rather than silently ignored.
+    const ownPrefixes = await db
+      .select({
+        prefix: sql<string>`split_part(${questions.externalId}, '-', 1)`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(questions)
+      .innerJoin(collectionQuestions, eq(collectionQuestions.questionId, questions.id))
+      .where(eq(collectionQuestions.collectionId, collection.id))
+      .groupBy(sql`split_part(${questions.externalId}, '-', 1)`);
+
+    const prefixList = ownPrefixes.map(r => `${r.prefix} (${r.count})`).join(', ');
+    if (ownPrefixes.length > 1) {
+      console.log(`Note: spans ${ownPrefixes.length} external-id prefixes: ${prefixList}. All audited.`);
+    }
+    if (prefix && !ownPrefixes.some(r => r.prefix === prefix)) {
+      console.warn(`Warning: --prefix '${prefix}' matches none of this collection's prefixes (${prefixList}).`);
+      console.warn('It is advisory and was ignored.');
+    }
+
     // Step 2: Count DRAFT questions
     const [draftCountResult] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(questions)
       .where(
-        sql`${questions.externalId} LIKE ${prefixPattern} AND ${questions.status} = 'draft'`
+        sql`${inCollection} AND ${questions.status} = 'draft'`
       );
 
     const draftCount = draftCountResult?.count ?? 0;
@@ -169,7 +214,7 @@ async function main(): Promise<void> {
       .select({ count: sql<number>`count(*)::int` })
       .from(questions)
       .where(
-        sql`${questions.externalId} LIKE ${prefixPattern} AND ${questions.status} = 'active'`
+        sql`${inCollection} AND ${questions.status} = 'active'`
       );
 
     const activeCount = activeCountResult?.count ?? 0;
@@ -180,7 +225,7 @@ async function main(): Promise<void> {
       .from(questions)
       .where(
         sql`
-          ${questions.externalId} LIKE ${prefixPattern}
+          ${inCollection}
           AND ${questions.status} IN ('draft', 'active')
           AND ${questions.expiresAt} IS NOT NULL
           AND ${questions.expiresAt} <= ${ninetyDaysFromNow.toISOString()}
@@ -195,7 +240,7 @@ async function main(): Promise<void> {
       .from(questions)
       .where(
         sql`
-          ${questions.externalId} LIKE ${prefixPattern}
+          ${inCollection}
           AND ${questions.status} IN ('draft', 'active')
           AND ${questions.expiresAt} IS NOT NULL
         `
@@ -259,7 +304,7 @@ async function main(): Promise<void> {
         })
         .from(questions)
         .where(sql`
-          ${questions.externalId} LIKE ${prefixPattern}
+          ${inCollection}
           AND ${questions.status} IN ('draft', 'active')
           AND ${questions.expiresAt} IS NOT NULL
         `);

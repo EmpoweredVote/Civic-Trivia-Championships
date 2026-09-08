@@ -15,7 +15,7 @@ import 'dotenv/config';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { db } from '../db/index.js';
-import { collections, questions } from '../db/schema.js';
+import { collections, questions, collectionQuestions } from '../db/schema.js';
 import { eq, sql } from 'drizzle-orm';
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
@@ -59,7 +59,9 @@ Usage: npx tsx src/scripts/activate-collection.ts [options]
 
 Required:
   --slug <slug>          Collection slug (e.g. bloomington-in)
-  --prefix <prefix>      External ID prefix used for this collection's questions (e.g. bli)
+  --prefix <prefix>      ADVISORY only. Cross-checked against the collection's actual
+                         prefixes and warned about on a mismatch; it no longer selects
+                         what gets activated (that is scoped by collection_id).
 
 Optional:
   --dry-run              Show what would happen without writing to the database
@@ -80,9 +82,13 @@ function validate(args: ParsedArgs): void {
     errors.push('--slug is required and must be non-empty');
   }
 
-  if (!args.prefix) {
-    errors.push('--prefix is required');
-  } else if (!/^[a-z]{2,5}$/.test(args.prefix)) {
+  // --prefix is ADVISORY as of 2026-09-08. It used to select the questions to
+  // activate, which was wrong: a prefix does not identify a collection. `ind` is
+  // shared by Indiana and Indio CA, and five collections use more than one prefix
+  // (Bloomington IN has three, and 15 of its drafts sat stranded under a prefix
+  // nobody passed). Activation now scopes through collection_questions; the prefix
+  // is only cross-checked, so a stale or wrong one warns instead of mis-activating.
+  if (args.prefix && !/^[a-z]{2,5}$/.test(args.prefix)) {
     errors.push(`--prefix "${args.prefix}" must match /^[a-z]{2,5}$/ (2–5 lowercase letters)`);
   }
 
@@ -113,7 +119,7 @@ async function main(): Promise<void> {
   validate(args);
 
   const slug = args.slug!;
-  const prefix = args.prefix!;
+  const prefix = args.prefix;   // advisory only — see validate()
 
   try {
     // Step 1: Verify collection exists
@@ -134,20 +140,65 @@ async function main(): Promise<void> {
       console.warn(`Warning: Collection "${collection.name}" (${slug}) is already active. Proceeding anyway.`);
     }
 
-    // Step 2: Count draft questions
+    // Step 2: Count this COLLECTION's draft questions, via the join table.
+    //
+    // Scoped by collection_id rather than by external-id prefix. The prefix was
+    // never a collection identifier: it silently reached into other collections on
+    // a collision, and silently missed a collection's own questions whenever it
+    // used more than one prefix.
     const [countResult] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(questions)
-      .where(sql`${questions.externalId} LIKE ${prefix + '-%'} AND ${questions.status} = 'draft'`);
+      .innerJoin(collectionQuestions, eq(collectionQuestions.questionId, questions.id))
+      .where(sql`${collectionQuestions.collectionId} = ${collection.id} AND ${questions.status} = 'draft'`);
 
     const draftCount = countResult?.count ?? 0;
 
+    // A collection with NOTHING linked means the link step was skipped. Fail loudly:
+    // silently activating nothing is how 15 Bloomington drafts went unnoticed.
+    const [linkedResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(collectionQuestions)
+      .where(eq(collectionQuestions.collectionId, collection.id));
+
+    if ((linkedResult?.count ?? 0) === 0) {
+      console.error(`Error: Collection "${collection.name}" (${slug}) has no linked questions.`);
+      console.error('Nothing can be activated until questions are linked to it.');
+      console.error('Run the link step first (create-collection SKILL.md, step 6e):');
+      console.error('  INSERT INTO trivia.collection_questions (collection_id, question_id, created_at)');
+      console.error(`  SELECT ${collection.id}, q.id, NOW() FROM trivia.questions q`);
+      console.error("  WHERE q.external_id LIKE '<prefix>-%'");
+      console.error('    AND NOT EXISTS (SELECT 1 FROM trivia.collection_questions cq WHERE cq.question_id = q.id);');
+      process.exit(1);
+    }
+
+    // Cross-check the advisory prefix against what this collection actually holds.
+    const ownPrefixes = await db
+      .select({
+        prefix: sql<string>`split_part(${questions.externalId}, '-', 1)`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(questions)
+      .innerJoin(collectionQuestions, eq(collectionQuestions.questionId, questions.id))
+      .where(eq(collectionQuestions.collectionId, collection.id))
+      .groupBy(sql`split_part(${questions.externalId}, '-', 1)`);
+
+    const prefixList = ownPrefixes.map(r => `${r.prefix} (${r.count})`).join(', ');
+    if (ownPrefixes.length > 1) {
+      console.log(`Note: "${collection.name}" spans ${ownPrefixes.length} external-id prefixes: ${prefixList}.`);
+      console.log('All of them are covered — activation is scoped by collection, not by prefix.');
+    }
+    if (prefix && !ownPrefixes.some(r => r.prefix === prefix)) {
+      console.warn(`Warning: --prefix '${prefix}' matches none of this collection's prefixes (${prefixList}).`);
+      console.warn('It is advisory and will be ignored. Check you named the collection you meant.');
+    }
+
     if (draftCount === 0) {
-      console.warn(`Warning: No draft questions found with prefix '${prefix}-*'. Nothing to activate.`);
+      console.warn(`Warning: No draft questions in "${collection.name}". Nothing to activate.`);
     } else if (draftCount < 50) {
       console.warn(`Warning: Only ${draftCount} draft questions found (recommended: 50+). Proceeding anyway.`);
     } else {
-      console.log(`Found ${draftCount} draft questions matching '${prefix}-*'.`);
+      console.log(`Found ${draftCount} draft questions in "${collection.name}".`);
     }
 
     // Step 3: Dry run — show what would happen and exit
@@ -158,7 +209,7 @@ DRY RUN — no changes made.
 Would activate:
   Collection: ${collection.name} (${slug}) — currently ${activeStatus}
   Banner:     frontend/public/images/collections/${slug}.jpg ✓
-  Questions:  ${draftCount} draft questions matching '${prefix}-*'
+  Questions:  ${draftCount} draft questions linked to this collection
 `);
       process.exit(0);
     }
@@ -172,10 +223,16 @@ Would activate:
     // Step 5: Activate questions (only if count > 0)
     let activatedCount = 0;
     if (draftCount > 0) {
+      // Scoped to this collection's linked questions. The EXISTS is what makes the
+      // write safe: it cannot touch a question belonging to another collection, no
+      // matter what --prefix said.
       const activated = await db
         .update(questions)
         .set({ status: 'active', updatedAt: sql`NOW()` })
-        .where(sql`${questions.externalId} LIKE ${prefix + '-%'} AND ${questions.status} = 'draft'`)
+        .where(sql`${questions.status} = 'draft' AND EXISTS (
+          SELECT 1 FROM trivia.collection_questions cq
+          WHERE cq.question_id = ${questions.id} AND cq.collection_id = ${collection.id}
+        )`)
         .returning({ externalId: questions.externalId });
 
       activatedCount = activated.length;
