@@ -124,6 +124,22 @@ Two checkable rules fall out, both cheap:
 
 Methodology caveat: the detector counts any question whose four options all contain a digit, which catches label-style options like "District 1 / District 2 / District 4 / District 8" where the numbers are names rather than magnitudes. Rare enough not to move the numbers, but a real rule would need to exclude them.
 
+### Remediation progress and the recipe
+
+**Done:** Pittsburgh, PA (27 questions) and Asheville, NC (27) — both now 7/7/7/6 on value rank and even on display position. **Remaining: ~1,100.** Next worst by bias, then by size: Massachusetts (23 numeric, 0% at extremes), California (21, 0%), Washington DC (58), Phoenix AZ (40).
+
+The recipe, per collection, is two passes — **both are needed**, and neither alone leaves a clean collection:
+
+1. **Value rank:** redesign distractors so the correct value sometimes sits entirely above or below them. Target 7/7/7/6 across ranks. Never change the correct value; re-derive nothing from it. Roughly a quarter must stay at rank 3, so do not "fix" them all.
+2. **Display position:** the existing 6d rotation, scoped by `collection_id`, over the *non-magnitude* questions only — rotating a sorted numeric series un-sorts it.
+
+**Two traps found in Asheville that an automated version must handle:**
+
+- **Prose dates are not magnitude series.** `ashnc-022` offers "December 5, 1791" / "July 4, 1776" / "March 15, 1800"; digit-extraction yields `51791`, `41776`, `151800` — nonsense. Such questions must be excluded from the value-rank pass and **explicitly named into** the display rotation, or they fall through both filters and stay pinned at one position permanently.
+- **Mixed units cannot be value-compared.** `ashnc-073` offered "$500 million" against "$3 billion" — extraction sorts `500` above `6`. Normalise the units as a content repair. This also means the **54.2% project-wide figure is understated**, since mixed-unit questions were mis-ranked in the original survey.
+
+Also constrained by hand rather than formula: bounded series like "4 out of 5" cannot reach rank 1, because too few values exist above the answer.
+
 ## Related work already banked
 
 - `elc-1-011` (Bloomington, archived 2026-09-08) made a named individual's "Republican party activism" the **correct answer** — the same failure class as 3b/3c, from the election-detection cron rather than the news pipeline. Whatever guard gets designed should cover both generators.
