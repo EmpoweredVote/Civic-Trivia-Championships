@@ -398,6 +398,73 @@ async function main(): Promise<void> {
       }
     }
 
+    // ── Answer position ──────────────────────────────────────────────────────
+    /**
+     * Where the correct answer sits in the option list as displayed.
+     *
+     * Options are stored in `questions.options` and served in stored order --
+     * `stripAnswers()` removes correctAnswer from the payload, but nothing shuffles
+     * the options themselves (only the questions are shuffled, in questionService.ts
+     * and gameModes.ts). So the stored index IS the position the player sees.
+     *
+     * A survey on 2026-09-08 found this had collapsed. In Missouri, St. Louis and New
+     * York the answer was at position A in 100% of active questions -- 457 questions
+     * across five collections where "always pick A" wins every game. Federal was at
+     * 73.5% on B. Only the six collections that had had a manual rotation run against
+     * them were near uniform.
+     *
+     * It hid because the rotation was a manual per-collection step that nothing
+     * asserted, and the collections it had been run on were exactly the ones that
+     * looked fine. This check is the assertion that was missing.
+     *
+     * Note this is a strict companion to the bracketing check above, not a substitute:
+     * for a magnitude question displayed in ascending order the two measure the same
+     * thing (value rank IS display position), which is precisely why sorting numeric
+     * options is preferable to rotating them -- rotation moves the answer without
+     * touching the values, so it flattens this histogram while leaving the
+     * sort-and-pick exploit intact.
+     */
+    const posCounts = [0, 0, 0, 0];
+    let positionTotal = 0;
+    for (const row of optionRows) {
+      const opts = (row.options as string[] | null) ?? [];
+      if (opts.length !== 4) continue;
+      if (row.correctAnswer < 0 || row.correctAnswer > 3) continue;
+      positionTotal++;
+      posCounts[row.correctAnswer]++;
+    }
+
+    if (positionTotal >= 8) {
+      const worstPos = Math.max(...posCounts);
+      const pctWorstPos = (100 * worstPos) / positionTotal;
+      const letter = ['A', 'B', 'C', 'D'][posCounts.indexOf(worstPos)];
+
+      console.log('\n  Answer Position:');
+      console.log(`    Correct answer at A / B / C / D: ${posCounts.join(' / ')}`);
+      console.log(
+        `    Best single guess: ${pctWorstPos.toFixed(1)}% (random 25%, ideal ~25%)`
+      );
+
+      // 40% against a 25% baseline -- lenient enough that an ordinary lumpy
+      // collection stays quiet, tight enough to have caught all 22 collections
+      // that were above 45% when this was written.
+      if (pctWorstPos > 40) {
+        console.log(
+          `\n  WARNING: "always pick ${letter}" scores ${pctWorstPos.toFixed(1)}% ` +
+            'without reading the question (random 25%).'
+        );
+        console.log(
+          '  Fix by moving the correct answer across positions. For PROSE options, ' +
+            'permute freely. For NUMERIC options, sort them ascending instead of ' +
+            'rotating -- that fixes position and value rank together and leaves the ' +
+            'series readable.'
+        );
+        console.log(
+          '  Check for "all of the above"-style options first; those must stay last.'
+        );
+      }
+    }
+
     if (localeConfig?.officeholders && localeConfig.officeholders.length > 0) {
       console.log('\n  Officeholder Coverage:');
 

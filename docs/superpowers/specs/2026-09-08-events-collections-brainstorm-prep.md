@@ -172,11 +172,35 @@ Only six collections are near uniform (Pittsburgh, Bend, Milwaukee, Asheville, M
 
 Why this hid: the 6d rotation is a per-collection manual step, and the collections it was run on are exactly the collections that look fine. Nothing asserts it. `audit-collection-readiness.ts` gained a *value-rank* check on 2026-09-08 but still has no *position* check, so a 91-of-91-at-A collection passes the audit silently.
 
-Notes for whoever fixes it:
+### Fixed: the five 100% collections (2026-09-08)
+
+Missouri, St. Louis MO, New York, Louisiana and Springfield MO — **458 active questions, 456 of them pinned at A** — are now uniform:
+
+| Collection | before | after | best guess |
+|---|---|---|---|
+| Missouri | 91/0/0/0 | 23/23/23/22 | 100.0% → **25.3%** |
+| St. Louis, MO | 92/0/0/0 | 23/23/23/23 | 100.0% → **25.0%** |
+| New York | 87/0/0/0 | 22/22/22/21 | 100.0% → **25.3%** |
+| Louisiana | 93/0/1/0 | 24/24/23/23 | 98.9% → **25.5%** |
+| Springfield, MO | 93/1/0/0 | 24/24/23/23 | 98.9% → **25.5%** |
+
+Done in two mechanical passes, no content rewritten:
+
+1. **139 magnitude questions sorted ascending.** Position then equals value rank by construction, so the two metrics coincide and neither can mask the other. Verified first that no question had tied extracted values (sort would be ambiguous) and that all 139 preserved their correct value.
+2. **319 prose questions permuted**, swapping the correct option with a target slot. Targets were not uniform-per-subset but chosen to *absorb* the magnitude subset's residual rank skew, so each collection's total lands uniform. Feasible only because prose outnumbers magnitude everywhere here — check `prose_target >= 0` per position before relying on it.
+
+Both writes were gated in SQL on `old_options->>old_ca = new_options->>new_ca`, so a mis-derived index could not have written a wrong answer. Checked beforehand that no collection had "all/none of the above" options needing a fixed slot — none did.
+
+**The value-rank bias in these five is untouched and still owed:** 13/51/66/9 across the 139, 15.8% at an extreme. Because the options are now sorted, fixing that rank distribution will move display position with it — the two passes have merged into one for this subset.
+
+**Twelve mixed-unit questions found here** (`lou-057`, `lou-060`, `misso-068`, `misso-073`, `nysts-043`, `nysts-055`, `nysts-061`, `nysts-070`, `nysts-077`, `nysts-081`, `sprmo-079`, `stlmo-027`). Options mix "million" with "billion", or hedges like "About" with "Over", so `unit_of` differs and they fall out of the magnitude filter into the prose bucket. They were permuted rather than sorted and still read out of order. Same class as `ashnc-073`; they need unit normalisation as a content repair, which will also fold them back into the value-rank metric.
+
+Notes for whoever fixes the rest:
 
 - Rotation is safe on prose options but **un-sorts a numeric series**, so magnitude questions want the sort-ascending-and-rebracket treatment from the section above instead. The two passes have to be applied to disjoint sets.
 - The five 100%-at-A collections cannot be repaired by rotation alone in the way the others can: with every answer at A, any rotation is a pure permutation of a degenerate distribution, which is fine — but it means their *value* ranks were never examined either. Expect them to need both passes.
-- This deserves an audit assertion of its own (position histogram, same 30%-style threshold as the value-rank check) so it cannot regress silently again. Without it the fix decays the moment new questions land.
+- **The audit assertion now exists** (`audit-collection-readiness.ts`, "Answer Position"). It reports the A/B/C/D histogram and warns when the best single guess exceeds 40% against a 25% baseline. Against the live bank it fires on **30 of 42 collections** and stays quiet on 12 — the six previously rotated, the five fixed above, and Bloomington (35.0%). Worst remaining is **Plano, TX at 74.1%**, then North Carolina 73.6% and Federal 73.5%.
+- Work the rest in descending order of that number. Federal deserves priority out of turn: it is the collection every player sees, and it is at 73.5% on "always pick B".
 
 ## Related work already banked
 
