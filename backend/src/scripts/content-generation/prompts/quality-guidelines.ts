@@ -107,6 +107,38 @@ Your generated questions will be validated against strict quality rules. Follow 
 
 **All four options should make someone pause and think about the correct answer.**
 
+### 6a. Numeric distractors — VARY WHERE THE ANSWER FALLS
+
+**Rule:** For a question whose four options are numbers, quantities, years or
+percentages, the correct value must NOT always sit in the middle of the range.
+
+This is the single most exploitable flaw measured in the existing bank. A survey of
+1,154 numeric questions found the correct value was the **third of four** 54% of the
+time and at either extreme only 14% — so "sort the four numbers and pick the third"
+scored 54% with no knowledge at all, and 96% in one collection. The cause is a habit:
+writing the true value, then padding it with two smaller and one larger distractor.
+
+**Vary the bracket deliberately.** Across a batch, aim for roughly equal numbers of:
+
+- answer is the **smallest** offered — "9 members" → 9 / 11 / 13 / 15
+- answer is **second** — "9 members" → 7 / 9 / 11 / 13
+- answer is **third** — "9 members" → 5 / 7 / 9 / 11
+- answer is the **largest** offered — "9 members" → 3 / 5 / 7 / 9
+
+All four remain plausible; only the placement changes. Never move the correct value
+itself to achieve this — change the distractors around it.
+
+**Two further requirements for numeric options:**
+
+- **One unit per question.** Never mix scales: "$500 million" alongside "$3 billion"
+  cannot be compared at a glance and reads as a trick.
+- **Order them ascending.** A sorted series is easier to scan, and it means placement
+  is carried by the distractor values rather than by shuffling positions.
+
+**Note:** rotating the answer's POSITION (A/B/C/D) does not fix this. A player who
+sorts the numbers mentally is unaffected by position. Only the choice of distractors
+fixes it. Both matter and they are separate concerns.
+
 ---
 
 **Validation Process:**
