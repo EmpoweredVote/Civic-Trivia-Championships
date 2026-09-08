@@ -209,6 +209,29 @@ SELECT id, slug, is_active FROM trivia.collections WHERE slug = '[slug]';
 
 Save this ID.
 
+### 5a. Prefix uniqueness gate — RUN THIS BEFORE WRITING ANY QUESTIONS
+
+Steps 6c and 6d identify "the questions I just created" by their prefix, because
+until 6e links them there is nothing else to identify them by. That is only safe
+if the prefix is globally unique, so prove it is — **before** generating content:
+
+```sql
+SELECT
+  (SELECT count(*) FROM trivia.questions WHERE external_id LIKE '[prefix]-%') AS questions,
+  (SELECT count(*) FROM trivia.topics    WHERE slug        LIKE '[prefix]-%') AS topics;
+```
+
+**Both must be 0.** If either is non-zero the prefix is taken — pick another and
+re-run. Do not proceed on a non-zero count, and do not work around it by
+filtering more narrowly: every later step assumes the prefix belongs to exactly
+one collection.
+
+Why this is a hard gate rather than advice: `ind` is already shared by Indiana
+and Indio CA, so `LIKE 'ind-%'` matches 51 questions across two collections.
+Five collections use more than one prefix (Bloomington IN has three). A prefix
+has never actually identified a collection — this gate is what makes treating it
+as one safe for the length of this flow.
+
 **Topics are global, not owned by a collection.** `trivia.topics` has no
 collection column; the link is the `trivia.collection_topics` join table. Create
 your topic rows, then link them:
@@ -219,8 +242,14 @@ INSERT INTO trivia.topics (name, slug, description, created_at) VALUES
   -- one row per topic
 ON CONFLICT (slug) DO NOTHING RETURNING id, slug;
 
+-- The NOT EXISTS is defence in depth behind the 5a gate: even if a prefix does
+-- collide, this can only ever link a topic no collection owns yet.
 INSERT INTO trivia.collection_topics (collection_id, topic_id, created_at)
-SELECT [collection_id], id, NOW() FROM trivia.topics WHERE slug LIKE '[prefix]-%'
+SELECT [collection_id], t.id, NOW() FROM trivia.topics t
+WHERE t.slug LIKE '[prefix]-%'
+  AND NOT EXISTS (
+    SELECT 1 FROM trivia.collection_topics ct WHERE ct.topic_id = t.id
+  )
 ON CONFLICT DO NOTHING;
 ```
 
@@ -293,6 +322,12 @@ INSERT INTO trivia.questions (
 SELECT COUNT(*) FROM trivia.questions WHERE external_id LIKE '[prefix]-%';
 ```
 
+> This query and 6d's below match on the prefix instead of joining through
+> `trivia.collection_questions`, deliberately: the link rows do not exist until
+> 6e, so a join would return zero here. They are safe **only** because 5a proved
+> the prefix matches nothing else. If you skipped 5a, go back — on a colliding
+> prefix, 6d's UPDATE rewrites another collection's answer options.
+
 Continue until you have 80–100 questions inserted. Aim for at least 85.
 
 ### 6d. Fix answer-position bias — DO NOT SKIP
@@ -338,21 +373,45 @@ so promote the genuinely obvious ones to `easy` to reach roughly 40/40/20.
 ### 6e. Link questions to the collection — REQUIRED
 
 ```sql
+-- NOT EXISTS is the load-bearing part: this is the one INSERT that could hand a
+-- collection somebody else's questions, and it is the only place the prefix is
+-- turned into ownership. Behind 5a it is redundant; the day 5a is skipped it is
+-- the difference between a bad collection and a corrupted one.
 INSERT INTO trivia.collection_questions (collection_id, question_id, created_at)
-SELECT [collection_id], id, NOW() FROM trivia.questions
-WHERE external_id LIKE '[prefix]-%'
+SELECT [collection_id], q.id, NOW() FROM trivia.questions q
+WHERE q.external_id LIKE '[prefix]-%'
+  AND NOT EXISTS (
+    SELECT 1 FROM trivia.collection_questions cq WHERE cq.question_id = q.id
+  )
 ON CONFLICT DO NOTHING;
 ```
 
+**Verify the link landed on the right rows before moving on:**
+```sql
+SELECT c.name, count(*) AS linked
+FROM trivia.collection_questions cq
+JOIN trivia.collections c ON c.id = cq.collection_id
+JOIN trivia.questions q ON q.id = cq.question_id
+WHERE q.external_id LIKE '[prefix]-%'
+GROUP BY c.name;
+```
+One row, your collection, the count you expect. More than one row means a prefix
+collision took effect — stop and unpick it before continuing.
+
 ### 6f. Expiring question check
+
+This runs after 6e, so the link exists — join on `collection_id` rather than
+matching the prefix. Every query from here on should do the same; the prefix has
+done its job by this point.
 
 ```sql
 SELECT
-  COUNT(*) FILTER (WHERE expires_at IS NOT NULL) AS expiring,
+  COUNT(*) FILTER (WHERE q.expires_at IS NOT NULL) AS expiring,
   COUNT(*) AS total,
-  ROUND(100.0 * COUNT(*) FILTER (WHERE expires_at IS NOT NULL) / COUNT(*), 1) AS pct
-FROM trivia.questions
-WHERE external_id LIKE '[prefix]-%' AND status = 'draft';
+  ROUND(100.0 * COUNT(*) FILTER (WHERE q.expires_at IS NOT NULL) / COUNT(*), 1) AS pct
+FROM trivia.questions q
+JOIN trivia.collection_questions cq ON cq.question_id = q.id
+WHERE cq.collection_id = [collection_id] AND q.status = 'draft';
 ```
 
 **Target: 15–30% expiring.** If below 15%, write additional officeholder questions (current mayor, council members) and insert them.
