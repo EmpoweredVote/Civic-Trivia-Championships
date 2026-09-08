@@ -1,3 +1,5 @@
+import { apiRequest } from '../../services/api';
+
 /**
  * Which questions a player has a bobit for.
  *
@@ -12,6 +14,14 @@ export interface BobitProgressStore {
   revoke(slug: string, questionId: string): void;
   /** Owned count per collection slug, for a future per-collection tally. */
   summary(): Record<string, number>;
+  /**
+   * Fill the mirror from wherever the truth lives, before the crowd is seeded.
+   *
+   * Optional, and absent on the localStorage driver -- there the mirror IS the truth and is
+   * already populated by the time the store is constructed. Callers do `await
+   * store.hydrate?.(slug)`, which is a no-op for signed-out play.
+   */
+  hydrate?(slug: string): Promise<void>;
 }
 
 export const STORAGE_KEY = 'ctc.bobits.v1';
@@ -88,4 +98,72 @@ function safeDefaultStorage(): Storage | null {
   } catch {
     return null;
   }
+}
+
+
+/** Shape of `GET /api/users/profile/bobits`: collection slug -> owned question external ids. */
+export type BobitsPayload = Record<string, string[]>;
+
+/**
+ * Per-account progress, for a signed-in player.
+ *
+ * **Read-server, write-local.** `hydrate` pulls the truth in one authenticated request;
+ * `grant` and `revoke` then only touch the in-memory mirror, because the very answer
+ * submission that triggered them has already told the server. That is what removes the whole
+ * class of optimistic-write reconciliation bugs -- there is nothing to reconcile, because
+ * this driver never writes.
+ *
+ * The trade is that a grant whose answer POST failed shows a bobit this match and loses him
+ * on the next hydrate. Self-healing, and strictly better than blocking an answer on a
+ * cosmetic write.
+ */
+export function createServerProgressStore(
+  fetchBobits: () => Promise<BobitsPayload> = defaultFetchBobits,
+): BobitProgressStore {
+  let data: BobitsPayload = {};
+
+  return {
+    async hydrate() {
+      try {
+        const fetched = await fetchBobits();
+        // Replaces rather than merges: the server is authoritative, so a bobit missing from
+        // the payload is one the player genuinely no longer owns.
+        data = fetched && typeof fetched === 'object' ? fetched : {};
+      } catch {
+        // Gameplay never blocks on the crowd. An empty field is the correct degradation.
+        data = {};
+      }
+    },
+    load(slug) {
+      return new Set(data[slug] ?? []);
+    },
+    grant(slug, questionId) {
+      const owned = data[slug] ?? (data[slug] = []);
+      if (!owned.includes(questionId)) owned.push(questionId);
+    },
+    revoke(slug, questionId) {
+      const owned = data[slug];
+      if (!owned) return;
+      const at = owned.indexOf(questionId);
+      if (at >= 0) owned.splice(at, 1);
+    },
+    summary() {
+      const out: Record<string, number> = {};
+      for (const slug of Object.keys(data)) {
+        if (data[slug].length > 0) out[slug] = data[slug].length;
+      }
+      return out;
+    },
+  };
+}
+
+/** The real request. `apiRequest` already attaches the Bearer token from the auth store. */
+async function defaultFetchBobits(): Promise<BobitsPayload> {
+  // /api/users/profile/... , not /api/profile/... -- the profile router is mounted at
+  // /ctc/api/users/profile (see ev-accounts src/index.ts). The shorter path 404s silently,
+  // which degrades to an empty crowd and looks exactly like every player losing their bobits.
+  const { bobits } = await apiRequest<{ bobits: BobitsPayload }>('/api/users/profile/bobits', {
+    method: 'GET',
+  });
+  return bobits ?? {};
 }

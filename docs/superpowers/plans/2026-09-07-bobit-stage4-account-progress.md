@@ -69,14 +69,15 @@ Keyed by **slug text, not `collection_id`**. Three reasons: the frontend's store
 - [ ] **Step 1: Write the migration**
 
 ```sql
--- Per-account bobit progress. Stage 4 of the bobit collection design.
---
--- Keyed by collection SLUG rather than collection_id: the session carries
--- collectionSlug, a session's collection_id is null for the Federal default, and the
--- frontend's own store has been slug-keyed since Stage 3.
---
--- question_external_id is the client-visible question id (questionService returns
--- external_id AS id), not the serial PK.
+-- See supabase/migrations/20260907000001_add_bobit_progress.sql for the applied version.
+-- Two things verified against the live project before writing it:
+--   * every trivia table has RLS enabled and the per-user ones carry THREE policies
+--     (select/insert/delete), so mirror trivia.user_collection_mutes rather than
+--     inventing a single-policy shape;
+--   * ctc_app, ev_api and trivia_service all have BYPASSRLS, so policies never gate the
+--     server -- but BYPASSRLS is not a table privilege and a new table does not inherit
+--     its siblings' grants, so the GRANTs are load-bearing. Without them the server gets
+--     a bare permission error that no policy change would explain.
 CREATE TABLE IF NOT EXISTS trivia.bobit_progress (
   user_id              uuid        NOT NULL,
   collection_slug      text        NOT NULL,
@@ -85,17 +86,21 @@ CREATE TABLE IF NOT EXISTS trivia.bobit_progress (
   PRIMARY KEY (user_id, question_external_id)
 );
 
--- The only read this table serves: one player's crowd for one collection.
 CREATE INDEX IF NOT EXISTS idx_bobit_progress_user_collection
   ON trivia.bobit_progress (user_id, collection_slug);
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON trivia.bobit_progress
+  TO ctc_app, ev_api, trivia_service, authenticated, service_role;
+
 ALTER TABLE trivia.bobit_progress ENABLE ROW LEVEL SECURITY;
 
--- The service connects as ctc_app and is the only writer; these policies exist so a
--- direct PostgREST read with a user JWT can never see another player's crowd.
-DROP POLICY IF EXISTS bobit_progress_select_own ON trivia.bobit_progress;
-CREATE POLICY bobit_progress_select_own ON trivia.bobit_progress
-  FOR SELECT USING (user_id = auth.uid());
+-- Three policies, mirroring trivia.user_collection_mutes.
+CREATE POLICY users_select_own_bobits ON trivia.bobit_progress
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY users_insert_own_bobits ON trivia.bobit_progress
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY users_delete_own_bobits ON trivia.bobit_progress
+  FOR DELETE USING (auth.uid() = user_id);
 ```
 
 PK is `(user_id, question_external_id)` without the slug: a question belongs to exactly one collection, so including the slug would permit the same question under two collections and reintroduce the split-key bug at the schema level.
