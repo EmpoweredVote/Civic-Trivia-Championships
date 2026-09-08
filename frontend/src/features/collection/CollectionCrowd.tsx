@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { BobitField } from '../../components/bobbits/BobitField';
 import type { FieldFigure } from '../../components/bobbits/fieldGeometry';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useAuthStore } from '../../store/authStore';
 import { useConfettiStore } from '../../store/confettiStore';
-import { createLocalProgressStore } from './bobitProgress';
+import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
+import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
 import { crowdFigures, overflowCount } from './crowdFigures';
@@ -20,7 +22,11 @@ interface CollectionCrowdProps {
   finished5of5: boolean;
 }
 
-const store = createLocalProgressStore();
+/**
+ * The localStorage driver, shared across every signed-out mount: its state IS the browser's,
+ * so there is nothing per-instance about it and rebuilding it would only re-read storage.
+ */
+const localStore = createLocalProgressStore();
 
 /**
  * The collection crowd: one bobit per question this player has answered correctly, standing
@@ -35,8 +41,18 @@ export function CollectionCrowd({
 }: CollectionCrowdProps) {
   const reducedMotion = useReducedMotion();
   const fireFireworks = useConfettiStore(s => s.fireFireworks);
+  const userId = useAuthStore(s => s.user?.id ?? null);
   const stateRef = useRef<CrowdState>(crowdInit());
   const [overflow, setOverflow] = useState(0);
+
+  // Signed in: progress lives on the account. Signed out: it lives in this browser, exactly
+  // as it has since Stage 3. Keyed on the user id rather than merely on truthiness, so
+  // switching accounts builds a fresh store and one player's crowd can never be served to
+  // the next.
+  const store: BobitProgressStore = useMemo(
+    () => (userId ? createServerProgressStore() : localStore),
+    [userId],
+  );
 
   const height = isMobile ? 54 : 96;
   const band: CrowdBand = useMemo(() => ({
@@ -45,13 +61,28 @@ export function CollectionCrowd({
     scale: isMobile ? 0.13 : 0.2,
   }), [height, isMobile]);
 
-  // Seed from storage whenever the collection changes.
+  // Seed from storage whenever the collection -- or the driver behind it -- changes.
   useEffect(() => {
     if (!slug) { stateRef.current = crowdInit(); setOverflow(0); return; }
-    const owned = [...store.load(slug)];
-    stateRef.current = crowdApply(stateRef.current, { type: 'seed', ids: owned });
-    setOverflow(overflowCount(stateRef.current));
-  }, [slug]);
+
+    let cancelled = false;
+    const seed = () => {
+      // A hydrate that lands after the collection changed must not seed the wrong crowd.
+      if (cancelled) return;
+      const owned = [...store.load(slug)];
+      stateRef.current = crowdApply(stateRef.current, { type: 'seed', ids: owned });
+      setOverflow(overflowCount(stateRef.current));
+    };
+
+    // No-op for the local driver, which has no hydrate: its mirror is already the truth.
+    // Seeds either way -- a failed hydrate must still leave a definite (empty) crowd rather
+    // than an indeterminate band.
+    const pending = store.hydrate?.(slug);
+    if (pending) pending.then(seed, seed);
+    else seed();
+
+    return () => { cancelled = true; };
+  }, [slug, store]);
 
   // React to a revealed answer. Keyed on object identity, so the same question answered again
   // in a later match still registers.
@@ -68,7 +99,7 @@ export function CollectionCrowd({
       store.revoke(slug, questionId);
     }
     setOverflow(overflowCount(stateRef.current));
-  }, [lastAnswer, slug]);
+  }, [lastAnswer, slug, store]);
 
   // Confetti belongs to the finish, not to a tier.
   useEffect(() => {
