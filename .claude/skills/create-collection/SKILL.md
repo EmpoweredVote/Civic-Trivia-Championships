@@ -19,7 +19,7 @@ Ask the user (or parse from `$ARGUMENTS`) for the following. If they provided th
 **Required:**
 - **City and state** — e.g. "Austin, TX"
 - **Slug** — lowercase, hyphenated, e.g. `austin-tx`
-- **External ID prefix** — 3 letters, unique across all collections. Check existing prefixes in memory: `bli bxl cam cas fca fre ica ind ins lac mas mis nur ors pla por smo tex wdc`. Choose something that doesn't conflict.
+- **External ID prefix** — **5 lowercase letters**, `[city-letters][state-code]` (e.g. `madwi`, `phxaz`). Standardised 2026-03-22; older collections kept shorter legacy prefixes. Must be unique across ALL collections. Verify against the live DB rather than trusting a list, because prefixes have drifted: `SELECT DISTINCT split_part(external_id,'-',1) FROM trivia.questions ORDER BY 1;` — five collections use more than one prefix, and `ind` is already shared by Indiana and Indio CA. Choose something that collides with nothing. Note that a trailing `la` means Louisiana (`alxla`, `wmnla`) while a leading `la` means Los Angeles — do not reuse either.
 - **Theme color** — hex, e.g. `#1A3A6B`. If not provided, suggest a color that matches the city's official colors or local identity.
 
 **Confirm before proceeding.** Show the user a summary table and ask for a go/no-go.
