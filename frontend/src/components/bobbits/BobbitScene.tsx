@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import { BobbitCanvas } from './BobbitCanvas';
-import type { BobbitFigureSpec } from './BobbitCanvas';
-import { figColor } from './leremyRig';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { BobitField } from './BobitField';
+import type { FieldFigure } from './fieldGeometry';
+import { figColor } from './rigExtras';
 import { useConfettiStore } from '../../store/confettiStore';
 
 interface BobbitSceneProps {
@@ -11,11 +10,9 @@ interface BobbitSceneProps {
 }
 
 interface CastMember {
-  anim: BobbitFigureSpec['anim'];
+  anim: string;
   tone: number;
   x: number;
-  card?: boolean;
-  flip?: boolean;
   phase: number;
   /** Marks this cast member as clickable — currently only used to fire the dancer's confetti. */
   clickable?: boolean;
@@ -28,40 +25,43 @@ const CAST: CastMember[] = [
 ];
 
 /**
- * A thin divider rail hosting a couple of Bobbits, ported from the leremy-rig engine.
- * Purely decorative — sits in normal flow so it never overlaps surrounding text/cards.
+ * A thin divider rail hosting a couple of Bobbits. Purely decorative — sits in normal flow so
+ * it never overlaps surrounding text or cards.
+ *
+ * Rendered through the shared BobitField rather than its own canvas, so these two share the
+ * clock (and the hover-greet and hold-to-poof behaviour) with every other Bobbit on the page.
  */
 export function BobbitScene({ darkMode, isMobile }: BobbitSceneProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const animate = !prefersReducedMotion;
-
   const fireTopRain = useConfettiStore(s => s.fireTopRain);
 
-  // height/railBottom keep enough clearance above (raised arms) and below (the sit/read
-  // pose's dangling feet) the rail — both scaled proportionally with `scale`, matching the
-  // same size used for every other Bobbit instance (hero trophy-carry, card greeter).
+  // height/railBottom keep enough clearance above (raised arms) and below (the sit/read pose's
+  // dangling feet) the rail — both scaled proportionally with `scale`, matching the same size
+  // used for every other Bobbit instance (hero trophy-carry, card greeter).
   const scale = isMobile ? 0.22 : 0.28;
   const height = isMobile ? 71 : 93;
   const railBottom = isMobile ? 15 : 20;
 
-  // Memoised: BobbitCanvas keys its rAF loop on this array's identity, so a fresh array on
-  // every parent render (Dashboard re-renders on window resize) would restart the animation
-  // clock at 0 and make the figures visibly jump.
-  const figures: BobbitFigureSpec[] = useMemo(() => CAST.map((c) => ({
+  // Positioned by fraction so the pair stays put as the responsive column resizes; the field
+  // resolves xFrac against its measured width each frame.
+  const figures: FieldFigure[] = useMemo(() => CAST.map((c, i) => ({
+    id: `scene-${i}`,
     anim: c.anim,
     color: figColor(c.tone, darkMode),
-    x: c.x,
-    bottom: railBottom,
+    x: 0,
+    xFrac: c.x,
+    groundY: height - railBottom,
     scale,
-    card: c.card,
-    flip: c.flip,
     phase: c.phase,
-    onClick: c.clickable ? () => fireTopRain() : undefined,
-  })), [darkMode, railBottom, scale, fireTopRain]);
+  })), [darkMode, railBottom, scale, height]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', marginTop: isMobile ? 16 : 24, pointerEvents: 'none' }}>
-      <BobbitCanvas figures={figures} height={height} animate={animate} />
+    <div style={{ position: 'relative', width: '100%', marginTop: isMobile ? 16 : 24 }}>
+      <BobitField
+        figures={figures}
+        height={height}
+        interactive
+        onFigureClick={() => fireTopRain()}
+      />
     </div>
   );
 }
