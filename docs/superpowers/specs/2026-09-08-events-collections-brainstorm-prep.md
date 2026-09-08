@@ -46,6 +46,15 @@ The pool contains multiple simultaneously-active questions about the same fact, 
 
 At least 9 duplicate pairs and 3 outright contradictions in a 95-question pool. A rolling daily pipeline re-covers the same story as it develops and nothing dedupes across days. Note `runWithinCollectionSemanticDedup()` runs at generation — it is evidently not catching these, which is worth checking before designing anything new.
 
+**RESOLVED in the pool, NOT in the pipeline (2026-09-08).** 13 questions archived, leaving 82 active with no surviving contradiction:
+
+- Duplicates — kept the later-generated copy (more shelf life): archived `1557`, `1575`, `1576`, `1582`, `1583`, `1592`.
+- Nepal toll — `1562` and `1571` were generated in the same minute and disagreed (>1,300 vs 1,050); both archived. `1620` survives alone because it dates itself ("as of September 7" → 1,287).
+- Saxony-Anhalt — `1591` dated the election Sept 6, `1608` dated it Sept 7; both asked the same 43.8% fact, so one was redundant and one carried a false date, and which is which could not be determined without external verification. Both archived; `1609` (39 seats) and `1610` (42 needed) carry the story dateless.
+- Miami crash — `1593`/`1594` said Sept 6, `1605` answered "September 7", same event. All three archived; `1606` (five killed) and `1607` (San Juan) keep the verifiable facts without asserting a date.
+
+The **cause is untouched**: the pipeline will reintroduce this class the next time it covers a developing story. Every one of these questions also expires within 1–4 days of generation, so the pool self-cleans — but a player inside that window can be shown two different correct answers to the same question, which is why waiting it out was not good enough.
+
 ### Finding 3 — framing, which is three separate problems
 
 Chris framed this as partisanship; the audit suggests it splits into three, and only one is partisan.
