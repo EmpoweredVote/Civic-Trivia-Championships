@@ -5,7 +5,7 @@ import { ALL_ANIMATIONS } from './rigExtras';
 import { pelvisOffset, sortByDepth, figureBounds, resolveX, resolveAnimKey } from './fieldGeometry';
 import type { FieldFigure } from './fieldGeometry';
 import { figureAtPoint } from './hitTest';
-import { greetReduce, isGreeting, greetClock } from './greetReducer';
+import { greetReduce, isGreeting, greetClock, greetingIds } from './greetReducer';
 import type { GreetState } from './greetReducer';
 import { poofReduce, POOF_IDLE, POOF_HOLD, POOF_BURST } from './poofReducer';
 import type { PoofState, PoofEvent } from './poofReducer';
@@ -44,15 +44,17 @@ interface BobitFieldProps {
   /** Speech bubbles to show, keyed by figure id. Lifetimes are managed by the field. */
   bubbles?: Record<string, string>;
   /**
-   * Per-frame figure source. When present this is called once per frame and replaces
-   * `figures` for that frame.
+   * Per-frame figure source, called once at the top of each frame. `width` is the field's
+   * measured width; `greeting` is the PREVIOUS frame's greeting set, because hover is resolved
+   * after this call (hover needs positions, and positions would then need hover). One frame of
+   * latency, ~16ms.
    *
-   * The crowd's figures change every frame -- newcomers walk in, the celebration tier swaps
-   * poses, a victim rises -- and a React prop cannot carry that without re-rendering sixty
-   * times a second. This keeps the choreography inside the existing rAF loop and React out
-   * of the per-frame path entirely.
+   * Extra parameters are appended positionally so a narrower `(t, dt) => …` callback stays
+   * assignable -- CollectionCrowd relies on that.
    */
-  figuresFor?: (t: number, dt: number) => FieldFigure[];
+  figuresFor?: (
+    t: number, dt: number, width: number, greeting: ReadonlySet<string>,
+  ) => FieldFigure[];
   className?: string;
   style?: CSSProperties;
 }
@@ -225,7 +227,7 @@ export function BobitField({
       clockRef.current = t;
       const w = widthRef.current;
       const source = figuresForRef.current
-        ? figuresForRef.current(t, dt)
+        ? figuresForRef.current(t, dt, w, greetingIds(greetRef.current))
         : figuresRef.current;
       const all = resolveX(source, w);
       resolvedRef.current = all;

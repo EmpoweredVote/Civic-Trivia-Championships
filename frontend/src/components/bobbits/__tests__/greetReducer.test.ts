@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { greetReduce, isGreeting, greetClock, GREET_LINGER } from '../greetReducer';
+import { greetingIds } from '../greetReducer';
 
 describe('greetReduce', () => {
   it('starts empty', () => {
@@ -60,5 +61,28 @@ describe('greetReduce', () => {
     const before = s0.a.clock;
     greetReduce(s0, 'a', 0.5);
     expect(s0.a.clock).toBe(before);
+  });
+});
+
+describe('greetingIds', () => {
+  it('is empty for empty state', () => {
+    expect(greetingIds({}).size).toBe(0);
+  });
+
+  it('contains a hovered figure', () => {
+    const s = greetReduce({}, 'a', 0.016);
+    expect(greetingIds(s).has('a')).toBe(true);
+  });
+
+  it('still contains a figure inside its linger', () => {
+    let s = greetReduce({}, 'a', 0.1);
+    s = greetReduce(s, null, 1.0);
+    expect(greetingIds(s).has('a')).toBe(true);
+  });
+
+  it('drops a figure once its linger expires', () => {
+    let s = greetReduce({}, 'a', 0.1);
+    s = greetReduce(s, null, GREET_LINGER + 0.01);
+    expect(greetingIds(s).has('a')).toBe(false);
   });
 });
