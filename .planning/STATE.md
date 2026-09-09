@@ -5,23 +5,38 @@
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Make civic learning fun through game show mechanics — play, not study. No dark patterns, no guilt, no pressure.
-**Current focus:** Phase 79 — Launch Collections (v2.5 International Collections)
+**Current focus:** None assigned. Phase 80 (Admin Visibility) is the next unstarted GSD phase; recent work has run outside `.planning/`.
 
 ## Current Position
 
-Phase: 79 of 80 (Launch Collections)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-04-09 — Completed 79-02 (Climate Agreements Launch)
+Phase: 79 of 80 complete (Launch Collections)
+Plan: 2 of 2 in phase 79
+Status: Phase 79 complete; Phase 80 pending and **not yet planned** (no `.planning/phases/80-*` directory)
+Last GSD phase activity: 2026-04-09 — Completed 79-02 (Climate Agreements Launch)
+Last repo activity: 2026-09-08 — content-quality / answer-placement guard workstream (untracked by `.planning/`)
 
 Progress: [██████████] v1.0–v2.4 complete (Phases 1–74); v2.5 Phases 75–79 complete; Phase 80 pending
 
-**Deployment Status:**
-- Frontend LIVE: https://civic-trivia-frontend.onrender.com / https://ctc.empowered.vote
-- Backend LIVE: https://civic-trivia-backend.onrender.com
-- Database: Supabase shared project (kxsdzaojfaibhuzmclfq) — trivia schema
-- Redis: Upstash (stirred-pika-7510)
-- Active collections (34 total): Federal + 21 local + 12 state (see MEMORY.md for full list)
+**Work done outside `.planning/` since 2026-04-09** (no phase dirs; see git log):
+- **Bobit collection feature, stages 1–4** — merged to master (`41179fd`, `f4a1d47`). Specs and plans
+  live in `docs/superpowers/`, not `.planning/`.
+- **Content-quality workstream, 2026-09-08** — bank-wide answer-position and value-bracket
+  remediation, plus a write-path guard (`answerPlacement.ts`) and audit assertion. 19 commits,
+  currently **unpushed** on master.
+
+**Deployment Status (verified 2026-09-09):**
+- Frontend LIVE: https://civic-trivia-frontend.onrender.com / https://ctc.empowered.vote (Render static site, auto-deploys from master)
+- Backend: **this repo's `backend/` is FROZEN and serves nothing.** Production CTC is served by the
+  `ev-accounts` engine at https://api.empowered.vote (`/ctc` and `/api/trivia`). See `backend/FROZEN.md`
+  and ev-cto decision 0013. Canonical backend source: `ev-accounts/backend/src/trivia/`.
+- `civic-trivia-backend` Render service (`srv-d69ubnk9c44c738h8fh0`): **suspended**, auto-deploy **off**.
+- Database: Supabase shared project (kxsdzaojfaibhuzmclfq) — `trivia` schema
+- Redis: Upstash (stirred-pika-7510) — free tier, 500k commands/month
+- Collections: **42 total, 41 active** — 25 city, 14 state, 1 federal, 1 international (War in Iran).
+  **Climate Agreements is `is_active = false`** despite Phase 79-02 being marked complete; it holds 91
+  active questions but is not playable. Unresolved — see Pending Todos.
+- Questions: 3,825 active of 8,389 total; 3,734 active questions sit in active collections.
+  All active questions are linked in `collection_questions` (0 unlinked).
 
 ## Accumulated Context
 
@@ -93,18 +108,31 @@ v2.5 decisions at roadmap time (2026-04-08):
 
 ### Pending Todos
 
-- trivia_service DB role needs password reset via Supabase dashboard (non-blocking; using postgres superuser currently)
+- **Climate Agreements collection is inactive** (`is_active = false`) with 91 active questions behind it.
+  Phase 79-02 is marked complete and this file previously claimed it was launched. Decide whether to
+  activate it or record why it is held back.
+- **19 commits unpushed on master** (content-quality + guard workstream). Pushing deploys nothing —
+  backend service is suspended and the diff touches no `frontend/` files — but the code lands in a
+  frozen tree. Decide: push for history, or treat this repo's `backend/` as reference-only.
 - Tucson, AZ expiring ratio at 8.3% — below 15% advisory target; ~6 more officeholder questions would close it (non-blocking)
-- Decide AP News sourcing strategy before Phase 79 (skip AP or use verified aggregator)
+- Phase 80 (Admin Visibility) targets admin views on `generation_jobs` — it is a **backend** phase, so it
+  cannot be executed in this repo. It needs replanning against `ev-accounts` or dropping.
+
+**Resolved since last update:**
+- ~~trivia_service DB role password reset~~ — superseded 2026-06-03 by the dedicated non-rotating
+  `ctc_app` role via Session pooler (region `us-west-1`).
+- ~~Decide AP News sourcing strategy before Phase 79~~ — moot; Phase 79 shipped with the 4 confirmed feeds.
 
 ### Blockers/Concerns
 
-None.
+- Phase 80 as written is unexecutable here (backend frozen). The roadmap has not been reconciled with
+  ev-cto decision 0013.
 
 ## Session Continuity
 
-Last session: 2026-04-09T22:48:11Z
-Stopped at: Completed 79-02-PLAN.md (Climate Agreements Launch) — Phase 79 fully complete
+Last session: 2026-09-09 — stale-state reconciliation (this update)
+Stopped at: Docs reconciled against live DB and Render. No code changes.
 Resume file: None
 
-Next action: Execute Phase 80 (Admin Visibility) — fully unblocked
+Next action: Chris's call — bobit work (stages 1–4 shipped, base is clean), or resolve the two
+decisions in Pending Todos (Climate Agreements activation, unpushed commits).

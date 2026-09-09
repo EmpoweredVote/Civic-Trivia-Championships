@@ -1,443 +1,332 @@
 # Deployment Documentation
 
-**Status:** LIVE ✅  
-**Last Updated:** 2026-02-17  
-**Deployed By:** Chris (EmpoweredChris)
+**Status:** Frontend LIVE. This repo's backend is FROZEN and serves nothing.
+**Last Updated:** 2026-09-09 (verified against the Render API and the live Supabase project)
+**Previous revision:** 2026-02-17 — described a single-service architecture that no longer exists.
 
 ---
 
 ## Live URLs
 
-- **Frontend:** https://civic-trivia-frontend.onrender.com
-- **Backend API:** https://civic-trivia-backend.onrender.com
-- **Health Check:** https://civic-trivia-backend.onrender.com/health
-- **GitHub Repo:** https://github.com/EmpoweredVote/Civic-Trivia-Championships
+- **Frontend:** https://ctc.empowered.vote (also https://civic-trivia-frontend.onrender.com)
+- **API:** https://api.empowered.vote — served by **`ev-accounts`**, not by this repo
+- **GitHub Repo:** https://github.com/EmpoweredVote/Civic-Trivia-Championships (public)
 
 ---
 
 ## Architecture Overview
 
 ```
-Frontend (Render Static Site)
-    ↓ API calls to
-Backend (Render Web Service)
-    ↓ Connects to
-PostgreSQL (Supabase - civic_trivia schema)
-Redis (Upstash - session storage)
+Frontend  (Render Static Site, this repo's frontend/)
+    |
+    | API calls to
+    v
+ev-accounts engine  (https://api.empowered.vote)
+    |   mounts a vendored copy of CTC's routers at /ctc and /api/trivia
+    |   canonical source: ev-accounts/backend/src/trivia/
+    |
+    +--> PostgreSQL  (Supabase project kxsdzaojfaibhuzmclfq, schema `trivia`)
+    +--> Redis       (Upstash stirred-pika-7510, session storage)
+
+this repo's backend/   -- FROZEN. Deploys nowhere. History and reference only.
 ```
+
+### The ownership split (ev-cto decision 0013, 2026-09-05)
+
+| Change | Repo |
+|---|---|
+| UI, components, game screens | **this repo**, `frontend/` |
+| Questions, collections, content scripts | **this repo**, `backend/src/scripts/` + DB |
+| Routes, tables, migrations, services | **`ev-accounts`**, `backend/src/trivia/` |
+
+A change committed to this repo's `backend/` reaches nothing and creates silent drift — the
+fold vendored the runtime with no dependency link back. See `backend/FROZEN.md`.
+
+Anything needing a new route, table, or migration **cannot be done in this repo.**
 
 ---
 
-## GitHub Organization
+## Render
 
-**Organization:** EmpoweredVote  
-**Repository:** Civic-Trivia-Championships  
-**URL:** https://github.com/EmpoweredVote/Civic-Trivia-Championships
+**Account:** chris@empowered.vote · **Dashboard:** https://dashboard.render.com
 
-**Members:**
-- Chris (EmpoweredChris) - Owner
-- [Add other volunteers as they join]
+### Frontend Static Site — LIVE
 
-**Connected Services:**
-- Render (GitHub App installed)
-- Netlify (authorized but not currently used)
+**Service:** `civic-trivia-frontend` · Region: Oregon (US West)
 
----
-
-## Render Deployment
-
-**Account:** Personal account (chris@empowered.vote)  
-**Dashboard:** https://dashboard.render.com
-
-### Backend Web Service
-
-**Service Name:** civic-trivia-backend  
-**Type:** Web Service  
-**Region:** Oregon (US West)  
-**Instance:** Free tier
-
-**Build Settings:**
-- Root Directory: `backend`
-- Build Command: `npm install --include=dev && npm run build && cp -r src/data dist/data`
-- Start Command: `npm start`
-
-**Environment Variables:**
-```
-NODE_ENV=production
-PORT=10000
-FRONTEND_URL=https://civic-trivia-frontend.onrender.com
-DATABASE_URL=postgresql://postgres.mzuppdqbibqjedmesbmp:[PASSWORD]@aws-1-us-east-2.pooler.supabase.com:5432/postgres?options=--search_path%3Dcivic_trivia
-REDIS_URL=rediss://default:[PASSWORD]@stirred-pika-7510.upstash.io:6379
-JWT_SECRET=7f91baaeb99aae188678f9f710c5bee0fd67ae2da9e28016a3847a2d3e00794f
-JWT_REFRESH_SECRET=cb7fcc878418c82575647d7911314f0ca80fb6a49640e455170c5aed10f5147c
-```
-
-**Note:** Passwords are stored in Render environment variables (not shown here for security)
-
-### Frontend Static Site
-
-**Service Name:** civic-trivia-frontend  
-**Type:** Static Site  
-**Region:** Oregon (US West)  
-
-**Build Settings:**
 - Root Directory: `frontend`
 - Build Command: `npm install && npm run build`
 - Publish Directory: `dist`
+- Auto-deploys from `master`. **Deploys are gated on CI** — the required check names are
+  enforced by the master ruleset. **Never rename a CI job.**
 
-**Environment Variables:**
-```
-VITE_API_URL=https://civic-trivia-backend.onrender.com
-```
+**Environment:** split across two places.
 
-**Important Files:**
-- `frontend/.env.production` - Contains VITE_API_URL for production builds
-- `frontend/public/_redirects` - Not used (Render static sites don't support redirects)
+- `frontend/.env.production` **is tracked in the repo** and holds Vite public vars — e.g.
+  `VITE_SUPABASE_ANON_KEY`, switched from the legacy anon key to the **publishable** key on
+  2026-09-09 (`9122c4e`).
+- The production **API URL** is Render-env-only. Ask for it rather than guessing.
+
+**Anything in a `VITE_`-prefixed var is inlined into the public bundle at build time.** Only
+publishable values belong there — never a service key or a secret. Note that reading `.env`
+files is blocked by a deny rule in this workspace, which is deliberate; don't route around it.
+
+### Backend Web Service — SUSPENDED
+
+**Service:** `srv-d69ubnk9c44c738h8fh0` (`civic-trivia-backend`) · starter plan · Oregon
+
+Verified 2026-09-09: `suspended: suspended`, `autoDeploy: no`, `autoDeployTrigger: off`.
+It serves no traffic, and **a push to `master` will not deploy it.** Retained so its config
+and history stay inspectable.
+
+Health check path was `/health/live`. Starter plan does **not** spin down, so uptime pings
+were for alerting, not keepalive — there is no sleep-mode problem to work around here.
+
+**Changing service settings requires Render's REST API** — the Render MCP server exposes no
+`update_web_service` tool.
 
 ---
 
-## Supabase Database
+## Supabase
 
-**Account:** chris@empowered.vote  
-**Project:** EV-Backend-Dev (Development)  
-**Dashboard:** https://supabase.com/dashboard
+**Account:** chris@empowered.vote
+**Project ref:** `kxsdzaojfaibhuzmclfq` — shared across Empowered.Vote apps
+**Schema:** `trivia`
 
-**Connection Details:**
-- Host: aws-1-us-east-2.pooler.supabase.com
-- Port: 5432
-- Database: postgres
-- Schema: civic_trivia
-- User: postgres.mzuppdqbibqjedmesbmp
+CTC has been on this shared project since Phase 40 (2026-02-28). Cross-app identity is
+confirmed working; `GET /api/users/profile/identity` (Bearer auth) returns the user UUID for
+cross-app comparison.
 
-**Tables:**
-- `civic_trivia.users` - User accounts, progression, profile data
+### Connection — read this before changing anything
 
-**Schema Location:** `backend/schema.sql`
+- **Role: `ctc_app`** — a dedicated, **non-rotating** role, via the **Session pooler**.
+- **Region MUST be `us-west-1`.** `us-east-1` will fail.
+- **Do NOT revert to the `postgres` user.** It auto-rotates, which caused recurring
+  production outages until this was fixed on 2026-06-03.
 
-**Note:** We use a separate `civic_trivia` schema to avoid conflicts with other Empowered.Vote features in the same Supabase project.
+### Dashboard navigation gotcha
+
+**Exposed Schemas** is under Settings → **Schema**. (Settings → API is the outdated path.)
+
+### Content inventory (queried 2026-09-09)
+
+| | Count |
+|---|---|
+| Collections total | 42 |
+| Collections active | 41 — 25 city, 14 state, 1 federal, 1 international |
+| Active questions | 3,825 (of 8,389 rows) |
+| Active questions in active collections | 3,734 |
+
+**Open discrepancy:** `Climate Agreements` is `is_active = false` with 91 active questions
+behind it, despite Phase 79-02 being marked complete. Not playable. See STATE.md.
+
+---
+
+## Authentication
+
+**Supabase migrated to ES256 on 2026-04-03.** Verification is JWKS-based via
+`createRemoteJWKSet`. The old symmetric `JWT_SECRET` / `JWT_REFRESH_SECRET` scheme is
+**obsolete** — do not reintroduce it. Other EV services may still need the same fix.
+
+**Admin access:** the CTC admin panel is role-aware. Either a `ctc_content_editor` role or an
+`admin_users` row grants access; the role alone is now sufficient.
 
 ---
 
 ## Upstash Redis
 
-**Account:** chris@empowered.vote  
-**Database:** civic-trivia-redis  
-**Dashboard:** https://console.upstash.com
+**Database:** `stirred-pika-7510` · **Dashboard:** https://console.upstash.com
 
-**Connection Details:**
-- Host: stirred-pika-7510.upstash.io
-- Port: 6379
-- TLS: Enabled
+**Free tier: 500,000 commands/month, resets on the 1st.** Treat it as a hard design budget.
+(The previous revision of this doc said 10,000/day — that was wrong.)
 
-**Usage:**
-- Session storage (game sessions, user sessions)
-- Legacy token storage (refresh tokens)
+- Sessions are the only Redis dependency. Graceful degradation to `MemoryStorage` works, but
+  sessions are lost on restart.
+- The hot read path (`getSession`) uses **`GETEX`** — one command per read. **Do not regress
+  to `get()` + `set()`**; that doubles cost to persist `lastActivityTime`, which only
+  `MemoryStorage.cleanup()` ever reads.
+- `RedisStorage.count()` is O(N) and billed per call. Diagnostics only — never on a path a
+  monitor can poll.
+- **If usage looks high, suspect a prober before suspecting users.** Gameplay volume is small;
+  probes are relentless.
 
-**Free Tier Limits:**
-- 10,000 commands/day
-- 256 MB storage
+### Health endpoint rules (learned the hard way, 2026-07-25)
+
+Render polls a configured health check path **every 5–10 seconds, not configurable** — roughly
+500,000 hits/month. In July 2026 `/health` computed `sessionCount` via `KEYS session:*`, one
+billed command per probe. That alone consumed the **entire** monthly free tier while real
+gameplay used under 2k.
+
+- **The platform probe path must be dependency-free** — no Redis, no Postgres, no outbound
+  HTTP. `/health/live` is that path.
+- **Diagnostics go behind a flag.** `/health` reports dependency status; `/health?verbose=1`
+  adds `sessionCount` and its `KEYS` scan.
+- **Report connection state from local client state**, not by issuing a command —
+  `isRedisHealthy()` reads the client's `isReady` flag.
+- **Never point a health check path at a route that doesn't exist yet.** Deploy the route,
+  verify 200 in production, *then* change the Render setting — otherwise probes hit a 404 and
+  Render restarts the service.
+
+These rules still bind. Carry them into `ev-accounts`, which now serves production and talks
+to the same Upstash instance.
+
+---
+
+## Platform Integration
+
+**Canonical API URL (since 2026-04-02):** `https://api.empowered.vote`. Both
+`EMPOWERED_ACCOUNTS_API_URL` and `EMPOWERED_ACCOUNTS_URL` point here. The old
+`accounts-api.empowered.vote` subdomain is deprecated.
+
+| Award | Call | Key |
+|---|---|---|
+| XP | POST `{API}/api/xp/award` via `awardPlatformXp()` | `TRIVIA_SERVICE_KEY` |
+| Gems | POST `{API}/api/gems/award` via `awardPlatformGems()` | `TRIVIA_GEMS_KEY` |
+
+The deprecated `connect.credit_gems` direct RPC is fully removed (migrated Phase 66).
 
 ---
 
 ## Deployment Workflow
 
-### Automatic Deploys
+### Automatic deploys
 
-Render watches the GitHub repo and auto-deploys on push to `master` branch:
+Push to `master`. Render rebuilds the **frontend static site** only; CI must pass first.
+A commit touching only `backend/` or docs ships nothing.
 
-1. **Developer pushes to master:**
-   ```bash
-   git push origin master
-   ```
-
-2. **Render automatically:**
-   - Detects the push
-   - Rebuilds affected services
-   - Deploys if build succeeds
-   - Shows live logs during deployment
-
-3. **Typical deploy time:**
-   - Backend: 2-3 minutes
-   - Frontend: 1-2 minutes
-
-### Manual Deploy
-
-**Via Render Dashboard:**
-1. Go to service (backend or frontend)
-2. Click "Manual Deploy" button
-3. Select "Deploy latest commit"
-
-### Viewing Logs
-
-**Live logs:**
-1. Go to service in Render dashboard
-2. Click "Logs" tab
-3. Click "Live tail" to see real-time logs
-
-**Common log messages:**
-```
-✅ Connected to Redis
-PostgreSQL connected
-Server running on http://localhost:10000
-CORS enabled for: https://civic-trivia-frontend.onrender.com
-Storage: Redis
+```bash
+git push origin master
 ```
 
----
+Workflow-file pushes work — the token carries `workflow` scope (confirmed 2026-09-01).
 
-## Free Tier Limitations
+### After any bundler or dependency bump
 
-### Render Free Tier
+```bash
+cd frontend && npm run smoke
+```
 
-**Backend (Web Service):**
-- Goes to sleep after 15 minutes of inactivity
-- First request after sleep takes 20-30 seconds to wake up
-- 750 hours/month free (enough for continuous uptime)
-- Spins down after extended inactivity
+**A green build is not a page load.** A Vite 8 bump built cleanly and produced a blank white
+page in production: `react-canvas-confetti` is CJS-only and triggered React error #130. It was
+replaced with `canvas-confetti` directly. Run the smoke test.
 
-**Frontend (Static Site):**
-- Always available (no sleep mode)
-- Fast delivery via CDN
+### Manual deploy
 
-**Workarounds for sleep mode:**
-- Use a service like UptimeRobot to ping the health endpoint every 10 minutes
-- Or accept the occasional slow first load
+Render dashboard → service → "Manual Deploy" → "Deploy latest commit".
 
-### Supabase Free Tier
+### Logs
 
-- 2 projects maximum (using EV-Backend-Dev)
-- 500 MB database storage
-- 1 GB file storage
-- 2 GB bandwidth/month
+Render dashboard → service → Logs → Live tail. Also available through the Render MCP server
+(`list_logs`, `get_metrics`).
 
-### Upstash Free Tier
-
-- 10,000 commands/day
-- 256 MB storage
-- Usually enough for development/small production
+**Render MCP setup:** endpoint is `/mcp`; OAuth is broken (no DCR), so it needs a
+`RENDER_API_KEY` env var — reuse the one from EV-Accounts `.env`.
 
 ---
 
 ## Local Development
 
-### Environment Files
-
-**Backend `.env` (local development):**
-```
-PORT=3000
-FRONTEND_URL=http://localhost:5173
-DATABASE_URL=postgresql://postgres:On0mastic0n!@localhost:5433/civic_trivia
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=7f91baaeb99aae188678f9f710c5bee0fd67ae2da9e28016a3847a2d3e00794f
-JWT_REFRESH_SECRET=cb7fcc878418c82575647d7911314f0ca80fb6a49640e455170c5aed10f5147c
-```
-
-**Frontend `.env.production` (production builds):**
-```
-VITE_API_URL=https://civic-trivia-backend.onrender.com
-```
-
-### Running Locally
-
-**Backend:**
 ```bash
-cd backend
-npm run dev
+cd frontend && npm run dev     # http://localhost:5173
+cd backend  && npm run dev     # reference only; serves nothing in production
 ```
 
-**Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-
-**Local URLs:**
-- Frontend: http://localhost:5173
-- Backend: http://localhost:3000
+Environment files are **not** in git. `backend/.env.example` and the Render dashboard are the
+references. Never commit a populated `.env`.
 
 ---
 
-## Database Management
+## Content and Collection Work
 
-### Applying Schema Updates
+This is the most active work owned by this repo.
 
-**To Supabase (production):**
-1. Go to Supabase SQL Editor
-2. Paste contents of `backend/schema.sql`
-3. Run the script
+**Creating a collection:** use the **`/create-collection <City, ST>`** skill — it researches,
+writes, scaffolds, seeds and activates autonomously with no extra API spend. Manual fallback
+steps and all quality conventions are in CLAUDE.md.
 
-**To Local PostgreSQL:**
-```bash
-cd backend
-node update-local-schema.js
-```
+**Two rules that cause real damage if missed:**
 
-### Viewing Data
+1. **NEVER derive a collection from an `external_id` prefix.** Verified against the live DB
+   2026-09-08: a prefix does not identify a collection and never has. Five collections use
+   more than one prefix, and **`ind` is used by both Indiana and Indio CA** —
+   `WHERE external_id LIKE 'ind-%'` matches 51 questions across the two. Join through
+   `trivia.collection_questions` instead. Federal has no shared prefix at all
+   (`q001`…`q120`), so prefix logic breaks on it entirely.
 
-**Supabase:**
-1. Dashboard → Table Editor
-2. Select `civic_trivia` schema
-3. View/edit data in browser
+2. **Any new question-insert path MUST call `placeAnswer()`.** Generator prompts anchor
+   `correctAnswer` to index 0, so answer position is guarded at write time —
+   `backend/src/services/questionQuality/answerPlacement.ts` (also ported to ev-accounts;
+   two copies exist, noted in the source).
 
-**Local:**
-Use a PostgreSQL client or pgAdmin
+**`collection_questions` is required.** `/api/game/collections` joins on it, and the activate
+script does not populate it. Use the **guarded** insert from CLAUDE.md — the bare
+`LIKE '<prefix>-%'` form cross-links on a shared prefix.
 
 ---
 
 ## Troubleshooting
 
-### Backend Won't Start
+### Frontend can't reach the API
+1. Confirm the API URL in Render's frontend env (it is not in the repo).
+2. Rebuild after changing it — Vite inlines env vars at build time.
+3. CORS error? The allowed origin is configured in `ev-accounts`, not here.
 
-**Check Render logs for:**
-- `password authentication failed` → Wrong DATABASE_URL password in Render environment
-- `relation "users" does not exist` → Schema search path issue (should be fixed in database.ts)
-- `Cannot find module` → Build command missing dependencies
+### Blank white page after a deploy that built green
+A CJS-only dependency under Vite. Check the browser console for React error #130 and run
+`npm run smoke` locally. See the Vite 8 / confetti incident above.
 
-**Fix:**
-1. Verify environment variables in Render
-2. Check build logs for errors
-3. Ensure `cp -r src/data dist/data` in build command
+### Database connection failures
+1. Confirm the role is `ctc_app`, not `postgres` (which auto-rotates).
+2. Confirm the region is `us-west-1`.
+3. Confirm the Session pooler host, not the direct connection.
 
-### Frontend Can't Connect to Backend
+### Redis usage spiking
+Suspect a prober, not players. Check what is polling `/health` and whether anything on that
+path issues a Redis command. See the health endpoint rules above.
 
-**Check:**
-1. `frontend/.env.production` has correct VITE_API_URL
-2. Rebuild frontend after changing .env.production
-3. CORS error? Check FRONTEND_URL in backend environment matches frontend URL
-
-**Test:**
-```
-https://civic-trivia-backend.onrender.com/health
-```
-Should return JSON health status
-
-### Database Connection Issues
-
-**Check:**
-1. Supabase password is current (reset if unsure)
-2. DATABASE_URL in Render has correct password
-3. DATABASE_URL includes `?options=--search_path%3Dcivic_trivia`
-4. Tables exist in `civic_trivia` schema in Supabase
-
-### Redis Connection Issues
-
-**Check:**
-1. Upstash database is active
-2. REDIS_URL in Render has correct password
-3. URL starts with `rediss://` (double 's' for TLS)
-
----
-
-## Security Notes
-
-### Passwords Not in Git
-
-**Never commit:**
-- `.env` files with real passwords
-- Database passwords
-- API keys
-
-**Safe to commit:**
-- `.env.example` files with placeholder values
-- `frontend/.env.production` (only contains public API URL)
-
-### Stored Passwords
-
-**Location:** Render environment variables (encrypted)
-
-**To rotate passwords:**
-1. Reset in Supabase/Upstash
-2. Update in Render environment variables
-3. Redeploy service
+### Favicon looks wrong after a rebrand
+Browser cache. Hard-reload before believing the deploy failed.
 
 ---
 
 ## Team Access
 
-### Adding Volunteers to GitHub
+**GitHub:** https://github.com/orgs/EmpoweredVote/people → Invite member.
 
-1. Go to https://github.com/orgs/EmpoweredVote/people
-2. Click "Invite member"
-3. Enter their GitHub username
-4. Choose role (Member or Owner)
+**Contributors:** Krishna Patel sends ongoing frontend tweaks via **fork PRs**. Review
+caveats: partial extractions, test hacks, and PRs that may not pass `tsc`. The master ruleset
+is active (both build checks required, admin bypass working) — confirmed 2026-07-18.
 
-### Render Access
+**Render:** free tier does not support team members; Chris manages deploys.
 
-**Current limitation:** Free tier doesn't support team members
-
-**Options:**
-- Volunteers create their own Render accounts and deploy from the org repo
-- Or one person manages Render deployments
-- Or upgrade to Render Team plan ($19/month) for shared access
-
-### Supabase Access
-
-**Current:** Only chris@empowered.vote has access
-
-**To add team members:**
-1. Supabase Project Settings → Team
-2. Invite members (requires Pro plan for multiple users)
+**Supabase:** shared project — access is managed at the Empowered.Vote org level.
 
 ---
 
-## Cost Breakdown
+## Cost
 
-**Current Monthly Costs:**
-
-- GitHub: $0 (org is free for open source)
-- Render: $0 (free tier)
-- Supabase: $0 (free tier, paid plan available)
-- Upstash: $0 (free tier)
-
-**Total: $0/month**
-
-**If scaling needed:**
-- Render Team: $19/month (team access + better performance)
-- Supabase Pro: $25/month (more storage, better support)
-- Upstash Pro: Pay as you go (only if exceeding free tier)
+| Service | Cost | Note |
+|---|---|---|
+| GitHub | $0 | public repo |
+| Render | frontend static site free; backend starter plan (suspended) | |
+| Supabase | shared EV project | not billed to CTC alone |
+| Upstash | $0 | free tier — **500k commands/month is a hard design budget** |
 
 ---
 
-## Next Steps
+## Open Items
 
-**Immediate:**
-- [x] Backend deployed and working
-- [x] Frontend deployed and working
-- [x] Database connected
-- [x] Full game flow tested
-- [ ] Invite volunteers to GitHub org
-- [ ] Add to ev-prototypes.netlify.app (optional)
-- [ ] Set up UptimeRobot to prevent sleep (optional)
-
-**Future Improvements:**
-- Add staging environment (use Supabase Public project)
-- Set up CI/CD for automated testing
-- Add error monitoring (Sentry, LogRocket)
-- Optimize bundle size
-- Add analytics
+- [ ] **Decide on `Climate Agreements`** — inactive with 91 active questions behind it.
+- [ ] **19 commits unpushed on `master`** (content-quality + answer-placement guard). Pushing
+      deploys nothing, but the code lands in a frozen tree.
+- [ ] **Reconcile Phase 80 (Admin Visibility) with decision 0013** — it is backend work and
+      cannot be executed in this repo as planned.
+- [ ] **Rotate/confirm the credentials that the 2026-02-17 revision of this file exposed.**
+      That revision committed `JWT_SECRET`, `JWT_REFRESH_SECRET`, and a local Postgres
+      password in plaintext to a **public** repo. They are redacted here and the symmetric JWT
+      scheme is obsolete (ES256/JWKS now), but **git history retains them.**
 
 ---
 
-## Support Resources
-
-**Render:**
-- Docs: https://render.com/docs
-- Community: https://community.render.com
-
-**Supabase:**
-- Docs: https://supabase.com/docs
-- Community: https://github.com/supabase/supabase/discussions
-
-**GitHub:**
-- Docs: https://docs.github.com
-
-**Questions?**
-- Check .planning/STATE.md for current status
-- Check .planning/ROADMAP.md for feature plans
-- Post in team Slack/Discord
-
----
-
-*Last deployment: 2026-02-17*  
-*Deployed by: Chris (@EmpoweredChris)*  
-*Status: ✅ All systems operational*
+*Verified 2026-09-09 against the Render API (`get_service`) and Supabase project
+`kxsdzaojfaibhuzmclfq`.*

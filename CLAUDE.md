@@ -2,6 +2,10 @@
 
 ## Health endpoints (learned the hard way, 2026-07-25)
 
+> **Where this applies now:** the service these rules were written for is suspended
+> (see Render, below). The rules still bind — carry them into `ev-accounts`, which
+> serves production and talks to the same Upstash instance.
+
 Render polls a service's configured Health Check Path **every 5–10 seconds**, and
 that interval is **not configurable** — it's a standing feature request, not a
 setting. Anything on that path runs ~500,000 times a month.
@@ -41,9 +45,16 @@ budget, not a formality.
 
 ## Render
 
-- Backend service: `srv-d69ubnk9c44c738h8fh0` (`civic-trivia-backend`), starter
-  plan, region `oregon`, auto-deploys on commit to `master`.
+**Verified 2026-09-09.**
+
+- Backend service `srv-d69ubnk9c44c738h8fh0` (`civic-trivia-backend`) is
+  **suspended**, with `autoDeploy: no` and `autoDeployTrigger: off`. It serves no
+  traffic and a push to `master` will not deploy it. Production CTC is served by
+  the `ev-accounts` engine at `https://api.empowered.vote` (`/ctc`, `/api/trivia`).
+- The **frontend** static site is the only live Render service fed by this repo,
+  and it does auto-deploy from `master`. A commit touching `frontend/` ships.
 - Starter plan does **not** spin down, so uptime pings are for alerting, not
-  keepalive.
+  keepalive. (Historical — applies to the suspended service and to whatever plan
+  ev-accounts runs on.)
 - Changing service settings needs Render's REST API — the Render MCP server
   exposes no `update_web_service` tool.

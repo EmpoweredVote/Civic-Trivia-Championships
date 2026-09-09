@@ -364,6 +364,16 @@ Plans:
 
 #### Phase 80: Admin Visibility
 
+> **BLOCKED / NEEDS REPLANNING (noted 2026-09-09).** This phase is backend work — admin
+> routes and views over `generation_jobs`. Per **ev-cto decision 0013** (2026-09-05) this
+> repo's `backend/` is **frozen** and serves nothing; production is the `ev-accounts` engine.
+> As written, Phase 80 **cannot be executed here.** It needs replanning against
+> `ev-accounts/backend/src/trivia/`, splitting into a frontend half here plus a backend half
+> there, or dropping. Do not start it as-is.
+>
+> Also note: the "full 8-question game" success criteria in Phases 37, 53 and 79 were correct
+> when met. The game is **5 questions** as of 2026-06-17 — see PROJECT.md Current State.
+
 **Goal:** Admin can monitor International pipeline health â job history, pool depth, and pending review queue â directly from the admin dashboard.
 
 **Dependencies:** Phase 78 (generation_jobs table populated; pipeline running)

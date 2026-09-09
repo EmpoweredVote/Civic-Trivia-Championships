@@ -1,270 +1,215 @@
 # Quick Resume Guide for Claude
 
-**Last Updated:** 2026-02-17  
-**For:** Handing off Civic Trivia Championship project to another Claude instance
+**Last Updated:** 2026-09-09
+**For:** Handing off Civic Trivia Championship to another Claude instance
+
+> Everything below was verified on 2026-09-09 against the live Supabase project and the
+> Render API. Where a number appears, it came from a query, not from memory.
 
 ---
 
-## TL;DR - What Just Happened
+## TL;DR — where things stand
 
-We successfully deployed Civic Trivia Championship to production! 🎉
+CTC is **live in production and has been since 2026-02-17**. The interesting part of a
+handoff today is not "is it deployed" but **which repo owns which half of it**.
+
+- **`frontend/` is live and owned here.** Render static site, auto-deploys from `master`.
+- **`backend/` in this repo is FROZEN and serves nothing.** Read `backend/FROZEN.md`.
+  Production CTC is served by the **`ev-accounts`** engine, which mounts a vendored copy of
+  CTC's routers at `https://api.empowered.vote/ctc` and `/api/trivia`.
+- **Question content and collection scripts are owned here** and are the most active work.
 
 **Live URLs:**
-- Frontend: https://civic-trivia-frontend.onrender.com
-- Backend: https://civic-trivia-backend.onrender.com
-
-**What works:**
-- Full signup/login flow
-- 10-question trivia game with timer
-- Learn More modals
-- Wager mechanics on final question
-- XP/gems progression
-- User profiles
+- Frontend: https://ctc.empowered.vote (also https://civic-trivia-frontend.onrender.com)
+- API: https://api.empowered.vote
+- Leaderboard: /leaderboard — public, ranked by total XP
 
 ---
 
-## Infrastructure Overview
+## The ownership rule (read before touching backend code)
+
+Per **ev-cto decision 0013** (2026-09-05):
+
+| Change | Goes where |
+|---|---|
+| UI, components, game screens | `frontend/` — **this repo** |
+| Questions, collections, content scripts | `backend/src/scripts/`, DB — **this repo** |
+| Routes, tables, migrations, services | **`ev-accounts/backend/src/trivia/`** |
+
+A change committed to this repo's `backend/` **reaches nothing** and creates silent drift —
+the fold vendored the runtime with no dependency link back, so the two copies can diverge with
+no alert. Freezing is the mitigation.
+
+Anything needing a new route, table, or migration **cannot be done in this repo at all**.
+Features needing server persistence are two-repo changes; `docs/superpowers/` has a worked
+example in the bobit stage 3 to stage 4 split.
+
+---
+
+## Infrastructure (verified 2026-09-09)
 
 ```
 GitHub Org: EmpoweredVote
-├── Repo: Civic-Trivia-Championships
-    ├── backend/ (Express TypeScript API)
-    │   └── Deployed to: Render Web Service
-    │       └── Connects to: Supabase PostgreSQL + Upstash Redis
-    └── frontend/ (React Vite app)
-        └── Deployed to: Render Static Site
-            └── Calls backend API directly
+└── Repo: Civic-Trivia-Championships  (this repo, branch: master)
+    ├── frontend/   React + Vite  -> Render Static Site  [LIVE, auto-deploys]
+    └── backend/    Express + TS  -> FROZEN, deploys nowhere
+
+Repo: ev-accounts
+└── backend/src/trivia/  -> https://api.empowered.vote  [LIVE — serves CTC]
+
+Shared services:
+├── Supabase project kxsdzaojfaibhuzmclfq, schema `trivia`
+└── Upstash Redis  stirred-pika-7510  (free tier, 500k commands/month)
 ```
+
+**Suspended:** Render service `srv-d69ubnk9c44c738h8fh0` (`civic-trivia-backend`) —
+`suspended`, `autoDeploy: no`. A push to `master` cannot deploy it.
+
+**DB connection:** dedicated **`ctc_app`** role (non-rotating) via the **Session pooler**,
+region **`us-west-1`**. Do NOT revert to the `postgres` user — it auto-rotates and caused
+recurring outages until this was fixed 2026-06-03. `us-east-1` will fail.
+
+**Auth:** Supabase migrated to **ES256** (2026-04-03). Verification is JWKS-based via
+`createRemoteJWKSet` — not a static `JWT_SECRET`.
+
+**Platform awards:** `awardPlatformXp()` and `awardPlatformGems()` POST to
+`EMPOWERED_ACCOUNTS_API_URL/api/xp/award` and `/api/gems/award` with `TRIVIA_SERVICE_KEY` /
+`TRIVIA_GEMS_KEY`. The old `connect.credit_gems` direct RPC is fully removed.
 
 ---
 
-## Key Files to Know
+## Game structure (current)
 
-**Planning Docs (in .planning/):**
-- `DEPLOYMENT.md` ← **READ THIS FIRST** - Complete infrastructure guide
-- `STATE.md` - Current project status, what's done, what's next
-- `ROADMAP.md` - Feature roadmap (v1.0 complete, v1.1 in progress)
-- `PROJECT.md` - Core requirements and goals
-- `REQUIREMENTS.md` - All requirements and traceability
+- **5 questions**, not 8 and not 10. `TOTAL_QUESTIONS = 5`. Reduced 8 to 5 on 2026-06-17.
+- Difficulty curve: Q1 easy; Q2–Q4 one each easy/medium/hard; Q5 hard/final.
+- Q1–Q4 standard (100 base + up to 50 speed = 150 max each, so 0–600).
+- **Q5 is the wager question** — no base or speed points, plus or minus the wager. Wager max is
+  `floor(currentScore / 2)` at the time of Q5. Max reachable score is about 900.
+- **XP:** 50 base + up to 150 variable on correct/total, so 50–200 XP.
+- **Gems:** 2 for a perfect 5/5; 1 for finalScore >= 600 (`GEM_SCORE_THRESHOLD`); else 0.
+  The frontend hardcodes this threshold separately in `WagerScreen.tsx` **and**
+  `ResultsScreen.tsx` — both must match the backend.
+- **Theming:** game components use `G` from `useGameTheme()`
+  (`frontend/src/features/game/gameTheme.ts`); non-game components still use `C` from `useTheme()`.
 
-**Code:**
-- `backend/src/config/database.ts` - PostgreSQL connection (uses civic_trivia schema)
-- `backend/.env` - Local development environment vars
-- `frontend/.env.production` - Production API URL
-- `backend/schema.sql` - Database schema definition
+---
 
-**Deployment:**
-- Render auto-deploys on push to master
-- Environment variables configured in Render dashboard
-- Supabase hosts PostgreSQL (EV-Backend-Dev project)
-- Upstash hosts Redis (civic-trivia-redis database)
+## Content inventory (queried 2026-09-09)
+
+| | Count |
+|---|---|
+| Collections total | 42 |
+| Collections active | **41** — 25 city, 14 state, 1 federal, 1 international |
+| Active questions | **3,825** (8,389 total rows) |
+| Active questions in active collections | 3,734 |
+
+**Known discrepancy:** **Climate Agreements** is `is_active = false` despite Phase 79-02 being
+marked complete. It holds 91 active questions but is not playable. Unresolved — see STATE.md.
+
+**Two content rules that bite:**
+1. **NEVER derive a collection from an `external_id` prefix.** A prefix does not identify a
+   collection and never has. Five collections use more than one prefix, and `ind` is used by
+   **both Indiana and Indio CA**. Join through `trivia.collection_questions` instead.
+2. **Any new question-insert path MUST call `placeAnswer()`.** Generator prompts anchor
+   `correctAnswer` to index 0, so answer position is guarded at write time
+   (`backend/src/services/questionQuality/answerPlacement.ts`, ported to ev-accounts).
+
+Creating a collection: use the **`/create-collection <City, ST>`** skill — it researches,
+writes, scaffolds, seeds and activates autonomously. Manual fallback steps are in CLAUDE.md.
 
 ---
 
 ## Common Commands
 
-**Local Development:**
 ```bash
-# Backend
-cd backend
-npm run dev
+# Local dev
+cd frontend && npm run dev
+cd backend  && npm run dev      # reference only — this backend serves nothing
 
-# Frontend
-cd frontend
-npm run dev
+# Frontend smoke test — REQUIRED after any bundler/dep bump
+cd frontend && npm run smoke
 ```
 
-**Deploy:**
-```bash
-git add .
-git commit -m "Description"
-git push origin master
-# Render auto-deploys from GitHub
-```
+**Why the smoke test is not optional:** a Vite 8 bump produced a green build and a **blank
+white page** in production (a CJS-only `react-canvas-confetti` triggered React error #130).
+A green build is not a page load. Run the smoke test.
 
-**Database:**
-```bash
-# Update local schema
-cd backend
-node update-local-schema.js
-```
+**Deploy:** push to `master`. Only `frontend/` changes ship. Deploys are gated on CI, and the
+CI job names are **required by the master ruleset — never rename them.**
 
 ---
 
-## What's Next (v1.1 Roadmap)
+## What's next
 
-**Completed:**
-- ✅ Phase 8: Dev tooling & docs
-- ✅ Phase 9: Redis session migration (deployed!)
+**GSD phases:** v1.0–v2.4 (Phases 1–74) and v2.5 (Phases 75–79) are complete.
+**Phase 80 (Admin Visibility) is pending, unplanned, and unexecutable in this repo** — it
+targets admin views over `generation_jobs`, which is backend work. It needs replanning against
+`ev-accounts` or dropping.
 
-**Remaining:**
-- Phase 10: Game UX improvements (positioning tweaks)
-- Phase 11: Plausibility enhancement (anti-cheat)
-- Phase 12: Learning content expansion (15% → 25-30%)
-
----
-
-## Common Issues & Solutions
-
-**"Backend won't start"**
-→ Check Render logs, usually environment variable issue
-
-**"Can't connect to database"**
-→ Verify DATABASE_URL has `?options=--search_path%3Dcivic_trivia`
-
-**"Frontend shows 'unexpected error'"**
-→ Check CORS (FRONTEND_URL in backend) and API URL (VITE_API_URL in frontend)
-
-**"Site is slow to load"**
-→ Free tier sleep mode (15 min inactivity = 20-30s wake time)
+**Active work is running outside `.planning/`:**
+- **Bobits** — an animated stick-figure meta-progression. Stages 1–4 are merged. Specs and
+  plans are in `docs/superpowers/`, not `.planning/`. Crowd cap is **100 figures** (measured,
+  not guessed). Standing product constraint: **bobits must never cover the question card or
+  any of the four answer options.**
+- **Content quality** — bank-wide answer-position and value-bracket remediation, 2026-09-08.
+  19 commits currently unpushed on `master`.
 
 ---
 
 ## Team Context
 
-**Chris (EmpoweredChris):**
+**Chris (chris@empowered.vote):**
 - Executive Director of Empowered.Vote
-- Works with volunteers on civic engagement platform
-- Not a coder but systems designer from game industry
-- Needs clear step-by-step guidance
+- Systems designer from the game industry, not a coder — wants clear step-by-step guidance
+- Prefers being told the real state of things over reassurance
 
-**Volunteers:**
-- 4-5 "vibe coding with Claude"
-- Working on different features
-- Need access to GitHub org
-- May have separate Render accounts (free tier limitation)
-
-**Other Features:**
-- Other prototypes exist at ev-prototypes.netlify.app
-- Shared Supabase project (civic_trivia uses separate schema)
-- Multiple features in development
-
----
-
-## Resume Checklist for New Claude
-
-When starting a new session:
-
-1. **Read DEPLOYMENT.md** - Understand the infrastructure
-2. **Read STATE.md** - Know what's been done and what's next
-3. **Check live site** - Verify it's still working
-4. **Review ROADMAP.md** - Understand feature priorities
-5. **Ask about blockers** - What's preventing progress?
-
----
-
-## Quick Test Flow
-
-Verify everything works:
-
-1. Visit https://civic-trivia-frontend.onrender.com
-2. Sign up with test account
-3. Play through all 10 questions
-4. Complete wager on final question
-5. Check results screen (XP/gems awarded)
-6. View profile (stats saved)
-7. Try Learn More on a question
-
-**Expected:** All steps work smoothly (first load may be slow - free tier)
-
----
-
-## Environment Variables (Render)
-
-**Backend:**
-- `DATABASE_URL` - Supabase connection (with search_path)
-- `REDIS_URL` - Upstash connection
-- `FRONTEND_URL` - CORS origin
-- `JWT_SECRET` - Token signing
-- `JWT_REFRESH_SECRET` - Refresh token signing
-- `NODE_ENV` - production
-
-**Frontend:**
-- `VITE_API_URL` - Backend URL
-
-**See DEPLOYMENT.md for full details and actual values**
-
----
-
-## Account Access
-
-**GitHub:** EmpoweredVote organization  
-**Render:** Chris's personal account (chris@empowered.vote)  
-**Supabase:** Chris's account, EV-Backend-Dev project  
-**Upstash:** Chris's account, civic-trivia-redis database
-
-**Limitation:** Free tiers don't allow multiple team members. Volunteers can create their own free accounts and deploy from the org repo.
+**Krishna Patel:** ongoing frontend tweaks via **fork PRs**. Review caveats: partial
+extractions, test hacks, and PRs that may not pass `tsc`. Read before merging.
 
 ---
 
 ## Design Philosophy (Important!)
 
-From PROJECT.md:
+1. **Play, Not Study** — game show aesthetics, exciting pacing
+2. **Learn Through Discovery** — questions reveal interesting facts
+3. **Inclusive Competition** — anyone can play regardless of knowledge
+4. **No Dark Patterns** — no daily streaks, loss aversion, or social pressure
 
-1. **Play, Not Study** - Game show aesthetics, exciting pacing
-2. **Learn Through Discovery** - Questions reveal interesting facts
-3. **Inclusive Competition** - Anyone can play regardless of knowledge
-4. **No Dark Patterns** - No daily streaks, loss aversion, or social pressure
-
-**Tone:** "Not quite" instead of "Wrong", focus on teaching not judging
-
----
-
-## Cost Breakdown
-
-**Current: $0/month** (all free tiers)
-
-**If scaling needed:**
-- Render Team: $19/month (team access + performance)
-- Supabase Pro: $25/month (more storage)
-- Upstash Pro: Pay as you go
-
----
-
-## Success Metrics (from v1.0)
-
-**Delivered:**
-- 50/50 requirements (100%)
-- 7/7 phases complete
-- 30 plans executed
-- ~115 min total execution time
-- Fully deployed and operational
-
-**Quality:**
-- WCAG AA accessible
-- 60fps animations
-- <300KB bundle size
-- <1.5s FCP, <3s TTI
+**Tone:** "Not quite" instead of "Wrong". Teach, don't judge.
 
 ---
 
 ## Red Flags to Watch For
 
-❌ **Don't do these:**
-- Commit .env files with real passwords
-- Deploy without testing locally first
-- Ignore free tier limits
-- Break WCAG accessibility
-- Add dark patterns (streaks, timers, pressure)
+**Don't:**
+- Commit backend changes to this repo expecting them to ship — they won't
+- Put anything with a dependency on the platform health-check path (`/health/live`).
+  Render polls it every 5–10s, about 500k times a month. A `KEYS session:*` on `/health` once
+  ate the **entire** Upstash free tier in a month while real gameplay used under 2k commands.
+- Regress `getSession` from `GETEX` to `get()` + `set()` — it doubles Redis cost per read
+- Derive a collection from an `external_id` prefix (see above)
+- Bump a bundler or dep without running `npm run smoke`
+- Rename a CI job name — the master ruleset requires them
+- Add dark patterns (streaks, pressure, guilt)
 
-✅ **Always do:**
-- Test locally before pushing
-- Read DEPLOYMENT.md for infrastructure changes
-- Maintain accessibility standards
-- Follow "Play, Not Study" philosophy
-- Keep Chris in the loop
+**Always:**
+- Check which repo owns the change before writing it
+- Verify counts against the DB rather than quoting a doc
+- Keep Chris in the loop on anything outward-facing
 
 ---
 
 ## When in Doubt
 
-**Technical issues:** Check DEPLOYMENT.md troubleshooting  
-**Feature questions:** Check ROADMAP.md and REQUIREMENTS.md  
-**Philosophy questions:** Check PROJECT.md design principles  
-**Current status:** Check STATE.md
+| Question | Read |
+|---|---|
+| Infrastructure, deploy | `.planning/DEPLOYMENT.md`, CLAUDE.md |
+| Current status | `.planning/STATE.md` |
+| Feature priorities | `.planning/ROADMAP.md`, `REQUIREMENTS.md` |
+| Design principles | `.planning/PROJECT.md` |
+| Collection conventions | CLAUDE.md, `.planning/COLLECTION-PLAYBOOK.md` |
+| Backend ownership | `backend/FROZEN.md`, ev-cto decision 0013 |
+| Bobits | `docs/superpowers/specs/`, `docs/superpowers/plans/` |
 
-**Most important:** Chris knows his volunteers and org context. When unclear, ask before implementing!
-
----
-
-*This guide gets you 80% caught up. Read DEPLOYMENT.md for the other 20%.*
+**Most important:** Chris knows his volunteers and org context. When unclear, ask before
+implementing.

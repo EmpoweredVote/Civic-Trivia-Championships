@@ -8,6 +8,26 @@ A game-show-style trivia experience that makes civic learning engaging, social, 
 
 Make civic learning fun through game show mechanics — play, not study. No dark patterns, no guilt, no pressure.
 
+## Current State (verified 2026-09-09) — supersedes anything below
+
+The Validated / Key Decisions sections below are **dated delivery records**, accurate as of the
+milestone each line is tagged with. Four of those facts have since changed. Where they conflict
+with this block, this block wins.
+
+| Recorded below | Current reality |
+|---|---|
+| Solo game flow is **10 questions** (v1.0) | Game is **5 questions** — `TOTAL_QUESTIONS = 5`, changed 2026-06-17 (8 → 5; it was 10 → 8 earlier). Q1–Q4 standard, **Q5 is the wager question**. |
+| Gem awards via **`award_gems` RPC** (v1.8) | The direct RPC is **fully removed** (Phase 66). Gems go over HTTP: POST `{EMPOWERED_ACCOUNTS_API_URL}/api/gems/award` with `TRIVIA_GEMS_KEY`. Same for XP via `/api/xp/award` with `TRIVIA_SERVICE_KEY`. |
+| Supabase JWT via **`SUPABASE_JWT_SECRET`** (v1.8) | Supabase moved to **ES256** on 2026-04-03. Verification is JWKS-based via `createRemoteJWKSet`. The shared-secret path is obsolete. |
+| Backend deployed as a Render web service | **This repo's `backend/` is FROZEN and serves nothing** (ev-cto decision 0013). Production is the `ev-accounts` engine at `https://api.empowered.vote`. Only `frontend/` and content work ship from here. |
+
+**Scale:** 42 collections (41 active — 25 city, 14 state, 1 federal, 1 international);
+3,825 active questions. `Climate Agreements` is inactive despite Phase 79-02 being marked
+complete — open decision, see STATE.md.
+
+Note: the "8 questions" figures in **PIPE-05** and in the collection playbook's topic caps refer
+to *generation limits*, not game length. Those are current and correct.
+
 ## Requirements
 
 ### Validated
