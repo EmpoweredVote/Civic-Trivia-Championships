@@ -16,6 +16,13 @@ import type { PoofEvent } from './poofReducer';
  */
 export const TOUCH_ARM_MS = 300;
 
+/**
+ * How long a tap keeps acting as a hover. Touch fires no mousemove, so without this a tapped
+ * Bobit gets its click and never its greet. Must outlast a frame (so hover resolves at least
+ * once) and expire before TOUCH_ARM_MS (so a tap and a hold-to-poof stay distinct).
+ */
+export const TAP_HOVER_MS = 180;
+
 /** How far the finger may drift before the hold is treated as a scroll instead. */
 export const HOLD_SLOP = 12;
 

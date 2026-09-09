@@ -255,6 +255,13 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
       }}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
+      onTouchStart={() => {
+        // Tap = hover + click together: he looks up and speaks in one gesture. Routed through
+        // settleAfterEvent (not a raw readerReduce click) so this works under reduced motion
+        // too, where there is no rAF loop to carry the lookup -> hold transition on its own.
+        hoveringRef.current = true;
+        settleAfterEvent({ type: 'click' });
+      }}
     >
       <div
         aria-hidden="true"

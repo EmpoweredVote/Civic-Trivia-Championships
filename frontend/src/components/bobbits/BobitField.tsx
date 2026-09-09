@@ -9,7 +9,9 @@ import { greetReduce, isGreeting, greetClock, greetingIds } from './greetReducer
 import type { GreetState } from './greetReducer';
 import { poofReduce, POOF_IDLE, POOF_HOLD, POOF_BURST } from './poofReducer';
 import type { PoofState, PoofEvent } from './poofReducer';
-import { gestureReduce, GESTURE_IDLE, shouldSuppressContextMenu } from './pointerGestures';
+import {
+  gestureReduce, GESTURE_IDLE, shouldSuppressContextMenu, TAP_HOVER_MS,
+} from './pointerGestures';
 import { armFlee, fleeAdvance, allGone } from './fleeReducer';
 import { bubbleReduce } from './dialogue/bubbleReducer';
 import type { BubbleState } from './dialogue/bubbleReducer';
@@ -83,6 +85,9 @@ export function BobitField({
   const gestureRef = useRef<GestureState>(GESTURE_IDLE);
   const hoveredRef = useRef<string | null>(null);
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  // Touch fires no mousemove, so a tap publishes its point here and this holds the window
+  // open long enough for renderFrame to resolve hover from it at least once.
+  const tapHoverUntilRef = useRef(0);
   const widthRef = useRef(0);
   const clockRef = useRef(0);
   const fleeRef = useRef<FleeState>({});
@@ -233,6 +238,12 @@ export function BobitField({
       resolvedRef.current = all;
       const poof = poofRef.current;
 
+      // A tap's hover expires on its own, so the greet linger drains and the figure settles.
+      if (tapHoverUntilRef.current && performance.now() >= tapHoverUntilRef.current) {
+        pointerRef.current = null;
+        tapHoverUntilRef.current = 0;
+      }
+
       // Resolve hover before drawing, so a greeting figure is painted greeting this frame.
       if (interactive && poof.phase === 'idle') {
         const p = pointerRef.current;
@@ -369,6 +380,7 @@ export function BobitField({
     const onMove = (e: MouseEvent) => { pointerRef.current = local(e.clientX, e.clientY); };
     const onLeave = () => {
       pointerRef.current = null;
+      tapHoverUntilRef.current = 0;
       const r = gestureReduce(gestureRef.current, { kind: 'cancel' });
       gestureRef.current = r.state; apply(r.emit);
     };
@@ -397,6 +409,10 @@ export function BobitField({
       const t0 = e.touches[0];
       if (!t0) return;
       const p = local(t0.clientX, t0.clientY);
+      // Touch fires no mousemove, so publish the tap as a pointer position: this is what
+      // makes a tap read as hover AND click, per the landing page's touch model.
+      pointerRef.current = p;
+      tapHoverUntilRef.current = performance.now() + TAP_HOVER_MS;
       const hit = poofableAt(p.x, p.y);
       const f = hit ? fraction(hit, p.x, p.y) : { fx: 0, fy: 0 };
       const r = gestureReduce(gestureRef.current, {
@@ -410,6 +426,9 @@ export function BobitField({
       const t0 = e.touches[0];
       if (!t0) return;
       const p = local(t0.clientX, t0.clientY);
+      // Keep following the finger while it is still a tap; once the window has expired
+      // (dragged into a hold, or just old) leave pointerRef alone so it can settle.
+      if (performance.now() < tapHoverUntilRef.current) pointerRef.current = p;
       const r = gestureReduce(gestureRef.current, {
         kind: 'touchmove', x: p.x, y: p.y, touches: e.touches.length, now: performance.now(),
       });
