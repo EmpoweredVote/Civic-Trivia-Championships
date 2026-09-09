@@ -256,17 +256,26 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       onTouchStart={() => {
-        // Tap = hover + click together: he looks up and speaks in one gesture. Routed through
-        // settleAfterEvent (not a raw readerReduce click) so this works under reduced motion
-        // too, where there is no rAF loop to carry the lookup -> hold transition on its own.
+        // Hover half only. The click half arrives for free: the browser synthesizes a click
+        // after touchend, which the canvas's existing onClick={onActivate} already handles.
+        // Calling settleAfterEvent here too would double-fire the reducer on one physical tap
+        // -- masked under normal motion (the first call parks in `lookup`, mid-transition, and
+        // a click there is dropped) but not under reduced motion, where settleAfterEvent
+        // fast-forwards synchronously to a settled `hold`, so the synthesized click reads as a
+        // genuine second click and immediately closes what it just opened.
         hoveringRef.current = true;
-        settleAfterEvent({ type: 'click' });
       }}
       onTouchEnd={() => {
         // Touch has no mouseleave/blur to fall back to `false`, so drop it here as the finger
-        // lifts. Safe: glance only means anything in `read`, and a tap has just moved the
-        // machine to lookup/hold, where the click transition drives the pose instead -- this
-        // is what lets the reader return to a plain read (not a stuck glance) after dismiss.
+        // lifts. Safe: glance only means anything in `read`, and a tap is about to move the
+        // machine to lookup/hold via the synthesized click, where the click transition drives
+        // the pose instead -- this is what lets the reader return to a plain read (not a stuck
+        // glance) after dismiss.
+        hoveringRef.current = false;
+      }}
+      onTouchCancel={() => {
+        // Same stuck-state hazard as touchend, via an OS-interrupted touch (e.g. an incoming
+        // call) that never fires touchend at all.
         hoveringRef.current = false;
       }}
     >
