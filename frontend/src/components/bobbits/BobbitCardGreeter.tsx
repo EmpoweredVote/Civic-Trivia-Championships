@@ -10,9 +10,10 @@ interface BobbitCardGreeterProps {
 
 /**
  * A single Bobbit perched on the top edge of whatever card this is placed over — seated,
- * legs dangling onto the card below, waving hello. Render as a SIBLING of the card (inside
- * a shared position:relative wrapper), not as its descendant — the card's own overflow:hidden
- * would otherwise clip the head/arm poking up above its edge.
+ * legs dangling onto the card below. At rest it just sits; hovering makes it wave, which
+ * BobitField supplies for free by swapping a hovered seated figure to `greetseat`. Render as
+ * a SIBLING of the card (inside a shared position:relative wrapper), not as its descendant —
+ * the card's own overflow:hidden would otherwise clip the head/arm poking up above its edge.
  */
 export function BobbitCardGreeter({ darkMode, isMobile }: BobbitCardGreeterProps) {
   // Same scale as every other Bobbit instance (hero trophy-carry, collections pair).
@@ -27,7 +28,7 @@ export function BobbitCardGreeter({ darkMode, isMobile }: BobbitCardGreeterProps
 
   const figures: FieldFigure[] = useMemo(() => [{
     id: 'card-greeter',
-    anim: 'greetseat',
+    anim: 'sit',
     color: figColor(0, darkMode),
     x: 0,
     xFrac: 0.5,
