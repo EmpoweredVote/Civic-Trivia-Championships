@@ -227,18 +227,19 @@ One thing that got much cheaper: because every magnitude question in the bank is
 | Queens, NY | 34.6% → **25.4%** | 0% → **50.0%** | 30 of 60 rebracketed |
 | Bloomington, IN | 35.0% → **25.0%** | 4.8% → **47.6%** | 10 of 21 rebracketed |
 | War in Iran | 31.7% → **26.8%** | 0% → 7.9% | only 5 of 38 durable; see below |
-| Climate Agreements | 37.8% (unchanged) | 2.2% (unchanged) | **deliberately skipped** |
+| Climate Agreements | 37.8% → **25.6%** | 2.2% → **51.1%** | 23 of 45 rebracketed (done on request) |
 
 **Check expiry before rebracketing an events collection.** This nearly became 143 questions of throwaway work. `expires_at` says:
 
 - **War in Iran — 33 of 38 magnitude questions expire between 2026-09-09 and 09-12.** Only five never expire, and they are exactly the curated `wiran-00xx` block (`0018`, `0019`, `0020`, `0028`, `0040`). Those five were fixed; the 33 RSS-derived ones were left, because they self-clean within four days and the write-time guard means their replacements arrive unbiased. Note the collection's *reported* bracketing will look worse after they expire (3 of 5 at an extreme = 60%), but with only 5 magnitude questions it falls under the audit's 8-question floor and stops reporting at all.
-- **Climate Agreements — skipped entirely.** The collection is `is_active: false`, so no player can reach it, and all 45 of its magnitude questions expire by 2026-09-18. Rebracketing it would have zero player impact and evaporate in ten days. Its 37.8% is the one number still above 30% bank-wide, and it is knowingly left there. Revisit only if the collection is ever activated — and then generate fresh, since the guard now covers new writes.
+- **Climate Agreements — done on request, after being flagged as not worth it.** The collection is `is_active: false` and all 45 of its magnitude questions expire by 2026-09-18, so this was recorded as zero-player-impact work and skipped; Chris asked for it anyway and it was completed (23 of 45 rebracketed, then the prose pass re-run: 23/23/22/22 on position, 51.1% at a value-rank extreme). Worth reading the numbers as a **method check rather than a player fix** — they confirm the recipe reaches ~25%/~50% even on a badly bracketed, magnitude-heavy collection where water-filling alone had bottomed out at 37.8%.
+- Careful reading mattered here: four questions had their correct answer somewhere other than a quick scan suggested (`clima-1509`/`1527` are 16 not 15, `1525`/`1535` are 750 not 500). All 23 were diffed old-correct against new-correct before the write, and all 23 matched.
 
 **Label-style numbers are a third of Queens.** Twelve of its 60 magnitude questions ask "which Queens district?" with options like District 20/21/22/23 — the number identifies a district, it does not measure anything. Unlike the US Civics amendment questions, these *were* safe to rebracket: Queens council districts run roughly 19–32, so the answer can sit anywhere in that band and every neighbouring district remains an equally plausible distractor. The distinction that matters is whether the label's neighbours are interchangeable as distractors (Queens districts: yes) or thematically chosen (Reconstruction amendments: no).
 
 **Two more bounded series found**, both in Bloomington: `bli-005` (council term, 4 years) and `bli-073` (4 sports complexes) cannot reach rank 4, because the only values below the answer include 1 — and "1 year" / "1 sports complex" breaks unit consistency, which would drop the question out of the metric rather than fix it. Both left at rank 3. Same family as `q002` and "4 out of 5".
 
-Remaining queue: the ~1,100 questions the original survey counted, none of which now exceeds 30% on position.
+**Bank-wide after this pass: 42 collections, 3,815 questions, nothing above 30% on position** (worst is Wisconsin at 30.0%, from an early manual rotation). Value rank across 972 magnitude questions is **97/319/460/96 — 19.9% at an extreme**, up from 13.8%. That remains the open work, and it is now the only one of the two metrics still far from target.
 
 - Work anything new in descending order of the audit's reported number.
 
