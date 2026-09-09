@@ -262,6 +262,13 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
         hoveringRef.current = true;
         settleAfterEvent({ type: 'click' });
       }}
+      onTouchEnd={() => {
+        // Touch has no mouseleave/blur to fall back to `false`, so drop it here as the finger
+        // lifts. Safe: glance only means anything in `read`, and a tap has just moved the
+        // machine to lookup/hold, where the click transition drives the pose instead -- this
+        // is what lets the reader return to a plain read (not a stuck glance) after dismiss.
+        hoveringRef.current = false;
+      }}
     >
       <div
         aria-hidden="true"
