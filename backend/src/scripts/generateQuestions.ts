@@ -36,7 +36,7 @@ const __dirname = dirname(__filename);
 
 // Collection metadata — names must match the DB `name` column exactly
 const COLLECTION_NAMES: Record<string, string> = {
-  'federal': 'How Washington Works',
+  'federal': 'US Civics',
   'bloomington-in': 'Bloomington, IN',
   'los-angeles-ca': 'Los Angeles, CA',
   'indiana-state': 'Indiana',

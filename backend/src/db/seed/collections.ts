@@ -2,7 +2,7 @@ import type { NewCollection } from '../schema.js';
 
 export const collectionsData: NewCollection[] = [
   {
-    name: 'How Washington Works',
+    name: 'US Civics',
     slug: 'federal',
     description: 'How well do you really know Uncle Sam?',
     localeCode: 'en-US',

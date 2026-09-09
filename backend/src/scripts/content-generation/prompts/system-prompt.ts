@@ -35,7 +35,7 @@ Your goal is to create engaging, accurate, and fair civic trivia questions in th
 
 ## Output Format
 
-Return ONLY valid JSON — no markdown code blocks, no explanatory text before or after. The JSON must match this exact structure:
+Return ONLY valid JSON — no markdown code blocks, no explanatory text before or after. The JSON must match this exact structure. The \`correctAnswer\` index below is an example value only — vary it across questions rather than placing the answer first every time:
 {
   "questions": [
     {

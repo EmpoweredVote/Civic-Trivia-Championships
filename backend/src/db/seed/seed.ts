@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { db } from '../index.js';
+import { placeAnswer } from '../../services/questionQuality/answerPlacement.js';
 import { collections, topics, collectionTopics, questions, collectionQuestions } from '../schema.js';
 import { collectionsData } from './collections.js';
 import { topicsData } from './topics.js';
@@ -65,7 +66,14 @@ async function seed() {
 
       // d) Transform and insert questions
       console.log('\nSeeding questions...');
-      const questionInserts = getQuestionInserts(topicIdMap);
+      // Apply the same write-time answer-position guard the generators use. The seed
+      // JSON banks were written before the guard existed and carry the old
+      // answer-always-first shape, so re-seeding without this would reintroduce the
+      // position collapse on any rebuild.
+      const questionInserts = getQuestionInserts(topicIdMap).map((q) => {
+        const placed = placeAnswer(q.options as string[], q.correctAnswer, q.externalId);
+        return { ...q, options: placed.options, correctAnswer: placed.correctAnswer };
+      });
       console.log(`Preparing to insert ${questionInserts.length} questions...`);
 
       const insertedQuestions = await tx

@@ -14,6 +14,7 @@
     "db:migrate": "drizzle-kit push",
     "db:seed": "tsx src/db/seed/seed.ts",
     "db:seed:community": "tsx src/db/seed/seed-community.ts",
+    "verify:answer-placement": "tsx src/scripts/verify-answer-placement.ts",
     "audit-questions": "tsx src/scripts/audit-questions.ts",
     "audit-address-phone": "tsx src/scripts/audit-address-phone.ts",
     "archive-violations": "tsx src/scripts/archive-violations.ts",

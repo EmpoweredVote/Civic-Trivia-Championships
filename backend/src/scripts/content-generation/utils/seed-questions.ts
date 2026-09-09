@@ -3,6 +3,7 @@ import { questions, collectionQuestions, topics, collections, collectionTopics }
 import { eq, and, inArray } from 'drizzle-orm';
 import type { ValidatedQuestion } from '../question-schema.js';
 import { DuplicateDetector, normalizeText } from '../../../services/qualityRules/rules/duplicate.js';
+import { placeAnswer } from '../../../services/questionQuality/answerPlacement.js';
 
 export interface TopicCategoryInput {
   slug: string;
@@ -148,12 +149,17 @@ export async function seedQuestionBatch(
       continue;
     }
 
+    // Move the correct answer off wherever the model left it -- the prompt's output
+    // example says correctAnswer: 0 and models copy it. Seeded on externalId so
+    // regenerating the same question does not move its answer between reviews.
+    const placed = placeAnswer(question.options, question.correctAnswer, question.externalId);
+
     // Build question record matching NewQuestion type from schema
     const newQuestion = {
       externalId: question.externalId,
       text: question.text,
-      options: question.options,
-      correctAnswer: question.correctAnswer,
+      options: placed.options,
+      correctAnswer: placed.correctAnswer,
       explanation: question.explanation,
       difficulty: question.difficulty,
       topicId,

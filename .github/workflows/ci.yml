@@ -63,3 +63,13 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run build
+
+      # The write-time answer-position guard. Generator prompts show the model an
+      # output example with correctAnswer: 0 and it copies it -- that produced five
+      # collections where the answer was at position A in 100% of questions. A prompt
+      # instruction is advisory, so the guard is a deterministic transform on the write
+      # path and this proves it still works. No DB or network, so it is safe in CI.
+      # Kept inside this job: the master ruleset requires this check by name, and a new
+      # job would not be required, so a red result would not block anything.
+      - name: Verify answer placement guard
+        run: npm run verify:answer-placement

@@ -122,57 +122,13 @@ async function tryLoadLocaleConfig(slug: string): Promise<LocaleConfig | null> {
 }
 
 // ─── Distractor bracketing ────────────────────────────────────────────────────
-/**
- * Where the correct value ranks among four numeric options (1 = smallest offered,
- * 4 = largest), or null when the options are not a comparable magnitude series.
- *
- * Why this check exists: a survey on 2026-09-08 found the generator writes the true
- * value then pads it with two smaller and one larger distractor, near-universally.
- * Across 1,154 numeric questions -- 31% of the active bank -- the answer was third of
- * four 54.2% of the time and at either extreme only 14%, against a 50% baseline.
- * "Sort the numbers, take the third" scored 54% project-wide and 96% in Pittsburgh.
- *
- * This is deliberately NOT a qualityRules rule. Those are per-question, and a single
- * question whose answer sits in the middle is perfectly fine -- the defect only exists
- * as a distribution across a collection, so it belongs in a collection-level audit.
- *
- * Note the answer-position rotation (step 6d of the create-collection skill) does NOT
- * fix this and actively hides it: rotation changes where options are displayed, so the
- * position histogram comes out uniform while the value-rank exploit survives intact for
- * anyone who sorts the numbers. Both checks are needed.
- */
-export function magnitudeRank(options: string[], correctIndex: number): number | null {
-  if (options.length !== 4) return null;
-  if (correctIndex < 0 || correctIndex > 3) return null;
-
-  // A prose date is not a magnitude. "December 5, 1791" and "July 4, 1776" extract to
-  // 51791 and 41776, which sorts them backwards. Found in asheville-nc.
-  const MONTHS =
-    /\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i;
-  if (options.some((o) => MONTHS.test(o))) return null;
-
-  // Options must share a unit, or they cannot be compared. "$500 million" against
-  // "$3 billion" extracts to 500 vs 3 -- backwards. Found in asheville-nc.
-  const unitOf = (o: string) =>
-    (o.replace(/[0-9][0-9,.]*/g, ' ').match(/[a-z%$+]+/gi) || [])
-      .join(' ')
-      .toLowerCase()
-      .trim();
-  const units = new Set(options.map(unitOf));
-  if (units.size > 1) return null;
-
-  const valueOf = (o: string): number | null => {
-    const m = o.match(/[0-9][0-9,]*(\.[0-9]+)?/);
-    if (!m) return null;
-    const n = Number(m[0].replace(/,/g, ''));
-    return Number.isFinite(n) ? n : null;
-  };
-  const values = options.map(valueOf);
-  if (values.some((v) => v === null)) return null;
-
-  const correct = values[correctIndex] as number;
-  return (values as number[]).filter((v) => v < correct).length + 1;
-}
+// magnitudeRank lives in services/questionQuality/answerPlacement.ts, alongside the
+// write-time placeAnswer() guard that consumes the same magnitude definition. Keeping
+// one copy is the point: two drifting definitions of "is this a number series" is how
+// this class of bug survives. Re-exported so existing importers of this script still
+// resolve it.
+import { magnitudeRank } from '../services/questionQuality/answerPlacement.js';
+export { magnitudeRank };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 

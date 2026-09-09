@@ -202,6 +202,35 @@ Notes for whoever fixes the rest:
 - **The audit assertion now exists** (`audit-collection-readiness.ts`, "Answer Position"). It reports the A/B/C/D histogram and warns when the best single guess exceeds 40% against a 25% baseline. Against the live bank it fires on **30 of 42 collections** and stays quiet on 12 — the six previously rotated, the five fixed above, and Bloomington (35.0%). Worst remaining is **Plano, TX at 74.1%**, then North Carolina 73.6% and Federal 73.5%.
 - Work the rest in descending order of that number.
 
+### The guard: why it kept happening, and what now stops it (2026-09-08)
+
+**Root cause found.** Every generator prompt shows the model a JSON output example containing `"correctAnswer": 0`, and the model copies it verbatim. That is the whole mechanism — seven prompt sites carried it, including the two shared system prompts feeding the nightly 02:00 ET replacement cron.
+
+A prompt instruction cannot be the fix: it is advisory, the model may quietly stop complying, and nothing detects it when it does. The `4a487a3` prompt change for bracketing has the same weakness. So the guard is a **deterministic transform on the write path**, where compliance is not optional:
+
+`backend/src/services/questionQuality/answerPlacement.ts` — `placeAnswer(options, correctAnswer, seed)`:
+
+- **Numeric series → sorted ascending**, not permuted. Deliberate: position then *equals* value rank, so the two metrics coincide and neither can hide behind the other. Permuting numeric options instead is exactly what let the bracketing bias survive the earlier manual rotations.
+- **Everything else → permuted** into a slot derived from a hash of the seed. Stateless, so it is safe from any number of concurrent generators; uniform in expectation rather than exactly, so a single 12-question night can be lumpy while a collection converges.
+- **Seeded on `externalId`** so regenerating a question does not move its answer between draft reviews.
+- **Returns input untouched, never throws**, for malformed payloads, wrong option counts, out-of-range indices, and any "all/none of the above" option whose position is semantic. A bad generator payload degrades to today's behaviour rather than corrupting a question.
+
+**Wired into every ongoing write path** — the two crons and both content paths:
+
+| Path | What it feeds |
+|---|---|
+| `cron/replacementGenerator.ts` | nightly 02:00 ET replacements |
+| `services/generation/ElectionQuestionGenerator.ts` | election-detection cron |
+| `services/generation/CurrentTermQuestionGenerator.ts` | post-election officeholder questions |
+| `scripts/content-generation/utils/seed-questions.ts` | `generate-locale-questions` and the create-collection flow |
+| `db/seed/seed.ts` | rebuilds — the seed JSON banks predate the guard and carry the old answer-first shape, so re-seeding without it would reintroduce the collapse |
+
+`generateQuestions.ts` writes JSON rather than the DB, so it is covered downstream by `seed.ts`. The remaining direct inserters (`add-ms-`/`add-smo-`/`generate-biloxi-`/`generate-wdc-officeholder-questions.ts`, `migrate-to-shared-supabase.ts`) are spent one-offs.
+
+**`magnitudeRank` now has exactly one definition**, in `answerPlacement.ts`, re-exported from the audit script. Two drifting definitions of "is this a number series" is precisely how this class of bug survives.
+
+**Proof it works:** `npm run verify:answer-placement` (backend) — 37 checks, no DB, no network, no API spend. Covers answer-text and option-set preservation across all five option shapes, the refusals, determinism, and a 400-question batch that spreads 100/98/100/102 (25.5% best guess, from a 100% baseline). It runs as a **step inside the existing `Backend build (tsc)` job** — not a new job, because the master ruleset requires checks by name and a new job would not be required, so a red result would not block anything.
+
 ### Fixed: Federal / "How Washington Works" (2026-09-08)
 
 Taken out of turn as the collection every player sees. **113 questions, 3/83/23/4 → 29/28/28/28**, best guess 73.5% → **25.7%**. Value rank fixed in the same pass: 1/8/9/0 → **5/4/4/5**, 55.6% at an extreme (was 5.6%).
@@ -212,15 +241,15 @@ Verified by fingerprint rather than by trusting the write guards: `md5(string_ag
 
 Also note `q002` ("how many branches") is a **bounded series that cannot reach rank 4** — only two values exist below 3, so no set of distractors puts the answer last. Same class as the "4 out of 5" case from Asheville.
 
-### Renamed: Federal → "How Washington Works" (2026-09-08)
+### Renamed: Federal → "US Civics" (2026-09-08)
 
 Product decision. The collection is federal *civics*, not history: Constitution + Bill of Rights + Amendments 45, judiciary 31, Congress + executive 29, elections 8, and only **3** questions tagged U.S. History — so "US History" would have misdescribed 97% of it, and "US Judicial" describes 27%.
 
+Settled on **US Civics** after "How Washington Works" was judged too much Washington — the bank already has "Washington, DC" and "Washington", and a third Washington-ish title was one too many.
+
 Three places must agree and all three were changed: `trivia.collections.name`, `backend/src/db/seed/collections.ts`, and the `COLLECTION_NAMES` map in `generateQuestions.ts` (whose comment says names must match the DB `name` column exactly).
 
-Deliberately **not** changed: `slug` stays `federal` — `trivia.bobit_progress` keys player progress by collection slug, and URLs depend on it. `locale_name` stays "United States", which is what `getRegion()` in `CollectionCard.tsx` renders as the eyebrow above the title; the card now reads UNITED STATES / How Washington Works. Note that card's `tier === 'federal'` fallback is dead code for this collection — `locale_name` is set, so the fallback never fires.
-
-⚠️ **Naming collision to watch:** the bank already has "Washington, DC" (city) and "Washington" (state). Three Washington-ish titles now sit in one list; the eyebrow disambiguates on the card, but anywhere the title appears alone it will not.
+Deliberately **not** changed: `slug` stays `federal` — `trivia.bobit_progress` keys player progress by collection slug, and URLs depend on it. `locale_name` stays "United States", which is what `getRegion()` in `CollectionCard.tsx` renders as the eyebrow above the title; the card now reads UNITED STATES / US Civics. Note that card's `tier === 'federal'` fallback is dead code for this collection — `locale_name` is set, so the fallback never fires.
 
 If a "U.S. Judicial" collection is ever split out, note `MIN_QUESTION_THRESHOLD = 50` in `game.ts` — the 31 Supreme Court questions would need ~20 more before the collection is playable.
 

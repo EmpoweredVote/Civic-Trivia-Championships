@@ -10,6 +10,7 @@
 
 import { client } from '../../scripts/content-generation/anthropic-client.js';
 import { db } from '../../db/index.js';
+import { placeAnswer } from '../questionQuality/answerPlacement.js';
 import {
   questions,
   collectionQuestions,
@@ -231,13 +232,17 @@ export async function generateCurrentTermQuestions(
     const seq = i + 1;
     const externalId = buildCurrentTermExternalId(raceId, seq);
 
+    // Write-time answer-position guard -- the output example in the prompt above says
+    // correctAnswer: 0, and the model copies it. Seeded on externalId for determinism.
+    const placed = placeAnswer(q.options, q.correctAnswer, externalId);
+
     const inserted = await db
       .insert(questions)
       .values({
         externalId,
         text: q.text,
-        options: q.options,
-        correctAnswer: q.correctAnswer,
+        options: placed.options,
+        correctAnswer: placed.correctAnswer,
         explanation: q.explanation,
         difficulty: q.difficulty,
         topicId,
