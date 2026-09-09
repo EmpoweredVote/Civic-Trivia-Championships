@@ -28,6 +28,12 @@ export interface FieldFigure {
    *  means "you got this wrong", never something the player can do on purpose. */
   poofable?: boolean;
   greetable?: boolean;
+  /**
+   * What this figure plays while greeting (hovered, or within the greet linger). Defaults to
+   * `greet`, or `greetseat` when its own pose is seated. ev-figures.js carries the same field
+   * on its stand specs (`A[spec.hoverAnim || 'greet']`).
+   */
+  hoverAnim?: string;
   props?: DrawOpts;
 }
 
@@ -87,4 +93,14 @@ export interface Surface {
   left: number;
   right: number;
   y: number;
+}
+
+/**
+ * Which animation key a figure paints with this frame. Seatedness is passed in rather than
+ * looked up so this stays pure and free of a dependency on the animation registry.
+ */
+export function resolveAnimKey(f: FieldFigure, greeting: boolean, isSeated: boolean): string {
+  if (!greeting) return f.anim;
+  if (f.hoverAnim) return f.hoverAnim;
+  return isSeated ? 'greetseat' : 'greet';
 }

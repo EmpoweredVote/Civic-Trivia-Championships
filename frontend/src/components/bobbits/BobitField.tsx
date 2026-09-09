@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { CFG, computePose, draw, drawBatched, canBatch, drawShadow, drawSmoke } from './leremyRig';
 import { ALL_ANIMATIONS } from './rigExtras';
-import { pelvisOffset, sortByDepth, figureBounds, resolveX } from './fieldGeometry';
+import { pelvisOffset, sortByDepth, figureBounds, resolveX, resolveAnimKey } from './fieldGeometry';
 import type { FieldFigure } from './fieldGeometry';
 import { figureAtPoint } from './hitTest';
 import { greetReduce, isGreeting, greetClock } from './greetReducer';
@@ -143,9 +143,7 @@ export function BobitField({
     const paint = (
       c: CanvasRenderingContext2D, f: FieldFigure, t: number, greeting: boolean, gclock: number,
     ) => {
-      const animKey = greeting
-        ? (ALL_ANIMATIONS[f.anim]?.seated ? 'greetseat' : 'greet')
-        : f.anim;
+      const animKey = resolveAnimKey(f, greeting, !!ALL_ANIMATIONS[f.anim]?.seated);
       const anim = ALL_ANIMATIONS[animKey] || ALL_ANIMATIONS[f.anim];
       if (!anim) return;
 
