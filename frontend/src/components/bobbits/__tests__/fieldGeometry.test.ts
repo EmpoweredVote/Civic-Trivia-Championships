@@ -93,7 +93,7 @@ describe('resolveAnimKey', () => {
     expect(resolveAnimKey({ ...base, hoverAnim: 'dance' }, true, false)).toBe('dance');
   });
 
-  it('prefers an explicit hoverAnim over greatseat too', () => {
+  it('prefers an explicit hoverAnim over greetseat too', () => {
     const f = { ...base, anim: 'sit', hoverAnim: 'dance' };
     expect(resolveAnimKey(f, true, true)).toBe('dance');
   });

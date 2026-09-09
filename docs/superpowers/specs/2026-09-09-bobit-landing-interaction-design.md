@@ -265,11 +265,15 @@ timing model.
 The reader, which owns its own canvas, gets the same rule locally: a tap runs the glance and the
 click transition together, so one tap goes from reading to speaking.
 
-## Open item: the reader on mobile
+## Open item: the reader on mobile — TRIED, MEASURED, REVERTED (still open)
 
-`BobbitCivicFactSitter` currently returns `null` below 640px, deliberately — "hover has no
-equivalent there" (`BobbitCivicFactSitter.tsx:160`). The touch rule removes that reason, so it
-should now render on phones. But its position is desktop-tuned and will not survive the move as-is:
+`BobbitCivicFactSitter` returns `null` below 640px. The reason recorded here originally was
+"hover has no equivalent there"; the touch rule in this same batch removed that reason, so the
+plan's Task 9 specified a mobile anchor and it was implemented. **It was then measured, found to
+collide with the search box's own controls, and reverted.** The component still returns `null`
+below 640px, now for a different and better-evidenced reason.
+
+The original difficulty, which still holds:
 
 - It is absolutely positioned `top: -seatFromTop, right: 340` inside the search-box container
   (`CollectionPicker.tsx:190`). On a 375px viewport the search box is roughly 330px wide, so
@@ -277,16 +281,25 @@ should now render on phones. But its position is desktop-tuned and will not surv
 - Its bubble is `width: 200` with `maxWidth: 60vw`, centred on the sitter via
   `translate(-50%, …)`. Near a narrow viewport's edge that overflows.
 
-Specified resolution:
+The specified resolution — **and why it does not work**:
 
-- **Mobile anchor `right: 16`** — the sitter perches on the search box's top-right corner, clear of
-  the search icon (left) and the placeholder text's start.
-- **Bubble alignment becomes edge-aware on mobile:** right-anchored rather than centre-anchored, so
-  it opens inward and stays on screen.
+- **Mobile anchor `right: 16`** — the sitter was to perch on the search box's top-right corner,
+  clear of the search icon (left) and the placeholder text's start. Implemented, then measured in
+  Chromium at 320 / 375 / 414px with a query typed: at 320px the sitter's 80px-wide box spans
+  **x199–279**, while the search box's own **"Clear search" button spans x262–279** — the sitter
+  covers it *entirely*. The **text input spans x66–252**. There is no x inside the search box where
+  an 80px-wide anchor clears both the input and the clear button; the box is simply not wide enough
+  to hold a third occupant at that viewport. The clear button only exists once a query is typed,
+  which is exactly when a search-adjacent decoration is most in the way.
+- **Edge-aware bubble alignment** — was not the blocker and remains a fine idea, but it does not
+  help: the collision is the sitter's own hit box, not the bubble's.
 
-This is the one item in the batch that could grow, and it is layout work rather than a flag flip.
-If it proves fussier than the above, mobile rendering for the reader is the piece to defer — the
-other four changes do not depend on it.
+**Still open, deliberately deferred — not cancelled.** Giving the reader a mobile home is layout
+work, not a constant to nudge: it needs a spot *outside* the search box, or a narrow-viewport
+rearrangement of the box itself that makes room. Anyone picking this up should start from the
+measurement above rather than re-trying `right: 16`. The `if (isMobile) return null` guard in
+`BobbitCivicFactSitter.tsx` carries the same reasoning inline; the other changes in this batch do
+not depend on it.
 
 ## Testing
 
@@ -301,7 +314,10 @@ Following the `__tests__/` precedent, where every reducer has a companion test:
 - **Quote stability** — the fact does not change across hover/click cycles or a remount within one
   session.
 - **Trophy contact** — computed hand joints coincide with the drawn pedestal corners within
-  tolerance, sampled across gait frames.
+  tolerance, sampled across gait frames. A corner is two-dimensional, so **both** axes are
+  asserted: the hands' x span against the pedestal width, and their y against each other (the
+  pedestal base rides their average, so an uneven pair puts one hand through the pedestal and the
+  other under it).
 - **`hoverAnim` default** — a figure without `hoverAnim` still resolves to `greet`/`greetseat` by
   seatedness, so `CollectionCrowd` behaviour is provably unchanged.
 
