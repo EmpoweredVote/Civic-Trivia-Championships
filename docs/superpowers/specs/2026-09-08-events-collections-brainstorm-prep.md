@@ -432,6 +432,91 @@ All 18 done. Every one verified single-unit, strictly ascending, and — the che
 
 Neither the scale mixes nor the remaining 98 different-things questions are a position exploit — all sit in the prose bucket and are position-balanced already.
 
+### COMPLETE: the 7 scale mixes (2026-09-08)
+
+All seven fixed. Five were single-option swaps that left the correct answer's text
+untouched; two carried a directional hedge on the correct answer and took the
+closed-bracket treatment from the 18-question pass.
+
+| Question | Was | Now | Rank |
+|---|---|---|---|
+| `alxla-047` | `$1 billion` among `$…million` | `$50/200/350/502 million` | 4 |
+| `benor-046` | `More than 500 million` vs `More than 5 billion board feet` | `5-49 / 50-249 / 250-499 / 500-999 million board feet` | 4 |
+| `benor-075` | `Over $1 billion` vs `About $300 million` | `$0.5-0.9 / $1.0-1.9 / $2.0-2.9 / $3.0-4.9 billion` | 2 |
+| `clima-1502` | `850 million barrels` among billions | `1.2/1.7/2.3/4.5 billion barrels` | 2 |
+| `nysts-068` | `$500 billion` among trillions | `$1 / $1.5 / $2.3 / $4 trillion` | 3 |
+| `tucaz-043` | `About $1 billion` among millions | `About $50/200/500/800 million` | 3 |
+| `tucaz-091` | `$800 million` among billions | `$1.4/1.9/2.4/4.1 billion` | 3 |
+
+Ranks were picked to hold each collection at ~50%: Alexandria 50.0%, Bend 50.0%,
+Climate 50.0%, New York 48.8%, Tucson 48.6%.
+
+**⚠️ Two rest on inference**, same caveat as the earlier five: `benor-046` (explanation
+says only "more than 500 million board feet"; bracket top of 999 assumed) and
+`benor-075` ("more than $1 billion"; assumed under $2bn).
+
+### ⚠️ The "98 genuinely different things" was mis-triaged (2026-09-08)
+
+**It is not 98, and it is mostly not a content problem.** Re-sweeping the 113 that
+remained after the hedge and scale passes, and bucketing by *why* `unitOf` splits them:
+
+| Bucket | n | What it actually is |
+|---|---|---|
+| A. Inflection only | 18 | `1 year` vs `2 years`. A real magnitude series; a plural `s` is the only thing splitting the unit. |
+| B. Ordinal suffix only | 29 | `1st` / `2nd` / `3rd` / `4th`. Residue is `st`/`nd`/`rd`/`th`, so four distinct "units". |
+| D. Genuinely heterogeneous | 46 | Prose options carrying an incidental number — addresses, station names, film titles with years, scripture citations, council structures, opening hours. |
+
+Of the 46, **43 are legitimate and correctly outside the metric.** `por-016` offers four
+Portland addresses; `phipa-063` four films with release years; `penns-038` four scripture
+verses. These are not magnitude questions and never will be. They should stop being
+counted as a bracketing backlog — that is what inflated the original 142.
+
+Twenty of the remaining 113 *were* mechanically fixable and are done (scale mixes of the
+`500,000` vs `1 million` shape, plus three open-ended options converted to closed
+brackets: `tex-065` `80,000+`, `ashnc-067` `60+`, `ica-140` `Under 4 inches`). Two more
+genuine defects fixed: `bxl-150` (correct option was the only one within 1,000× of the
+truth *and* the only long one — two tells) and `clima-1511`. One left deliberately:
+`wiran-1567` expires 2026-09-09.
+
+### ⚠️ The extractor's blind spots hide a 47-question pocket at 10.6%
+
+Buckets A and B together are 47 questions whose value rank is currently unmeasured. Rank
+them anyway and the distribution is **1 / 22 / 20 / 4 — 10.6% at an extreme**, against
+49.3% for the measured bank. The term-length questions are the core of it: 16 of 18
+inflection cases are rank 2, none at an extreme, because `1 year / 2 years / 4 years /
+6 years` with a 2-year answer is the shape the generator reaches for every time.
+
+So the original finding's warning applies to its own instrument: **`unitOf` is not just
+understating coverage, it is understating it non-randomly.** The questions it drops are
+disproportionately the biased ones.
+
+**The fix is one line in `unitOf` — but it is not obviously the right call, because it
+changes `placeAnswer` too.** Folding these in reclassifies them from "prose" to
+"magnitude series", so the write path starts *sorting* them instead of permuting them.
+For a bounded series that is a downgrade, not an upgrade:
+
+- Term length has a fixed real-world domain — 1, 2, 4, 6 years. A 2-year answer is
+  structurally rank 2; there is no plausible distractor below 1 year, so the rank cannot
+  be varied without inventing nonsense.
+- Sorting therefore pins the answer to **position B in 16 of 18 questions** — creating an
+  "always pick B" position exploit where permuting currently has none.
+
+That is the module's own trade-off running backwards: sorting is the right default
+*because* it stops position and rank hiding behind each other, but for an irreducibly
+bounded series the rank is already known and permuting is the better player-facing
+choice. Options, in preference order:
+
+1. **Fix `unitOf`, and teach `placeAnswer` to permute a bounded series** — one whose
+   values are drawn from a small fixed domain — rather than sort it. Measures everything,
+   exploits nothing. Most work.
+2. **Fix `unitOf` for inflection only, leave ordinals alone.** Folds in 18, keeps
+   label-style noise (amendments, districts, wings) out of the rank metric. Accepts the
+   position clustering.
+3. **Leave `unitOf` alone, document the pocket.** Cheapest, and the 47 stay unmeasured.
+
+Needs a decision before anyone "finishes" the bracketing work — today's 49.3% is honest
+about what it measures and silent about these 47.
+
 ## Related work already banked
 
 - `elc-1-011` (Bloomington, archived 2026-09-08) made a named individual's "Republican party activism" the **correct answer** — the same failure class as 3b/3c, from the election-detection cron rather than the news pipeline. Whatever guard gets designed should cover both generators.
