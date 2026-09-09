@@ -1,4 +1,13 @@
 /**
+ * ⚠ RETIRED SERVICE — civic-trivia-backend no longer runs in production.
+ * This Express server's HTTP API was merged into ev-accounts
+ * (api.empowered.vote); the live auth / admin / game endpoints are served
+ * there now. This file is kept for reference and history only — do NOT debug
+ * live behavior against it, and do not assume it reflects production auth.
+ * See .planning/DEPLOYMENT.md ("Backend Web Service — SUSPENDED").
+ */
+
+/**
  * GET /api/leaderboard — Public leaderboard route with 60-second cache.
  *
  * Schema findings (2026-03-17):

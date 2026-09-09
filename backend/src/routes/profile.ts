@@ -1,3 +1,12 @@
+/**
+ * ⚠ RETIRED SERVICE — civic-trivia-backend no longer runs in production.
+ * This Express server's HTTP API was merged into ev-accounts
+ * (api.empowered.vote); the live auth / admin / game endpoints are served
+ * there now. This file is kept for reference and history only — do NOT debug
+ * live behavior against it, and do not assume it reflects production auth.
+ * See .planning/DEPLOYMENT.md ("Backend Web Service — SUSPENDED").
+ */
+
 import { Router, Request, Response } from 'express';
 import { requireAuth, resolveAdminContext } from '../middleware/auth.js';
 import { db } from '../db/index.js';
