@@ -67,3 +67,6 @@ backend/.embedding-cache/
 # Playwright MCP page captures. 556 of these were committed to
 # ev-accounts and held live credentials.
 .playwright-mcp/
+
+# Subagent-driven-development scratch workspace (ledgers, briefs, review packages)
+.superpowers/
