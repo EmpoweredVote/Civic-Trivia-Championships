@@ -54,11 +54,25 @@ console.log('\nAnswer placement checks\n');
 console.log('Magnitude detection:');
 check('plain numbers are a series', magnitudeValues(['8', '10', '12', '15']) !== null);
 check('shared unit is a series', magnitudeValues(['2 years', '4 years', '6 years', '8 years']) !== null);
-// The singular/plural trap: unitOf("1 year") is "year", unitOf("2 years") is "years".
-// This is why mas-006/056/057/089 and cas-003 sit outside the bracketing metric.
+// The singular/plural trap, fixed 2026-09-08: unitOf() now singularises its residue, so
+// "1 year" and "2 years" share a unit. This is what pulls mas-006/056/057/089 and cas-003
+// back into the bracketing metric.
 check(
-  'singular/plural is NOT a series (known limitation)',
-  magnitudeValues(['1 year', '2 years', '4 years', '6 years']) === null
+  'singular/plural IS a series',
+  magnitudeValues(['1 year', '2 years', '4 years', '6 years']) !== null
+);
+check(
+  'y/ies plural is a series',
+  magnitudeValues(['1 constituency', '2 constituencies', '3 constituencies', '4 constituencies']) !== null
+);
+// Ordinal suffixes, same fix: the residue was "st district" against "nd district".
+check(
+  'ordinal suffixes ARE a series',
+  magnitudeValues(['1st District', '3rd District', '22nd District', '30th District']) !== null
+);
+check(
+  'singularising must not collapse genuinely different units',
+  magnitudeValues(['5 miles', '10 minutes', '15 members', '20 acres']) === null
 );
 check(
   'mixed units are NOT a series',
@@ -89,6 +103,36 @@ console.log('\nSorting (numeric series → position equals rank):');
   // by original index, never by matching text.
   const placed = placeAnswer(['5', '5', '9', '12'], 1, 'dup');
   check('duplicate text: answer still a 5', placed.options[placed.correctAnswer] === '5');
+}
+
+console.log('');
+console.log('Bounded series (rank fixed by the world -> permute, do not sort):');
+{
+  // Legislative terms are 1/2/4/6 years. Sorting would pin a 2-year answer to position B
+  // in 16 of the bank's 18 such questions; permuting leaves position free.
+  const opts = ['1 year', '2 years', '4 years', '6 years'];
+  const placed = placeAnswer(opts, 1, 'mas-006');
+  check('bounded series is permuted, not sorted', placed.placement === 'permuted');
+  check('answer text unchanged', placed.options[placed.correctAnswer] === '2 years');
+  check(
+    'option set unchanged',
+    [...placed.options].sort().join('|') === [...opts].sort().join('|')
+  );
+  // The whole point: it stays measurable. magnitudeRank reads values, never positions.
+  check('still ranks by value', magnitudeRank(opts, 1) === 2);
+}
+{
+  // Unbounded numeric series must still sort -- the bounded rule has to stay narrow.
+  const placed = placeAnswer(['800,000', '1,000,000', '2,250,000', '5,000,000'], 2, 'stlmo-020');
+  check('large-magnitude series still sorts', placed.placement === 'sorted');
+}
+{
+  const placed = placeAnswer(['13th Amendment', '14th Amendment', '15th Amendment', '19th Amendment'], 2, 'q058');
+  check('label-style ordinals still sort (they read naturally in order)', placed.placement === 'sorted');
+}
+{
+  const placed = placeAnswer(['1 mile', '5 miles', '12.5 miles', '25 miles'], 2, 'stlmo-058');
+  check('non-integer series is not bounded', placed.placement === 'sorted');
 }
 
 console.log('\nPermuting (prose):');

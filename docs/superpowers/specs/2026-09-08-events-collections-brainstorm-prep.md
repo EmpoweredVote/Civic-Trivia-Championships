@@ -517,6 +517,74 @@ choice. Options, in preference order:
 Needs a decision before anyone "finishes" the bracketing work — today's 49.3% is honest
 about what it measures and silent about these 47.
 
+### RESOLVED: fix `unitOf`, and permute bounded series (2026-09-08)
+
+Chris picked option 1. Both halves are implemented in
+`services/questionQuality/answerPlacement.ts` and covered by
+`scripts/verify-answer-placement.ts` (47/47 checks, `tsc` clean).
+
+**`unitOf` now normalises two things away** before comparing units: an ordinal suffix
+glued to its number (`1st District` vs `22nd District`) and plural inflection
+(`1 year` vs `2 years`, `constituency` vs `constituencies`). Singularisation is
+deliberately crude — it only has to be *consistent* across one question's four options,
+never linguistically right.
+
+**`isBoundedSeries()` decides sort vs permute.** A magnitude series of whole numbers
+anchored at the domain floor (min ≤ 2) and staying small (max ≤ 12) is permuted rather
+than sorted. The reasoning that matters: sorting makes position equal rank, so for a
+series whose rank is fixed by the world it would export an unfixable rank bias into a
+position bias that did not exist — pinning 16 of 18 term-length questions to position B.
+Nothing is lost by permuting, because `magnitudeRank` reads values and never positions,
+so the audit measures them exactly the same either way.
+
+The threshold is narrow on purpose. Populations, dollars, acres and distances keep
+sorting; so do label-style ordinals (amendments, districts), which read naturally in
+numeric order and whose rank was always meaningless.
+
+**The honest bank-wide number is now 47.8%, not 49.3%.** Coverage went 1,029 → 1,077
+magnitude questions and the figure fell, which is the expected direction: the 48 newly
+visible questions are the biased ones. Best single guess 26.1% against a 25% baseline.
+Norwich surfaced below the warning line at 12.5% and was rebracketed to 50.0%
+(`nor-107`, `nor-062`, `nor-031` — the three of its eight that are neither bounded nor
+label-style). Only **War in Iran** remains under the line, at 7.9%, for the documented
+expiry reason.
+
+**A limit worth knowing:** the numeric rule is a proxy for a domain fact it cannot see.
+`nor-116` (voting age: 16 / 17 / 18 / 21) is bounded in reality — the real domain is
+{16, 18, 21} — but max 21 puts it outside the rule, so it sorts. Rebracketing it would
+mean inventing voting ages that do not exist. Left alone deliberately.
+
+### ⚠️ The write-time guard is not running in production (found 2026-09-08)
+
+`placeAnswer()` exists **only in this repo's frozen `backend/`**. The canonical tree —
+`ev-accounts/backend/src/trivia/`, per `backend/FROZEN.md` and ev-cto decision 0013 — has
+no `answerPlacement.ts` and no `questionQuality/` directory at all. Its
+`cron/replacementGenerator.ts` writes `parsedQuestion.correctAnswer` straight through,
+where the frozen copy wraps the same insert in `placeAnswer()`.
+
+This is exactly the silent drift `FROZEN.md` warns about, on the one file the anti-bias
+work depends on.
+
+What is verified:
+
+- Generation is live — 51 questions created 2026-09-08, and every day through the window.
+- Before 2026-09-03 the daily position split was **0 at A and 0 at D** for weeks on end
+  (e.g. 08-28: 0/18/22/0) — the collapse in raw form.
+- From ~09-04 both extremes appear (09-08: 12/11/19/9). Something improved; this data
+  cannot say whether it was the guard, the prompt change in `4a487a3`, or the content
+  passes, and it should not be assumed to be the guard.
+
+What is *not* established: which code path actually produced those rows. The canonical
+crons are gated behind `TRIVIA_CRONS_ENABLED` (off by default, comment says the standalone
+service still owns them) — but that service was suspended 2026-09-04. The active content
+scripts in this repo *do* call `placeAnswer`, so they are one candidate. Worth resolving
+before the guard is treated as covering production.
+
+Today's `unitOf` and bounded-series change lands in the same frozen file, so it reaches
+the audit and the content scripts — both explicitly still active here — and **not** the
+production cron. Porting the guard into `ev-accounts/backend/src/trivia/` is the open
+item.
+
 ## Related work already banked
 
 - `elc-1-011` (Bloomington, archived 2026-09-08) made a named individual's "Republican party activism" the **correct answer** — the same failure class as 3b/3c, from the election-detection cron rather than the news pipeline. Whatever guard gets designed should cover both generators.

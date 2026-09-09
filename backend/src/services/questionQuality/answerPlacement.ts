@@ -27,7 +27,8 @@
  * ## Two kinds of options
  *
  * A **magnitude series** (four comparable numbers sharing a unit) is sorted ascending
- * rather than permuted. That is deliberate: for a sorted series the answer's display
+ * rather than permuted -- unless it is a *bounded* series, whose rank is fixed by the
+ * real world and which is permuted instead; see isBoundedSeries(). That is deliberate: for a sorted series the answer's display
  * position IS its value rank, so the position histogram and the value-rank histogram
  * measure the same thing and neither can hide behind the other. Permuting a numeric
  * series instead would flatten the position histogram while leaving the older
@@ -47,15 +48,70 @@ const MONTHS =
   /\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i;
 
 /**
+ * Strip a plural inflection from one residue word, so "1 year" and "2 years" compare
+ * equal. Deliberately crude: it only has to be *consistent* across the four options of a
+ * single question, never linguistically right. A word that singularises oddly still
+ * compares equal to itself in its sibling options, which is all that is asked of it.
+ */
+function singularise(word: string): string {
+  if (/ies$/i.test(word)) return word.slice(0, -3) + 'y';
+  if (/s$/i.test(word) && !/ss$/i.test(word)) return word.slice(0, -1);
+  return word;
+}
+
+/**
  * The non-numeric residue of an option, used to decide whether four options share a unit.
  * "$500 million" and "$3 billion" yield "$ million" and "$ billion" — different, so they
  * are not value-comparable, because digit extraction would sort 500 above 3.
+ *
+ * Two things are normalised away first, because both split a genuine magnitude series
+ * into four "different units" and hide it from the bracketing metric entirely:
+ *
+ *  - **Ordinal suffixes glued to the number.** "1st District" and "22nd District" left a
+ *    residue of "st district" against "nd district".
+ *  - **Plural inflection.** "1 year" left "year" against "years" for "2 years".
+ *
+ * Together those two accounted for 47 active questions as of 2026-09-08, and they were
+ * not a random 47: ranked anyway they ran 1/22/20/4 — 10.6% at an extreme, against 49.3%
+ * for the bank the metric could actually see. The blind spot was selecting for exactly
+ * the bracketing bias the metric exists to find.
  */
 function unitOf(option: string): string {
-  return (option.replace(/[0-9][0-9,.]*/g, ' ').match(/[a-z%$+]+/gi) || [])
+  return (
+    option
+      // The ordinal suffix must be consumed with the digits it is glued to; requiring
+      // adjacency keeps "5 the best" from losing its "the".
+      .replace(/[0-9][0-9,.]*(?:st|nd|rd|th)?/gi, ' ')
+      .match(/[a-z%$+]+/gi) || []
+  )
+    .map(singularise)
+    .filter((w) => w.length > 0)
     .join(' ')
     .toLowerCase()
     .trim();
+}
+
+/**
+ * A magnitude series drawn from a small fixed real-world domain, where the answer's rank
+ * cannot be varied without inventing an implausible option.
+ *
+ * Term length is the motivating case: legislative terms are 1, 2, 4 or 6 years, so a
+ * 2-year answer is structurally rank 2 and no honest distractor sits below "1 year".
+ * 16 of the 18 such questions in the bank are rank 2 and none is at an extreme.
+ *
+ * Sorting those would make position equal rank, pinning the answer to **position B**
+ * across the whole bank — exporting a rank bias that content cannot fix into a position
+ * bias that did not previously exist. So a bounded series is permuted instead. Nothing is
+ * lost by doing so: `magnitudeRank` reads values, never positions, so the audit still
+ * measures these questions exactly as before.
+ *
+ * Deliberately narrow. Whole numbers only, anchored at the domain floor (min ≤ 2) and
+ * staying small (max ≤ 12). Counts and short durations of that shape are institutionally
+ * fixed; populations, dollars, acres and distances are not, and keep sorting.
+ */
+function isBoundedSeries(values: number[]): boolean {
+  if (!values.every((v) => Number.isInteger(v))) return false;
+  return Math.min(...values) <= 2 && Math.max(...values) <= 12;
 }
 
 function valueOf(option: string): number | null {
@@ -160,7 +216,8 @@ export function placeAnswer(
   }
 
   const values = magnitudeValues(options);
-  if (values) {
+  // A bounded series falls through to the permute branch below -- see isBoundedSeries().
+  if (values && !isBoundedSeries(values)) {
     // Sort ascending, tie-broken by original index so the result is stable. Track the
     // correct option by its original index, never by its text -- duplicate option text
     // would otherwise silently retarget the answer.
