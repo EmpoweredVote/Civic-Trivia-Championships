@@ -362,6 +362,38 @@ These six were in the prose bucket, so normalising moved them **into** the magni
 
 **This is why the bank-wide 49.2% understates the bracketing picture** — the same caveat the original survey raised about its own 54.2%. All 142 sit outside the value-rank metric, and until they are normalised nobody knows how they rank. They are *not* a position exploit: they are in the prose bucket and get position-balanced like any other prose question.
 
+### The "29 hedge-only" questions are not a mechanical batch (2026-09-08)
+
+Attempted; **4 done, 25 deliberately left**. Two things came out of looking at them that the earlier count got wrong.
+
+**The count was wrong: 22 hedge-only, not 29.** The classifier tested whether a scale word was *present* (`~* 'thousand|million|billion|trillion'`), not *which one*, so million/billion/trillion mixes passed as "same scale". Seven are actually scale mixes: `alxla-047`, `benor-046`, `benor-075`, `clima-1502`, `nysts-068`, `tucaz-043`, `tucaz-091`.
+
+**⚠️ Normalising a directional hedge creates multiple correct answers.** This is the reason the batch is not mechanical, and it is easy to miss. `mis-174`'s correct answer is "Over 50%". Normalising every option to "Over" yields:
+
+> Over 25% · Over 35% · **Over 50%** · Over 75%
+
+If the real value is above 50%, then "Over 25%" and "Over 35%" are *also true*. Directional hedges (`over`, `more than`, `at least`, `less than`, `up to`) are half-open ranges, not point estimates, so they cannot be swapped in the way approximation hedges (`about`, `around`, `nearly`, `almost`, `approximately`, `roughly`) can. **18 of the 22 carry a directional hedge on the correct answer.**
+
+There is no safe mechanical escape for those 18:
+
+- Keeping the directional hedge and pushing every distractor above the true value leaves exactly one true option — but it forces the correct answer to be the **smallest**, i.e. rank 1 every time. That trades one bias for another.
+- Converting them to point estimates ("About 55%") fixes the unit and the rank freely, but **changes what the correct option claims** — "over 50%" and "about 50%" are different assertions. That breaks the text-preservation guard every other edit today has held to, and is a content decision rather than a formatting one.
+
+So these 18 need the underlying fact checked against the explanation, one at a time, and a deliberate choice about whether the hedge belongs in the question at all. That is question-quality work, not bracketing work.
+
+**Done (4)** — correct answer carries an approximation hedge or none, so normalising is safe and preserves its text:
+
+| Question | Now |
+|---|---|
+| `ashnc-034` | `About 100/350/1,200/3,500` |
+| `ica-102` | `Nearly 50/60/75/95 percent` |
+| `lac-022` | `Almost 10/12/15/20%` |
+| `nysts-078` | `50/75/93/100%` |
+
+Asheville 50.0%, Indio 60.0%, Los Angeles 45.0%, New York 50.0% on value rank afterwards; all still healthy.
+
+**Left (25):** the 18 directional-hedge ones and the 7 scale mixes. Both want a human decision per question, and neither is a position exploit — all sit in the prose bucket and are position-balanced already.
+
 ## Related work already banked
 
 - `elc-1-011` (Bloomington, archived 2026-09-08) made a named individual's "Republican party activism" the **correct answer** — the same failure class as 3b/3c, from the election-detection cron rather than the news pipeline. Whatever guard gets designed should cover both generators.
