@@ -199,8 +199,30 @@ Notes for whoever fixes the rest:
 
 - Rotation is safe on prose options but **un-sorts a numeric series**, so magnitude questions want the sort-ascending-and-rebracket treatment from the section above instead. The two passes have to be applied to disjoint sets.
 - The five 100%-at-A collections cannot be repaired by rotation alone in the way the others can: with every answer at A, any rotation is a pure permutation of a degenerate distribution, which is fine — but it means their *value* ranks were never examined either. Expect them to need both passes.
-- **The audit assertion now exists** (`audit-collection-readiness.ts`, "Answer Position"). It reports the A/B/C/D histogram and warns when the best single guess exceeds 40% against a 25% baseline. Against the live bank it fires on **30 of 42 collections** and stays quiet on 12 — the six previously rotated, the five fixed above, and Bloomington (35.0%). Worst remaining is **Plano, TX at 74.1%**, then North Carolina 73.6% and Federal 73.5%.
-- Work the rest in descending order of that number.
+- **The audit assertion now exists** (`audit-collection-readiness.ts`, "Answer Position"). It reports the A/B/C/D histogram and warns when the best single guess exceeds 40% against a 25% baseline. When written it fired on 30 of 42 collections; **it now fires on none**.
+### COMPLETE: answer-position collapse cleared bank-wide (2026-09-08)
+
+**All 42 collections are now under the 40% warning line. Zero warn.** 3,815 active questions; best single guess ranges **25.0%–37.8%, average 26.5%**, against a 25% ideal. Started at five collections on 100% and 30 of 42 above the line.
+
+The last batch did 28 collections and 2,533 questions in two set-based passes, and the **answer fingerprint over all 2,533 came back identical** (`e27e5f37…`) — every correct answer provably unchanged, zero duplicate option lists, zero unresolvable indices.
+
+**Water-filling replaced the naive prose target.** The earlier `target_total − magnitude_at_position` formula goes negative when a collection is magnitude-heavy *and* badly bracketed, which three collections were: Climate Agreements (45 of 90 magnitude, 31 at rank 3), Queens NY (60 of 130, 45 at rank 3), War in Iran (38 of 82, 25 at rank 3). For these a uniform total is **mathematically unreachable** without rebracketing values — position C alone is already above target. So prose is now allocated by filling the lowest position first (highest water level whose fill cost fits the prose budget, remainder to the lowest positions). That minimises the maximum instead of chasing an impossible uniform, and it brought all three under the line honestly:
+
+| Collection | Floor | Why |
+|---|---|---|
+| Climate Agreements | 37.8% | 31 of 45 magnitude questions at rank 3 |
+| Queens, NY | 34.6% | 45 of 60 at rank 3 |
+| War in Iran | 31.7% | 25 of 38 at rank 3 |
+
+Their residual is **entirely** the value-rank bias, showing through the position metric because the options are sorted. That is the honest reading, not a leftover position problem. Bloomington IN sits at 35.0% for the same reason and was never in the warn set.
+
+**Value rank is now the binding constraint.** Across 972 magnitude questions bank-wide: **65 / 313 / 525 / 69**, only **13.8% at an extreme** against a 50% ideal. This is the original bracketing finding, now the whole of what remains.
+
+One thing that got much cheaper: because every magnitude question in the bank is sorted ascending, **display position now equals value rank everywhere**. Fixing a collection's bracket automatically fixes its position, and the position audit doubles as a bracketing tripwire. The two-pass recipe has collapsed into one pass for all future work.
+
+Remaining queue, by value-rank severity rather than position: the three above plus Bloomington, then the ~1,100 questions the original survey counted.
+
+- Work anything new in descending order of the audit's reported number.
 
 ### The guard: why it kept happening, and what now stops it (2026-09-08)
 
