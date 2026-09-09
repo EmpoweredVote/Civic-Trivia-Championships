@@ -294,6 +294,50 @@ Deliberately **not** changed: `slug` stays `federal` — `trivia.bobit_progress`
 
 If a "U.S. Judicial" collection is ever split out, note `MIN_QUESTION_THRESHOLD = 50` in `game.ts` — the 31 Supreme Court questions would need ~20 more before the collection is playable.
 
+### COMPLETE: value-rank backlog cleared (2026-09-08)
+
+**Both metrics are now healthy bank-wide.** 42 collections, 3,815 active questions:
+
+| Metric | Start of day | Now |
+|---|---|---|
+| Answer position — worst collection | **100.0%** (five collections) | **26.8%**, none above 40% |
+| Value rank — bank-wide at an extreme | **13.8%** | **49.0%** (242/247/249/234) |
+
+Only **War in Iran** is still below the rank line at 7.9%, and only because 33 of its 38 magnitude questions expire by 09-12; its five durable ones are fixed and the pool drops under the audit's 8-question floor once they go.
+
+Roughly 320 questions rebracketed by hand across ~25 collections, in batches of 4–5 collections. Every batch was diffed old-correct against new-correct before writing and gated on it in SQL; every batch matched. Prose was re-balanced after each, since rebracketing moves magnitude positions.
+
+### ⚠️ The measurement trap that caught me mid-way
+
+**`correct_answer` is only the value rank when the options are sorted.** Reading rank off `correct_answer` is correct for every collection that has been through the sort pass — and silently wrong for any that has not. Five collections had never been sorted, so my reported figures for them were wrong, in both directions:
+
+| Collection | Reported from position | Actual value rank |
+|---|---|---|
+| Milwaukee, WI | 42.9% "healthy" | **0.0%** |
+| Madison, WI | 37.5% | **6.3%** |
+| Bend, OR | 60.0% "healthy" | **6.7%** |
+| Wisconsin | 46.7% "healthy" | **13.3%** |
+| Cambridge, MA | 50.0% | 63.9% (better) |
+
+The three flagged "healthy" were among the worst in the bank. They are exactly the collections the **old 6d rotation** had been run against — rotation un-sorted their numeric options, so position and rank came apart, and reading one as the other hid the bracketing completely. This is the masking failure the original finding warned about, reproduced by accident in the measurement rather than the data.
+
+**Always compute rank from the values**, as the audit's `magnitudeRank` does:
+```sql
+(SELECT count(*) FROM jsonb_array_elements_text(options) e
+ WHERE val_of(e) < val_of(options->>correct_answer))
+```
+Comparing that against `correct_answer` also gives a cheap "is this collection sorted?" probe. All four were sorted and then rebracketed properly.
+
+### A fourth limitation class: fractions and clock times
+
+Six Cambridge questions are counted as magnitude but their rank is meaningless, because `val_of` takes only the **first** number in the string:
+
+- `cam-018`, `cam-041`, `cam-058`, `cam-083` — "More than 1/20th" / "1/15th" / "1/10th" / "1/5th" all extract to **1**. Genuinely ordered, unreadable to the extractor.
+- `cam-114` — "4:30 p.m." extracts to **4**; "5:00 p.m." and "5:30 p.m." both to 5.
+- `cam-072` — "6:00 a.m. to 8:00 p.m." extracts to **6**; a range, not a point.
+
+They pass the unit check (identical non-numeric residue) so nothing excludes them. Joins the label-style, mixed-unit, prose-date and bounded-series traps. Cambridge's true figure is 63.9% *including* this noise, so it is fine either way — but a collection built mostly of fraction or time options would report nonsense.
+
 ## Related work already banked
 
 - `elc-1-011` (Bloomington, archived 2026-09-08) made a named individual's "Republican party activism" the **correct answer** — the same failure class as 3b/3c, from the election-detection cron rather than the news pipeline. Whatever guard gets designed should cover both generators.
