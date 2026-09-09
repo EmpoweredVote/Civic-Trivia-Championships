@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { ANIMATIONS, CFG, computePose, draw, drawShadow, REST } from './leremyRig';
 import { figColor } from './rigExtras';
 import type { Pose } from './leremyRig';
@@ -7,7 +7,7 @@ import { useWindowSize } from '../../hooks/useWindowSize';
 import {
   readerReduce, bubbleOpen, showBook, READER_IDLE, QUOTE_TRANS,
 } from './readerReducer';
-import type { ReaderState } from './readerReducer';
+import type { ReaderEvent, ReaderState } from './readerReducer';
 
 const PELVIS_SEAT = 8;
 
@@ -112,6 +112,9 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
   const widthRef = useRef(0);
   const stateRef = useRef<ReaderState>(READER_IDLE);
   const hoveringRef = useRef(false);
+  // Set by the effect below to a same-frame repaint, used only when `!animate` -- with no rAF
+  // loop, a click/dismiss needs to redraw itself rather than wait for a frame that never comes.
+  const repaintRef = useRef<(() => void) | null>(null);
   const animate = !useReducedMotion();
   const [bubbleShown, setBubbleShown] = useState(false);
   // Seeded at random and advanced on the way OUT of a reveal, not into one — the description
@@ -127,6 +130,14 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
   const legClearance = 30;
   const height = seatFromTop + legClearance;
   const color = figColor(0, darkMode);
+
+  const advanceFact = useCallback(() => {
+    // Queue the next fact for the next reveal, skipping the one just shown.
+    setFactIndex(prev => {
+      const offset = 1 + Math.floor(Math.random() * (CIVIC_FACTS.length - 1));
+      return (prev + offset) % CIVIC_FACTS.length;
+    });
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -161,12 +172,19 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
       ctx!.restore();
     }
 
+    // Exposed so a click/dismiss outside this effect (reduced motion has no rAF loop to redraw
+    // on its own) can repaint immediately after settling the reducer.
+    repaintRef.current = () => render(stateRef.current, 0);
+
     if (!animate) {
       // No loop running to catch a later phase change, so this single frame must reflect
       // whatever stateRef.current already is (e.g. reduced motion switched on mid-hold)
       // rather than assume the idle read pose.
       render(stateRef.current, 0);
-      return () => ro.disconnect();
+      return () => {
+        ro.disconnect();
+        repaintRef.current = null;
+      };
     }
 
     let rafId: number;
@@ -183,13 +201,7 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
       if (isOpen !== wasOpen) {
         wasOpen = isOpen;
         setBubbleShown(isOpen);
-        if (!isOpen) {
-          // Queue the next fact for the next reveal, skipping the one just shown.
-          setFactIndex(prev => {
-            const offset = 1 + Math.floor(Math.random() * (CIVIC_FACTS.length - 1));
-            return (prev + offset) % CIVIC_FACTS.length;
-          });
-        }
+        if (!isOpen) advanceFact();
       }
       render(stateRef.current, (now - start) / 1000);
       rafId = requestAnimationFrame(tick);
@@ -199,21 +211,45 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
     return () => {
       ro.disconnect();
       cancelAnimationFrame(rafId);
+      repaintRef.current = null;
     };
   }, [animate, color, scale, height]);
+
+  /**
+   * Settles a click or dismiss. Under `animate`, mutating the ref is enough — the running rAF
+   * loop picks up the phase change on its next frame and syncs `bubbleShown` itself.
+   *
+   * Reduced motion has no loop to carry a transition across ticks, and reduced motion means no
+   * animated easing, not no destination -- a reader whose "entire purpose is delivering text"
+   * must still be able to speak. So here we feed the reducer synthetic ticks until the phase
+   * settles on `read` or `hold`, then sync state and repaint once, ourselves. Bounded at 2
+   * iterations: `lookup`->`hold` or `resume`->`read` is the most any single click/dismiss can
+   * need, so a future phase added to the machine cannot spin this loop.
+   */
+  const settleAfterEvent = useCallback((ev: ReaderEvent) => {
+    stateRef.current = readerReduce(stateRef.current, ev);
+    if (animate) return;
+    let guard = 0;
+    while (guard < 2 && (stateRef.current.phase === 'lookup' || stateRef.current.phase === 'resume')) {
+      stateRef.current = readerReduce(stateRef.current, { type: 'tick', dt: QUOTE_TRANS, hovering: false });
+      guard++;
+    }
+    const isOpen = bubbleOpen(stateRef.current);
+    setBubbleShown(isOpen);
+    if (!isOpen) advanceFact();
+    repaintRef.current?.();
+  }, [animate, advanceFact]);
 
   // Document-level dismissal while the bubble is open: Escape or a click anywhere outside the
   // wrapper both close it. Attached only while open and torn down when it closes or unmounts.
   useEffect(() => {
     if (!bubbleShown) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        stateRef.current = readerReduce(stateRef.current, { type: 'dismiss' });
-      }
+      if (e.key === 'Escape') settleAfterEvent({ type: 'dismiss' });
     };
     const onPointerDown = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        stateRef.current = readerReduce(stateRef.current, { type: 'dismiss' });
+        settleAfterEvent({ type: 'dismiss' });
       }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -222,13 +258,11 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('mousedown', onPointerDown);
     };
-  }, [bubbleShown]);
+  }, [bubbleShown, settleAfterEvent]);
 
   const onEnter = () => { hoveringRef.current = true; };
   const onLeave = () => { hoveringRef.current = false; };
-  const onActivate = () => {
-    stateRef.current = readerReduce(stateRef.current, { type: 'click' });
-  };
+  const onActivate = () => settleAfterEvent({ type: 'click' });
 
   if (isMobile) return null;
 
@@ -277,9 +311,7 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
         onClick={onActivate}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(); }
-          else if (e.key === 'Escape') {
-            stateRef.current = readerReduce(stateRef.current, { type: 'dismiss' });
-          }
+          else if (e.key === 'Escape') settleAfterEvent({ type: 'dismiss' });
         }}
         style={{ display: 'block', width: '100%', height, outline: 'none', cursor: 'pointer' }}
       />
