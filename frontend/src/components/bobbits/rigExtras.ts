@@ -43,27 +43,41 @@ export const EXTRA_ANIMATIONS: Record<string, Animation> = {
   // because a beam wider than four figures sits UNDER the hands. CTC's trophy is 50 units
   // wide against a 150-unit gap, so those hands had nothing to reach for and the logo floated.
   //
-  // Symmetric on purpose. Each carrier's INNER arm is the one that meets the trophy -- rear
-  // reaches right, lead reaches left -- and one symmetric pose serves both roles, the way
-  // `carry` already did. The outer arms splay outward as a consequence; if that reads badly,
-  // the alternative is a per-side variant driven by AnimVars.hand, as `greet` does.
+  // NOT symmetric, and it cannot be. `computePose` adds the body-bend term `ub = lean + hunch`
+  // (~-16 here, from carry's hunch=-14 plus the walk-cycle wave) to BOTH arm angles, and
+  // cos(ub + t) != cos(ub - t), so a mirrored pose puts the two hands at DIFFERENT heights --
+  // the earlier symmetric 31/39/-31/-39 left a 26-32 unit vertical split between them (hR.y
+  // ~ +15.5, hL.y ~ -13.0). The trophy rides the hands' midpoint, so each hand missed the
+  // pedestal base by ~14 units: the lead carrier's hand overlapped the pedestal and the rear
+  // carrier's hung clear beneath it. Independent left/right angles are the fix.
   //
-  // These two angles are TUNED AGAINST __tests__/trophyGrip.test.ts, not derived -- change
-  // them only by re-running that test. Both suggested starting points overshot: the brief's
-  // own armRU=33/armRF=41 (which ignored the body-bend term `ub = lean + hunch` added to both
-  // arm angles in computePose) measured a span of ~46 units, and the corrected-geometry
-  // estimate of 49-56 degrees measured ~20 units at 50/50 -- reaching far past the target as
-  // the angle grew, because `ub` (~-16 here, from carry's hunch=-14 plus the walk-cycle wave)
-  // pulls the hands inward faster than the flat-ground arithmetic assumed. The pair below
-  // (measured 2026-09-09) is where the hand-span assertion actually passes, holding across
-  // the whole gait cycle -- see the tuning log in task-5-report.md for the intermediate
-  // values tried.
+  // One pose still serves both roles, as `carry` did: each carrier's INNER arm meets the
+  // trophy -- rear reaches right, lead reaches left -- and the outer arm splays outward as a
+  // consequence. If that ever reads badly, the alternative is a per-side variant driven by
+  // AnimVars.hand, as `greet` does.
+  //
+  // These four angles are TUNED AGAINST __tests__/trophyGrip.test.ts, not derived -- change
+  // them only by re-running that test, which is the arbiter on BOTH axes. Tuning log,
+  // 2026-09-09, measured over a 10s sweep of the gait (span = distance between the two inner
+  // hands, target 50; split = hR.y - hL.y, target 0):
+  //
+  //   armRU/armRF/armLU/armLF        span            split    note
+  //   33 / 41 / -33 / -41            ~46             ~28      the brief's arithmetic; ignored `ub`
+  //   50 / 50 / -50 / -50            ~20             --       corrected geometry; overshot inward
+  //   31 / 39 / -31 / -39            49.06 - 51.57   26 - 32  x passed, y was never asserted
+  //   6 / 107 / -9 / -68             50.15 - 50.35   <= 6.40  both axes; kept
+  //
+  // Two IK solutions reach the same hand target; the one kept is elbows-at-the-sides with
+  // horizontal forearms (elbow-down). Its mirror, armRU=104/armRF=3/armLU=-67/armLF=-8, lands
+  // the hands identically but splays the elbows out above shoulder height -- chicken wings.
+  // The hands also sit ~23 units higher than the old pose, which lifts the trophy to about rib
+  // height; checked against the canvas at both scales, the heads still top the silhouette.
   carryGrip: {
     label: "Carrying (grip)", mood: "mind the trophy",
     frame(t: number) {
       const p = ANIMATIONS.carry.frame(t);
-      p.armRU = 31; p.armRF = 39;
-      p.armLU = -31; p.armLF = -39;
+      p.armRU = 6; p.armRF = 107;
+      p.armLU = -9; p.armLF = -68;
       return p;
     },
   },
