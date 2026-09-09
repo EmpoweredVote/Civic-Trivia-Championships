@@ -231,8 +231,14 @@ export function BobitField({
     const renderFrame = (t: number, dt: number) => {
       clockRef.current = t;
       const w = widthRef.current;
+      // The stun is a TOTAL freeze, positions included -- see the `frozen` comment below.
+      // `frozen` only pins the animation clock, and a `figuresFor` source advances its own
+      // wandering off `dt`, so without this the rail would keep sliding figures along in a
+      // frozen pose for the whole stunned second. Handing it dt = 0 makes wanderAdvance a
+      // no-op and changes nothing else.
+      const dtEff = poofRef.current.phase === 'stunned' ? 0 : dt;
       const source = figuresForRef.current
-        ? figuresForRef.current(t, dt, w, greetingIds(greetRef.current))
+        ? figuresForRef.current(t, dtEff, w, greetingIds(greetRef.current))
         : figuresRef.current;
       const all = resolveX(source, w);
       resolvedRef.current = all;
