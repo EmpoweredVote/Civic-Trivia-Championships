@@ -8,6 +8,7 @@ import {
   readerReduce, bubbleOpen, showBook, READER_IDLE, QUOTE_TRANS,
 } from './readerReducer';
 import type { ReaderEvent, ReaderState } from './readerReducer';
+import { sessionFact } from './civicFacts';
 
 const PELVIS_SEAT = 8;
 
@@ -69,16 +70,6 @@ function poseFor(state: ReaderState, t: number): Pose {
   }
 }
 
-const CIVIC_FACTS = [
-  'The Bill of Rights added the first 10 amendments in 1791.',
-  'Every state gets at least 3 electoral votes, no matter its population.',
-  'The Supreme Court has sat with 9 justices since 1869.',
-  'The 26th Amendment lowered the voting age to 18 in 1971.',
-  'Congress has two chambers: the House and the Senate.',
-  'A presidential veto can be overridden by a two-thirds vote in Congress.',
-  'Local elections often decide your school board, mayor, and ballot measures.',
-  'The First Amendment protects speech, press, religion, assembly, and petition.',
-];
 
 interface BobbitCivicFactSitterProps {
   darkMode: boolean;
@@ -117,10 +108,9 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
   const repaintRef = useRef<(() => void) | null>(null);
   const animate = !useReducedMotion();
   const [bubbleShown, setBubbleShown] = useState(false);
-  // Seeded at random and advanced on the way OUT of a reveal, not into one — the description
-  // a screen reader reads on focus is computed from the DOM as it stands when focus lands,
-  // so the fact has to already be committed before the reveal starts.
-  const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * CIVIC_FACTS.length));
+  // The fact is chosen once per session at module load and never changes during a visit.
+  // A screen reader computes its description from the DOM as it stands when focus lands,
+  // so the fact commitment happens before any reveal interaction — no races possible.
   const factId = useId();
   const { width: viewportWidth } = useWindowSize();
   const isMobile = viewportWidth < 640;
@@ -130,14 +120,6 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
   const legClearance = 30;
   const height = seatFromTop + legClearance;
   const color = figColor(0, darkMode);
-
-  const advanceFact = useCallback(() => {
-    // Queue the next fact for the next reveal, skipping the one just shown.
-    setFactIndex(prev => {
-      const offset = 1 + Math.floor(Math.random() * (CIVIC_FACTS.length - 1));
-      return (prev + offset) % CIVIC_FACTS.length;
-    });
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -201,7 +183,6 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
       if (isOpen !== wasOpen) {
         wasOpen = isOpen;
         setBubbleShown(isOpen);
-        if (!isOpen) advanceFact();
       }
       render(stateRef.current, (now - start) / 1000);
       rafId = requestAnimationFrame(tick);
@@ -236,9 +217,8 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
     }
     const isOpen = bubbleOpen(stateRef.current);
     setBubbleShown(isOpen);
-    if (!isOpen) advanceFact();
     repaintRef.current?.();
-  }, [animate, advanceFact]);
+  }, [animate]);
 
   // Document-level dismissal while the bubble is open: Escape or a click anywhere outside the
   // wrapper both close it. Attached only while open and torn down when it closes or unmounts.
@@ -295,11 +275,11 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
           boxShadow: darkMode ? '0 8px 24px rgba(0,0,0,0.4)' : '0 8px 24px rgba(15,23,42,0.12)',
         }}
       >
-        {CIVIC_FACTS[factIndex]}
+        {sessionFact()}
       </div>
       {/* The bubble above is aria-hidden because its opacity transition keeps it in the DOM
           even when invisible. This carries the same text as the canvas's description instead. */}
-      <span id={factId} className="sr-only">{CIVIC_FACTS[factIndex]}</span>
+      <span id={factId} className="sr-only">{sessionFact()}</span>
       <canvas
         ref={canvasRef}
         tabIndex={0}
