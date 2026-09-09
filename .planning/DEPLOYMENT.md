@@ -131,6 +131,23 @@ behind it, despite Phase 79-02 being marked complete. Not playable. See STATE.md
 **Admin access:** the CTC admin panel is role-aware. Either a `ctc_content_editor` role or an
 `admin_users` row grants access; the role alone is now sufficient.
 
+**WorkOS AuthKit — second token issuer (ev-accounts decision 0002, CTC PR #59).** The backend
+accepts both Supabase and WorkOS JWTs. The WorkOS path is gated on one backend env var:
+
+- `WORKOS_CLIENT_ID` — **required for WorkOS logins.** Unset = Supabase-only; every WorkOS
+  token is rejected, which breaks admin access and all authenticated calls for WorkOS-session
+  users. The startup log prints the active mode (`[env] WorkOS issuer enabled …` or
+  `WORKOS_CLIENT_ID unset …`) — check it after a deploy.
+- The value must match the WorkOS **environment** the accounts app issues from (staging vs
+  production). Production currently points at WorkOS **staging**; the production-environment
+  cutover is still pending and will need this var updated in lockstep with ev-accounts.
+- `WORKOS_ISSUER` / `WORKOS_JWKS_URL` are optional overrides, derived from `WORKOS_CLIENT_ID`
+  by default. The full per-service env runbook lives in ev-accounts (`DEPLOY.md`, PR #195).
+
+For a WorkOS token the internal user id comes from the `external_id` claim (the original
+`auth.users` UUID), never the WorkOS `sub`. A brand-new AuthKit signup with no `external_id`
+resolves to no account, so it is not in `admin_users` and sees the panel as Forbidden.
+
 ---
 
 ## Upstash Redis
