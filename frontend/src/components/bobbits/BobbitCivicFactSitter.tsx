@@ -61,8 +61,18 @@ function poseFor(state: ReaderState, t: number): Pose {
   switch (state.phase) {
     case 'read':
       return state.glance > 0 ? lerpPose(read, quoteGlance(t), smooth01(state.glance)) : read;
-    case 'lookup':
-      return lerpPose(read, quoteHold(t), smooth01(state.t / QUOTE_TRANS));
+    case 'lookup': {
+      // Start from wherever the hover glance actually left him, not from the un-glanced read.
+      // `readerReduce` deliberately carries `glance` into `lookup` (the `resume` branch zeroes
+      // it; this one does not), and on desktop you must hover before you can click, so glance
+      // is ~1 at click time. Lerping from bare `read` snapped the head down ~20deg (headTilt
+      // differs 18-23deg and hunch 7-9deg between `read` and `quoteGlance`) in the first frame
+      // and raised it again over the next 500ms — a flinch exactly when the quote appears.
+      const from = state.glance > 0
+        ? lerpPose(read, quoteGlance(t), smooth01(state.glance))
+        : read;
+      return lerpPose(from, quoteHold(t), smooth01(state.t / QUOTE_TRANS));
+    }
     case 'hold':
       return quoteHold(t);
     case 'resume':
@@ -94,8 +104,19 @@ interface BobbitCivicFactSitterProps {
  * (already turns pages on its own). Hovering (or focusing) lifts his head off the page without
  * letting go of the book — acknowledgement, no payload. Clicking (or Enter/Space) sits him up,
  * lowers the book into his lap and opens a bubble with a civic fact; clicking again, Escape, or
- * a click elsewhere returns him to reading. Hidden on mobile since hover has no equivalent
- * there.
+ * a click elsewhere returns him to reading.
+ *
+ * WHY `if (isMobile) return null` IS STILL HERE (do not delete it without a new anchor).
+ * Hover DOES have a touch equivalent now — the touch handlers below make a tap act as both
+ * hover and click — so "no hover on touch" is no longer the reason. The reason is that the
+ * only anchor available inside the search box collides with the box's own controls. Rendering
+ * him on phones was implemented, measured and reverted: verified in Chromium at 320/375/414px
+ * with a query typed, the sitter's box spans x199-279 at 320px while the search box's own
+ * "Clear search" button spans x262-279 — entirely covered — and the text input spans x66-252,
+ * so no anchor inside that box clears both the input and the clear button. Giving the reader a
+ * mobile home is a layout decision (a spot outside the search box, or a narrow-viewport
+ * rearrangement of the box itself), not a constant to nudge. Tracked as an open item in
+ * docs/superpowers/specs/2026-09-09-bobit-landing-interaction-design.md.
  */
 export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
