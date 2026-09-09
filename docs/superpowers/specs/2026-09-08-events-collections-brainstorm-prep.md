@@ -582,8 +582,33 @@ before the guard is treated as covering production.
 
 Today's `unitOf` and bounded-series change lands in the same frozen file, so it reaches
 the audit and the content scripts — both explicitly still active here — and **not** the
-production cron. Porting the guard into `ev-accounts/backend/src/trivia/` is the open
-item.
+production cron.
+
+### RESOLVED: guard ported to ev-accounts (2026-09-08)
+
+`answerPlacement.ts` now exists at
+`ev-accounts/backend/src/trivia/services/questionQuality/answerPlacement.ts`, wired into
+**all four** of that tree's question-insert paths:
+
+| Path | Was |
+|---|---|
+| `cron/replacementGenerator.ts` | unguarded |
+| `services/generation/ElectionQuestionGenerator.ts` | unguarded |
+| `services/generation/CurrentTermQuestionGenerator.ts` | unguarded |
+| `scripts/international/question-generator.ts` | **unguarded in *both* copies** — never had the guard anywhere |
+
+That last one is worth noting: the frozen repo guards three insert paths, not four, so
+the international generator had been writing unguarded questions since it was built. It
+is guarded now in the production copy.
+
+Verification: 31 vitest tests (`answerPlacement.test.ts`, ported from this repo's
+`verify-answer-placement.ts`), `tsc --noEmit` clean, `eslint` clean on all touched files.
+The CTC-side script still passes 47/47.
+
+**The two copies are now byte-identical, deliberately, including their header comment**,
+so `diff` between them is the drift check — that comment says so in both. The duplication
+cannot be removed: production needs the engine copy, and this repo's content scripts
+(explicitly not frozen) need this one.
 
 ## Related work already banked
 

@@ -1,6 +1,23 @@
 /**
  * Answer placement — the write-time guard against answer-position collapse.
  *
+ * ## Two copies — keep them in step
+ *
+ * This file exists twice and neither copy can be deleted:
+ *
+ *  - `ev-accounts/backend/src/trivia/services/questionQuality/answerPlacement.ts` guards
+ *    the four production insert paths — the replacement cron, the two election
+ *    generators, and the international generator. That copy is what runs in production.
+ *  - `Civic-Trivia-Championships/backend/src/services/questionQuality/answerPlacement.ts`
+ *    serves that repo's content scripts, which are explicitly NOT frozen even though the
+ *    `backend/` around them is, and its `audit-collection-readiness.ts` imports
+ *    `magnitudeRank` as the detection backstop.
+ *
+ * The two are kept identical on purpose, including this comment, so `diff` between them
+ * (modulo line endings) is the drift check. A change to one is a bug until it lands in
+ * the other. The guard was absent from the production copy for its first day of life for
+ * exactly this reason — see `backend/FROZEN.md`.
+ *
  * ## What went wrong
  *
  * Options are stored in `questions.options` and served in stored order. `stripAnswers()`
