@@ -55,6 +55,28 @@ So wander lives in `BobbitScene`, driven through `figuresFor` and backed by a ne
 translator, each with a test in `__tests__/` — and keeps `CollectionCrowd` entirely out of the
 blast radius.
 
+**Amended 2026-09-09 during planning.** `figuresFor` as it stands is not quite sufficient, and
+this design originally overstated the case by claiming `hoverAnim` was the only shared change.
+Two facts surfaced while writing the plan:
+
+- Hovering must **stop** the walk (ev-figures.js gates its own walker the same way:
+  `if (!e.greet) av.x += …`). But `figuresFor` receives no hover information, so a wander that
+  owns positions cannot know to hold still.
+- Clamping to the rail requires the field's measured width, which `figuresFor` also does not
+  receive.
+
+So `figuresFor` gains two **appended optional positional** parameters —
+`(t, dt, width, greeting)` — plus a small `greetingIds(state)` helper on `greetReducer`.
+Appending positionally rather than switching to an options object is deliberate:
+`CollectionCrowd`'s existing `(t, dt) => …` arrow stays assignable to the wider signature, so
+that file still needs no edit and the "untouched" property is preserved. The shared surface
+therefore grows by one optional field and two optional parameters, not by one field alone.
+
+One consequence worth recording: `figuresFor` is called at the top of the frame, *before* hover
+is resolved for that frame, so the greeting set it receives is the **previous** frame's — about
+16ms of latency on stopping a hovered walker. That ordering is not a defect to fix; hover
+resolution needs positions, and positions would then need hover.
+
 ### The one additive interface change
 
 `BobitField` currently hardcodes what a hovered figure plays:
