@@ -338,6 +338,30 @@ Six Cambridge questions are counted as magnitude but their rank is meaningless, 
 
 They pass the unit check (identical non-numeric residue) so nothing excludes them. Joins the label-style, mixed-unit, prose-date and bounded-series traps. Cambridge's true figure is 63.9% *including* this noise, so it is fine either way — but a collection built mostly of fraction or time options would report nonsense.
 
+### Mixed units normalised — and the population is 142, not 12 (2026-09-08)
+
+The twelve mixed-unit questions recorded earlier turned out to be **six** by the time they were reached: `nysts-055`, `nysts-061`, `nysts-070`, `lou-060`, `misso-073` and `nysts-043` had become unit-consistent as a side effect of the rebracketing passes. The remaining six are fixed:
+
+| Question | Was | Now |
+|---|---|---|
+| `nysts-081` | "Over 10 million" / "About 500,000" / … | `Over 3/5/8/12 million` |
+| `nysts-077` | "About 100,000" / "About 1 million" / … | `About 100,000/200,000/300,000/400,000` |
+| `stlmo-027` | "Over 50 million" / "About 5 million" / "Nearly 19.7 million" | `Nearly 19.7/25/35/50 million` |
+| `lou-057` | "Over 850 million pounds" vs "Over 1 billion pounds" | `Over 300/500/700/850 million pounds` |
+| `misso-068` | "About 65 million" vs "Nearly 1.5 billion years old" | `Nearly 1/1.5/2/3 billion years old` |
+| `sprmo-079` | "More than 70" / "About 10" / … | `More than 70/100/150/200` |
+
+**The trick that avoided rewording the correct answer:** match the *hedge word* across all four options ("Nearly X million" throughout) rather than normalising to a neutral one. `unit_of` then collapses to a single value and the correct option's text survives verbatim, so the standard preservation guard still applies. All six verified text-preserved, single-unit and sorted before the write.
+
+These six were in the prose bucket, so normalising moved them **into** the magnitude pool (972 → 978) and shifted five collections' rank histograms. Targets were chosen to absorb that: Louisiana 53.3%, Springfield 52.0%, New York 51.2%, Missouri 50.0%, St. Louis 48.1% — all still healthy, position 25.5–26.4%.
+
+**⚠️ The real population is 142.** The "twelve" were only the ones earlier passes happened to surface. A bank-wide sweep finds **142 active questions whose options are all numeric but carry more than one unit**, concentrated in Arizona (11), Phoenix (8), US Civics (8), Philadelphia (8), Tucson (6). Breakdown:
+
+- **44 are hedge-or-scale-only** — same underlying quantity, options just disagree on "About" vs "Over" or on million vs billion. 29 of those differ *only* by hedge word, which is close to mechanical.
+- **98 are genuinely different things** being offered as alternatives (different nouns entirely), which is a question-quality problem rather than a formatting one and needs reading case by case.
+
+**This is why the bank-wide 49.2% understates the bracketing picture** — the same caveat the original survey raised about its own 54.2%. All 142 sit outside the value-rank metric, and until they are normalised nobody knows how they rank. They are *not* a position exploit: they are in the prose bucket and get position-balanced like any other prose question.
+
 ## Related work already banked
 
 - `elc-1-011` (Bloomington, archived 2026-09-08) made a named individual's "Republican party activism" the **correct answer** — the same failure class as 3b/3c, from the election-detection cron rather than the news pipeline. Whatever guard gets designed should cover both generators.
