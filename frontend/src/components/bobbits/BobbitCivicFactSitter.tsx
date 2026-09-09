@@ -94,9 +94,8 @@ interface BobbitCivicFactSitterProps {
  * (already turns pages on its own). Hovering (or focusing) lifts his head off the page without
  * letting go of the book — acknowledgement, no payload. Clicking (or Enter/Space) sits him up,
  * lowers the book into his lap and opens a bubble with a civic fact; clicking again, Escape, or
- * a click elsewhere returns him to reading. Renders on mobile too: a tap now drives both the
- * hover-glance and the click-hold in sequence, so there is no longer a hover-only interaction
- * stranded on touch. `isMobile` only steers the sitter to a corner anchor there.
+ * a click elsewhere returns him to reading. Hidden on mobile since hover has no equivalent
+ * there.
  */
 export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -245,15 +244,13 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
   const onLeave = () => { hoveringRef.current = false; };
   const onActivate = () => settleAfterEvent({ type: 'click' });
 
-  // Desktop clears the search input's text; mobile perches on the top-right corner, where the
-  // only thing behind it is the input's trailing whitespace (the search icon is on the left).
-  const rightOffset = isMobile ? 16 : 340;
+  if (isMobile) return null;
 
   return (
     <div
       ref={wrapperRef}
       style={{
-        position: 'absolute', top: -seatFromTop, right: rightOffset,
+        position: 'absolute', top: -seatFromTop, right: 340,
         width: 80, height, zIndex: 2, pointerEvents: 'auto',
       }}
       onMouseEnter={onEnter}
@@ -285,15 +282,12 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
       <div
         aria-hidden="true"
         style={{
-          position: 'absolute', bottom: height + 10,
-          ...(isMobile
-            ? { right: 0, transform: `translateY(${bubbleShown ? '0' : '4px'})` }
-            : { left: '50%', transform: `translate(-50%, ${bubbleShown ? '0' : '4px'})` }),
+          position: 'absolute', bottom: height + 10, left: '50%',
+          transform: `translate(-50%, ${bubbleShown ? '0' : '4px'})`,
           opacity: bubbleShown ? 1 : 0,
           transition: 'opacity 0.22s ease, transform 0.22s ease',
           pointerEvents: 'none',
-          width: isMobile ? 240 : 200,
-          maxWidth: isMobile ? 'calc(100vw - 48px)' : '60vw',
+          width: 200, maxWidth: '60vw',
           padding: '10px 12px',
           borderRadius: 10,
           fontFamily: "'Manrope', sans-serif", fontWeight: 600, fontSize: 12.5, lineHeight: 1.4,
