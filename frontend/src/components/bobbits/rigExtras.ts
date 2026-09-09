@@ -28,8 +28,45 @@ export function figColor(i: number, darkMode: boolean): string {
   return pal[i % pal.length];
 }
 
+/**
+ * How far apart the two carriers' inner hands must sit, in rig units, for each to land on a
+ * corner of the trophy's pedestal. drawTrophy's pedestal is 12.5 units either side of centre
+ * and the prop draws at TROPHY_SIZE_MULT = 2, so the pedestal spans 50 units and the trophy
+ * rides the hands' midpoint.
+ */
+export const GRIP_HAND_SPAN_UNITS = 50;
+
 /** Poses this app added to the rig. Built on the ported ones where it makes sense. */
 export const EXTRA_ANIMATIONS: Record<string, Animation> = {
+  // `carry` with the arms reaching in, so two carriers can actually hold the trophy between
+  // them. `carry` itself is ev-figures.js's beam-crew pose: its arms hang close to the body
+  // because a beam wider than four figures sits UNDER the hands. CTC's trophy is 50 units
+  // wide against a 150-unit gap, so those hands had nothing to reach for and the logo floated.
+  //
+  // Symmetric on purpose. Each carrier's INNER arm is the one that meets the trophy -- rear
+  // reaches right, lead reaches left -- and one symmetric pose serves both roles, the way
+  // `carry` already did. The outer arms splay outward as a consequence; if that reads badly,
+  // the alternative is a per-side variant driven by AnimVars.hand, as `greet` does.
+  //
+  // These two angles are TUNED AGAINST __tests__/trophyGrip.test.ts, not derived -- change
+  // them only by re-running that test. Both suggested starting points overshot: the brief's
+  // own armRU=33/armRF=41 (which ignored the body-bend term `ub = lean + hunch` added to both
+  // arm angles in computePose) measured a span of ~46 units, and the corrected-geometry
+  // estimate of 49-56 degrees measured ~20 units at 50/50 -- reaching far past the target as
+  // the angle grew, because `ub` (~-16 here, from carry's hunch=-14 plus the walk-cycle wave)
+  // pulls the hands inward faster than the flat-ground arithmetic assumed. The pair below
+  // (measured 2026-09-09) is where the hand-span assertion actually passes, holding across
+  // the whole gait cycle -- see the tuning log in task-5-report.md for the intermediate
+  // values tried.
+  carryGrip: {
+    label: "Carrying (grip)", mood: "mind the trophy",
+    frame(t: number) {
+      const p = ANIMATIONS.carry.frame(t);
+      p.armRU = 31; p.armRF = 39;
+      p.armLU = -31; p.armLF = -39;
+      return p;
+    },
+  },
   cheer: {
     label: "Cheer", mood: "yes! got it!",
     frame(t: number) {

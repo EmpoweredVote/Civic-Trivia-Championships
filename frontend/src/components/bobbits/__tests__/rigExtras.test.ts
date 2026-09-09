@@ -3,20 +3,20 @@ import { ALL_ANIMATIONS, EXTRA_ANIMATIONS, figColor, FIG_COLORS } from '../rigEx
 import { ANIMATIONS } from '../leremyRig';
 
 describe('EXTRA_ANIMATIONS', () => {
-  it('holds exactly the four CTC-only poses', () => {
-    expect(Object.keys(EXTRA_ANIMATIONS).sort()).toEqual(['cheer', 'dance', 'offer', 'ponder']);
+  it('holds exactly the five CTC-only poses', () => {
+    expect(Object.keys(EXTRA_ANIMATIONS).sort()).toEqual(['carryGrip', 'cheer', 'dance', 'offer', 'ponder']);
   });
 
   it('keeps them out of the ported rig', () => {
-    for (const k of ['cheer', 'dance', 'offer', 'ponder']) {
+    for (const k of ['carryGrip', 'cheer', 'dance', 'offer', 'ponder']) {
       expect(ANIMATIONS[k], `${k} leaked into the ported rig`).toBeUndefined();
     }
   });
 });
 
 describe('ALL_ANIMATIONS', () => {
-  it('merges the 41 ported plus the walk alias plus the 4 extras', () => {
-    expect(Object.keys(ALL_ANIMATIONS).length).toBe(46);
+  it('merges the 41 ported plus the walk alias plus the 5 extras', () => {
+    expect(Object.keys(ALL_ANIMATIONS).length).toBe(47);
   });
 
   it('exposes both families', () => {
