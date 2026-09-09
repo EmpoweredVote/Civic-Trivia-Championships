@@ -200,7 +200,29 @@ Notes for whoever fixes the rest:
 - Rotation is safe on prose options but **un-sorts a numeric series**, so magnitude questions want the sort-ascending-and-rebracket treatment from the section above instead. The two passes have to be applied to disjoint sets.
 - The five 100%-at-A collections cannot be repaired by rotation alone in the way the others can: with every answer at A, any rotation is a pure permutation of a degenerate distribution, which is fine — but it means their *value* ranks were never examined either. Expect them to need both passes.
 - **The audit assertion now exists** (`audit-collection-readiness.ts`, "Answer Position"). It reports the A/B/C/D histogram and warns when the best single guess exceeds 40% against a 25% baseline. Against the live bank it fires on **30 of 42 collections** and stays quiet on 12 — the six previously rotated, the five fixed above, and Bloomington (35.0%). Worst remaining is **Plano, TX at 74.1%**, then North Carolina 73.6% and Federal 73.5%.
-- Work the rest in descending order of that number. Federal deserves priority out of turn: it is the collection every player sees, and it is at 73.5% on "always pick B".
+- Work the rest in descending order of that number.
+
+### Fixed: Federal / "How Washington Works" (2026-09-08)
+
+Taken out of turn as the collection every player sees. **113 questions, 3/83/23/4 → 29/28/28/28**, best guess 73.5% → **25.7%**. Value rank fixed in the same pass: 1/8/9/0 → **5/4/4/5**, 55.6% at an extreme (was 5.6%).
+
+Verified by fingerprint rather than by trusting the write guards: `md5(string_agg(external_id || '|' || correct option))` taken before the first write and again after the last came back **identical** (`3341cf55…`), so all 113 correct answers provably survived three separate rewrites.
+
+**The label-style trap is real and it bites here.** Six of the 18 "magnitude" questions are amendment *numbers* — `q005`, `q020`, `q033`, `q042`, `q054`, `q073`. The detector reads "13th Amendment" as the value 13 and ranks it, but the number is an identifier, not a quantity. Rebracketing them would mean replacing thematically chosen distractors (the Reconstruction amendments 13/14/15 in `q073`) with unrelated ones, making the questions *easier* while improving the metric. **They were deliberately left alone**, and the 12 genuine magnitudes were skewed to compensate (5/2/0/5) so the reported total still lands uniform. This is the caveat in the methodology note above, no longer hypothetical: on a collection this amendment-heavy it is a third of the numeric pool.
+
+Also note `q002` ("how many branches") is a **bounded series that cannot reach rank 4** — only two values exist below 3, so no set of distractors puts the answer last. Same class as the "4 out of 5" case from Asheville.
+
+### Renamed: Federal → "How Washington Works" (2026-09-08)
+
+Product decision. The collection is federal *civics*, not history: Constitution + Bill of Rights + Amendments 45, judiciary 31, Congress + executive 29, elections 8, and only **3** questions tagged U.S. History — so "US History" would have misdescribed 97% of it, and "US Judicial" describes 27%.
+
+Three places must agree and all three were changed: `trivia.collections.name`, `backend/src/db/seed/collections.ts`, and the `COLLECTION_NAMES` map in `generateQuestions.ts` (whose comment says names must match the DB `name` column exactly).
+
+Deliberately **not** changed: `slug` stays `federal` — `trivia.bobit_progress` keys player progress by collection slug, and URLs depend on it. `locale_name` stays "United States", which is what `getRegion()` in `CollectionCard.tsx` renders as the eyebrow above the title; the card now reads UNITED STATES / How Washington Works. Note that card's `tier === 'federal'` fallback is dead code for this collection — `locale_name` is set, so the fallback never fires.
+
+⚠️ **Naming collision to watch:** the bank already has "Washington, DC" (city) and "Washington" (state). Three Washington-ish titles now sit in one list; the eyebrow disambiguates on the card, but anywhere the title appears alone it will not.
+
+If a "U.S. Judicial" collection is ever split out, note `MIN_QUESTION_THRESHOLD = 50` in `game.ts` — the 31 Supreme Court questions would need ~20 more before the collection is playable.
 
 ## Related work already banked
 
