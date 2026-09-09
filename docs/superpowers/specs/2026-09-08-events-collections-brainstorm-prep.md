@@ -392,7 +392,45 @@ So these 18 need the underlying fact checked against the explanation, one at a t
 
 Asheville 50.0%, Indio 60.0%, Los Angeles 45.0%, New York 50.0% on value rank afterwards; all still healthy.
 
-**Left (25):** the 18 directional-hedge ones and the 7 scale mixes. Both want a human decision per question, and neither is a position exploit — all sit in the prose bucket and are position-balanced already.
+### The 18 directional-hedge ones: closed brackets (2026-09-08)
+
+**Chris's idea, and it is the right one:** replace the hedge with a **closed range** — `25-49%` / `50-74%` / `75-89%` / `90-100%`. Ranges *partition* the space, so exactly one option can contain the true value. Mutual exclusivity is precisely the property directional hedges lack, so the multiple-true-answers hazard disappears rather than being worked around, and the rank becomes free (pick which bracket holds the answer).
+
+Two mechanics worth keeping:
+
+- **All four must be closed ranges.** Mixing an open `Under 35%` with closed ranges gives `unit_of` "under %" vs "%" and drops the question out of the metric again — the same failure this was meant to fix.
+- **Put the range's unit once, at the end**: `100-249 miles`, not `100 miles-249 miles`. `unit_of` then collapses to `miles` and `val_of` reads the lower bound, so sorting by lower bound orders the brackets correctly.
+
+All 18 done. Every one verified single-unit, strictly ascending, and — the check that replaces text-preservation here — **the value its own explanation states falls inside the chosen bracket**:
+
+| Question | Was | Now | Rank |
+|---|---|---|---|
+| `arizs-053` | At least 1150 AD | `1150 AD` (hedge simply dropped — a point date, not a range) | 1 |
+| `arizs-061` | More than 60% | `60-74%` | 2 |
+| `arizs-070` | More than $500 billion | `$500-749 billion` | 3 |
+| `arizs-082` | More than 160,000 | `160,000-199,999` | 4 |
+| `benor-073` | More than 30 | `30-49` | 4 |
+| `lac-002` | Over 10 million people | `10-14 million people` | 4 |
+| `madwi-087` | More than 120 | `120-179` | 1 |
+| `milwi-069` | More than 34,000 | `25,000-49,999` | 2 |
+| `mis-174` | Over 50% | `50-74%` | 2 |
+| `phxaz-047` | Over 40,000 | `40,000-59,999` | 1 |
+| `phxaz-056` | Over 250,000 acres | `250,000-499,999 acres` | 2 |
+| `phxaz-084` | Over 135 miles | `100-199 miles` | 3 |
+| `pla-019` | Over 72,000 | `50,000-99,999` | 1 |
+| `queny-067` | More than 200 | `200-299` | 1 |
+| `smo-175` | At least 95% | `95-100%` | 4 |
+| `tex-069` | Over 500 | `500-999` | 3 |
+| `tucaz-038` | More than 4,400 | `4,000-5,999` | 1 |
+| `tucaz-040` | More than 56,000 | `50,000-74,999` | 2 |
+
+`smo-175` is another bounded case: a `95-100%` bracket cannot sit at rank 1, because no percentage bracket exists above it. It went to rank 4.
+
+**⚠️ Five brackets rest on inference, not on the explanation.** Where an explanation states only a threshold ("more than 60%"), the true value is known to be *above* it but not by how much, so the bracket is right only if the value also falls below the bracket's top. Tops were chosen generously, but these five should be checked against source if anyone is passing through: `arizs-061` (assumes ~65%, not >74%), `arizs-082` (ASU ~183k, not >199,999), `mis-174` (assumes ~65%), `tex-069` (assumes ~700), `benor-073` (assumes ~30-49). The other thirteen either state a figure or have a threshold comfortably inside a wide bracket.
+
+**Left: the 7 scale mixes** (`alxla-047`, `benor-046`, `benor-075`, `clima-1502`, `nysts-068`, `tucaz-043`, `tucaz-091`).
+
+Neither the scale mixes nor the remaining 98 different-things questions are a position exploit — all sit in the prose bucket and are position-balanced already.
 
 ## Related work already banked
 
