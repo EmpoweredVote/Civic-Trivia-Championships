@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { exchangeRefreshToken, fetchAccountProfile, ssoSessionCheck, ACCOUNTS_API_URL } from '../services/accountsApi';
 import { API_URL } from '../services/api';
+import { shouldClearOnSessionPoll } from './sessionSync';
 
 interface AuthInitializerProps {
   children: React.ReactNode;
@@ -108,11 +109,20 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
     if (!isAuthenticated) return;
 
     const SESSION_URL = `${ACCOUNTS_API_URL}/api/auth/session`;
+    // Only a 2xx→401 transition means the shared cookie session was cleared
+    // elsewhere. A CTC Bearer login never establishes that cookie, so it gets
+    // 401 forever — clearing on that would (and did) log valid users out every
+    // 60s. See shouldClearOnSessionPoll / sessionSync.ts.
+    let hadCookieSession = false;
     const poll = async () => {
       if (document.visibilityState !== 'visible') return;
       try {
         const res = await fetch(SESSION_URL, { credentials: 'include' });
-        if (res.status === 401) clearAuth();
+        if (res.ok) {
+          hadCookieSession = true;
+        } else if (shouldClearOnSessionPoll(hadCookieSession, res.status)) {
+          clearAuth();
+        }
       } catch {
         // Network error — don't log out
       }
