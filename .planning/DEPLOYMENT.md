@@ -131,6 +131,13 @@ behind it, despite Phase 79-02 being marked complete. Not playable. See STATE.md
 **Admin access:** the CTC admin panel is role-aware. Either a `ctc_content_editor` role or an
 `admin_users` row grants access; the role alone is now sufficient.
 
+> ⚠ **This WorkOS section (added in PR #94) describes the RETIRED
+> `civic-trivia-backend` service, not the live auth path.** CTC's backend was
+> merged into **ev-accounts** (`api.empowered.vote`), so today's login and admin
+> resolution run there — the authoritative env/auth runbook is ev-accounts
+> `DEPLOY.md` (PR #195). The notes below apply only if the standalone backend in
+> this repo is ever run again. Kept for reference.
+
 **WorkOS AuthKit — second token issuer (ev-accounts decision 0002, CTC PR #59).** The backend
 accepts both Supabase and WorkOS JWTs. The WorkOS path is gated on one backend env var:
 
