@@ -1,5 +1,5 @@
 import { ANIMATIONS, clonePose, wave, REST, drawQuizCard, roundRectPath } from './leremyRig';
-import type { Animation } from './leremyRig';
+import type { Animation, AnimVars } from './leremyRig';
 
 export { drawQuizCard };
 
@@ -51,10 +51,16 @@ export const EXTRA_ANIMATIONS: Record<string, Animation> = {
   // pedestal base by ~14 units: the lead carrier's hand overlapped the pedestal and the rear
   // carrier's hung clear beneath it. Independent left/right angles are the fix.
   //
-  // One pose still serves both roles, as `carry` did: each carrier's INNER arm meets the
-  // trophy -- rear reaches right, lead reaches left -- and the outer arm splays outward as a
-  // consequence. If that ever reads badly, the alternative is a per-side variant driven by
-  // AnimVars.hand, as `greet` does.
+  // PER-SIDE, via AnimVars.hand, as `greet` does. One pose served both roles at first and only
+  // the INNER arm was ever asserted -- so the outer arm inherited the same near-horizontal
+  // reach and both carriers stood in a T-pose, arms held straight out into empty space. The
+  // contact test could not see it: it constrains the two gripping hands and nothing else. A
+  // screenshot caught it. Pass `{ hand: 'R' }` for the rear carrier (reaches right, toward the
+  // trophy) and `{ hand: 'L' }` for the lead (reaches left); the other arm keeps `carry`'s own
+  // hang, which is what a person not holding anything with it actually does.
+  //
+  // The gripping-hand angles below are unchanged from the tuning that fixed the two axes --
+  // splitting the pose per side moves no hand, it only stops the idle arm copying the reach.
   //
   // These four angles are TUNED AGAINST __tests__/trophyGrip.test.ts, not derived -- change
   // them only by re-running that test, which is the arbiter on BOTH axes. Tuning log,
@@ -74,10 +80,13 @@ export const EXTRA_ANIMATIONS: Record<string, Animation> = {
   // height; checked against the canvas at both scales, the heads still top the silhouette.
   carryGrip: {
     label: "Carrying (grip)", mood: "mind the trophy",
-    frame(t: number) {
+    frame(t: number, v?: AnimVars) {
       const p = ANIMATIONS.carry.frame(t);
-      p.armRU = 6; p.armRF = 107;
-      p.armLU = -9; p.armLF = -68;
+      // Only the arm named reaches for the pedestal. The other keeps carry's hang.
+      // Defaults to 'R' so a caller that forgets the variant still grips with one arm
+      // rather than neither.
+      if (v?.hand === 'L') { p.armLU = -9; p.armLF = -68; }
+      else { p.armRU = 6; p.armRF = 107; }
       return p;
     },
   },

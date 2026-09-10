@@ -13,8 +13,13 @@ const PELVIS_STAND = 112;
 // carryGrip's arm angles are fixed, so its hands sit at a near-constant height relative to the
 // pelvis (only the small walk-cycle bob/hunch sway it). Computed once as the reference height
 // the trophy returns to once it's picked back up, rather than hand-derived on every frame.
-const CARRY_REF_JOINTS = computePose(ALL_ANIMATIONS.carryGrip.frame(0), CFG, { x: 0, y: 0 });
-const CARRY_HAND_Y = (CARRY_REF_JOINTS.hR.y + CARRY_REF_JOINTS.hL.y) / 2;
+// carryGrip is per-side: each carrier reaches with its INNER arm only, so the reference has
+// to come from the two GRIPPING hands (rear's right, lead's left) and not from one pose's
+// two hands -- averaging a gripping hand with an idle one would put the trophy's rest height
+// halfway between the pedestal and somebody's hip.
+const CARRY_REF_REAR = computePose(ALL_ANIMATIONS.carryGrip.frame(0, { hand: 'R' }), CFG, { x: 0, y: 0 });
+const CARRY_REF_LEAD = computePose(ALL_ANIMATIONS.carryGrip.frame(0, { hand: 'L' }), CFG, { x: 0, y: 0 });
+const CARRY_HAND_Y = (CARRY_REF_REAR.hR.y + CARRY_REF_LEAD.hL.y) / 2;
 
 type Phase = 'walk' | 'lowering' | 'rising1' | 'waving' | 'lowering2' | 'rising2' | 'offstage';
 
@@ -138,8 +143,10 @@ export function BobbitTrophyCarry({ darkMode, isMobile }: BobbitTrophyCarryProps
         // look like sliding — back to 1:1 once cruising at the normal speed.
         const gaitRate = st.entering ? entrySpeed / speed : 1;
         const gaitClock = st.walkClock * gaitRate;
-        leadPose = ALL_ANIMATIONS.carryGrip.frame(gaitClock);
-        rearPose = ALL_ANIMATIONS.carryGrip.frame(gaitClock + 0.16);
+        // Each carrier grips with the arm facing the other: rear is on the left so it reaches
+        // right, lead is on the right so it reaches left. The outer arm hangs.
+        leadPose = ALL_ANIMATIONS.carryGrip.frame(gaitClock, { hand: 'L' });
+        rearPose = ALL_ANIMATIONS.carryGrip.frame(gaitClock + 0.16, { hand: 'R' });
       } else if (st.phase === 'lowering') {
         leadPose = rearPose = ANIMATIONS.heave.frame(st.phaseT);
       } else if (st.phase === 'rising1') {
