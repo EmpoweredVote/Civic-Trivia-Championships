@@ -68,7 +68,31 @@ Exactly one lane per story, so a single fact cannot appear in two collections si
 
 The current four feeds (BBC World, NPR World, Guardian World, DW) are all world-desk feeds. Routed against them alone, US News would contain only US stories that *foreign* desks choose to cover — tariffs, presidential politics, mass-casualty events — which is a collection about how the US is seen abroad, not a US news collection.
 
-**Add US-domestic feeds to the shared ingest**: NPR National and AP US. Still one ingest, still routed, so this does not disturb the single-assignment guarantee; it widens the input so the US lane has real material.
+**Add US-domestic feeds to the shared ingest.** Still one ingest, still routed, so this does not disturb the single-assignment guarantee; it widens the input so the US lane has real material.
+
+> **ATTEMPTED AND FAILED, 2026-09-10 — the US lane has no domestic feed.** Both
+> candidates this section originally named are unusable, and the surviving feed
+> set is three world desks: BBC World, The Guardian, DW.
+>
+> - **NPR** serves RSS but blocks bot access to article bodies as policy. Measured:
+>   `www.npr.org` returns 0 bytes after a 20s timeout for `CivicTriviaBot/1.0`
+>   *and* for an honest identifying UA (`CivicTriviaBot/1.0
+>   (+https://empowered.vote)`), while returning 200 in ~111ms for a browser UA.
+>   We will not spoof a browser UA to defeat a deliberate block. Both NPR feeds
+>   were removed — note the long-standing `NPR` world feed had **never** produced
+>   a usable article, so the pipeline had been running on three feeds, not four,
+>   and burning ~5 min/run on timeouts.
+> - **AP** is unreachable: the `rsshub.app/apnews` mirror 403s declaring itself
+>   test-only, and every `apnews.com` RSS endpoint sits behind a Cloudflare
+>   challenge.
+>
+> **Consequence for Plan 3:** `us-news` can only receive US stories that foreign
+> desks choose to cover — exactly the "how the US is seen abroad" collection this
+> section warns against. **Do not create `us-news` until a domestic source is
+> found.** The most promising avenue is not another feed URL but the 300-word
+> body gate: `rss-ingestor.ts` already falls back to RSS `content:encoded`, and it
+> is the word gate rather than the fetch that rejects NPR. A source whose
+> `content:encoded` clears 300 words needs no body fetch at all.
 
 ---
 
@@ -104,7 +128,9 @@ This catches paraphrase that survives Layer 1 because the extractor structured t
 ### Two constraints, both from things that have already bitten
 
 - **Scope by `collection_questions`, never by prefix.** The existing city/state implementation filters `prefix + '-%'` (`generate-locale-questions.ts:386`), which is the documented `ind` collision footgun — `LIKE 'ind-%'` matches questions across both Indiana and Indio CA. Join through the link table.
-- **Never skip silently.** The prior embedding dedup was gated on `if (process.env.OPENAI_API_KEY)` and returned quietly when unset, so an unset key made the feature a no-op with no signal. Both layers here are local and unconditional; any skip writes a WARN into `generation_jobs.notes` and surfaces in admin pipeline health.
+- **Never skip silently.** The prior embedding dedup was gated on `if (process.env.OPENAI_API_KEY)` and returned quietly when unset, so an unset key made the feature a no-op with no signal. Both layers here are local and unconditional; any skip writes a WARN into `generation_jobs.notes`.
+
+**Correction, 2026-09-10:** an earlier draft of this line claimed skips "surface in admin pipeline health." **No such surface exists.** `trivia.generation_jobs` is written by this pipeline and read by nothing else in `ev-accounts` — verified by grep. "Never skip silently" is therefore satisfied at the *write* side only; detection today is manual SQL against `notes`, which is what §9's "review after the first week" actually requires someone to do. An admin read surface is unbuilt work, not an existing mitigation.
 
 ### Regression fixtures
 
