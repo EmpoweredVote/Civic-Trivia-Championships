@@ -15,7 +15,7 @@
 - **All code in this plan lands in `C:\ev-accounts`, not `C:\Project Test`.** `backend/` in Project Test is FROZEN per ev-cto decision 0013; the canonical trivia backend is `ev-accounts/backend/src/trivia/`. This plan touches no files in Project Test.
 - **ESM import specifiers end in `.js`** even for TypeScript sources (`from './lanes.js'`). This is the established pattern throughout `src/trivia/`.
 - **DB imports are lazy** inside functions (`const { db } = await import('../../db/index.js')`), matching the existing pattern in `run-pipeline.ts:70`.
-- **No OpenAI, no embeddings, no new runtime dependency.** Both dedup layers are local. `pg_trgm` 1.6 is already installed in project `kxsdzaojfaibhuzmclfq`.
+- **No OpenAI, no embeddings, no new runtime dependency.** Both dedup layers are local. `pg_trgm` 1.6 is already installed in project `kxsdzaojfaibhuzmclfq`, **in the `extensions` schema, which is not on `search_path`** — so every call must be written `extensions.similarity(...)`. Unqualified it fails at runtime with `42883`, and because it is raw SQL in a template string `tsc` cannot catch it.
 - **Never scope question queries by external_id prefix.** Join through `trivia.collection_questions`. `LIKE 'ind-%'` matches questions across both Indiana and Indio CA — the documented collision footgun.
 - **Never skip silently.** Every guard that rejects or bypasses writes a structured entry into `generation_jobs.notes`.
 - **No schema migration tooling exists.** There is no `drizzle/` migrations directory; `src/trivia/db/schema.ts` is hand-maintained. DDL is applied via Supabase against project `kxsdzaojfaibhuzmclfq`, and `schema.ts` is updated to match in the same commit.
@@ -901,7 +901,7 @@ SELECT
   (SELECT count(*) FROM information_schema.columns
     WHERE table_schema='trivia' AND table_name='claim_fingerprints') AS cols,
   (SELECT installed_version FROM pg_available_extensions WHERE name='pg_trgm') AS trgm,
-  similarity('At what age did King Harald V of Norway die in 2026?',
+  extensions.similarity('At what age did King Harald V of Norway die in 2026?',
              'How old was King Harald V of Norway when he died in 2026?') AS harald_sim;
 ```
 
@@ -1002,7 +1002,7 @@ export function createSimilarityProbe(): SimilarityProbe {
       // a shared prefix cross-links collections (the `ind` footgun).
       const result = await db.execute(sql`
         SELECT q.external_id AS external_id,
-               similarity(q.text, ${text}) AS sim
+               extensions.similarity(q.text, ${text}) AS sim
         FROM trivia.questions q
         JOIN trivia.collection_questions cq ON cq.question_id = q.id
         WHERE cq.collection_id = ANY(${sql.raw(`ARRAY[${collectionIds.join(',')}]::int[]`)})
@@ -1563,7 +1563,7 @@ WITH pairs(a, b, expect) AS (VALUES
   ('wiran-1639','wiran-1665','distinct')
 )
 SELECT p.expect, p.a, p.b,
-       round(similarity(qa.text, qb.text)::numeric, 3) AS sim
+       round(extensions.similarity(qa.text, qb.text)::numeric, 3) AS sim
 FROM pairs p
 JOIN trivia.questions qa ON qa.external_id = p.a
 JOIN trivia.questions qb ON qb.external_id = p.b

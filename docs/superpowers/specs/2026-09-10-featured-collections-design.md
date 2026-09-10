@@ -82,13 +82,22 @@ Deduplicate at the **claim** layer, before question generation, not at the quest
 
 Because both duplicate questions descend from one claim, catching it here means the second question is never written — cheaper and more reliable than detecting the similarity of two finished questions.
 
-Fingerprints are stored in a new table, `trivia.claim_fingerprints` (`fingerprint text primary key`, `lane text`, `first_seen_at timestamptz`, `generation_job_id int`), pruned beyond 30 days.
+Fingerprints are stored in a new table, `trivia.claim_fingerprints`, pruned beyond 30 days. **The fingerprint is two columns, not one**, and the split carries meaning:
+
+| Match | Verdict |
+|---|---|
+| same `topic_key` **and** same `value_key` | **duplicate** — the fact is already covered |
+| same `topic_key`, **different** `value_key` | **contradiction** — two live answers to one question |
+
+Columns: `id bigserial pk`, `topic_key text not null`, `value_key text not null`, `lane text not null`, `question_external_id text`, `generation_job_id int references generation_jobs(id) on delete set null`, `first_seen_at timestamptz not null default now()`; unique index on `(topic_key, value_key)`, lookup index on `(topic_key, first_seen_at desc)`.
+
+The contradiction verdict is the more valuable half: a duplicate is cosmetic, while two different correct answers to the same question can both be served to a player inside the same window. The audit found both classes live — Meta's India ad count as 84 (`clima-1599`) and 78 (`wiran-1640`), and the AfD's vote share as 43.8% and 44%. Applied 2026-09-10 as migration `create_claim_fingerprints`.
 
 **Both layers are scoped across all four lanes, not per lane.** Single-assignment routing (§2) already makes the same *story* impossible in two collections, so cross-lane checking is not the primary defence — it is the safety net for a routing misclassification, where one night's story is filed under `us` and the next night's under `world`. Cross-lane scope costs nothing and turns a routing error into a skipped duplicate rather than a visible one.
 
 ### Layer 2 — trigram safety net
 
-`pg_trgm` 1.6 is **already installed** in project `kxsdzaojfaibhuzmclfq`. Before insert, compare each candidate question's text against active and recently expired questions across **all four lanes** using `similarity()`, and skip above threshold. Starting threshold **0.55**, tuned during implementation against the fixtures below.
+`pg_trgm` 1.6 is **already installed** in project `kxsdzaojfaibhuzmclfq` — in the **`extensions`** schema, which is NOT on the database's `search_path` (`"$user", public`). Every call must therefore be schema-qualified as **`extensions.similarity(...)`**; unqualified it fails with `42883: function similarity(unknown, unknown) does not exist`. Qualify rather than altering `search_path`: the application connects as `ctc_app` via the session pooler, whose path may differ again. (Verified 2026-09-10. Note that `pg_available_extensions.installed_version` reporting 1.6 establishes only that the extension is installed, not that the function is reachable.) Before insert, compare each candidate question's text against active and recently expired questions across **all four lanes** using `extensions.similarity()`, and skip above threshold. Starting threshold **0.55**, tuned during implementation against the fixtures below.
 
 This catches paraphrase that survives Layer 1 because the extractor structured the claim differently on two nights — the `89` versus `89 years old` class.
 
