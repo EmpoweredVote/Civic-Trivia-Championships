@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { exchangeRefreshToken, fetchAccountProfile, ssoSessionCheck, ACCOUNTS_API_URL } from '../services/accountsApi';
-import { API_URL } from '../services/api';
+import { exchangeRefreshToken, fetchAccountProfile, ssoSessionCheck } from '../services/accountsApi';
+import { API_URL, apiRequest } from '../services/api';
 
 interface AuthInitializerProps {
   children: React.ReactNode;
@@ -102,25 +102,32 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
     initializeAuth();
   }, [setAuth, clearAuth, setLoading]);
 
-  // Cross-app logout sync — detect ev_session cookie cleared by another app
+  // Cross-app logout sync — Bearer heartbeat.
+  // Logging out of any EV app revokes the session server-side: ev-accounts
+  // calls Supabase signOut(scope:'global') and records the logout time so
+  // requireAuth rejects the token immediately. CTC authenticates with a Bearer
+  // token (no shared cookie), so it detects that by periodically calling a
+  // lightweight authenticated endpoint. apiRequest refreshes on a 401 and, when
+  // the refresh token is also revoked, calls clearAuth itself — so a global
+  // logout elsewhere logs this tab out within one interval. Transient errors
+  // (5xx, offline) never clear auth; only a failed refresh does.
   const { isAuthenticated } = useAuthStore();
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const SESSION_URL = `${ACCOUNTS_API_URL}/api/auth/session`;
     const poll = async () => {
       if (document.visibilityState !== 'visible') return;
       try {
-        const res = await fetch(SESSION_URL, { credentials: 'include' });
-        if (res.status === 401) clearAuth();
+        await apiRequest('/api/users/profile/identity');
       } catch {
-        // Network error — don't log out
+        // Non-fatal: a revoked session already triggered clearAuth inside
+        // apiRequest; anything else is transient and must not log the user out.
       }
     };
 
     const id = setInterval(poll, 60_000);
     return () => clearInterval(id);
-  }, [isAuthenticated, clearAuth]);
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
