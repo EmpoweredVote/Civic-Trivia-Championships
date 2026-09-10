@@ -1,22 +1,85 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { ANIMATIONS, CFG, computePose, draw, drawShadow } from './leremyRig';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { ANIMATIONS, CFG, computePose, draw, drawShadow, REST } from './leremyRig';
 import { figColor } from './rigExtras';
 import type { Pose } from './leremyRig';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useWindowSize } from '../../hooks/useWindowSize';
+import {
+  readerReduce, bubbleOpen, showBook, READER_IDLE, QUOTE_TRANS,
+} from './readerReducer';
+import type { ReaderEvent, ReaderState } from './readerReducer';
+import { sessionFact } from './civicFacts';
 
 const PELVIS_SEAT = 8;
 
-const CIVIC_FACTS = [
-  'The Bill of Rights added the first 10 amendments in 1791.',
-  'Every state gets at least 3 electoral votes, no matter its population.',
-  'The Supreme Court has sat with 9 justices since 1869.',
-  'The 26th Amendment lowered the voting age to 18 in 1971.',
-  'Congress has two chambers: the House and the Senate.',
-  'A presidential veto can be overridden by a two-thirds vote in Congress.',
-  'Local elections often decide your school board, mayor, and ballot measures.',
-  'The First Amendment protects speech, press, religion, assembly, and petition.',
-];
+/** ev-figures.js's easing: flat at both ends, so a glance starts and settles softly. */
+function smooth01(u: number): number {
+  const c = u < 0 ? 0 : u > 1 ? 1 : u;
+  return c * c * (3 - 2 * c);
+}
+
+/** Blends every field of two poses. Pose is a flat record of numbers, so this is total. */
+function lerpPose(a: Pose, b: Pose, t: number): Pose {
+  const out = { ...a };
+  (Object.keys(out) as (keyof Pose)[]).forEach((k) => {
+    out[k] = a[k] + (b[k] - a[k]) * t;
+  });
+  return out;
+}
+
+/** Hover: the same reading hold, head raised off the page. Ported from ev-figures.js. */
+function quoteGlance(t: number): Pose {
+  const p = ANIMATIONS.read.frame(t);
+  const br = Math.sin(t * 0.28 * Math.PI * 2);
+  p.hunch = -(14 + br * 2);              // partly uncurled, still leaning in
+  p.headTilt = 6 + Math.sin(t * 0.4 * Math.PI * 2) * 3;
+  return p;
+}
+
+/**
+ * Settled: sat up, book down in the lap, looking up and out. Ported from ev-figures.js.
+ * 0deg points straight DOWN and 90 is horizontal, so the upper arms hang low and the forearms
+ * come forward, putting the hands over the thighs -- the book draws at the hand midpoint,
+ * which is what drops it into the lap.
+ */
+function quoteHold(t: number): Pose {
+  const p = { ...REST };
+  const br = Math.sin(t * 0.26 * Math.PI * 2);
+  p.lean = 2;
+  p.hunch = -(4 + br * 2);
+  p.bob = br * 1.2;
+  p.headTilt = 9 + Math.sin(t * 0.32 * Math.PI * 2) * 3;
+  p.armRU = 30 + br;  p.armRF = 88 + br * 3;
+  p.armLU = 22 - br;  p.armLF = 80 + br * 2;
+  p.legRU = 78; p.legRF = 11;
+  p.legLU = 70; p.legLF = 5;
+  return p;
+}
+
+function poseFor(state: ReaderState, t: number): Pose {
+  const read = ANIMATIONS.read.frame(t);
+  switch (state.phase) {
+    case 'read':
+      return state.glance > 0 ? lerpPose(read, quoteGlance(t), smooth01(state.glance)) : read;
+    case 'lookup': {
+      // Start from wherever the hover glance actually left him, not from the un-glanced read.
+      // `readerReduce` deliberately carries `glance` into `lookup` (the `resume` branch zeroes
+      // it; this one does not), and on desktop you must hover before you can click, so glance
+      // is ~1 at click time. Lerping from bare `read` snapped the head down ~20deg (headTilt
+      // differs 18-23deg and hunch 7-9deg between `read` and `quoteGlance`) in the first frame
+      // and raised it again over the next 500ms — a flinch exactly when the quote appears.
+      const from = state.glance > 0
+        ? lerpPose(read, quoteGlance(t), smooth01(state.glance))
+        : read;
+      return lerpPose(from, quoteHold(t), smooth01(state.t / QUOTE_TRANS));
+    }
+    case 'hold':
+      return quoteHold(t);
+    case 'resume':
+      return lerpPose(quoteHold(t), read, smooth01(state.t / QUOTE_TRANS));
+  }
+}
+
 
 interface BobbitCivicFactSitterProps {
   darkMode: boolean;
@@ -38,22 +101,37 @@ interface BobbitCivicFactSitterProps {
  */
 /**
  * Seated on the search box's top edge, reading — idle motion is the rig's own `read` pose
- * (already turns pages on its own). Hovering closes the book, eases into a wave borrowed
- * from `greetseat`, and surfaces one short civic fact; leaving reopens the book and resumes
- * reading. Hidden on mobile since hover has no equivalent there.
+ * (already turns pages on its own). Hovering (or focusing) lifts his head off the page without
+ * letting go of the book — acknowledgement, no payload. Clicking (or Enter/Space) sits him up,
+ * lowers the book into his lap and opens a bubble with a civic fact; clicking again, Escape, or
+ * a click elsewhere returns him to reading.
+ *
+ * WHY `if (isMobile) return null` IS STILL HERE (do not delete it without a new anchor).
+ * Hover DOES have a touch equivalent now — the touch handlers below make a tap act as both
+ * hover and click — so "no hover on touch" is no longer the reason. The reason is that the
+ * only anchor available inside the search box collides with the box's own controls. Rendering
+ * him on phones was implemented, measured and reverted: verified in Chromium at 320/375/414px
+ * with a query typed, the sitter's box spans x199-279 at 320px while the search box's own
+ * "Clear search" button spans x262-279 — entirely covered — and the text input spans x66-252,
+ * so no anchor inside that box clears both the input and the clear button. Giving the reader a
+ * mobile home is a layout decision (a spot outside the search box, or a narrow-viewport
+ * rearrangement of the box itself), not a constant to nudge. Tracked as an open item in
+ * docs/superpowers/specs/2026-09-09-bobit-landing-interaction-design.md.
  */
 export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const widthRef = useRef(0);
-  const hoverTargetRef = useRef(0);
-  const hoverAmountRef = useRef(0);
-  const hoverStartAtRef = useRef(0);
+  const stateRef = useRef<ReaderState>(READER_IDLE);
+  const hoveringRef = useRef(false);
+  // Set by the effect below to a same-frame repaint, used only when `!animate` -- with no rAF
+  // loop, a click/dismiss needs to redraw itself rather than wait for a frame that never comes.
+  const repaintRef = useRef<(() => void) | null>(null);
   const animate = !useReducedMotion();
-  const [hovered, setHovered] = useState(false);
-  // Seeded at random and advanced on the way OUT of a reveal, not into one — the description
-  // a screen reader reads on focus is computed from the DOM as it stands when focus lands,
-  // so the fact has to already be committed before the reveal starts.
-  const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * CIVIC_FACTS.length));
+  const [bubbleShown, setBubbleShown] = useState(false);
+  // The fact is chosen once per session at module load and never changes during a visit.
+  // A screen reader computes its description from the DOM as it stands when focus lands,
+  // so the fact commitment happens before any reveal interaction — no races possible.
   const factId = useId();
   const { width: viewportWidth } = useWindowSize();
   const isMobile = viewportWidth < 640;
@@ -83,56 +161,51 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
 
     const seatY = height - legClearance;
 
-    function blend(a: number, b: number, t: number) {
-      return a + (b - a) * t;
-    }
-
-    // Idle = the rig's own `read` pose untouched. Hovering cross-fades every field toward
-    // `greetseat`'s wave (borrowed wholesale — it already eases from a "look up" into a
-    // raised-arm wave with its own oscillation), so the reading motion smoothly hands off
-    // into waving hello instead of two poses fighting each other.
-    function poseFor(t: number, hoverAmount: number, waveT: number): Pose {
-      const base = ANIMATIONS.read.frame(t);
-      if (hoverAmount <= 0.001) return base;
-      const wavePose = ANIMATIONS.greetseat.frame(waveT, { hand: 'R' });
-      const out = { ...base };
-      (Object.keys(out) as (keyof Pose)[]).forEach((k) => {
-        out[k] = blend(base[k], wavePose[k], hoverAmount);
-      });
-      return out;
-    }
-
-    function render(t: number, now: number) {
+    function render(state: ReaderState, t: number) {
       const w = widthRef.current;
       ctx!.clearRect(0, 0, w, height);
       const x = w / 2;
       drawShadow(ctx!, x, seatY, 10 * scale);
-      const hoverAmount = hoverAmountRef.current;
-      const waveT = hoverStartAtRef.current ? (now - hoverStartAtRef.current) / 1000 : 0;
-      const pose = poseFor(t, hoverAmount, waveT);
-      // The book closes (and gets set down) once the wave has mostly taken over.
-      const showBook = hoverAmount < 0.5;
+      const pose = poseFor(state, t);
       ctx!.save();
       ctx!.translate(x, seatY - PELVIS_SEAT * scale);
       ctx!.scale(scale, scale);
       const j = computePose(pose, CFG, { x: 0, y: 0 });
-      draw(ctx!, j, CFG, { color, card: showBook, cardRot: -0.15 });
+      draw(ctx!, j, CFG, { color, card: showBook(state), cardRot: -0.15 });
       ctx!.restore();
     }
 
+    // Exposed so a click/dismiss outside this effect (reduced motion has no rAF loop to redraw
+    // on its own) can repaint immediately after settling the reducer.
+    repaintRef.current = () => render(stateRef.current, 0);
+
     if (!animate) {
-      render(0, 0);
-      return () => ro.disconnect();
+      // No loop running to catch a later phase change, so this single frame must reflect
+      // whatever stateRef.current already is (e.g. reduced motion switched on mid-hold)
+      // rather than assume the idle read pose.
+      render(stateRef.current, 0);
+      return () => {
+        ro.disconnect();
+        repaintRef.current = null;
+      };
     }
 
     let rafId: number;
     let last = performance.now();
     const start = performance.now();
+    let wasOpen = bubbleOpen(stateRef.current);
     const tick = (now: number) => {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      hoverAmountRef.current += (hoverTargetRef.current - hoverAmountRef.current) * Math.min(1, dt * 6);
-      render((now - start) / 1000, now);
+      stateRef.current = readerReduce(stateRef.current, {
+        type: 'tick', dt, hovering: hoveringRef.current,
+      });
+      const isOpen = bubbleOpen(stateRef.current);
+      if (isOpen !== wasOpen) {
+        wasOpen = isOpen;
+        setBubbleShown(isOpen);
+      }
+      render(stateRef.current, (now - start) / 1000);
       rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
@@ -140,40 +213,99 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
     return () => {
       ro.disconnect();
       cancelAnimationFrame(rafId);
+      repaintRef.current = null;
     };
   }, [animate, color, scale, height]);
 
-  const setHover = (v: boolean) => {
-    hoverTargetRef.current = v ? 1 : 0;
-    if (v) {
-      hoverStartAtRef.current = performance.now();
-    } else {
-      // Queue the next fact for the next reveal, skipping the one just shown.
-      setFactIndex(prev => {
-        const offset = 1 + Math.floor(Math.random() * (CIVIC_FACTS.length - 1));
-        return (prev + offset) % CIVIC_FACTS.length;
-      });
+  /**
+   * Settles a click or dismiss. Under `animate`, mutating the ref is enough — the running rAF
+   * loop picks up the phase change on its next frame and syncs `bubbleShown` itself.
+   *
+   * Reduced motion has no loop to carry a transition across ticks, and reduced motion means no
+   * animated easing, not no destination -- a reader whose "entire purpose is delivering text"
+   * must still be able to speak. So here we feed the reducer synthetic ticks until the phase
+   * settles on `read` or `hold`, then sync state and repaint once, ourselves. Bounded at 2
+   * iterations: `lookup`->`hold` or `resume`->`read` is the most any single click/dismiss can
+   * need, so a future phase added to the machine cannot spin this loop.
+   */
+  const settleAfterEvent = useCallback((ev: ReaderEvent) => {
+    stateRef.current = readerReduce(stateRef.current, ev);
+    if (animate) return;
+    let guard = 0;
+    while (guard < 2 && (stateRef.current.phase === 'lookup' || stateRef.current.phase === 'resume')) {
+      stateRef.current = readerReduce(stateRef.current, { type: 'tick', dt: QUOTE_TRANS, hovering: false });
+      guard++;
     }
-    setHovered(v);
-  };
+    const isOpen = bubbleOpen(stateRef.current);
+    setBubbleShown(isOpen);
+    repaintRef.current?.();
+  }, [animate]);
+
+  // Document-level dismissal while the bubble is open: Escape or a click anywhere outside the
+  // wrapper both close it. Attached only while open and torn down when it closes or unmounts.
+  useEffect(() => {
+    if (!bubbleShown) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') settleAfterEvent({ type: 'dismiss' });
+    };
+    const onPointerDown = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        settleAfterEvent({ type: 'dismiss' });
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onPointerDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onPointerDown);
+    };
+  }, [bubbleShown, settleAfterEvent]);
+
+  const onEnter = () => { hoveringRef.current = true; };
+  const onLeave = () => { hoveringRef.current = false; };
+  const onActivate = () => settleAfterEvent({ type: 'click' });
 
   if (isMobile) return null;
 
   return (
     <div
+      ref={wrapperRef}
       style={{
         position: 'absolute', top: -seatFromTop, right: 340,
         width: 80, height, zIndex: 2, pointerEvents: 'auto',
       }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onTouchStart={() => {
+        // Hover half only. The click half arrives for free: the browser synthesizes a click
+        // after touchend, which the canvas's existing onClick={onActivate} already handles.
+        // Calling settleAfterEvent here too would double-fire the reducer on one physical tap
+        // -- masked under normal motion (the first call parks in `lookup`, mid-transition, and
+        // a click there is dropped) but not under reduced motion, where settleAfterEvent
+        // fast-forwards synchronously to a settled `hold`, so the synthesized click reads as a
+        // genuine second click and immediately closes what it just opened.
+        hoveringRef.current = true;
+      }}
+      onTouchEnd={() => {
+        // Touch has no mouseleave/blur to fall back to `false`, so drop it here as the finger
+        // lifts. Safe: glance only means anything in `read`, and a tap is about to move the
+        // machine to lookup/hold via the synthesized click, where the click transition drives
+        // the pose instead -- this is what lets the reader return to a plain read (not a stuck
+        // glance) after dismiss.
+        hoveringRef.current = false;
+      }}
+      onTouchCancel={() => {
+        // Same stuck-state hazard as touchend, via an OS-interrupted touch (e.g. an incoming
+        // call) that never fires touchend at all.
+        hoveringRef.current = false;
+      }}
     >
       <div
         aria-hidden="true"
         style={{
           position: 'absolute', bottom: height + 10, left: '50%',
-          transform: `translate(-50%, ${hovered ? '0' : '4px'})`,
-          opacity: hovered ? 1 : 0,
+          transform: `translate(-50%, ${bubbleShown ? '0' : '4px'})`,
+          opacity: bubbleShown ? 1 : 0,
           transition: 'opacity 0.22s ease, transform 0.22s ease',
           pointerEvents: 'none',
           width: 200, maxWidth: '60vw',
@@ -187,19 +319,24 @@ export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) 
           boxShadow: darkMode ? '0 8px 24px rgba(0,0,0,0.4)' : '0 8px 24px rgba(15,23,42,0.12)',
         }}
       >
-        {CIVIC_FACTS[factIndex]}
+        {sessionFact()}
       </div>
       {/* The bubble above is aria-hidden because its opacity transition keeps it in the DOM
           even when invisible. This carries the same text as the canvas's description instead. */}
-      <span id={factId} className="sr-only">{CIVIC_FACTS[factIndex]}</span>
+      <span id={factId} className="sr-only">{sessionFact()}</span>
       <canvas
         ref={canvasRef}
         tabIndex={0}
         role="img"
-        aria-label="A Bobbit sitting on the divider, reading — reveals a civic fact"
+        aria-label="A Bobbit sitting on the divider, reading — activate to hear a civic fact"
         aria-describedby={factId}
-        onFocus={() => setHover(true)}
-        onBlur={() => setHover(false)}
+        onFocus={onEnter}
+        onBlur={onLeave}
+        onClick={onActivate}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(); }
+          else if (e.key === 'Escape') settleAfterEvent({ type: 'dismiss' });
+        }}
         style={{ display: 'block', width: '100%', height, outline: 'none', cursor: 'pointer' }}
       />
     </div>

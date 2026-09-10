@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import {
   ANIMATIONS, CFG, computePose, draw, drawShadow, heaveBend,
 } from './leremyRig';
-import { drawTrophy, figColor } from './rigExtras';
+import { ALL_ANIMATIONS, drawTrophy, figColor } from './rigExtras';
 import type { Pose } from './leremyRig';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
@@ -10,11 +10,16 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
 // pelvis — same constant used throughout the other Bobbit scenes.
 const PELVIS_STAND = 112;
 
-// carry's arm angles are fixed, so its hands sit at a near-constant height relative to the
+// carryGrip's arm angles are fixed, so its hands sit at a near-constant height relative to the
 // pelvis (only the small walk-cycle bob/hunch sway it). Computed once as the reference height
 // the trophy returns to once it's picked back up, rather than hand-derived on every frame.
-const CARRY_REF_JOINTS = computePose(ANIMATIONS.carry.frame(0), CFG, { x: 0, y: 0 });
-const CARRY_HAND_Y = (CARRY_REF_JOINTS.hR.y + CARRY_REF_JOINTS.hL.y) / 2;
+// carryGrip is per-side: each carrier reaches with its INNER arm only, so the reference has
+// to come from the two GRIPPING hands (rear's right, lead's left) and not from one pose's
+// two hands -- averaging a gripping hand with an idle one would put the trophy's rest height
+// halfway between the pedestal and somebody's hip.
+const CARRY_REF_REAR = computePose(ALL_ANIMATIONS.carryGrip.frame(0, { hand: 'R' }), CFG, { x: 0, y: 0 });
+const CARRY_REF_LEAD = computePose(ALL_ANIMATIONS.carryGrip.frame(0, { hand: 'L' }), CFG, { x: 0, y: 0 });
+const CARRY_HAND_Y = (CARRY_REF_REAR.hR.y + CARRY_REF_LEAD.hL.y) / 2;
 
 type Phase = 'walk' | 'lowering' | 'rising1' | 'waving' | 'lowering2' | 'rising2' | 'offstage';
 
@@ -138,8 +143,10 @@ export function BobbitTrophyCarry({ darkMode, isMobile }: BobbitTrophyCarryProps
         // look like sliding — back to 1:1 once cruising at the normal speed.
         const gaitRate = st.entering ? entrySpeed / speed : 1;
         const gaitClock = st.walkClock * gaitRate;
-        leadPose = ANIMATIONS.carry.frame(gaitClock);
-        rearPose = ANIMATIONS.carry.frame(gaitClock + 0.16);
+        // Each carrier grips with the arm facing the other: rear is on the left so it reaches
+        // right, lead is on the right so it reaches left. The outer arm hangs.
+        leadPose = ALL_ANIMATIONS.carryGrip.frame(gaitClock, { hand: 'L' });
+        rearPose = ALL_ANIMATIONS.carryGrip.frame(gaitClock + 0.16, { hand: 'R' });
       } else if (st.phase === 'lowering') {
         leadPose = rearPose = ANIMATIONS.heave.frame(st.phaseT);
       } else if (st.phase === 'rising1') {
@@ -165,9 +172,19 @@ export function BobbitTrophyCarry({ darkMode, isMobile }: BobbitTrophyCarryProps
         const jRear = poseAndHand(rearPose);
         const jLead = poseAndHand(leadPose);
 
-        // Trophy x: the midpoint between the two carriers — they don't move relative to each
-        // other, so this never needs to track anything but their (shared) walk position.
-        const trophyX = (leadX + rearX) / 2;
+        // Trophy x rides the two INNER hands only while walking -- rear's right and lead's
+        // left, the same joints its y already tracks below. The old midpoint of the two
+        // ground-contact points is what left the logo floating during the walk: it ignored
+        // where the hands actually were.
+        //
+        // Gated to 'walk' the same way the y-track is: outside it, hR/hL are doing other
+        // work -- heave's reach down to the ground, greet's big wave swing -- not gripping,
+        // so tracking them would make the trophy slide sideways while it's sitting still on
+        // the ground. Measured: greet's waving hand alone ranges over ~40 raw units of x.
+        // The ground-point midpoint is still correct for the phases where nothing is held.
+        const trophyX = st.phase === 'walk'
+          ? (rearX + jRear.hR.x * scale + leadX + jLead.hL.x * scale) / 2
+          : (leadX + rearX) / 2;
         let trophyY: number;
 
         if (st.phase === 'walk') {

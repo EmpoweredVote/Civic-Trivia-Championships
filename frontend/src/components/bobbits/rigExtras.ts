@@ -1,5 +1,5 @@
 import { ANIMATIONS, clonePose, wave, REST, drawQuizCard, roundRectPath } from './leremyRig';
-import type { Animation } from './leremyRig';
+import type { Animation, AnimVars } from './leremyRig';
 
 export { drawQuizCard };
 
@@ -28,8 +28,68 @@ export function figColor(i: number, darkMode: boolean): string {
   return pal[i % pal.length];
 }
 
+/**
+ * How far apart the two carriers' inner hands must sit, in rig units, for each to land on a
+ * corner of the trophy's pedestal. drawTrophy's pedestal is 12.5 units either side of centre
+ * and the prop draws at TROPHY_SIZE_MULT = 2, so the pedestal spans 50 units and the trophy
+ * rides the hands' midpoint.
+ */
+export const GRIP_HAND_SPAN_UNITS = 50;
+
 /** Poses this app added to the rig. Built on the ported ones where it makes sense. */
 export const EXTRA_ANIMATIONS: Record<string, Animation> = {
+  // `carry` with the arms reaching in, so two carriers can actually hold the trophy between
+  // them. `carry` itself is ev-figures.js's beam-crew pose: its arms hang close to the body
+  // because a beam wider than four figures sits UNDER the hands. CTC's trophy is 50 units
+  // wide against a 150-unit gap, so those hands had nothing to reach for and the logo floated.
+  //
+  // NOT symmetric, and it cannot be. `computePose` adds the body-bend term `ub = lean + hunch`
+  // (~-16 here, from carry's hunch=-14 plus the walk-cycle wave) to BOTH arm angles, and
+  // cos(ub + t) != cos(ub - t), so a mirrored pose puts the two hands at DIFFERENT heights --
+  // the earlier symmetric 31/39/-31/-39 left a 26-32 unit vertical split between them (hR.y
+  // ~ +15.5, hL.y ~ -13.0). The trophy rides the hands' midpoint, so each hand missed the
+  // pedestal base by ~14 units: the lead carrier's hand overlapped the pedestal and the rear
+  // carrier's hung clear beneath it. Independent left/right angles are the fix.
+  //
+  // PER-SIDE, via AnimVars.hand, as `greet` does. One pose served both roles at first and only
+  // the INNER arm was ever asserted -- so the outer arm inherited the same near-horizontal
+  // reach and both carriers stood in a T-pose, arms held straight out into empty space. The
+  // contact test could not see it: it constrains the two gripping hands and nothing else. A
+  // screenshot caught it. Pass `{ hand: 'R' }` for the rear carrier (reaches right, toward the
+  // trophy) and `{ hand: 'L' }` for the lead (reaches left); the other arm keeps `carry`'s own
+  // hang, which is what a person not holding anything with it actually does.
+  //
+  // The gripping-hand angles below are unchanged from the tuning that fixed the two axes --
+  // splitting the pose per side moves no hand, it only stops the idle arm copying the reach.
+  //
+  // These four angles are TUNED AGAINST __tests__/trophyGrip.test.ts, not derived -- change
+  // them only by re-running that test, which is the arbiter on BOTH axes. Tuning log,
+  // 2026-09-09, measured over a 10s sweep of the gait (span = distance between the two inner
+  // hands, target 50; split = hR.y - hL.y, target 0):
+  //
+  //   armRU/armRF/armLU/armLF        span            split    note
+  //   33 / 41 / -33 / -41            ~46             ~28      the brief's arithmetic; ignored `ub`
+  //   50 / 50 / -50 / -50            ~20             --       corrected geometry; overshot inward
+  //   31 / 39 / -31 / -39            49.06 - 51.57   26 - 32  x passed, y was never asserted
+  //   6 / 107 / -9 / -68             50.15 - 50.35   <= 6.40  both axes; kept
+  //
+  // Two IK solutions reach the same hand target; the one kept is elbows-at-the-sides with
+  // horizontal forearms (elbow-down). Its mirror, armRU=104/armRF=3/armLU=-67/armLF=-8, lands
+  // the hands identically but splays the elbows out above shoulder height -- chicken wings.
+  // The hands also sit ~23 units higher than the old pose, which lifts the trophy to about rib
+  // height; checked against the canvas at both scales, the heads still top the silhouette.
+  carryGrip: {
+    label: "Carrying (grip)", mood: "mind the trophy",
+    frame(t: number, v?: AnimVars) {
+      const p = ANIMATIONS.carry.frame(t);
+      // Only the arm named reaches for the pedestal. The other keeps carry's hang.
+      // Defaults to 'R' so a caller that forgets the variant still grips with one arm
+      // rather than neither.
+      if (v?.hand === 'L') { p.armLU = -9; p.armLF = -68; }
+      else { p.armRU = 6; p.armRF = 107; }
+      return p;
+    },
+  },
   cheer: {
     label: "Cheer", mood: "yes! got it!",
     frame(t: number) {

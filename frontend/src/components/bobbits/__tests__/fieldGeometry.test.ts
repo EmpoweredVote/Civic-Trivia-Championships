@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pelvisOffset, sortByDepth, figureBounds } from '../fieldGeometry';
+import { pelvisOffset, sortByDepth, figureBounds, resolveAnimKey } from '../fieldGeometry';
 import type { FieldFigure } from '../fieldGeometry';
 
 const fig = (over: Partial<FieldFigure> = {}): FieldFigure => ({
@@ -69,5 +69,36 @@ describe('figureBounds', () => {
     const standing = figureBounds(fig({ anim: 'standstill', groundY: 200 }));
     const seated = figureBounds(fig({ anim: 'sit', groundY: 200 }));
     expect(seated.top).toBeGreaterThan(standing.top);
+  });
+});
+
+describe('resolveAnimKey', () => {
+  const base: FieldFigure = {
+    id: 'a', anim: 'stroll', color: '#000', x: 0, groundY: 50, scale: 0.28,
+  };
+
+  it('plays its own animation when not greeting', () => {
+    expect(resolveAnimKey(base, false, false)).toBe('stroll');
+  });
+
+  it('defaults a standing figure to greet', () => {
+    expect(resolveAnimKey(base, true, false)).toBe('greet');
+  });
+
+  it('defaults a seated figure to greetseat', () => {
+    expect(resolveAnimKey({ ...base, anim: 'sit' }, true, true)).toBe('greetseat');
+  });
+
+  it('prefers an explicit hoverAnim over the default', () => {
+    expect(resolveAnimKey({ ...base, hoverAnim: 'dance' }, true, false)).toBe('dance');
+  });
+
+  it('prefers an explicit hoverAnim over greetseat too', () => {
+    const f = { ...base, anim: 'sit', hoverAnim: 'dance' };
+    expect(resolveAnimKey(f, true, true)).toBe('dance');
+  });
+
+  it('ignores hoverAnim while not greeting', () => {
+    expect(resolveAnimKey({ ...base, hoverAnim: 'dance' }, false, false)).toBe('stroll');
   });
 });

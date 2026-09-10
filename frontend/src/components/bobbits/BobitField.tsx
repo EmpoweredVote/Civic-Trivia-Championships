@@ -2,14 +2,16 @@ import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { CFG, computePose, draw, drawBatched, canBatch, drawShadow, drawSmoke } from './leremyRig';
 import { ALL_ANIMATIONS } from './rigExtras';
-import { pelvisOffset, sortByDepth, figureBounds, resolveX } from './fieldGeometry';
+import { pelvisOffset, sortByDepth, figureBounds, resolveX, resolveAnimKey } from './fieldGeometry';
 import type { FieldFigure } from './fieldGeometry';
 import { figureAtPoint } from './hitTest';
-import { greetReduce, isGreeting, greetClock } from './greetReducer';
+import { greetReduce, isGreeting, greetClock, greetingIds } from './greetReducer';
 import type { GreetState } from './greetReducer';
 import { poofReduce, POOF_IDLE, POOF_HOLD, POOF_BURST } from './poofReducer';
 import type { PoofState, PoofEvent } from './poofReducer';
-import { gestureReduce, GESTURE_IDLE, shouldSuppressContextMenu } from './pointerGestures';
+import {
+  gestureReduce, GESTURE_IDLE, shouldSuppressContextMenu, TAP_HOVER_MS,
+} from './pointerGestures';
 import { armFlee, fleeAdvance, allGone } from './fleeReducer';
 import { bubbleReduce } from './dialogue/bubbleReducer';
 import type { BubbleState } from './dialogue/bubbleReducer';
@@ -44,15 +46,17 @@ interface BobitFieldProps {
   /** Speech bubbles to show, keyed by figure id. Lifetimes are managed by the field. */
   bubbles?: Record<string, string>;
   /**
-   * Per-frame figure source. When present this is called once per frame and replaces
-   * `figures` for that frame.
+   * Per-frame figure source, called once at the top of each frame. `width` is the field's
+   * measured width; `greeting` is the PREVIOUS frame's greeting set, because hover is resolved
+   * after this call (hover needs positions, and positions would then need hover). One frame of
+   * latency, ~16ms.
    *
-   * The crowd's figures change every frame -- newcomers walk in, the celebration tier swaps
-   * poses, a victim rises -- and a React prop cannot carry that without re-rendering sixty
-   * times a second. This keeps the choreography inside the existing rAF loop and React out
-   * of the per-frame path entirely.
+   * Extra parameters are appended positionally so a narrower `(t, dt) => …` callback stays
+   * assignable -- CollectionCrowd relies on that.
    */
-  figuresFor?: (t: number, dt: number) => FieldFigure[];
+  figuresFor?: (
+    t: number, dt: number, width: number, greeting: ReadonlySet<string>,
+  ) => FieldFigure[];
   className?: string;
   style?: CSSProperties;
 }
@@ -81,6 +85,9 @@ export function BobitField({
   const gestureRef = useRef<GestureState>(GESTURE_IDLE);
   const hoveredRef = useRef<string | null>(null);
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  // Touch fires no mousemove, so a tap publishes its point here and this holds the window
+  // open long enough for renderFrame to resolve hover from it at least once.
+  const tapHoverUntilRef = useRef(0);
   const widthRef = useRef(0);
   const clockRef = useRef(0);
   const fleeRef = useRef<FleeState>({});
@@ -143,9 +150,7 @@ export function BobitField({
     const paint = (
       c: CanvasRenderingContext2D, f: FieldFigure, t: number, greeting: boolean, gclock: number,
     ) => {
-      const animKey = greeting
-        ? (ALL_ANIMATIONS[f.anim]?.seated ? 'greetseat' : 'greet')
-        : f.anim;
+      const animKey = resolveAnimKey(f, greeting, !!ALL_ANIMATIONS[f.anim]?.seated);
       const anim = ALL_ANIMATIONS[animKey] || ALL_ANIMATIONS[f.anim];
       if (!anim) return;
 
@@ -226,12 +231,24 @@ export function BobitField({
     const renderFrame = (t: number, dt: number) => {
       clockRef.current = t;
       const w = widthRef.current;
+      // The stun is a TOTAL freeze, positions included -- see the `frozen` comment below.
+      // `frozen` only pins the animation clock, and a `figuresFor` source advances its own
+      // wandering off `dt`, so without this the rail would keep sliding figures along in a
+      // frozen pose for the whole stunned second. Handing it dt = 0 makes wanderAdvance a
+      // no-op and changes nothing else.
+      const dtEff = poofRef.current.phase === 'stunned' ? 0 : dt;
       const source = figuresForRef.current
-        ? figuresForRef.current(t, dt)
+        ? figuresForRef.current(t, dtEff, w, greetingIds(greetRef.current))
         : figuresRef.current;
       const all = resolveX(source, w);
       resolvedRef.current = all;
       const poof = poofRef.current;
+
+      // A tap's hover expires on its own, so the greet linger drains and the figure settles.
+      if (tapHoverUntilRef.current && performance.now() >= tapHoverUntilRef.current) {
+        pointerRef.current = null;
+        tapHoverUntilRef.current = 0;
+      }
 
       // Resolve hover before drawing, so a greeting figure is painted greeting this frame.
       if (interactive && poof.phase === 'idle') {
@@ -369,6 +386,7 @@ export function BobitField({
     const onMove = (e: MouseEvent) => { pointerRef.current = local(e.clientX, e.clientY); };
     const onLeave = () => {
       pointerRef.current = null;
+      tapHoverUntilRef.current = 0;
       const r = gestureReduce(gestureRef.current, { kind: 'cancel' });
       gestureRef.current = r.state; apply(r.emit);
     };
@@ -397,6 +415,10 @@ export function BobitField({
       const t0 = e.touches[0];
       if (!t0) return;
       const p = local(t0.clientX, t0.clientY);
+      // Touch fires no mousemove, so publish the tap as a pointer position: this is what
+      // makes a tap read as hover AND click, per the landing page's touch model.
+      pointerRef.current = p;
+      tapHoverUntilRef.current = performance.now() + TAP_HOVER_MS;
       const hit = poofableAt(p.x, p.y);
       const f = hit ? fraction(hit, p.x, p.y) : { fx: 0, fy: 0 };
       const r = gestureReduce(gestureRef.current, {
@@ -410,6 +432,9 @@ export function BobitField({
       const t0 = e.touches[0];
       if (!t0) return;
       const p = local(t0.clientX, t0.clientY);
+      // Keep following the finger while it is still a tap; once the window has expired
+      // (dragged into a hold, or just old) leave pointerRef alone so it can settle.
+      if (performance.now() < tapHoverUntilRef.current) pointerRef.current = p;
       const r = gestureReduce(gestureRef.current, {
         kind: 'touchmove', x: p.x, y: p.y, touches: e.touches.length, now: performance.now(),
       });

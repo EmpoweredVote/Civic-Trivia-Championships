@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  gestureReduce, GESTURE_IDLE, TOUCH_ARM_MS, HOLD_SLOP, shouldSuppressContextMenu,
+  gestureReduce, GESTURE_IDLE, TOUCH_ARM_MS, TAP_HOVER_MS, HOLD_SLOP, shouldSuppressContextMenu,
 } from '../pointerGestures';
 
 describe('mouse', () => {
@@ -131,5 +131,15 @@ describe('cancel', () => {
 
   it('emits nothing when nothing was armed', () => {
     expect(gestureReduce(GESTURE_IDLE, { kind: 'cancel' }).emit).toBeNull();
+  });
+});
+
+describe('TAP_HOVER_MS', () => {
+  it('outlasts a frame at 60fps, so hover resolves at least once from a tap', () => {
+    expect(TAP_HOVER_MS).toBeGreaterThan(1000 / 60);
+  });
+
+  it('expires before the poof hold arms, so a tap and a hold stay distinct', () => {
+    expect(TAP_HOVER_MS).toBeLessThan(TOUCH_ARM_MS);
   });
 });

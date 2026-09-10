@@ -42,3 +42,11 @@ export function isGreeting(state: GreetState, id: string): boolean {
 export function greetClock(state: GreetState, id: string): number {
   return state[id] ? state[id].clock : 0;
 }
+
+/**
+ * Everyone currently greeting, hovered or lingering. Handed to a field's `figuresFor` so a
+ * choreography that owns positions (the wander) can hold a greeting figure still.
+ */
+export function greetingIds(state: GreetState): ReadonlySet<string> {
+  return new Set(Object.keys(state));
+}
