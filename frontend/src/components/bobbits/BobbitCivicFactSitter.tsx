@@ -106,17 +106,26 @@ interface BobbitCivicFactSitterProps {
  * lowers the book into his lap and opens a bubble with a civic fact; clicking again, Escape, or
  * a click elsewhere returns him to reading.
  *
- * WHY `if (isMobile) return null` IS STILL HERE (do not delete it without a new anchor).
- * Hover DOES have a touch equivalent now — the touch handlers below make a tap act as both
- * hover and click — so "no hover on touch" is no longer the reason. The reason is that the
- * only anchor available inside the search box collides with the box's own controls. Rendering
- * him on phones was implemented, measured and reverted: verified in Chromium at 320/375/414px
- * with a query typed, the sitter's box spans x199-279 at 320px while the search box's own
- * "Clear search" button spans x262-279 — entirely covered — and the text input spans x66-252,
- * so no anchor inside that box clears both the input and the clear button. Giving the reader a
- * mobile home is a layout decision (a spot outside the search box, or a narrow-viewport
- * rearrangement of the box itself), not a constant to nudge. Tracked as an open item in
+ * WHY `if (isMobile) return null` IS HERE — a decision, not an unfinished task.
+ * He is desktop-only on purpose (decided 2026-09-10). Do not "fix" this.
+ *
+ * Note first that hover DOES have a touch equivalent now: the touch handlers below make a tap
+ * act as both hover and click, so "no hover on touch" is NOT the reason. The reason is that no
+ * anchor inside the search box fits. Rendering him on phones was implemented and measured in
+ * Chromium at 320/375/414px with a query typed: at 320px his box spans x199-279, the search
+ * box's own "Clear search" button spans x262-279 — entirely covered — and the text input spans
+ * x66-252. An 80px-wide occupant cannot clear both, and the clear button appears exactly when
+ * a search-adjacent decoration is most in the way.
+ *
+ * Anchors OUTSIDE the box do work — the section header wraps on mobile, leaving empty space
+ * beside `Explore ›` — and that was weighed and declined: phones already get three bobits, and
+ * his whole point is a quote bubble that wants horizontal room 320px hasn't got. The full
+ * reasoning and the rejected alternatives are in
  * docs/superpowers/specs/2026-09-09-bobit-landing-interaction-design.md.
+ *
+ * DO NOT delete the touch handlers below as dead code. They are unreachable on phones, but he
+ * renders on touch devices at >=640px — tablets, touchscreen laptops — where a tap is the only
+ * way to reach the quote.
  */
 export function BobbitCivicFactSitter({ darkMode }: BobbitCivicFactSitterProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);

@@ -265,7 +265,7 @@ timing model.
 The reader, which owns its own canvas, gets the same rule locally: a tap runs the glance and the
 click transition together, so one tap goes from reading to speaking.
 
-## Open item: the reader on mobile — TRIED, MEASURED, REVERTED (still open)
+## The reader on mobile — CLOSED, decided desktop-only (2026-09-10)
 
 `BobbitCivicFactSitter` returns `null` below 640px. The reason recorded here originally was
 "hover has no equivalent there"; the touch rule in this same batch removed that reason, so the
@@ -294,12 +294,37 @@ The specified resolution — **and why it does not work**:
 - **Edge-aware bubble alignment** — was not the blocker and remains a fine idea, but it does not
   help: the collision is the sitter's own hit box, not the bubble's.
 
-**Still open, deliberately deferred — not cancelled.** Giving the reader a mobile home is layout
-work, not a constant to nudge: it needs a spot *outside* the search box, or a narrow-viewport
-rearrangement of the box itself that makes room. Anyone picking this up should start from the
-measurement above rather than re-trying `right: 16`. The `if (isMobile) return null` guard in
-`BobbitCivicFactSitter.tsx` carries the same reasoning inline; the other changes in this batch do
-not depend on it.
+### Decision: the reader stays desktop-only
+
+**Closed 2026-09-10 (Chris).** Not deferred any longer — decided. `if (isMobile) return null`
+is the intended final behaviour, not a placeholder.
+
+Two alternatives were on the table, both viable, both measured against the live site at
+320/375px before the call:
+
+- **Beside "Explore".** The section header *wraps* on mobile, so `Explore ›` sits alone on its
+  own line with a large empty band to its right, immediately above the search box. A sitter
+  anchored there clears every control at every width — its legs would dangle over background
+  rather than over the input. This was the low-risk option and it does work.
+- **Perched on a collection card.** Reuse the pattern `BobbitCardGreeter` already uses on the
+  featured card, which is proven on mobile. More plumbing: the reader mounts inside the search
+  box today, so it would move to the grid, and its bubble wants room above a card that sits
+  close to its neighbours.
+
+Neither was taken. The reasoning: phones already get three bobits (the card greeter, the trophy
+carriers and the footer pair — all verified rendering and reading correctly on mobile), the
+reader's whole point is a quote bubble that wants horizontal room, and 320px has little to
+spare. Spending layout on a fourth figure was judged not worth it. The civic fact is a desktop
+easter egg by design.
+
+**What this means for anyone reading later:** do not treat the `isMobile` guard as unfinished
+business. If the product view changes, "beside Explore" is the anchor to start from — not
+`right: 16`, which the measurement above rules out.
+
+**Do not delete the reader's touch handlers as dead code.** `onTouchStart` / `onTouchEnd` /
+`onTouchCancel` on this component are unreachable on phones, but the component *does* render on
+touch devices at ≥640px — tablets and touchscreen laptops — where a tap is the only way to
+reach the quote at all.
 
 ## Testing
 
