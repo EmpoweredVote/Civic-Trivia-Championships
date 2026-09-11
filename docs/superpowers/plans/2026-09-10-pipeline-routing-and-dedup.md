@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Superseded in part, 2026-09-11 — do not implement Task 2's identity rule as written.** This plan was executed, and execution falsified the deduplication design it is built on: matching claims by the normalised `(subject, attribute, value)` triple does not survive the extractor re-authoring its own prose between runs. `fingerprintClaim`, `topicKey`/`valueKey` and the contradiction verdict all still stand and shipped; what changed is that **identity is now value equality plus cluster entity overlap**, with the topic key as a fallback. See the *Correction, 2026-09-11* blocks in §3 of `specs/2026-09-10-featured-collections-design.md` for the measurements and the replacement rule. The tests written in Task 2 remain correct and are still green.
+
 **Goal:** Make the nightly news pipeline ingest once and route each story to exactly one collection, and stop it re-authoring facts it has already covered.
 
 **Architecture:** The pipeline currently loops over registered collections, re-fetching the same four RSS feeds inside the loop, so every collection generates independently from identical input. This plan inverts that loop: one ingest per night, one Claude call per story cluster that now also returns topic tags and a structured `(subject, attribute, value)` triple, then deterministic local code assigns a lane and rejects claims already covered. Deduplication happens at the *claim* layer, before a question is authored, with a `pg_trgm` similarity check as a paraphrase net. No external service and no embeddings.

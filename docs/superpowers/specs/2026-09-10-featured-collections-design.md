@@ -1,12 +1,17 @@
 # Featured Collections — Design
 
-> **Status:** approved design, ready for implementation planning.
+> **Status:** approved design, in implementation. **§3's Layer 1 mechanism has been
+> replaced** — the design's claim key was falsified by live runs on 2026-09-10 and
+> the corrections are recorded inline there. Read §3 before relying on any
+> deduplication claim in this document.
 > **Written:** 2026-09-10.
 > **Input:** `2026-09-08-events-collections-brainstorm-prep.md` (audit + open questions).
 
 ## Goal
 
-A **Featured** shelf at the top of the collection picker holding four events-focused collections — **World News**, **US News**, **War in Iran**, **Climate Change** — each drawing on the nightly RSS pipeline, with no two of them covering the same fact.
+A **Featured** shelf at the top of the collection picker holding four events-focused collections — **World News**, **US News**, **War in Iran**, **Climate Change** — each drawing on the nightly RSS pipeline.
+
+**Intent: no two of them cover the same fact.** That is the design goal, not a delivered guarantee. §3 records what the deduplication layers have actually been measured to do and where they are still known to miss.
 
 ## Scope
 
@@ -119,11 +124,28 @@ The contradiction verdict is the more valuable half: a duplicate is cosmetic, wh
 
 **Both layers are scoped across all four lanes, not per lane.** Single-assignment routing (§2) already makes the same *story* impossible in two collections, so cross-lane checking is not the primary defence — it is the safety net for a routing misclassification, where one night's story is filed under `us` and the next night's under `world`. Cross-lane scope costs nothing and turns a routing error into a skipped duplicate rather than a visible one.
 
+**Correction, 2026-09-11 — the claim key above does not work, and has been replaced.** Everything from "Fingerprint the normalised `(subject, attribute, value)` tuple" onward describes a mechanism that two live runs 90 seconds apart falsified. It is left in place because the table's two-column split and the contradiction verdict survive; the *identity rule* does not.
+
+What failed: the extractor re-authors the claim between runs on identical input. One story came back as `houthi capture mokha port yemen|distance from bab al-mandab strait` = `75km`, then `houthi seizure mokha port yemen|distance from bab al-mandab strait after capture` = `75` — a synonym in the subject, an appended qualifier in the attribute, and a dropped unit in the value. Any one of those breaks string equality. **String-normalised keys are the wrong primitive for deduplicating model-authored text**, because the model varies synonym choice and qualifying phrases between runs and normalisation cannot absorb either.
+
+What replaced it, as implemented in `ev-accounts` (`5508183a`, `7610a4d1`, `9a515d38`):
+
+- **A claim is a duplicate when its normalised value equals a recent claim's value AND the two stories' entity sets overlap by Jaccard ≥ 0.34.** Identity is anchored on the *cluster's named entities*, which the model does not re-author, rather than on its prose.
+- **Those entities are the pairwise union of the overlaps that joined the cluster's articles**, not the intersection across all of them. The intersection measured empty on every cluster larger than two articles — that is, on every running story, which is exactly the population that recurs. A leave-one-out membership-drift simulation put the union at 0/18 below the 0.34 threshold, against 14/18 for the intersection and 2/18 for a present-in-most-articles quorum.
+- **`normalizeValue` now splits a unit glued to its number** (`75km` → `75`). It did not before, and since value equality is checked first, the whole rule short-circuited on the motivating case.
+- **A cluster with fewer than two usable entities falls back to the old topic-key rule.** That fallback is the mechanism described above, with its known weakness; it is now the exception rather than the normal path.
+
+**Proven and not proven.** Proven: 1,646 unit tests green, including regression tests pinning both defects; and on live feeds the shipped code yields usable entity sets for 7 of 9 clusters, up from 4 of 9, with the two previously-blind multi-article clusters going from 0 entities to 8 and 6. **Not proven: no live end-to-end run has yet observed this rule catching a duplicate.** The 0.34 threshold remains a hypothesis rather than a tuned value — there is still no corpus of real cross-day entity measurements behind it, which is why `run-pipeline.ts` logs every computed overlap under `[DedupOverlap]`. Treat §3 as "the known structural blindness is removed", not as "duplicates cannot ship".
+
 ### Layer 2 — trigram safety net
 
 `pg_trgm` 1.6 is **already installed** in project `kxsdzaojfaibhuzmclfq` — in the **`extensions`** schema, which is NOT on the database's `search_path` (`"$user", public`). Every call must therefore be schema-qualified as **`extensions.similarity(...)`**; unqualified it fails with `42883: function similarity(unknown, unknown) does not exist`. Qualify rather than altering `search_path`: the application connects as `ctc_app` via the session pooler, whose path may differ again. (Verified 2026-09-10. Note that `pg_available_extensions.installed_version` reporting 1.6 establishes only that the extension is installed, not that the function is reachable.) Before insert, compare each candidate question's text against active and recently expired questions across **all four lanes** using `extensions.similarity()`, and skip above threshold. Starting threshold **0.55**, tuned during implementation against the fixtures below.
 
 This catches paraphrase that survives Layer 1 because the extractor structured the claim differently on two nights — the `89` versus `89 years old` class.
+
+**Correction, 2026-09-11 — Layer 2 is not a net for the Layer 1 miss class.** The sentence above overstates it. Measured on the real questions from the falsifying run: the *true duplicate* scored **0.4468** — below the 0.55 threshold, so it shipped — while a pair of *genuinely different* facts scored **0.5086**, because both carry the boilerplate "7 October 2023 Hamas-led attacks on Israel" while asking about deaths versus hostages. The duplicate scored lower than the non-duplicate. **No threshold on trigram similarity separates the two**, because lexical overlap tracks same-*story*, not same-*fact*.
+
+The 0.55 figure itself came from eight fixtures spanning 0.2759–0.8850, every one a cross-day duplicate of near-identical phrasing. A genuine recurrence in genuinely different words lands around 0.45, inside the band that choice deliberately left uncovered — the fixtures were unrepresentative of the thing being defended against. Layer 2 is therefore a backstop for near-identical phrasing with a known miss band, and the primary defence has to hold on its own.
 
 ### Two constraints, both from things that have already bitten
 
@@ -250,7 +272,7 @@ Every question in the curated spine, and every generated question routed to this
 
 - **Lane precedence and Layer 1 fingerprint normalisation are pure functions** — unit tested in node, which is what this repo's vitest setup supports.
 - **Layer 2** tested against fixture rows; `pg_trgm` is in-database, so no service stub is needed.
-- **The regression fixtures in §3** are the acceptance test for E: five pairs that must be caught, three that must not be flagged.
+- **The regression fixtures in §3** are *a* test for E, not the acceptance test. They are all cross-day pairs of near-identical phrasing, and passing them is what made the 0.55 threshold look sound while it missed a real duplicate at 0.4468. **The acceptance test for E is a live run repeated on the same feeds**, because the failure mode is the extractor re-authoring a claim, and no fixture written by hand exhibits it — one that did would have been written from the phrasing you already thought of.
 - **The picker cannot be component-tested here.** No DOM-capable component tests exist, by design — vitest is node-only. Three interaction bugs of exactly this class shipped on one branch and were caught by reading the code, not by tests. The shelf therefore gets a deliberate read plus a real page load: `npm run smoke` in `frontend/`. A green build is not evidence — that is the Vite 8 lesson.
 
 ## 9. Risks
@@ -259,7 +281,8 @@ Every question in the curated spine, and every generated question routed to this
 |---|---|
 | Two repos, two deploy cadences, ordering-sensitive | §4 deploy order; verify the API field in production before merging frontend |
 | Double-render key collision, search interaction | §4 picker changes; verified by page load |
-| Trigram threshold too loose or too tight | Tune against the §3 fixtures before merge |
+| Trigram threshold too loose or too tight | **Mitigation falsified 2026-09-11.** The §3 fixtures cannot tune it: they are all near-identical phrasing, and a threshold that passes them still missed a real duplicate at 0.4468 while a non-duplicate scored 0.5086. No threshold separates the classes. Layer 1 must carry it; Layer 2 is a backstop with a known miss band |
+| Entity overlap threshold (0.34) is a hypothesis, not a tuned value | `[DedupOverlap]` logs every computed overlap, pass and near-miss alike; revisit once a week of real runs exists. A threshold set too high silently reverts claims to the weak prose fallback |
 | Routing misclassifies a story class systematically | Lane distribution logged per run in `generation_jobs.notes`; review after the first week |
 | Banners and taglines are content work, not code | Three images and three taglines tracked as explicit tasks |
 | `backend/` in this repo is frozen (decision 0013) | All pipeline and API work lands in `ev-accounts/backend/src/trivia/`; only `frontend/` changes here |
