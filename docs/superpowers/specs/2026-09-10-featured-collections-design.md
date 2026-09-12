@@ -2,8 +2,9 @@
 
 > **Status:** approved design, in implementation. **§3's Layer 1 mechanism has been
 > replaced** — the design's claim key was falsified by live runs on 2026-09-10 and
-> the corrections are recorded inline there. Read §3 before relying on any
-> deduplication claim in this document.
+> the corrections are recorded inline there. A live duplicate was measured caught
+> on 2026-09-12, after the clustering fix in §3a; the cross-day threshold is still
+> untuned. Read §3 before relying on any deduplication claim in this document.
 > **Written:** 2026-09-10.
 > **Input:** `2026-09-08-events-collections-brainstorm-prep.md` (audit + open questions).
 
@@ -135,7 +136,46 @@ What replaced it, as implemented in `ev-accounts` (`5508183a`, `7610a4d1`, `9a51
 - **`normalizeValue` now splits a unit glued to its number** (`75km` → `75`). It did not before, and since value equality is checked first, the whole rule short-circuited on the motivating case.
 - **A cluster with fewer than two usable entities falls back to the old topic-key rule.** That fallback is the mechanism described above, with its known weakness; it is now the exception rather than the normal path.
 
-**Proven and not proven.** Proven: 1,646 unit tests green, including regression tests pinning both defects; and on live feeds the shipped code yields usable entity sets for 7 of 9 clusters, up from 4 of 9, with the two previously-blind multi-article clusters going from 0 entities to 8 and 6. **Not proven: no live end-to-end run has yet observed this rule catching a duplicate.** The 0.34 threshold remains a hypothesis rather than a tuned value — there is still no corpus of real cross-day entity measurements behind it, which is why `run-pipeline.ts` logs every computed overlap under `[DedupOverlap]`. Treat §3 as "the known structural blindness is removed", not as "duplicates cannot ship".
+**Proven and not proven.** Proven: 1,653 unit tests green, including regression tests pinning both defects; and on live feeds the shipped code yields usable entity sets for every cluster. The 0.34 threshold remains a hypothesis rather than a tuned value — there is still no corpus of real cross-day entity measurements behind it, which is why `run-pipeline.ts` logs every computed overlap under `[DedupOverlap]`.
+
+**Update, 2026-09-12 — a live duplicate was caught.** Two sequential passes, ~90 seconds apart:
+
+```
+[DedupOverlap] basis=entities overlap=1.000 threshold=0.34 matched=true
+               usableEntities=16 existingEntities=16 valueKey="shut down" existing=wiran-1702
+[Dedup] duplicate of wiran-1702 (basis=entities overlap=1.000)
+[Pipeline] lane=iran: 0 generated, 1 duplicate, 0 prose-fallback
+```
+
+Pass 2 re-covered the Saudi East-West pipeline claim and the guard rejected it before question generation — verified in the database, not only the log: one fingerprint across both passes, `war-in-iran` 98 → 100, two questions from pass 1 and none from pass 2. The entity rule succeeded exactly where the prose key had failed the day before, because the extractor again re-authored the attribute between runs and identity was anchored on entities it does not re-author.
+
+**This required the clustering fix in §3a**, without which the same test failed the previous day: the claim came from a cluster of one usable entity, fell below the floor, took the prose fallback, and shipped a duplicate.
+
+**Still not established:** the overlap measured **1.000** — both runs produced identical entity sets 90 seconds apart — so the rule is proven to fire and reject, but the 0.34 threshold was never exercised. A cross-*day* repeat with shifted cluster membership is where that number earns or loses its keep. Read §3 as "a same-day repeat is measured to be caught via entity identity", not as "duplicates cannot ship".
+
+### 3a. Clustering precision — added 2026-09-12, upstream of both layers
+
+Neither dedup layer can work on an incoherent cluster, and the design above never said what makes a cluster. `clusterArticles` joined articles that shared **2 raw named entities**, and union-find made that transitive. Measured on 73 live articles, that chained eight unrelated stories into one cluster — Ukraine's winter, a Nigerian romance scam, the BRICS summit, Australian aged care — and *that* cluster produced the aged-care/oil-price mashup behind the `wiran-1685` / `wiran-1688` duplicate. It yielded one usable entity, which put the claim under the floor and silently demoted it to the prose rule.
+
+Two coupled changes, and the coupling is the point:
+
+| normalise | join bar | clusters | dropped | sizes | usable entities | thin |
+|---|---|---|---|---|---|---|
+| off | 2 | 6 | 46 | 10,8,3,2,2,2 | 15,11,6,2,5,1 | 1 |
+| off | 3 | 5 | 57 | 7,3,2,2,2 | 11,6,5,3,3 | 0 |
+| **on** | **3** | **5** | **56** | **7,3,3,2,2** | **16,8,7,6,3** | **0** |
+| on | 2 | 6 | 36 | **27**,2,2,2,2,2 | 48,2,6,2,2,2 | 0 |
+
+- **Normalise entities before the join.** `compromise` returns `yemen` from one article and `yemen's` from another, and `iran,` with the comma; the join compared raw strings, so joins that should have happened did not.
+- **Raise the bar from 2 to 3.**
+
+**Do not apply either alone.** Normalising at a 2-entity bar is far worse than the bug it fixes — more entities match, chaining runs riot, and 27 of 73 articles collapse into a single cluster. Anyone "fixing" the obvious `yemen`/`yemen's` mismatch in isolation would have made clustering dramatically worse, and the symptom (bigger clusters, more entities) superficially reads as improvement.
+
+A hypothesis recorded as dead: generic entities are **not** the problem. No entity exceeds 10% document frequency (`iran` tops out at 7 of 73), so a frequency-based junk filter selects nothing and changes nothing.
+
+This breaks weak links; it does not bound transitivity. A chain of 3-entity overlaps can still form. If that appears, require overlap with the cluster as a whole rather than with one member — do not climb to 4, which over-fragments to 3 clusters.
+
+Cost is recall: ~10 more stories per night dropped as single-source. Currently theoretical, since only `war-in-iran` exists to receive anything.
 
 ### Layer 2 — trigram safety net
 
@@ -281,6 +321,7 @@ Every question in the curated spine, and every generated question routed to this
 |---|---|
 | Two repos, two deploy cadences, ordering-sensitive | §4 deploy order; verify the API field in production before merging frontend |
 | Double-render key collision, search interaction | §4 picker changes; verified by page load |
+| Clusters chain unrelated stories, starving the entity rule | §3a: normalised entities and a 3-entity join bar; re-measure if the fallback rate in `[DedupOverlap]` stays high |
 | Trigram threshold too loose or too tight | **Mitigation falsified 2026-09-11.** The §3 fixtures cannot tune it: they are all near-identical phrasing, and a threshold that passes them still missed a real duplicate at 0.4468 while a non-duplicate scored 0.5086. No threshold separates the classes. Layer 1 must carry it; Layer 2 is a backstop with a known miss band |
 | Entity overlap threshold (0.34) is a hypothesis, not a tuned value | `[DedupOverlap]` logs every computed overlap, pass and near-miss alike; revisit once a week of real runs exists. A threshold set too high silently reverts claims to the weak prose fallback |
 | Routing misclassifies a story class systematically | Lane distribution logged per run in `generation_jobs.notes`; review after the first week |
