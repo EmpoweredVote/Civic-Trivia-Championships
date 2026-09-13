@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { slotPosition, rowsFor, CROWD_CAP } from '../crowdLayout';
+import { slotPosition, rowsFor, CROWD_CAP, bandFor } from '../crowdLayout';
 
 const band = { width: 1000, height: 90, scale: 0.22 };
 
@@ -64,5 +64,30 @@ describe('slotPosition', () => {
     const a = slotPosition(0, 10, band);
     const b = slotPosition(1, 10, band);
     expect(Math.abs(a.x - b.x)).toBeGreaterThan(10);
+  });
+});
+
+describe('bandFor', () => {
+  it('gives desktop a 190px band at the held 0.2 scale', () => {
+    const b = bandFor(false);
+    expect(b.height).toBe(190);
+    expect(b.scale).toBeCloseTo(0.2, 5);
+  });
+
+  it('gives mobile a 100px band at the enlarged 0.20 scale', () => {
+    const b = bandFor(true);
+    expect(b.height).toBe(100);
+    expect(b.scale).toBeCloseTo(0.2, 5);
+  });
+
+  it('keeps the nominal 1000px width both ways -- figures are placed proportionally', () => {
+    expect(bandFor(false).width).toBe(1000);
+    expect(bandFor(true).width).toBe(1000);
+  });
+
+  it('is deep enough for four bobit-heights on desktop', () => {
+    // A standing figure is 195 rig units tall.
+    const b = bandFor(false);
+    expect(b.height / (195 * b.scale)).toBeGreaterThan(4);
   });
 });

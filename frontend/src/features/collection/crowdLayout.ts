@@ -49,3 +49,22 @@ export function slotPosition(index: number, total: number, band: CrowdBand) {
 
   return { x, groundY, row };
 }
+
+/**
+ * The band's height and figure scale.
+ *
+ * Desktop spends its extra height on DEPTH (scale held at 0.2) because there is width to
+ * spare and the room needs floor. Mobile spends it on SIZE (0.13 -> 0.20) because at 25px
+ * tall a wave is a few pixels and nothing reads.
+ *
+ * Provisional until screenshotted at a 768px-tall viewport -- see the measurement task. The
+ * band is flex-shrink-0 above a flex-1 question area, so every pixel here comes out of the
+ * question card's allowance.
+ */
+export function bandFor(isMobile: boolean): CrowdBand {
+  return {
+    width: 1000,                      // nominal; figures are placed proportionally
+    height: isMobile ? 100 : 190,
+    scale: 0.2,
+  };
+}

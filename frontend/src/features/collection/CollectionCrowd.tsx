@@ -9,6 +9,7 @@ import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
 import { crowdFigures, overflowCount } from './crowdFigures';
+import { bandFor } from './crowdLayout';
 import type { CrowdBand } from './crowdLayout';
 
 interface CollectionCrowdProps {
@@ -54,12 +55,8 @@ export function CollectionCrowd({
     [userId],
   );
 
-  const height = isMobile ? 54 : 96;
-  const band: CrowdBand = useMemo(() => ({
-    width: 1000,                       // nominal; figures are placed proportionally
-    height,
-    scale: isMobile ? 0.13 : 0.2,
-  }), [height, isMobile]);
+  const band: CrowdBand = useMemo(() => bandFor(isMobile), [isMobile]);
+  const height = band.height;
 
   // Seed from storage whenever the collection -- or the driver behind it -- changes.
   useEffect(() => {
