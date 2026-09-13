@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { slotPosition, rowsFor, CROWD_CAP, bandFor } from '../crowdLayout';
+import {
+  slotPosition, rowsFor, CROWD_CAP, bandFor, stageBounds, agentPlacement, WANDER_CAST,
+} from '../crowdLayout';
 
 const band = { width: 1000, height: 90, scale: 0.22 };
 
@@ -89,5 +91,45 @@ describe('bandFor', () => {
     // A standing figure is 195 rig units tall.
     const b = bandFor(false);
     expect(b.height / (195 * b.scale)).toBeGreaterThan(4);
+  });
+});
+
+describe('stageBounds', () => {
+  it('gives the stage the lower 60% of the band', () => {
+    const b = bandFor(false);
+    const s = stageBounds(b);
+    expect(s.bottom).toBe(b.height);
+    expect(s.top).toBeCloseTo(b.height * 0.4, 5);
+  });
+});
+
+describe('agentPlacement', () => {
+  it('puts depth 0 at the front of the stage and depth 1 at the back', () => {
+    const b = bandFor(false);
+    const front = agentPlacement(0, b);
+    const back = agentPlacement(1, b);
+    expect(front.groundY).toBeCloseTo(stageBounds(b).bottom, 5);
+    expect(back.groundY).toBeCloseTo(stageBounds(b).top, 5);
+    expect(back.groundY).toBeLessThan(front.groundY);   // further back sits higher
+  });
+
+  it('scales nearer figures up and further ones down, by +/-8%', () => {
+    const b = bandFor(false);
+    expect(agentPlacement(0, b).scale).toBeCloseTo(b.scale * 1.08, 5);
+    expect(agentPlacement(1, b).scale).toBeCloseTo(b.scale * 0.92, 5);
+    expect(agentPlacement(0.5, b).scale).toBeCloseTo(b.scale, 5);
+  });
+
+  it('clamps depth rather than trusting its caller', () => {
+    const b = bandFor(false);
+    expect(agentPlacement(-1, b).groundY).toBeCloseTo(agentPlacement(0, b).groundY, 5);
+    expect(agentPlacement(2, b).groundY).toBeCloseTo(agentPlacement(1, b).groundY, 5);
+  });
+});
+
+describe('WANDER_CAST', () => {
+  it('is small enough to keep the O(N^2) separation check cheap', () => {
+    // wanderAdvance compares every pair each frame. 100 would be 10,000 checks a frame.
+    expect(WANDER_CAST * WANDER_CAST).toBeLessThan(2000);
   });
 });
