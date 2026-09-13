@@ -79,9 +79,29 @@ export function bandFor(isMobile: boolean): CrowdBand {
  */
 export const WANDER_CAST = 24;
 
-/** The vertical span wandering agents occupy: the lower 60% of the band. */
+/**
+ * Rig units from a standing figure's ground line to the top of whatever it can raise.
+ *
+ * The figure itself is ~208 (pelvisOffset 112 + fieldGeometry's ABOVE_PELVIS 96), but `cheer`,
+ * `jump` and `dance` put the arms overhead, well past the bounding box that only had to
+ * contain a wave. 240 covers the raised-arm poses with a little air.
+ */
+const HEADROOM_UNITS = 240;
+
+/**
+ * The vertical span wandering agents occupy: the lower 60% of the band, but never so high
+ * that a figure at the back is clipped by the top of the canvas.
+ *
+ * The clamp is not theoretical. At mobile's 100px band the 40% line sits at 40px while a
+ * figure stands ~42px tall, and the back row rendered with its heads sliced off flat. The
+ * unit tests were green -- a screenshot caught it.
+ */
 export function stageBounds(band: CrowdBand) {
-  return { top: band.height * 0.4, bottom: band.height };
+  const clearance = HEADROOM_UNITS * band.scale;
+  // Never let the clamp collapse the stage entirely: keep at least a third of the band
+  // walkable even on a very short one.
+  const top = Math.min(Math.max(band.height * 0.4, clearance), band.height * 0.67);
+  return { top, bottom: band.height };
 }
 
 /**

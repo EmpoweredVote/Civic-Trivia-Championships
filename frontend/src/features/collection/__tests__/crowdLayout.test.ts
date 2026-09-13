@@ -133,3 +133,29 @@ describe('WANDER_CAST', () => {
     expect(WANDER_CAST * WANDER_CAST).toBeLessThan(2000);
   });
 });
+
+describe('stageBounds — nobody is clipped by the top of the band', () => {
+  // A standing figure spans pelvisOffset (112) + ABOVE_PELVIS (96) = 208 rig units, and the
+  // raised-arm celebration poses go higher still.
+  const FIGURE_UNITS = 208;
+
+  it('leaves a whole figure above the back of the stage on mobile', () => {
+    const b = bandFor(true);
+    const back = agentPlacement(1, b);
+    expect(back.groundY).toBeGreaterThanOrEqual(FIGURE_UNITS * back.scale);
+  });
+
+  it('leaves a whole figure above the back of the stage on desktop', () => {
+    const b = bandFor(false);
+    const back = agentPlacement(1, b);
+    expect(back.groundY).toBeGreaterThanOrEqual(FIGURE_UNITS * back.scale);
+  });
+
+  it('still leaves a usable stage after clamping', () => {
+    for (const mobile of [true, false]) {
+      const b = bandFor(mobile);
+      const s = stageBounds(b);
+      expect(s.bottom - s.top).toBeGreaterThan(b.height * 0.3);
+    }
+  });
+});

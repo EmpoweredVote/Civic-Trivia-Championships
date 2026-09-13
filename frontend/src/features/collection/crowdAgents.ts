@@ -13,7 +13,7 @@
 import { initWander, wanderAdvance } from '../../components/bobbits/wanderReducer';
 import type { Wanderer, WanderState, Rand } from '../../components/bobbits/wanderReducer';
 import { slotOrder } from './crowdIdentity';
-import { slotPosition, CROWD_CAP } from './crowdLayout';
+import { CROWD_CAP } from './crowdLayout';
 import type { CrowdBand } from './crowdLayout';
 
 /**
@@ -162,19 +162,28 @@ export function castFor(residents: string[], cast: number): { stage: string[]; r
 /**
  * Where a ranked bobit stands. Depth 1 puts him at the back of the band, behind the stage.
  *
- * Position comes from `slotPosition` over the ID-SORTED residents, exactly as the fixed-slot
- * crowd did, so a bobit's house does not move when his neighbours change.
+ * Indexed among the RANKED bobits, id-sorted -- not among all residents. Indexing over
+ * everyone packs the ranks into the first N slots of a 34-wide row, which put six standing
+ * bobits in a rigid line at the far left of the band while twenty-four milled about in the
+ * rest of it. It read as a queue, not as a crowd with people at the back. Caught by looking
+ * at a screenshot; the unit tests were all satisfied.
+ *
+ * Still id-sorted, so the ranks stay in a stable, legible order rather than shuffling. When
+ * the ranked SET changes, homes shift -- and a bobit whose home moved walks to it, which is
+ * what `moving` is for. Nobody teleports.
  */
-export function homeSlot(id: string, residents: string[], band: CrowdBand) {
-  const order = slotOrder(residents).slice(0, CROWD_CAP);
+export function homeSlot(id: string, residents: string[], band: CrowdBand, ranked?: string[]) {
+  const pool = ranked ?? residents;
+  const order = slotOrder(pool).slice(0, CROWD_CAP);
   const index = Math.max(0, order.indexOf(id));
-  const pos = slotPosition(index, order.length, band);
-  return { x: pos.x, depth: 1 };
+  // Spread over the full width: half-step inset so nobody stands flush against an edge.
+  const x = ((index + 0.5) / Math.max(1, order.length)) * band.width;
+  return { x, depth: 1 };
 }
 
 /** The `moving`/`rank` target fields for a home slot, as a spreadable fragment. */
-function homeSlotTarget(id: string, residents: string[], band: CrowdBand) {
-  const home = homeSlot(id, residents, band);
+function homeSlotTarget(id: string, residents: string[], band: CrowdBand, ranked: string[]) {
+  const home = homeSlot(id, residents, band, ranked);
   return { x: home.x, targetX: home.x, targetDepth: home.depth };
 }
 
@@ -199,7 +208,7 @@ export function syncCast(
       // A resident with no agent yet: seed one wandering where he stands.
       const born = initAgents([id], opts)[id];
       out[id] = inRank.has(id)
-        ? { ...born, activity: 'rank', depth: 1, ...homeSlotTarget(id, residents, opts.band) }
+        ? { ...born, activity: 'rank', depth: 1, ...homeSlotTarget(id, residents, opts.band, rank) }
         : born;
       continue;
     }
@@ -208,7 +217,7 @@ export function syncCast(
     const isRanked = a.activity === 'rank' || (a.activity === 'moving' && a.targetDepth >= 1);
 
     if (wantsRank && !isRanked) {
-      const home = homeSlot(id, residents, opts.band);
+      const home = homeSlot(id, residents, opts.band, rank);
       out[id] = { ...a, activity: 'moving', targetX: home.x, targetDepth: home.depth };
       continue;
     }
@@ -251,5 +260,24 @@ export function rotateCast(state: AgentState, elapsed: number, opts: AgentOpts):
     ...state,
     [up]: { ...state[up], activity: 'moving', targetX: state[up].x, targetDepth: opts.rand() * 0.9 },
     [down]: { ...state[down], activity: 'moving', targetX: state[down].x, targetDepth: 1 },
+  };
+}
+
+/**
+ * mulberry32 -- small, fast, dependency-free, and good enough for scattering a crowd.
+ *
+ * A null seed falls through to Math.random, which is what production wants. A seed makes a
+ * room reproducible, which is what the bench and the screenshot sweep want: a verification
+ * pass that cannot reproduce its own input is not a verification pass.
+ */
+export function makeRand(seed: string | null): Rand {
+  if (!seed) return () => Math.random();
+  let a = 0;
+  for (let i = 0; i < seed.length; i++) a = Math.imul(a ^ seed.charCodeAt(i), 0x01000193) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }

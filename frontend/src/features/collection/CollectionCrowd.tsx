@@ -6,10 +6,15 @@ import { useAuthStore } from '../../store/authStore';
 import { useConfettiStore } from '../../store/confettiStore';
 import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
 import type { BobitProgressStore } from './bobitProgress';
-import { crowdInit, crowdApply, crowdStep } from './crowdReducer';
+import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
 import { crowdFigures, overflowCount } from './crowdFigures';
-import { bandFor } from './crowdLayout';
+import { bandFor, CROWD_CAP, WANDER_CAST } from './crowdLayout';
+import {
+  initAgents, agentsAdvance, syncCast, rotateCast, makeRand,
+} from './crowdAgents';
+import type { AgentState } from './crowdAgents';
+import type { Rand } from '../../components/bobbits/wanderReducer';
 import type { CrowdBand } from './crowdLayout';
 
 interface CollectionCrowdProps {
@@ -44,6 +49,14 @@ export function CollectionCrowd({
   const fireFireworks = useConfettiStore(s => s.fireFireworks);
   const userId = useAuthStore(s => s.user?.id ?? null);
   const stateRef = useRef<CrowdState>(crowdInit());
+  const agentsRef = useRef<AgentState>({});
+  const rotateRef = useRef(0);
+  // Random by default; seedable via ?bobitSeed= so the screenshot sweep and the bench get the
+  // SAME room every run. Math.random cannot be seeded, and a verification pass that cannot
+  // reproduce its own input is not a verification pass.
+  const randRef = useRef<Rand>(makeRand(
+    new URLSearchParams(window.location.search).get('bobitSeed'),
+  ));
   const [overflow, setOverflow] = useState(0);
 
   // Signed in: progress lives on the account. Signed out: it lives in this browser, exactly
@@ -60,7 +73,12 @@ export function CollectionCrowd({
 
   // Seed from storage whenever the collection -- or the driver behind it -- changes.
   useEffect(() => {
-    if (!slug) { stateRef.current = crowdInit(); setOverflow(0); return; }
+    if (!slug) {
+      stateRef.current = crowdInit();
+      agentsRef.current = {};
+      setOverflow(0);
+      return;
+    }
 
     let cancelled = false;
     const seed = () => {
@@ -68,6 +86,13 @@ export function CollectionCrowd({
       if (cancelled) return;
       const owned = [...store.load(slug)];
       stateRef.current = crowdApply(stateRef.current, { type: 'seed', ids: owned });
+      // A returning player's bobits are already standing there when he arrives -- they do not
+      // walk in. Entrances belong to bobits earned in front of you.
+      agentsRef.current = initAgents(
+        stateRef.current.residents.slice(0, CROWD_CAP),
+        { band, width: band.width, greeting: new Set(), frozen: false, rand: randRef.current },
+      );
+      rotateRef.current = 0;
       setOverflow(overflowCount(stateRef.current));
     };
 
@@ -79,7 +104,7 @@ export function CollectionCrowd({
     else seed();
 
     return () => { cancelled = true; };
-  }, [slug, store]);
+  }, [slug, store, band]);
 
   // React to a revealed answer. Keyed on object identity, so the same question answered again
   // in a later match still registers.
@@ -103,20 +128,47 @@ export function CollectionCrowd({
     if (finished5of5 && !reducedMotion) fireFireworks();
   }, [finished5of5, reducedMotion, fireFireworks]);
 
-  const figuresFor = useMemo(() => (t: number, dt: number): FieldFigure[] => {
-    if (!reducedMotion) stateRef.current = crowdStep(stateRef.current, dt);
-    return crowdFigures(stateRef.current, t, band, darkMode);
+  const figuresFor = useMemo(() => (
+    _t: number, dt: number, width: number, greeting: ReadonlySet<string>,
+  ): FieldFigure[] => {
+    if (!reducedMotion) {
+      stateRef.current = crowdStep(stateRef.current, dt);
+
+      const opts = {
+        band,
+        width: width || band.width,
+        greeting,
+        // The abduction's freeze stops feet as well as poses. Rewinding the animation phase
+        // alone would pin everyone mid-stride and then slide them across the floor.
+        frozen: isStunned(stateRef.current),
+        rand: randRef.current,
+      };
+
+      // Reconcile first: a bobit granted this frame must exist before he is advanced.
+      agentsRef.current = syncCast(
+        agentsRef.current, stateRef.current.residents, opts, WANDER_CAST,
+      );
+
+      rotateRef.current += dt;
+      const rotated = rotateCast(agentsRef.current, rotateRef.current, opts);
+      if (rotated !== agentsRef.current) { agentsRef.current = rotated; rotateRef.current = 0; }
+
+      agentsRef.current = agentsAdvance(agentsRef.current, dt, opts);
+    }
+
+    return crowdFigures(stateRef.current, agentsRef.current, band, darkMode);
   }, [band, darkMode, reducedMotion]);
 
   if (!slug) return null;
 
   return (
     <div style={{ position: 'relative', width: '100%', flexShrink: 0 }}>
-      <BobitField figures={[]} figuresFor={figuresFor} height={height} />
+      <BobitField figures={[]} figuresFor={figuresFor} height={height} interactive />
       {overflow > 0 && (
         <span
           style={{
-            position: 'absolute', right: 8, bottom: 4,
+            // Bottom-LEFT: the right border is where the tree's trunk goes.
+            position: 'absolute', left: 8, bottom: 4,
             fontFamily: "'Manrope', sans-serif", fontSize: isMobile ? 10 : 12,
             fontWeight: 600, opacity: 0.55,
             color: darkMode ? '#94A3B8' : '#4B5768',

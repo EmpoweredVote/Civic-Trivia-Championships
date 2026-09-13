@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY,
+  initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY, makeRand,
 } from '../crowdAgents';
 import type { AgentOpts } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
@@ -180,5 +180,63 @@ describe('rotateCast', () => {
     const opts = OPTS();
     const s = initAgents(['a', 'b'], opts);
     expect(rotateCast(s, ROTATE_EVERY, opts)).toBe(s);
+  });
+});
+
+describe('makeRand', () => {
+  it('gives the same sequence for the same seed', () => {
+    const a = makeRand('milwaukee');
+    const b = makeRand('milwaukee');
+    expect([a(), a(), a()]).toEqual([b(), b(), b()]);
+  });
+
+  it('gives different sequences for different seeds', () => {
+    expect(makeRand('a')()).not.toBe(makeRand('b')());
+  });
+
+  it('stays inside 0..1', () => {
+    const r = makeRand('seed');
+    for (let i = 0; i < 50; i++) {
+      const v = r();
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThan(1);
+    }
+  });
+
+  it('falls through to a working generator with no seed', () => {
+    const r = makeRand(null);
+    expect(typeof r()).toBe('number');
+  });
+});
+
+describe('homeSlot — the ranks spread across the band', () => {
+  it('spans the whole width rather than packing into the first few slots', () => {
+    // Regression: indexing over ALL residents put the six ranked bobits in a rigid line at
+    // the far left while twenty-four wandered the rest of the band. Screenshot caught it.
+    const band = bandFor(false);
+    const ranked = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'];
+    const xs = ranked.map(id => homeSlot(id, ranked, band, ranked).x).sort((a, b) => a - b);
+    expect(xs[0]).toBeLessThan(band.width * 0.2);
+    expect(xs[xs.length - 1]).toBeGreaterThan(band.width * 0.8);
+  });
+
+  it('never stands anyone flush against an edge', () => {
+    const band = bandFor(false);
+    const ranked = ['q1', 'q2'];
+    for (const id of ranked) {
+      const { x } = homeSlot(id, ranked, band, ranked);
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThan(band.width);
+    }
+  });
+
+  it('keeps ranks in id order, so the back row does not shuffle', () => {
+    const band = bandFor(false);
+    const ranked = ['q3', 'q1', 'q2'];
+    const x1 = homeSlot('q1', ranked, band, ranked).x;
+    const x2 = homeSlot('q2', ranked, band, ranked).x;
+    const x3 = homeSlot('q3', ranked, band, ranked).x;
+    expect(x1).toBeLessThan(x2);
+    expect(x2).toBeLessThan(x3);
   });
 });
