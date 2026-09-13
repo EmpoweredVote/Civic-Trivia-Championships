@@ -6,10 +6,17 @@
  * per-frame path stays outside the React render cycle entirely.
  */
 
+import { slotOrder } from './crowdIdentity';
+import { RIPPLE_DUR } from './crowdReactions';
+
 /** Seconds a newcomer spends walking in and waving before he settles. */
 export const ARRIVAL_DUR = 1.1;
-/** Seconds the room celebrates a correct answer. */
-export const CELEBRATE_DUR = 2.2;
+/**
+ * Seconds the room celebrates a correct answer: cheer, clap, high-five.
+ * MUST match HIGHFIVE_UNTIL in crowdReactions -- that module decides the poses, this one
+ * decides how long they run, and a mismatch either truncates the chain or holds a dead pose.
+ */
+export const CELEBRATE_DUR = 2.4;
 
 // The loss sequence, from the spec: rise, burst, ~0.8s freeze, then look around and shrug,
 // with everyone back to normal inside ~2.5s of the burst.
@@ -35,6 +42,11 @@ export interface CrowdState {
   celebrating: number;
   celebrateT: number;
   loss: { id: string; phase: LossPhase; t: number } | null;
+  /**
+   * A miss that cost nothing. The room reacts from `from`'s position outward, but nobody is
+   * taken. Distinct from `loss`, which is the abduction.
+   */
+  ripple: { from: string; t: number } | null;
 }
 
 export type CrowdEvent =
@@ -44,7 +56,10 @@ export type CrowdEvent =
   | { type: 'reset' };
 
 export function crowdInit(): CrowdState {
-  return { residents: [], arriving: {}, celebrant: null, celebrating: 0, celebrateT: 0, loss: null };
+  return {
+    residents: [], arriving: {}, celebrant: null, celebrating: 0, celebrateT: 0,
+    loss: null, ripple: null,
+  };
 }
 
 export function crowdApply(state: CrowdState, event: CrowdEvent): CrowdState {
@@ -71,15 +86,23 @@ export function crowdApply(state: CrowdState, event: CrowdEvent): CrowdState {
     }
 
     case 'wrong': {
-      // Only a question the player actually owned costs anything. One loss at a time: a
+      // A question the player actually owned costs him that bobit. One loss at a time: a
       // second would fight the first for the room's attention.
-      if (state.loss || !state.residents.includes(event.id)) return state;
+      if (state.residents.includes(event.id)) {
+        if (state.loss) return state;
+        return {
+          ...state,
+          celebrating: 0, celebrateT: 0, celebrant: null, ripple: null,
+          loss: { id: event.id, phase: 'rising', t: 0 },
+        };
+      }
+      // A miss on a question he never owned takes nothing -- but the room still notices, or a
+      // new player's first match passes with no reaction to anything at all.
+      if (state.loss || !state.residents.length) return state;
       return {
         ...state,
-        celebrating: 0,
-        celebrateT: 0,
-        celebrant: null,
-        loss: { id: event.id, phase: 'rising', t: 0 },
+        celebrating: 0, celebrateT: 0, celebrant: null,
+        ripple: { from: slotOrder(state.residents)[0], t: 0 },
       };
     }
   }
@@ -103,6 +126,12 @@ export function crowdStep(state: CrowdState, dt: number): CrowdState {
     const t = state.celebrateT + dt;
     if (t >= CELEBRATE_DUR) { next.celebrating = 0; next.celebrateT = 0; next.celebrant = null; }
     else next.celebrateT = t;
+  }
+
+  // ripple
+  if (state.ripple) {
+    const t = state.ripple.t + dt;
+    next.ripple = t >= RIPPLE_DUR ? null : { ...state.ripple, t };
   }
 
   // loss
