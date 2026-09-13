@@ -20,7 +20,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@empoweredvote/analytics": "^0.2.0",
-    "@empoweredvote/ev-ui": "^0.11.0",
+    "@empoweredvote/ev-ui": "^0.11.1",
     "@floating-ui/react": "^0.27.20",
     "@headlessui/react": "^2.2.10",
     "@react-spring/web": "^10.1.2",
