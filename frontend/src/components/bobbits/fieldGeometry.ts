@@ -1,4 +1,4 @@
-import type { DrawOpts } from './leremyRig';
+import type { DrawOpts, AnimVars } from './leremyRig';
 
 /**
  * One inhabitant of a BobitField. Positions are in field space (CSS px from the field's own
@@ -41,6 +41,17 @@ export interface FieldFigure {
    */
   hoverAnim?: string;
   props?: DrawOpts;
+  /**
+   * Pose variant, passed to `Animation.frame(t, v)`.
+   *
+   * Distinct from `props`, which is `DrawOpts` and decorates a figure with objects (a book, a
+   * cane, a quiz card). `vars` changes the POSE itself -- which arm a per-side animation
+   * reaches with. `greet`, `carryGrip` and `highfive` all take `{ hand }`.
+   *
+   * Figures drawn on their own canvas (BobbitTrophyCarry) call `frame(t, v)` directly; before
+   * this field, a figure on the shared field had no way to say the same thing.
+   */
+  vars?: AnimVars;
 }
 
 /**

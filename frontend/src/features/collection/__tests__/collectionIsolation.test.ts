@@ -4,6 +4,7 @@ import type { BobitProgressStore } from '../bobitProgress';
 import { crowdInit, crowdApply } from '../crowdReducer';
 import { crowdFigures } from '../crowdFigures';
 import { CROWD_CAP } from '../crowdLayout';
+import { initAgents } from '../crowdAgents';
 
 /**
  * The collection invariant, stated as a test.
@@ -35,7 +36,10 @@ function fakeStorage(): Storage {
 function figuresOnStage(store: BobitProgressStore, slug: string) {
   const owned = [...store.load(slug)];
   const state = crowdApply(crowdInit(), { type: 'seed', ids: owned });
-  return crowdFigures(state, 0, band, false);
+  const agents = initAgents(owned, {
+    band, width: band.width, greeting: new Set(), frozen: false, rand: () => 0.5,
+  });
+  return crowdFigures(state, agents, band, false);
 }
 
 const countOnStage = (store: BobitProgressStore, slug: string) =>

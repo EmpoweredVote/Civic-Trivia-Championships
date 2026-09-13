@@ -154,7 +154,7 @@ export function BobitField({
       const anim = ALL_ANIMATIONS[animKey] || ALL_ANIMATIONS[f.anim];
       if (!anim) return;
 
-      const pose = anim.frame(greeting ? gclock : t + (f.phase || 0));
+      const pose = anim.frame(greeting ? gclock : t + (f.phase || 0), f.vars);
       const groundY = f.groundY;
       if (f.shadow !== false) drawShadow(c, f.x, groundY, 16 * f.scale);
 
