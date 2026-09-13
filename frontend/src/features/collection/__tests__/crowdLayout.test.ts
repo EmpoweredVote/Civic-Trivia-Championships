@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
-  slotPosition, rowsFor, CROWD_CAP, bandFor, stageBounds, agentPlacement, WANDER_CAST,
+  slotPosition, rowsFor, CROWD_CAP, bandFor, stageBounds, agentPlacement, wanderCastFor,
 } from '../crowdLayout';
+import { MIN_SEPARATION } from '../../../components/bobbits/wanderReducer';
 
 const band = { width: 1000, height: 90, scale: 0.22 };
 
@@ -127,10 +128,30 @@ describe('agentPlacement', () => {
   });
 });
 
-describe('WANDER_CAST', () => {
-  it('is small enough to keep the O(N^2) separation check cheap', () => {
-    // wanderAdvance compares every pair each frame. 100 would be 10,000 checks a frame.
-    expect(WANDER_CAST * WANDER_CAST).toBeLessThan(2000);
+describe('wanderCastFor', () => {
+  // Sized by FLOOR SPACE, not by CPU. The bench (2026-09-13) measured every cast size up to
+  // 100 comfortably inside the frame budget; what a narrow band cannot do is fit them.
+  it('gives a desktop band room for a real crowd', () => {
+    expect(wanderCastFor(1440, bandFor(false))).toBeGreaterThan(25);
+  });
+
+  it('gives a phone band far fewer, so they are not jammed shoulder to shoulder', () => {
+    const mobile = wanderCastFor(340, bandFor(true));
+    expect(mobile).toBeLessThan(15);
+    expect(mobile).toBeLessThan(wanderCastFor(1440, bandFor(false)));
+  });
+
+  it('keeps every walker at least a comfortable gap apart', () => {
+    const band = bandFor(true);
+    const width = 340;
+    const cast = wanderCastFor(width, band);
+    expect(width / cast).toBeGreaterThanOrEqual(MIN_SEPARATION * band.scale);
+  });
+
+  it('never exceeds the crowd cap and never empties the floor', () => {
+    expect(wanderCastFor(100000, bandFor(false))).toBeLessThanOrEqual(CROWD_CAP);
+    expect(wanderCastFor(0, bandFor(false))).toBeGreaterThanOrEqual(1);
+    expect(wanderCastFor(10, bandFor(false))).toBeGreaterThanOrEqual(1);
   });
 });
 

@@ -1,3 +1,5 @@
+import { MIN_SEPARATION } from '../../components/bobbits/wanderReducer';
+
 /**
  * Maximum figures rendered at once.
  *
@@ -72,12 +74,32 @@ export function bandFor(isMobile: boolean): CrowdBand {
 /**
  * How many bobits wander at once. The rest stand at their home slots.
  *
- * PROVISIONAL -- 24 is a starting point, not a measurement. `wanderAdvance` is O(N^2) over the
- * cast, so 24 is 576 pairwise checks a frame where the full 100-figure room would be 10,000.
- * The bench measures the real ceiling; the Stage 2 findings are blunt that four confident
- * predictions about this rig were all wrong.
+ * MEASURED 2026-09-13 (scripts/bobit-bench.mjs, 100 residents, 4x CPU throttle, 600 frames):
+ * the cast does not constrain performance. The worst case measured -- every one of the 100
+ * wandering, mid-celebration -- was 4.48ms against a 16.7ms budget. The O(N^2) separation
+ * check this constant was originally sized around costs 0.8ms at 10,000 comparisons. Paint
+ * dominates at ~3.4ms and is FLAT across every cast size, because the room is always
+ * CROWD_CAP figures whether they walk or stand.
+ *
+ * That falsified the prediction behind the first draft of this constant, which assumed 100
+ * would be unaffordable. It is affordable. The real constraint is FLOOR SPACE: `wanderAdvance`
+ * holds figures MIN_SEPARATION apart, so a band only fits so many walkers before they jam
+ * shoulder to shoulder and spend every frame turning away from each other. A 340px phone band
+ * fits 22 at the absolute minimum gap -- which is why a fixed 24 looked crowded on mobile and
+ * fine on desktop.
+ *
+ * So the cast is derived from the width instead of guessed, at a comfortable 2.5x the minimum
+ * gap: ~37 on a 1440px desktop band, ~8 on a 340px phone. Both are far under the performance
+ * ceiling, which is CROWD_CAP.
  */
-export const WANDER_CAST = 24;
+const COMFORT_MULTIPLE = 2.5;
+
+export function wanderCastFor(width: number, band: CrowdBand): number {
+  const gap = MIN_SEPARATION * band.scale * COMFORT_MULTIPLE;
+  if (!(width > 0) || !(gap > 0)) return 1;
+  // At least a few, however narrow the band: a room with nobody moving is not a room.
+  return Math.max(3, Math.min(CROWD_CAP, Math.floor(width / gap)));
+}
 
 /**
  * Rig units from a standing figure's ground line to the top of whatever it can raise.

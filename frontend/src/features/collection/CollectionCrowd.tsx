@@ -9,7 +9,7 @@ import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
 import { crowdFigures, overflowCount } from './crowdFigures';
-import { bandFor, CROWD_CAP, WANDER_CAST } from './crowdLayout';
+import { bandFor, CROWD_CAP, wanderCastFor } from './crowdLayout';
 import {
   initAgents, agentsAdvance, syncCast, rotateCast, makeRand,
 } from './crowdAgents';
@@ -144,9 +144,11 @@ export function CollectionCrowd({
         rand: randRef.current,
       };
 
-      // Reconcile first: a bobit granted this frame must exist before he is advanced.
+      // Reconcile first: a bobit granted this frame must exist before he is advanced. The
+      // cast is derived from the MEASURED width, so a phone gets a handful of wanderers and a
+      // wide desktop band gets a proper crowd -- it is floor space that limits this, not CPU.
       agentsRef.current = syncCast(
-        agentsRef.current, stateRef.current.residents, opts, WANDER_CAST,
+        agentsRef.current, stateRef.current.residents, opts, wanderCastFor(opts.width, band),
       );
 
       rotateRef.current += dt;

@@ -172,18 +172,21 @@ export function castFor(residents: string[], cast: number): { stage: string[]; r
  * the ranked SET changes, homes shift -- and a bobit whose home moved walks to it, which is
  * what `moving` is for. Nobody teleports.
  */
-export function homeSlot(id: string, residents: string[], band: CrowdBand, ranked?: string[]) {
+export function homeSlot(id: string, residents: string[], width: number, ranked?: string[]) {
   const pool = ranked ?? residents;
   const order = slotOrder(pool).slice(0, CROWD_CAP);
   const index = Math.max(0, order.indexOf(id));
-  // Spread over the full width: half-step inset so nobody stands flush against an edge.
-  const x = ((index + 0.5) / Math.max(1, order.length)) * band.width;
+  // Spread over the MEASURED width, not band.width -- that is a nominal 1000 used for
+  // proportional placement, and positioning real px against it put most of a phone's back row
+  // off the right-hand edge of a 340px canvas and squeezed a desktop's into the left 70%.
+  // Half-step inset so nobody stands flush against an edge.
+  const x = ((index + 0.5) / Math.max(1, order.length)) * width;
   return { x, depth: 1 };
 }
 
 /** The `moving`/`rank` target fields for a home slot, as a spreadable fragment. */
-function homeSlotTarget(id: string, residents: string[], band: CrowdBand, ranked: string[]) {
-  const home = homeSlot(id, residents, band, ranked);
+function homeSlotTarget(id: string, residents: string[], width: number, ranked: string[]) {
+  const home = homeSlot(id, residents, width, ranked);
   return { x: home.x, targetX: home.x, targetDepth: home.depth };
 }
 
@@ -208,7 +211,7 @@ export function syncCast(
       // A resident with no agent yet: seed one wandering where he stands.
       const born = initAgents([id], opts)[id];
       out[id] = inRank.has(id)
-        ? { ...born, activity: 'rank', depth: 1, ...homeSlotTarget(id, residents, opts.band, rank) }
+        ? { ...born, activity: 'rank', depth: 1, ...homeSlotTarget(id, residents, opts.width, rank) }
         : born;
       continue;
     }
@@ -217,7 +220,7 @@ export function syncCast(
     const isRanked = a.activity === 'rank' || (a.activity === 'moving' && a.targetDepth >= 1);
 
     if (wantsRank && !isRanked) {
-      const home = homeSlot(id, residents, opts.band, rank);
+      const home = homeSlot(id, residents, opts.width, rank);
       out[id] = { ...a, activity: 'moving', targetX: home.x, targetDepth: home.depth };
       continue;
     }

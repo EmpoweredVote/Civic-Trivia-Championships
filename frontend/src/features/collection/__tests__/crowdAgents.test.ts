@@ -105,15 +105,13 @@ describe('homeSlot', () => {
   it('derives a slot from the ID-SORTED order, not from grant order', () => {
     // Same set, different grant order -> identical home slot. This is what stops a lost and
     // re-earned bobit from moving everyone else's house.
-    const band = bandFor(false);
-    const a = homeSlot('q2', ['q1', 'q2', 'q3'], band);
-    const b = homeSlot('q2', ['q3', 'q1', 'q2'], band);
+    const a = homeSlot('q2', ['q1', 'q2', 'q3'], 1000);
+    const b = homeSlot('q2', ['q3', 'q1', 'q2'], 1000);
     expect(a).toEqual(b);
   });
 
   it('puts ranked bobits at the back, behind the stage', () => {
-    const band = bandFor(false);
-    expect(homeSlot('q1', ['q1', 'q2'], band).depth).toBe(1);
+    expect(homeSlot('q1', ['q1', 'q2'], 1000).depth).toBe(1);
   });
 });
 
@@ -213,30 +211,50 @@ describe('homeSlot — the ranks spread across the band', () => {
   it('spans the whole width rather than packing into the first few slots', () => {
     // Regression: indexing over ALL residents put the six ranked bobits in a rigid line at
     // the far left while twenty-four wandered the rest of the band. Screenshot caught it.
-    const band = bandFor(false);
+    const W = 1440;
     const ranked = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'];
-    const xs = ranked.map(id => homeSlot(id, ranked, band, ranked).x).sort((a, b) => a - b);
-    expect(xs[0]).toBeLessThan(band.width * 0.2);
-    expect(xs[xs.length - 1]).toBeGreaterThan(band.width * 0.8);
+    const xs = ranked.map(id => homeSlot(id, ranked, W, ranked).x).sort((a, b) => a - b);
+    expect(xs[0]).toBeLessThan(W * 0.2);
+    expect(xs[xs.length - 1]).toBeGreaterThan(W * 0.8);
   });
 
   it('never stands anyone flush against an edge', () => {
-    const band = bandFor(false);
+    const W = 340;
     const ranked = ['q1', 'q2'];
     for (const id of ranked) {
-      const { x } = homeSlot(id, ranked, band, ranked);
+      const { x } = homeSlot(id, ranked, W, ranked);
       expect(x).toBeGreaterThan(0);
-      expect(x).toBeLessThan(band.width);
+      expect(x).toBeLessThan(W);
     }
   });
 
   it('keeps ranks in id order, so the back row does not shuffle', () => {
-    const band = bandFor(false);
     const ranked = ['q3', 'q1', 'q2'];
-    const x1 = homeSlot('q1', ranked, band, ranked).x;
-    const x2 = homeSlot('q2', ranked, band, ranked).x;
-    const x3 = homeSlot('q3', ranked, band, ranked).x;
+    const x1 = homeSlot('q1', ranked, 1000, ranked).x;
+    const x2 = homeSlot('q2', ranked, 1000, ranked).x;
+    const x3 = homeSlot('q3', ranked, 1000, ranked).x;
     expect(x1).toBeLessThan(x2);
     expect(x2).toBeLessThan(x3);
+  });
+});
+
+describe('homeSlot — measured width, not the nominal band width', () => {
+  it('keeps every ranked bobit inside a narrow phone band', () => {
+    // Regression: positioning against band.width (a nominal 1000) put most of a phone's back
+    // row past the right edge of a 340px canvas, so only a handful were ever visible.
+    const W = 340;
+    const ranked = Array.from({ length: 22 }, (_, i) => `q${String(i).padStart(2, '0')}`);
+    for (const id of ranked) {
+      const { x } = homeSlot(id, ranked, W, ranked);
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThan(W);
+    }
+  });
+
+  it('uses the whole of a wide desktop band', () => {
+    const W = 1440;
+    const ranked = Array.from({ length: 10 }, (_, i) => `q${i}`);
+    const xs = ranked.map(id => homeSlot(id, ranked, W, ranked).x);
+    expect(Math.max(...xs)).toBeGreaterThan(W * 0.85);
   });
 });
