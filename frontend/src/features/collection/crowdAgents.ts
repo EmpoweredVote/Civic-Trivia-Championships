@@ -12,6 +12,8 @@
  */
 import { initWander, wanderAdvance } from '../../components/bobbits/wanderReducer';
 import type { Wanderer, WanderState, Rand } from '../../components/bobbits/wanderReducer';
+import { slotOrder } from './crowdIdentity';
+import { slotPosition, CROWD_CAP } from './crowdLayout';
 import type { CrowdBand } from './crowdLayout';
 
 /**
@@ -138,4 +140,86 @@ export function agentAnim(a: Agent): string {
   if (a.activity === 'rank') return 'standstill';
   if (a.activity === 'moving') return 'stroll';
   return a.phase === 'walk' ? 'stroll' : 'standstill';
+}
+
+/**
+ * Who wanders and who stands.
+ *
+ * Recency decides the stage: the bobits you most recently earned are the ones moving around,
+ * which is what makes a big room feel like it is still about this match. Note this is the one
+ * place grant order is used -- POSITIONS still come from the id-sorted order (see homeSlot),
+ * so nothing reflows when a bobit is lost and re-earned.
+ */
+export function castFor(residents: string[], cast: number): { stage: string[]; rank: string[] } {
+  const shown = residents.slice(0, CROWD_CAP);
+  if (shown.length <= cast) return { stage: shown, rank: [] };
+  return {
+    stage: shown.slice(shown.length - cast),
+    rank: shown.slice(0, shown.length - cast),
+  };
+}
+
+/**
+ * Where a ranked bobit stands. Depth 1 puts him at the back of the band, behind the stage.
+ *
+ * Position comes from `slotPosition` over the ID-SORTED residents, exactly as the fixed-slot
+ * crowd did, so a bobit's house does not move when his neighbours change.
+ */
+export function homeSlot(id: string, residents: string[], band: CrowdBand) {
+  const order = slotOrder(residents).slice(0, CROWD_CAP);
+  const index = Math.max(0, order.indexOf(id));
+  const pos = slotPosition(index, order.length, band);
+  return { x: pos.x, depth: 1 };
+}
+
+/** The `moving`/`rank` target fields for a home slot, as a spreadable fragment. */
+function homeSlotTarget(id: string, residents: string[], band: CrowdBand) {
+  const home = homeSlot(id, residents, band);
+  return { x: home.x, targetX: home.x, targetDepth: home.depth };
+}
+
+/**
+ * Reconcile the agent set with the residents and the cast.
+ *
+ * Newcomers are born wandering. Anyone who left is dropped. Anyone on the wrong side of the
+ * cast line is set WALKING to the right side -- never moved there.
+ */
+export function syncCast(
+  state: AgentState, residents: string[], opts: AgentOpts, cast: number,
+): AgentState {
+  const { stage, rank } = castFor(residents, cast);
+  const onStage = new Set(stage);
+  const inRank = new Set(rank);
+  const out: AgentState = {};
+
+  for (const id of [...stage, ...rank]) {
+    const a = state[id];
+
+    if (!a) {
+      // A resident with no agent yet: seed one wandering where he stands.
+      const born = initAgents([id], opts)[id];
+      out[id] = inRank.has(id)
+        ? { ...born, activity: 'rank', depth: 1, ...homeSlotTarget(id, residents, opts.band) }
+        : born;
+      continue;
+    }
+
+    const wantsRank = inRank.has(id);
+    const isRanked = a.activity === 'rank' || (a.activity === 'moving' && a.targetDepth >= 1);
+
+    if (wantsRank && !isRanked) {
+      const home = homeSlot(id, residents, opts.band);
+      out[id] = { ...a, activity: 'moving', targetX: home.x, targetDepth: home.depth };
+      continue;
+    }
+
+    if (onStage.has(id) && isRanked) {
+      out[id] = { ...a, activity: 'moving', targetX: a.x, targetDepth: opts.rand() * 0.9 };
+      continue;
+    }
+
+    out[id] = a;
+  }
+
+  return out;
 }

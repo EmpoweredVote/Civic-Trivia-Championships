@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { initAgents, agentsAdvance } from '../crowdAgents';
+import { initAgents, agentsAdvance, castFor, homeSlot, syncCast } from '../crowdAgents';
 import type { AgentOpts } from '../crowdAgents';
-import { bandFor } from '../crowdLayout';
+import { bandFor, CROWD_CAP } from '../crowdLayout';
 import type { Rand } from '../../../components/bobbits/wanderReducer';
 
 function seq(values: number[]): Rand {
@@ -73,5 +73,78 @@ describe('agentsAdvance', () => {
     const before = JSON.parse(JSON.stringify(s0));
     agentsAdvance(s0, 0.5, OPTS());
     expect(s0).toEqual(before);
+  });
+});
+
+describe('castFor', () => {
+  it('puts everyone on stage while the room is small', () => {
+    const { stage, rank } = castFor(['a', 'b', 'c'], 24);
+    expect(stage).toEqual(['a', 'b', 'c']);
+    expect(rank).toEqual([]);
+  });
+
+  it('gives the stage to the MOST RECENT arrivals once the room outgrows the cast', () => {
+    const residents = Array.from({ length: 30 }, (_, i) => `q${i}`);   // grant order
+    const { stage, rank } = castFor(residents, 24);
+    expect(stage).toHaveLength(24);
+    expect(rank).toHaveLength(6);
+    expect(stage[stage.length - 1]).toBe('q29');
+    expect(rank).toEqual(['q0', 'q1', 'q2', 'q3', 'q4', 'q5']);
+  });
+
+  it('never exceeds the crowd cap', () => {
+    const residents = Array.from({ length: 140 }, (_, i) => `q${i}`);
+    const { stage, rank } = castFor(residents, 24);
+    expect(stage.length + rank.length).toBe(CROWD_CAP);
+  });
+});
+
+describe('homeSlot', () => {
+  it('derives a slot from the ID-SORTED order, not from grant order', () => {
+    // Same set, different grant order -> identical home slot. This is what stops a lost and
+    // re-earned bobit from moving everyone else's house.
+    const band = bandFor(false);
+    const a = homeSlot('q2', ['q1', 'q2', 'q3'], band);
+    const b = homeSlot('q2', ['q3', 'q1', 'q2'], band);
+    expect(a).toEqual(b);
+  });
+
+  it('puts ranked bobits at the back, behind the stage', () => {
+    const band = bandFor(false);
+    expect(homeSlot('q1', ['q1', 'q2'], band).depth).toBe(1);
+  });
+});
+
+describe('syncCast', () => {
+  it('adds an agent for a new resident', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    const s1 = syncCast(s0, ['a', 'b'], opts, 24);
+    expect(Object.keys(s1).sort()).toEqual(['a', 'b']);
+  });
+
+  it('drops an agent who is no longer a resident', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a', 'b'], opts);
+    const s1 = syncCast(s0, ['a'], opts, 24);
+    expect(Object.keys(s1)).toEqual(['a']);
+  });
+
+  it('demotes by WALKING, never by teleporting', () => {
+    const opts = OPTS();
+    const residents = ['a', 'b', 'c'];
+    const s0 = initAgents(residents, opts);
+    const s1 = syncCast(s0, residents, opts, 1);   // only 'c' keeps the stage
+    expect(s1.a.activity).toBe('moving');
+    expect(s1.a.x).toBe(s0.a.x);                   // has not moved yet
+    expect(s1.a.targetDepth).toBe(1);
+    expect(s1.c.activity).toBe('wander');
+  });
+
+  it('leaves an already-correct agent untouched', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    const s1 = syncCast(s0, ['a'], opts, 24);
+    expect(s1.a).toBe(s0.a);
   });
 });
