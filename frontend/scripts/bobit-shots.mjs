@@ -81,6 +81,87 @@ async function shoot(page, name) {
   console.log(`  shot: ${name}`);
 }
 
+
+/**
+ * A pose sheet: the new poses rendered large, whole-figure, so a person can see what they
+ * actually do. This is the check that catches a T-pose. `highfive` is drawn as a PAIR, facing
+ * each other at the distance the celebration actually pairs them at, because a high-five that
+ * looks fine alone can still miss its partner's hand.
+ */
+async function poseSheet(browser) {
+  const context = await browser.newContext({
+    viewport: { width: 1200, height: 900 }, deviceScaleFactor: 2,
+  });
+  const page = await context.newPage();
+  await mockApi(page);
+  await page.goto(BASE);
+
+  for (const theme of ['light', 'dark']) {
+    const buf = await page.evaluate(async (dark) => {
+      const rig = await import('/src/components/bobbits/leremyRig.ts');
+      const extras = await import('/src/components/bobbits/rigExtras.ts');
+      const { CFG, computePose, draw, drawShadow } = rig;
+      const { ALL_ANIMATIONS, figColor } = extras;
+
+      const W = 1200, H = 900, S = 1.1;
+      const canvas = document.createElement('canvas');
+      canvas.width = W * 2; canvas.height = H * 2;
+      const c = canvas.getContext('2d');
+      c.scale(2, 2);
+      c.fillStyle = dark ? '#0B1220' : '#F1F5F9';
+      c.fillRect(0, 0, W, H);
+      c.font = '13px system-ui, sans-serif';
+
+      const one = (key, x, y, t, vars, label) => {
+        const anim = ALL_ANIMATIONS[key];
+        const pose = anim.frame(t, vars);
+        const color = figColor(vars && vars.hand === 'L' ? 1 : 0, dark);
+        drawShadow(c, x, y, 16 * S);
+        c.save();
+        c.translate(x, y - 112 * S);
+        c.scale(S, S);
+        draw(c, computePose(pose, CFG, { x: 0, y: 0 }), CFG, { color });
+        c.restore();
+        if (label) {
+          c.fillStyle = dark ? '#94A3B8' : '#475569';
+          c.textAlign = 'center';
+          c.fillText(label, x, y + 22);
+        }
+      };
+
+      // Row 1: clap through one full cycle -- the hands must visibly meet and part.
+      [0, 0.07, 0.15, 0.22, 0.29].forEach((t, i) =>
+        one('clap', 120 + i * 150, 360, t, undefined, `clap t=${t}`));
+
+      // Row 2: high-five PAIRS at the real pairing distance (HIGHFIVE_REACH is 160 units).
+      [0, 0.1, 0.2].forEach((t, i) => {
+        const cx = 220 + i * 340;
+        one('highfive', cx - 55, 780, t, { hand: 'R' }, null);
+        one('highfive', cx + 55, 780, t, { hand: 'L' }, `highfive pair t=${t}`);
+      });
+
+      // Row 3 (right): the celebration ladder's other rungs, for comparison.
+      ['cheer', 'jump', 'dance'].forEach((k, i) =>
+        one(k, 900 + i * 110, 360, 0.3, undefined, k));
+
+      c.fillStyle = dark ? '#E2E8F0' : '#0F172A';
+      c.textAlign = 'left';
+      c.font = '600 15px system-ui, sans-serif';
+      c.fillText('clap cycle', 40, 40);
+      c.fillText('celebration ladder', 880, 40);
+      c.fillText('high-five pairs (do the hands meet?)', 40, 430);
+
+      return canvas.toDataURL('image/png').split(',')[1];
+    }, theme === 'dark');
+
+    const { writeFile } = await import('node:fs/promises');
+    await writeFile(`${OUT}/poses-${theme}.png`, Buffer.from(buf, 'base64'));
+    console.log(`  shot: poses-${theme}`);
+  }
+
+  await context.close();
+}
+
 async function run() {
   await mkdir(OUT, { recursive: true });
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
@@ -116,6 +197,8 @@ async function run() {
       await context.close();
     }
   }
+
+  await poseSheet(browser);
 
   await browser.close();
   console.log(`\nWrote shots to ${OUT}/. Now LOOK at them.`);

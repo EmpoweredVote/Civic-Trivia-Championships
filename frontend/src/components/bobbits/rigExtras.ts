@@ -130,14 +130,42 @@ export const EXTRA_ANIMATIONS: Record<string, Animation> = {
   // Hands meet in front of the chest and part again. Built on `present` rather than REST so
   // the torso keeps its slight forward address -- a clap from a ramrod-straight body reads as
   // a golf clap, which is the wrong note for a room celebrating you.
+  //
+  // BOTH angles are measured from the upper-body direction `ub`, not from each other: the
+  // forearm's angle is absolute, so it does NOT inherit the upper arm's. 0 deg points straight
+  // DOWN, +ve toward the viewer's right. The first draft read armRF as an elbow bend and used
+  // +96..+130, which swung both forearms past horizontal and produced a textbook T-POSE -- arms
+  // straight out to the sides, hands meeting at the fingertips. The joint tests passed it: they
+  // asserted the arms were symmetric and that the forearm angle travelled, and a T-pose
+  // satisfies both. A pose sheet caught it, exactly as the trophy-grip T-pose was caught.
+  //
+  // Tuned 2026-09-13 by solving for the hand gap over a grid (gap = hR.x - hL.x; 0 is hands
+  // touching, negative means they have crossed through each other):
+  //
+  //   armRU  armRF   hand.y   gap     note
+  //    58    +96..   --       --      the T-POSE; armRF read as an elbow bend
+  //    15    -80     44.8    -46.8    elbows pinned to the ribs, hands cross straight through
+  //    38    -50     58.5     +0.4    hands meet -- but at HIP height, elbows splayed: this
+  //                                   renders as hands-on-hips akimbo, not as clapping
+  //    26   -145      5.0     +0.9    hands meet at CHEST height, elbows down -- KEPT (closed)
+  //    26   -169      0.2     +31     the open end of the swing            -- KEPT (open)
+  //
+  // Note the counter-intuitive direction: pushing armRF FURTHER negative opens the hands
+  // rather than closing them, because past about -140 the forearm is swinging up toward
+  // vertical and the hand stops travelling inward. y=0 is the shoulder line, so hand.y near 5
+  // is upper chest and hand.y near 58 is the hip -- which is what made the second attempt read
+  // as akimbo despite the hands genuinely touching.
   clap: {
     label: "Clap", mood: "nice one",
     frame(t: number) {
       const p = ANIMATIONS.present.frame(t);
       const s = wave(t, 3.4);                 // fast: claps are quicker than a wave
-      const close = 18 + s * 16;
-      p.armRU = 58; p.armRF = 96 + close;
-      p.armLU = -58; p.armLF = -96 - close;
+      // Amplitude is set by VISIBILITY at band scale, not by anatomy: the band draws figures
+      // at scale 0.2, so a 17-unit hand travel is ~3px and reads as standing still. 25 units
+      // of forearm swing moves the hands ~6px, which is the least that reads as clapping.
+      const swing = -157 + s * 12;            // -169 apart .. -145 together
+      p.armRU = 26; p.armRF = swing;
+      p.armLU = -26; p.armLF = -swing;
       p.headTilt = -4 + s * 2;
       p.bob = p.bob - Math.abs(s) * 1.2;
       return p;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ALL_ANIMATIONS, EXTRA_ANIMATIONS, figColor, FIG_COLORS } from '../rigExtras';
-import { ANIMATIONS } from '../leremyRig';
+import { ANIMATIONS, computePose, CFG } from '../leremyRig';
 
 describe('EXTRA_ANIMATIONS', () => {
   it('holds exactly the seven CTC-only poses', () => {
@@ -53,12 +53,32 @@ describe('clap', () => {
     expect(ALL_ANIMATIONS.clap).toBeDefined();
   });
 
-  it('swings the forearms in and out over time', () => {
-    // A static "clap" is just a pose. The forearms must actually travel -- and they travel
-    // TOGETHER (mirrored), so comparing the two against each other measures nothing; the
-    // quantity that moves is each forearm's own angle across the cycle.
-    const samples = [0, 0.07, 0.15, 0.22, 0.29].map(t => ALL_ANIMATIONS.clap.frame(t).armRF);
-    expect(Math.max(...samples) - Math.min(...samples)).toBeGreaterThan(20);
+  it('is NOT a T-pose: the upper arms stay down at the sides', () => {
+    // The original clap passed every other assertion here while rendering as a crucifixion --
+    // arms straight out horizontally, hands touching at the fingertips. Symmetry and forearm
+    // travel are both satisfied by a T-pose, so neither could see it. This can: 0 deg is
+    // straight DOWN and 90 is horizontal, so an upper arm at or past 90 is the failure.
+    for (const t of [0, 0.07, 0.15, 0.22, 0.29]) {
+      const p = ALL_ANIMATIONS.clap.frame(t);
+      expect(Math.abs(p.armRU)).toBeLessThan(60);
+      expect(Math.abs(p.armLU)).toBeLessThan(60);
+    }
+  });
+
+  it('actually brings the two hands together, measured on the joints', () => {
+    // Angles are not positions. This solves the pose and checks the hands meet in front of
+    // the body rather than trusting that the numbers imply it.
+    const gapAt = (t: number) => {
+      const j = computePose(ALL_ANIMATIONS.clap.frame(t), CFG, { x: 0, y: 0 });
+      return j.hR.x - j.hL.x;
+    };
+    const samples = [0, 0.04, 0.07, 0.11, 0.15, 0.22, 0.29].map(gapAt);
+    const closed = Math.min(...samples.map(Math.abs));
+    const open = Math.max(...samples);
+    expect(closed).toBeLessThan(6);          // they meet
+    expect(open).toBeGreaterThan(12);        // and they part again
+    // Never cross through each other: hR is the viewer-right hand and must stay right of hL.
+    expect(Math.min(...samples)).toBeGreaterThan(-6);
   });
 
   it('keeps the two hands symmetric, so they meet instead of passing', () => {
