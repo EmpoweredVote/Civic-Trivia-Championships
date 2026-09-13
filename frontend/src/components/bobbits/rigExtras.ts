@@ -127,6 +127,46 @@ export const EXTRA_ANIMATIONS: Record<string, Animation> = {
       return p;
     },
   },
+  // Hands meet in front of the chest and part again. Built on `present` rather than REST so
+  // the torso keeps its slight forward address -- a clap from a ramrod-straight body reads as
+  // a golf clap, which is the wrong note for a room celebrating you.
+  clap: {
+    label: "Clap", mood: "nice one",
+    frame(t: number) {
+      const p = ANIMATIONS.present.frame(t);
+      const s = wave(t, 3.4);                 // fast: claps are quicker than a wave
+      const close = 18 + s * 16;
+      p.armRU = 58; p.armRF = 96 + close;
+      p.armLU = -58; p.armLF = -96 - close;
+      p.headTilt = -4 + s * 2;
+      p.bob = p.bob - Math.abs(s) * 1.2;
+      return p;
+    },
+  },
+  // One arm up and across, body leaning into the partner. PER-SIDE via AnimVars.hand, the
+  // same contract `greet` and `carryGrip` use: pass 'R' for the partner standing to the LEFT
+  // (he reaches right) and 'L' for the one standing to the right.
+  //
+  // The non-slapping arm deliberately keeps its hang. Mirroring both arms reads as surrender,
+  // not a high-five -- the same trap `carryGrip` documents at length, where the symmetric pose
+  // is the intuitive choice and the wrong one.
+  highfive: {
+    label: "High five", mood: "up top",
+    frame(t: number, v?: AnimVars) {
+      const p = clonePose(REST);
+      const s = wave(t, 2.6);
+      p.hunch = -6;
+      p.headTilt = -8;
+      if (v?.hand === 'L') {
+        p.lean = -9;
+        p.armLU = -132 - s * 5; p.armLF = -38 - s * 4;
+      } else {
+        p.lean = 9;
+        p.armRU = 132 + s * 5; p.armRF = 38 + s * 4;
+      }
+      return p;
+    },
+  },
   offer: {
     label: "Offer", mood: "pick a collection, any collection",
     frame(t: number) {
