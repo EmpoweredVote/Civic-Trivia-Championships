@@ -985,7 +985,9 @@ git commit -m "feat(bobits): add clap and highfive poses"
 - Modify: `frontend/src/features/collection/__tests__/crowdReducer.test.ts`
 
 **Interfaces:**
-- Consumes: `CrowdState`, `CELEBRATE_DUR` from `./crowdReducer`.
+- Consumes: **nothing from `./crowdReducer`.** `crowdReactions.ts` must stay free of that import,
+  because step 11 makes `crowdReducer.ts` import `RIPPLE_DUR` from here — importing back would
+  close a cycle. Pose selection takes plain numbers, not a `CrowdState`.
 - Produces:
   - `CELEBRATE_DUR = 2.4`, and a new `ripple: { from: string; t: number } | null` field on `CrowdState`, plus `RIPPLE_DUR = 1.5`.
   - `pairUp(agents: Array<{ id: string; x: number }>, maxGap: number): Array<[string, string]>`
@@ -1569,8 +1571,33 @@ In `CollectionCrowd.tsx`, alongside the existing `stateRef`, add:
 ```tsx
   const agentsRef = useRef<AgentState>({});
   const rotateRef = useRef(0);
-  // Seeded per mount so a room is reproducible in a screenshot run but varied between visits.
-  const randRef = useRef<Rand>(() => Math.random());
+  // Random by default; seedable via ?bobitSeed= so the screenshot sweep and the bench get the
+  // SAME room every run. Math.random cannot be seeded, and a verification pass that cannot
+  // reproduce its own input is not a verification pass.
+  const randRef = useRef<Rand>(makeRand(
+    new URLSearchParams(window.location.search).get('bobitSeed'),
+  ));
+```
+
+Add to `crowdAgents.ts`, exported, with a test that the same seed yields the same sequence and
+that a null seed still returns a working generator:
+
+```ts
+/**
+ * mulberry32 -- small, fast, dependency-free, and good enough for scattering a crowd.
+ * A null seed falls through to Math.random, which is what production wants.
+ */
+export function makeRand(seed: string | null): Rand {
+  if (!seed) return () => Math.random();
+  let a = 0;
+  for (let i = 0; i < seed.length; i++) a = Math.imul(a ^ seed.charCodeAt(i), 0x01000193) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 ```
 
 Import `AgentState`, `initAgents`, `agentsAdvance`, `syncCast`, `rotateCast`, `ROTATE_EVERY` from `./crowdAgents`, `WANDER_CAST`, `bandFor` from `./crowdLayout`, and `Rand` (type) from `../../components/bobbits/wanderReducer`.
