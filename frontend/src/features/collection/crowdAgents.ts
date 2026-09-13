@@ -223,3 +223,33 @@ export function syncCast(
 
   return out;
 }
+
+/** Seconds between cast rotations. Slow on purpose: this is background life, not an event. */
+export const ROTATE_EVERY = 20;
+
+/**
+ * Swap one ranked bobit onto the stage and one stage bobit back into the ranks.
+ *
+ * Without this the same faces hold the stage forever and a 90-bobit room looks staffed rather
+ * than populated. Both journeys are walked, like every other position change here.
+ *
+ * `elapsed` is seconds since the last rotation; the caller owns that clock. Returns the SAME
+ * reference when nothing happens, so callers can skip work on identity.
+ */
+export function rotateCast(state: AgentState, elapsed: number, opts: AgentOpts): AgentState {
+  if (elapsed < ROTATE_EVERY) return state;
+
+  const ids = Object.keys(state).sort();          // sorted: deterministic under test
+  const ranked = ids.filter(id => state[id].activity === 'rank');
+  const roaming = ids.filter(id => state[id].activity === 'wander');
+  if (!ranked.length || !roaming.length) return state;
+
+  const up = ranked[Math.floor(opts.rand() * ranked.length) % ranked.length];
+  const down = roaming[Math.floor(opts.rand() * roaming.length) % roaming.length];
+
+  return {
+    ...state,
+    [up]: { ...state[up], activity: 'moving', targetX: state[up].x, targetDepth: opts.rand() * 0.9 },
+    [down]: { ...state[down], activity: 'moving', targetX: state[down].x, targetDepth: 1 },
+  };
+}

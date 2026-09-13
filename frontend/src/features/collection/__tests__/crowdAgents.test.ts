@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { initAgents, agentsAdvance, castFor, homeSlot, syncCast } from '../crowdAgents';
+import {
+  initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY,
+} from '../crowdAgents';
 import type { AgentOpts } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
 import type { Rand } from '../../../components/bobbits/wanderReducer';
@@ -146,5 +148,37 @@ describe('syncCast', () => {
     const s0 = initAgents(['a'], opts);
     const s1 = syncCast(s0, ['a'], opts, 24);
     expect(s1.a).toBe(s0.a);
+  });
+});
+
+describe('rotateCast', () => {
+  const mixed = (opts: AgentOpts) => {
+    const s = initAgents(['a', 'b', 'c'], opts);
+    return {
+      ...s,
+      a: { ...s.a, activity: 'rank' as const, depth: 1 },
+      b: { ...s.b, activity: 'rank' as const, depth: 1 },
+    };
+  };
+
+  it('does nothing before the interval elapses', () => {
+    const opts = OPTS();
+    const s = mixed(opts);
+    expect(rotateCast(s, ROTATE_EVERY - 0.01, opts)).toBe(s);
+  });
+
+  it('sends one ranked bobit walking to the stage and one stage bobit back', () => {
+    const opts = OPTS();
+    const s = rotateCast(mixed(opts), ROTATE_EVERY, opts);
+    const moving = Object.values(s).filter(a => a.activity === 'moving');
+    expect(moving).toHaveLength(2);
+    expect(moving.some(a => a.targetDepth >= 1)).toBe(true);    // one heading back
+    expect(moving.some(a => a.targetDepth < 1)).toBe(true);     // one coming forward
+  });
+
+  it('does nothing when there are no ranks to rotate with', () => {
+    const opts = OPTS();
+    const s = initAgents(['a', 'b'], opts);
+    expect(rotateCast(s, ROTATE_EVERY, opts)).toBe(s);
   });
 });
