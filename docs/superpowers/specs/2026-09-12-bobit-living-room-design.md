@@ -403,3 +403,50 @@ without it neither building nor reviewing this is practical.
 - The large random entrance library.
 - Any change to question selection, scoring, or difficulty gating.
 - Server-side bobit progress (already shipped separately).
+
+---
+
+## Addendum: what plan 1 changed (2026-09-14)
+
+Plan 1 shipped and was watched running. Four things in this spec are now wrong, and plan 2
+builds on the corrected versions.
+
+**Depth is gone. One ground line.** The spec gave agents a `depth` 0-1 mapped across the lower
+60% of the band with a ±8% scale swing. It looked right standing still and broke in motion: the
+rig has no perspective gait, so a bobit changing station walked diagonally up the screen and
+read as sliding. Everyone now stands on one line at one size, as ev-landing does.
+`stageBounds`/`agentPlacement` remain as the seam if depth is ever wanted back.
+
+**The band is full-bleed and much shorter.** It shared the question card's max-width, penning
+the crowd into a column down the middle; it now spans the viewport. On one line it only has to
+clear a raised-arm pose, so it is **96px desktop / 72px mobile**, not 190/100.
+
+**There is a floor line.** A faded rule under the crowd. Not decoration: with depth gone the
+crowd had nothing to stand on, so `jump` — a real 48-unit lift — read as a wobble.
+
+**`WANDER_CAST` is derived, not fixed.** Measurement falsified the premise: the cast never
+constrained performance (100 wandering, celebrating, 4x throttled = 4.48ms against 16.7ms).
+Floor space constrains it, so it is `wanderCastFor(width, band)` — ~37 desktop, ~8 phone.
+
+### The consequence for plan 2, and the constraint that changes with it
+
+A 96px band leaves **54px of headroom** above a standing figure. A cannon arc across even a
+third of a full-bleed band (~630px) needs ~126px of rise to read as flight rather than as
+sliding. The set piece no longer fits in the room the living floor gave back.
+
+**Decided 2026-09-14 (Chris):** the band **grows while a set piece runs** (96 → ~240px,
+animated, ~11s) and shrinks back, pushing the question card up rather than overlapping it.
+
+**And the standing no-occlusion rule is relaxed, narrowly.** The rule from 2026-09-05 —
+"bobits must never cover the question card or any of the four answer options" — was written
+against a crowd that would otherwise *stand* in front of the answers. Chris asked for a figure
+to be able to **briefly fly in front of** the card during a set piece, which growing the band
+cannot do on its own: an overlay is required. The relaxation is bounded to:
+
+- **Transient only.** A figure passes through; nothing ever comes to rest over the card.
+- **Reveal phase only.** Never while the timer is running and the player is aiming at an answer.
+- **`pointer-events: none`.** It can never intercept a click meant for an answer or for Next.
+- **Set pieces only.** Ordinary arrivals and the pool entrances stay wholly inside the band.
+
+The original intent — the player can always read the question and hit the answer they want —
+is preserved by those four bounds. The crowd at rest still never occludes anything.
