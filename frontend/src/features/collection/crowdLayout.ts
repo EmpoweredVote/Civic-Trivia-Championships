@@ -66,7 +66,10 @@ export function slotPosition(index: number, total: number, band: CrowdBand) {
 export function bandFor(isMobile: boolean): CrowdBand {
   return {
     width: 1000,                      // nominal; figures are placed proportionally
-    height: isMobile ? 100 : 190,
+    // On one ground line the band only has to hold a figure plus its raised arms (240 units,
+    // ~48px at this scale) and a little air. The 190px a depth band needed would now be mostly
+    // empty sky, and that height comes straight out of the question card's allowance.
+    height: isMobile ? 72 : 96,
     scale: 0.2,
   };
 }
@@ -107,37 +110,37 @@ export function wanderCastFor(width: number, band: CrowdBand): number {
  * The figure itself is ~208 (pelvisOffset 112 + fieldGeometry's ABOVE_PELVIS 96), but `cheer`,
  * `jump` and `dance` put the arms overhead, well past the bounding box that only had to
  * contain a wave. 240 covers the raised-arm poses with a little air.
+ *
+ * Exported because it is what sizes the band now that everyone is on one line: the band has to
+ * be at least this tall or the celebration poses clip out of the top of the canvas.
  */
-const HEADROOM_UNITS = 240;
+export const HEADROOM_UNITS = 240;
 
 /**
- * The vertical span wandering agents occupy: the lower 60% of the band, but never so high
- * that a figure at the back is clipped by the top of the canvas.
+ * ONE GROUND LINE.
  *
- * The clamp is not theoretical. At mobile's 100px band the 40% line sits at 40px while a
- * figure stands ~42px tall, and the back row rendered with its heads sliced off flat. The
- * unit tests were green -- a screenshot caught it.
+ * The crowd used to occupy a depth band -- agents sat anywhere in the lower 60% and scaled
+ * with distance. It looked like a diorama standing still, but it broke down in motion: a bobit
+ * changing station walked diagonally UP the screen, and the rig has no perspective gait, so it
+ * read as sliding rather than walking away from you. ev-landing's figures share a single
+ * ground line for exactly this reason.
+ *
+ * So depth is flattened: everyone stands on the same line at the foot of the band, at the same
+ * size, and all movement is left and right. `stageBounds` and `agentPlacement` are kept as the
+ * seam -- restoring depth means giving these two a range again, and nothing else changes.
  */
 export function stageBounds(band: CrowdBand) {
-  const clearance = HEADROOM_UNITS * band.scale;
-  // Never let the clamp collapse the stage entirely: keep at least a third of the band
-  // walkable even on a very short one.
-  const top = Math.min(Math.max(band.height * 0.4, clearance), band.height * 0.67);
-  return { top, bottom: band.height };
+  const line = band.height - GROUND_INSET;
+  return { top: line, bottom: line };
 }
 
-/**
- * Where a wandering agent stands, from its depth.
- *
- * Depth exists because free wandering without it puts every agent on one horizontal line,
- * which reads as a conga queue rather than a crowd. The +/-8% scale swing is what sells it as
- * distance rather than as figures at different heights.
- */
-export function agentPlacement(depth: number, band: CrowdBand) {
-  const d = Math.min(1, Math.max(0, depth));
-  const { top, bottom } = stageBounds(band);
-  return {
-    groundY: bottom - d * (bottom - top),
-    scale: band.scale * (1.08 - 0.16 * d),
-  };
+/** px of air under the feet, so the shadow is not flush against the band's bottom edge. */
+const GROUND_INSET = 6;
+
+/** Where an agent stands. One ground line, one scale -- see stageBounds. */
+export function agentPlacement(_depth: number, band: CrowdBand) {
+  // Depth is ignored: one line, one size. The parameter stays so the call sites and the agent
+  // state do not have to change if depth ever comes back.
+  const { bottom } = stageBounds(band);
+  return { groundY: bottom, scale: band.scale };
 }

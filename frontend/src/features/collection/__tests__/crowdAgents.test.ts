@@ -316,3 +316,26 @@ describe('station changes are walked, never snapped', () => {
     }
   });
 });
+
+describe('initAgents — the room does not resolve into standoffs', () => {
+  it('does not alternate direction by index', () => {
+    // Alternating sends every adjacent pair straight at each other, and with the separation
+    // rule working they meet, yield, and stay put: a row of evenly spaced couples rather than
+    // a crowd. Random directions mean roughly half of any neighbouring pair walk the same way.
+    const ids = Array.from({ length: 24 }, (_, i) => `q${i}`);
+    const s = initAgents(ids, OPTS({ rand: makeRand('standoff') }));
+    let alternations = 0;
+    for (let i = 1; i < ids.length; i++) {
+      if (s[ids[i]].dir !== s[ids[i - 1]].dir) alternations++;
+    }
+    expect(alternations).toBeLessThan(ids.length - 4);
+  });
+
+  it('still points some each way, rather than marching the room one direction', () => {
+    const ids = Array.from({ length: 24 }, (_, i) => `q${i}`);
+    const s = initAgents(ids, OPTS({ rand: makeRand('spread') }));
+    const right = ids.filter(id => s[id].dir === 1).length;
+    expect(right).toBeGreaterThan(3);
+    expect(right).toBeLessThan(ids.length - 3);
+  });
+});

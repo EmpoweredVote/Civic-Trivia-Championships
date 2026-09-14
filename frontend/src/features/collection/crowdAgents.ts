@@ -101,10 +101,14 @@ export function initAgents(ids: string[], opts: AgentOpts): AgentState {
   const { width, rand } = opts;
   // Spread across the width rather than stacking at 0: a room that starts as a pile takes
   // several seconds of separation pressure to look like a room.
+  // Direction is RANDOM per bobit, not alternating by index. Alternating makes every adjacent
+  // pair walk straight at each other, so the room resolves into evenly spaced couples who meet,
+  // yield and stand there -- fifteen little standoffs in a row. It was invisible while the
+  // separation check was oscillating; fixing that made it obvious.
   const seeds = ids.map((id, i) => ({
     id,
     x: ((i + 0.5) / Math.max(1, ids.length)) * width,
-    dir: (i % 2 === 0 ? 1 : -1) as 1 | -1,
+    dir: (rand() < 0.5 ? -1 : 1) as 1 | -1,
   }));
   const wander = initWander(seeds, rand);
 

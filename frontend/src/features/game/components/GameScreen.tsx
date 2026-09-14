@@ -781,7 +781,10 @@ export function GameScreen({
         {/* The collection crowd. In flow, never an overlay: it must not cover the question or
             any answer option. flex-shrink-0 keeps the band its full height and lets the
             content column above it take the compression instead. */}
-        <div className="mx-auto w-full flex-shrink-0" style={{ maxWidth: 'clamp(700px, 55vw, 1500px)' }}>
+        {/* FULL BLEED, unlike the question column above it: the crowd gets the whole viewport
+            width to walk in. Sharing the card's max-width penned them into a column down the
+            middle with empty margins either side. */}
+        <div className="w-full flex-shrink-0">
           <CollectionCrowd
             slug={state.collectionSlug}
             darkMode={darkMode}

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   slotPosition, rowsFor, CROWD_CAP, bandFor, stageBounds, agentPlacement, wanderCastFor,
+  HEADROOM_UNITS,
 } from '../crowdLayout';
 import { MIN_SEPARATION } from '../../../components/bobbits/wanderReducer';
 
@@ -71,16 +72,13 @@ describe('slotPosition', () => {
 });
 
 describe('bandFor', () => {
-  it('gives desktop a 190px band at the held 0.2 scale', () => {
-    const b = bandFor(false);
-    expect(b.height).toBe(190);
-    expect(b.scale).toBeCloseTo(0.2, 5);
+  it('draws both form factors at the same 0.2 scale', () => {
+    expect(bandFor(false).scale).toBeCloseTo(0.2, 5);
+    expect(bandFor(true).scale).toBeCloseTo(0.2, 5);
   });
 
-  it('gives mobile a 100px band at the enlarged 0.20 scale', () => {
-    const b = bandFor(true);
-    expect(b.height).toBe(100);
-    expect(b.scale).toBeCloseTo(0.2, 5);
+  it('gives desktop a little more air than mobile', () => {
+    expect(bandFor(false).height).toBeGreaterThan(bandFor(true).height);
   });
 
   it('keeps the nominal 1000px width both ways -- figures are placed proportionally', () => {
@@ -88,43 +86,46 @@ describe('bandFor', () => {
     expect(bandFor(true).width).toBe(1000);
   });
 
-  it('is deep enough for four bobit-heights on desktop', () => {
-    // A standing figure is 195 rig units tall.
-    const b = bandFor(false);
-    expect(b.height / (195 * b.scale)).toBeGreaterThan(4);
+  it('is tall enough for a figure with its arms up, and not much taller', () => {
+    // One ground line, so the band only needs to clear a raised-arm pose. Anything beyond that
+    // is empty sky taken out of the question card's allowance.
+    for (const mobile of [true, false]) {
+      const b = bandFor(mobile);
+      expect(b.height).toBeGreaterThanOrEqual(HEADROOM_UNITS * b.scale);
+      expect(b.height).toBeLessThan(HEADROOM_UNITS * b.scale * 2.2);
+    }
   });
 });
 
 describe('stageBounds', () => {
-  it('gives the stage the lower 60% of the band', () => {
+  it('collapses to a single ground line', () => {
     const b = bandFor(false);
     const s = stageBounds(b);
-    expect(s.bottom).toBe(b.height);
-    expect(s.top).toBeCloseTo(b.height * 0.4, 5);
+    expect(s.top).toBe(s.bottom);
+  });
+
+  it('keeps that line inside the band, clear of the bottom edge', () => {
+    for (const mobile of [true, false]) {
+      const b = bandFor(mobile);
+      const s = stageBounds(b);
+      expect(s.bottom).toBeLessThan(b.height);
+      expect(s.bottom).toBeGreaterThan(0);
+    }
   });
 });
 
 describe('agentPlacement', () => {
-  it('puts depth 0 at the front of the stage and depth 1 at the back', () => {
+  it('ignores depth entirely -- one line, one size', () => {
     const b = bandFor(false);
-    const front = agentPlacement(0, b);
-    const back = agentPlacement(1, b);
-    expect(front.groundY).toBeCloseTo(stageBounds(b).bottom, 5);
-    expect(back.groundY).toBeCloseTo(stageBounds(b).top, 5);
-    expect(back.groundY).toBeLessThan(front.groundY);   // further back sits higher
+    const a = agentPlacement(0, b);
+    for (const d of [-1, 0.25, 0.5, 1, 2]) {
+      expect(agentPlacement(d, b)).toEqual(a);
+    }
   });
 
-  it('scales nearer figures up and further ones down, by +/-8%', () => {
+  it('stands everyone on the stage line', () => {
     const b = bandFor(false);
-    expect(agentPlacement(0, b).scale).toBeCloseTo(b.scale * 1.08, 5);
-    expect(agentPlacement(1, b).scale).toBeCloseTo(b.scale * 0.92, 5);
-    expect(agentPlacement(0.5, b).scale).toBeCloseTo(b.scale, 5);
-  });
-
-  it('clamps depth rather than trusting its caller', () => {
-    const b = bandFor(false);
-    expect(agentPlacement(-1, b).groundY).toBeCloseTo(agentPlacement(0, b).groundY, 5);
-    expect(agentPlacement(2, b).groundY).toBeCloseTo(agentPlacement(1, b).groundY, 5);
+    expect(agentPlacement(0.4, b).groundY).toBe(stageBounds(b).bottom);
   });
 });
 
@@ -160,23 +161,48 @@ describe('stageBounds — nobody is clipped by the top of the band', () => {
   // raised-arm celebration poses go higher still.
   const FIGURE_UNITS = 208;
 
-  it('leaves a whole figure above the back of the stage on mobile', () => {
-    const b = bandFor(true);
-    const back = agentPlacement(1, b);
-    expect(back.groundY).toBeGreaterThanOrEqual(FIGURE_UNITS * back.scale);
-  });
-
-  it('leaves a whole figure above the back of the stage on desktop', () => {
-    const b = bandFor(false);
-    const back = agentPlacement(1, b);
-    expect(back.groundY).toBeGreaterThanOrEqual(FIGURE_UNITS * back.scale);
-  });
-
-  it('still leaves a usable stage after clamping', () => {
+  it('leaves a whole figure above the ground line, both form factors', () => {
     for (const mobile of [true, false]) {
       const b = bandFor(mobile);
-      const s = stageBounds(b);
-      expect(s.bottom - s.top).toBeGreaterThan(b.height * 0.3);
+      const a = agentPlacement(0, b);
+      expect(a.groundY).toBeGreaterThanOrEqual(FIGURE_UNITS * a.scale);
+    }
+  });
+
+  it('leaves the whole figure inside the band', () => {
+    for (const mobile of [true, false]) {
+      const b = bandFor(mobile);
+      const { groundY, scale } = agentPlacement(0, b);
+      expect(groundY).toBeGreaterThanOrEqual(HEADROOM_UNITS * scale);
+      expect(groundY).toBeLessThanOrEqual(b.height);
+    }
+  });
+});
+
+describe('one ground line', () => {
+  it('stands every agent on the same line, whatever its depth', () => {
+    const b = bandFor(false);
+    const ys = [0, 0.25, 0.5, 0.75, 1].map(d => agentPlacement(d, b).groundY);
+    expect(new Set(ys).size).toBe(1);
+  });
+
+  it('draws every agent at the same size, so nobody reads as further away', () => {
+    const b = bandFor(false);
+    const scales = [0, 0.5, 1].map(d => agentPlacement(d, b).scale);
+    expect(new Set(scales)).toEqual(new Set([b.scale]));
+  });
+
+  it('leaves the feet clear of the very bottom edge', () => {
+    for (const mobile of [true, false]) {
+      const b = bandFor(mobile);
+      expect(agentPlacement(0, b).groundY).toBeLessThan(b.height);
+    }
+  });
+
+  it('is still tall enough that a raised-arm celebration does not clip', () => {
+    for (const mobile of [true, false]) {
+      const b = bandFor(mobile);
+      expect(agentPlacement(0, b).groundY).toBeGreaterThanOrEqual(HEADROOM_UNITS * b.scale);
     }
   });
 });

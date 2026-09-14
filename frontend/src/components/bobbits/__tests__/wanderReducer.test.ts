@@ -162,3 +162,69 @@ describe('wanderAnim', () => {
     expect(wanderAnim({ x: 0, dir: 1, phase: 'pause', t: 0, next: 3 })).toBe('standstill');
   });
 });
+
+describe('yielding to someone in the way', () => {
+  /**
+   * Two figures walking straight at each other, starting OUTSIDE the minimum gap so the
+   * separation rule is what stops them. Seeding them already inside it tests nothing: the rule
+   * prevents closing, it does not push apart figures that were placed too close to begin with.
+   */
+  const converging = () => initWander(
+    [{ id: 'a', x: 100, dir: 1 }, { id: 'b', x: 100 + MIN_SEPARATION + 60, dir: -1 }],
+    seq([0.5]),
+  );
+
+  it('does not flip direction every frame when hemmed in on both sides', () => {
+    // The bug: the separation check broke on the FIRST blocker in id order rather than the
+    // nearest, so a figure between two others got a different blocker on alternating frames
+    // and reversed on each one. A figure is drawn mirrored by its direction, so that renders
+    // as a stick figure vibrating on the spot.
+    let s = initWander([
+      { id: 'a', x: 100, dir: 1 },
+      { id: 'mid', x: 108, dir: 1 },
+      { id: 'c', x: 116, dir: -1 },
+    ], seq([0.5]));
+
+    const dirs: number[] = [];
+    for (let i = 0; i < 40; i++) {
+      s = wanderAdvance(s, 1 / 60, OPTS({ scale: 1 }));
+      dirs.push(s.mid.dir);
+    }
+    let flips = 0;
+    for (let i = 1; i < dirs.length; i++) if (dirs[i] !== dirs[i - 1]) flips++;
+    expect(flips).toBeLessThanOrEqual(2);
+  });
+
+  it('stops rather than walking through, and never closes inside the gap', () => {
+    let s = converging();
+    let closest = Infinity;
+    for (let i = 0; i < 120; i++) {
+      s = wanderAdvance(s, 1 / 60, OPTS({ scale: 1 }));
+      closest = Math.min(closest, Math.abs(s.a.x - s.b.x));
+    }
+    // One frame of travel (~1.7px each at this speed) of tolerance: the check runs after the
+    // step, so the pair can be a single frame inside the line before they yield.
+    expect(closest).toBeGreaterThan(MIN_SEPARATION - 5);
+  });
+
+  it('pauses on the yield, so it reads as noticing somebody', () => {
+    let s = converging();
+    for (let i = 0; i < 30; i++) s = wanderAdvance(s, 1 / 60, OPTS({ scale: 1 }));
+    expect([s.a.phase, s.b.phase]).toContain('pause');
+  });
+
+  it('keeps the direction the yield chose instead of re-rolling back into them', () => {
+    // Leaving an ordinary pause rolls a fresh direction; leaving a yield must not, or half the
+    // time the figure turns straight back into whoever it just stopped for.
+    let s = converging();
+    for (let i = 0; i < 30; i++) s = wanderAdvance(s, 1 / 60, OPTS({ scale: 1 }));
+    const yielded = s.a.phase === 'pause' ? s.a : s.b;
+    const away = yielded.dir;
+    // rand() = 0 would otherwise pick dir -1 on the way out of the pause.
+    let t = { x: yielded } as unknown as WanderState;
+    t = { x: { ...yielded, t: yielded.next } };
+    const out = wanderAdvance(t, 1 / 60, OPTS({ scale: 1, rand: seq([0]) }));
+    expect(out.x.phase).toBe('walk');
+    expect(out.x.dir).toBe(away);
+  });
+});
