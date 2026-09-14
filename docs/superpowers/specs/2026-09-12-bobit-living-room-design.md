@@ -434,10 +434,11 @@ A 96px band leaves **54px of headroom** above a standing figure. A cannon arc ac
 third of a full-bleed band (~630px) needs ~126px of rise to read as flight rather than as
 sliding. The set piece no longer fits in the room the living floor gave back.
 
-**Decided 2026-09-14 (Chris):** the band **grows while a set piece runs** (96 → ~240px,
-animated, ~11s) and shrinks back, pushing the question card up rather than overlapping it.
+**Decided 2026-09-14 (Chris):** the band does **not** change size, and the layout does not
+move. The landscape keeps its shape; what changes is the rule about what may pass in front of
+it. An overlay layer carries the parts of a set piece that need altitude.
 
-**And the standing no-occlusion rule is relaxed, narrowly.** The rule from 2026-09-05 —
+**So the standing no-occlusion rule is relaxed, narrowly.** The rule from 2026-09-05 —
 "bobits must never cover the question card or any of the four answer options" — was written
 against a crowd that would otherwise *stand* in front of the answers. Chris asked for a figure
 to be able to **briefly fly in front of** the card during a set piece, which growing the band
@@ -450,3 +451,16 @@ cannot do on its own: an overlay is required. The relaxation is bounded to:
 
 The original intent — the player can always read the question and hit the answer they want —
 is preserved by those four bounds. The crowd at rest still never occludes anything.
+
+### Two layers
+
+The band canvas keeps the crowd, unchanged, at its own 96/72px. A second **overlay canvas**
+spans the game area above it, `pointer-events: none`, non-interactive, and empty except while a
+set piece has something in the air.
+
+One coordinate system spans both, so an arc is continuous across the handoff: a point at band-y
+`yb` is at overlay-y `overlayHeight - bandHeight + yb`. A figure is drawn on exactly one layer
+at a time — the director marks it `ground` or `air` — so nothing is ever painted twice.
+
+This is what lets the cannon fire a bobit up over the question card and back down into the
+crowd without the layout moving a pixel.
