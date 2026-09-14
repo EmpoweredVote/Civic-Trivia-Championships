@@ -192,6 +192,28 @@ export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): A
   return out;
 }
 
+/**
+ * Re-spread a room across a new width, proportionally.
+ *
+ * Agents are seeded before the field has measured itself, so they are laid out against the
+ * NOMINAL band width and then live in a canvas that is a different size -- which left a
+ * full-bleed desktop band with its whole crowd bunched into the left two thirds. Also covers
+ * an actual resize, where the alternative is everyone clinging to the old edge.
+ *
+ * Proportional, so the room keeps its shape rather than being reshuffled.
+ */
+export function rescaleTo(state: AgentState, fromWidth: number, toWidth: number): AgentState {
+  if (!(fromWidth > 0) || !(toWidth > 0)) return state;
+  const k = toWidth / fromWidth;
+  if (Math.abs(k - 1) < 0.02) return state;      // ignore sub-pixel jitter from the observer
+  const out: AgentState = {};
+  for (const id of Object.keys(state)) {
+    const a = state[id];
+    out[id] = { ...a, x: a.x * k, fromX: a.fromX * k, targetX: a.targetX * k };
+  }
+  return out;
+}
+
 /** Which rig animation an agent plays from its own activity alone. */
 export function agentAnim(a: Agent): string {
   if (a.activity === 'rank') return 'standstill';

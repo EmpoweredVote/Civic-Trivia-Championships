@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY, makeRand,
-  startMove, MOVE_MIN_SEC,
+  startMove, MOVE_MIN_SEC, rescaleTo,
 } from '../crowdAgents';
 import type { AgentOpts, AgentState } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
@@ -337,5 +337,45 @@ describe('initAgents — the room does not resolve into standoffs', () => {
     const right = ids.filter(id => s[id].dir === 1).length;
     expect(right).toBeGreaterThan(3);
     expect(right).toBeLessThan(ids.length - 3);
+  });
+});
+
+describe('rescaleTo', () => {
+  it('spreads a room seeded at the nominal width across the real one', () => {
+    // Agents are seeded before the field measures itself, so they are laid out against the
+    // nominal 1000 and then live in a canvas that may be 1900 wide. Without this the whole
+    // crowd sat in the left two thirds of a full-bleed band.
+    const ids = Array.from({ length: 10 }, (_, i) => `q${i}`);
+    const s = initAgents(ids, OPTS({ width: 1000 }));
+    const wide = rescaleTo(s, 1000, 2000);
+    expect(Math.max(...ids.map(i => wide[i].x))).toBeGreaterThan(1500);
+  });
+
+  it('keeps the room in the same relative shape', () => {
+    const ids = ['a', 'b', 'c'];
+    const s = initAgents(ids, OPTS({ width: 1000 }));
+    const before = ids.map(i => s[i].x);
+    const after = ids.map(i => rescaleTo(s, 1000, 2500)[i].x);
+    for (let i = 0; i < ids.length; i++) expect(after[i]).toBeCloseTo(before[i] * 2.5, 5);
+  });
+
+  it('carries a walk in progress with it, so nobody is left heading off-canvas', () => {
+    const opts = OPTS({ width: 1000 });
+    const s0 = initAgents(['a'], opts);
+    const moving = { a: startMove(s0.a, 900, 1, opts) };
+    const wide = rescaleTo(moving, 1000, 2000);
+    expect(wide.a.targetX).toBeCloseTo(1800, 5);
+    expect(wide.a.fromX).toBeCloseTo(moving.a.fromX * 2, 5);
+  });
+
+  it('ignores sub-pixel jitter from the resize observer', () => {
+    const s = initAgents(['a'], OPTS());
+    expect(rescaleTo(s, 1000, 1005)).toBe(s);
+  });
+
+  it('refuses nonsense widths rather than producing NaN positions', () => {
+    const s = initAgents(['a'], OPTS());
+    expect(rescaleTo(s, 0, 1000)).toBe(s);
+    expect(rescaleTo(s, 1000, 0)).toBe(s);
   });
 });

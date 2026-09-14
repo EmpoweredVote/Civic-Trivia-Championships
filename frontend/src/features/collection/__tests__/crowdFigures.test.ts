@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { crowdFigures, overflowCount } from '../crowdFigures';
-import { crowdInit, crowdApply } from '../crowdReducer';
+import { crowdInit, crowdApply, crowdStep, ARRIVAL_DUR } from '../crowdReducer';
 import { initAgents } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
 import type { AgentOpts } from '../crowdAgents';
@@ -111,5 +111,38 @@ describe('crowdFigures — the cap', () => {
     const idsOf = (a: typeof forward) =>
       crowdFigures(state, a, BAND, false).map(f => f.id).sort();
     expect(idsOf(forward)).toEqual(idsOf(backward));
+  });
+});
+
+describe('arrival', () => {
+  it('waves hello instead of celebrating itself', () => {
+    // Regression: the reducer tracked the arrival window all along, but the translator stopped
+    // reading it, so a newly earned bobit just materialised and stood there.
+    const ids = ['a'];
+    const agents = initAgents(ids, OPTS);
+    const state = crowdApply(crowdInit(), { type: 'correct', id: 'a', streak: 3 });
+    expect(state.arriving.a).toBeDefined();
+    expect(crowdFigures(state, agents, BAND, false)[0].anim).toBe('friendly');
+  });
+
+  it('stops waving once the arrival window closes, and joins the room', () => {
+    const ids = ['a', 'b'];
+    const agents = initAgents(ids, OPTS);
+    let state = crowdApply(crowdInit(), { type: 'seed', ids: ['b'] });
+    state = crowdApply(state, { type: 'correct', id: 'a', streak: 3 });
+    const settled = crowdStep(state, ARRIVAL_DUR + 0.01);
+    expect(settled.arriving.a).toBeUndefined();
+    expect(crowdFigures(settled, agents, BAND, false)
+      .find(f => f.id === 'a')!.anim).not.toBe('friendly');
+  });
+
+  it('never overrides the abduction -- a victim is a victim', () => {
+    const ids = ['a'];
+    const agents = initAgents(ids, OPTS);
+    const state = {
+      ...crowdApply(crowdInit(), { type: 'correct', id: 'a', streak: 1 }),
+      loss: { id: 'a', phase: 'rising' as const, t: 0 },
+    };
+    expect(crowdFigures(state, agents, BAND, false)[0].anim).toBe('fall');
   });
 });

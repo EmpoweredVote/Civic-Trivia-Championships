@@ -68,6 +68,14 @@ export function crowdFigures(
 
     if (victim) {
       anim = 'fall';                                   // limp, being lifted
+    } else if (state.arriving[id] !== undefined) {
+      // Just turned up: he waves hello rather than joining the applause for himself. The ROOM
+      // celebrates him -- that is the difference between a new bobit and one you already had.
+      //
+      // The reducer has always tracked this window; the agents rewrite stopped reading it, so
+      // newcomers simply appeared for a while. The proper entrances (smoke, the flash, the
+      // cannon) replace this branch in plan 2 -- until then a wave beats materialising.
+      anim = 'friendly';
     } else if (celebrating) {
       const pose = celebrationPose(
         state.celebrateT, state.celebrating, state.celebrant === id, hands.get(id) ?? null,

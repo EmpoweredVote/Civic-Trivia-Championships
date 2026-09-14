@@ -9,9 +9,9 @@ import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
 import { crowdFigures, overflowCount } from './crowdFigures';
-import { bandFor, CROWD_CAP, wanderCastFor } from './crowdLayout';
+import { bandFor, CROWD_CAP, wanderCastFor, groundLineFromBottom } from './crowdLayout';
 import {
-  initAgents, agentsAdvance, syncCast, rotateCast, makeRand,
+  initAgents, agentsAdvance, syncCast, rotateCast, makeRand, rescaleTo,
 } from './crowdAgents';
 import type { AgentState } from './crowdAgents';
 import type { Rand } from '../../components/bobbits/wanderReducer';
@@ -51,6 +51,9 @@ export function CollectionCrowd({
   const stateRef = useRef<CrowdState>(crowdInit());
   const agentsRef = useRef<AgentState>({});
   const rotateRef = useRef(0);
+  // The width the current layout was built for. Agents are seeded before the field has measured
+  // itself, so this starts nominal and is corrected on the first real frame.
+  const laidOutAtRef = useRef(0);
   // Random by default; seedable via ?bobitSeed= so the screenshot sweep and the bench get the
   // SAME room every run. Math.random cannot be seeded, and a verification pass that cannot
   // reproduce its own input is not a verification pass.
@@ -93,6 +96,7 @@ export function CollectionCrowd({
         { band, width: band.width, greeting: new Set(), frozen: false, rand: randRef.current },
       );
       rotateRef.current = 0;
+      laidOutAtRef.current = band.width;
       setOverflow(overflowCount(stateRef.current));
     };
 
@@ -134,6 +138,13 @@ export function CollectionCrowd({
     if (!reducedMotion) {
       stateRef.current = crowdStep(stateRef.current, dt);
 
+      // First real frame (and any resize): spread the room over the width it actually has.
+      const measured = width || band.width;
+      if (laidOutAtRef.current && measured !== laidOutAtRef.current) {
+        agentsRef.current = rescaleTo(agentsRef.current, laidOutAtRef.current, measured);
+        laidOutAtRef.current = measured;
+      }
+
       const opts = {
         band,
         width: width || band.width,
@@ -165,6 +176,25 @@ export function CollectionCrowd({
 
   return (
     <div style={{ position: 'relative', width: '100%', flexShrink: 0 }}>
+      {/* The floor.
+          Behind the canvas, so figures and their shadows sit ON it. It is not decoration: with
+          depth gone the crowd had nothing to stand on, which is why a jump -- a real 48-unit
+          lift in the rig -- read as a wobble rather than as leaving the ground. It also gives
+          the eye something to separate figures against when they pass in front of each other.
+          Faded at both ends because the band is full-bleed and a hard rule edge to edge would
+          read as a divider. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute', left: 0, right: 0,
+          bottom: groundLineFromBottom(), height: 1, pointerEvents: 'none',
+          background: `linear-gradient(90deg, transparent, ${
+            darkMode ? 'rgba(148,163,184,0.42)' : 'rgba(71,85,105,0.38)'
+          } 8%, ${
+            darkMode ? 'rgba(148,163,184,0.42)' : 'rgba(71,85,105,0.38)'
+          } 92%, transparent)`,
+        }}
+      />
       <BobitField figures={[]} figuresFor={figuresFor} height={height} interactive />
       {overflow > 0 && (
         <span

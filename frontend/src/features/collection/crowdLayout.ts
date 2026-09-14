@@ -137,6 +137,14 @@ export function stageBounds(band: CrowdBand) {
 /** px of air under the feet, so the shadow is not flush against the band's bottom edge. */
 const GROUND_INSET = 6;
 
+/**
+ * The y the crowd stands on, measured from the BOTTOM of the band -- the form a CSS `bottom`
+ * wants, so the floor line and the figures cannot drift apart.
+ */
+export function groundLineFromBottom(): number {
+  return GROUND_INSET;
+}
+
 /** Where an agent stands. One ground line, one scale -- see stageBounds. */
 export function agentPlacement(_depth: number, band: CrowdBand) {
   // Depth is ignored: one line, one size. The parameter stays so the call sites and the agent
