@@ -5,7 +5,7 @@ import { agentPlacement, CROWD_CAP } from './crowdLayout';
 import type { CrowdBand } from './crowdLayout';
 import { agentAnim } from './crowdAgents';
 import type { AgentState } from './crowdAgents';
-import { celebrationPose, ripplePose, pairUp } from './crowdReactions';
+import { celebrationPose, ripplePose, pairUp, reactionOffset } from './crowdReactions';
 import { isStunned, LOSS_RISE } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
 
@@ -71,6 +71,7 @@ export function crowdFigures(
     } else if (celebrating) {
       const pose = celebrationPose(
         state.celebrateT, state.celebrating, state.celebrant === id, hands.get(id) ?? null,
+        reactionOffset(hashId(id)),
       );
       if (pose.anim) {
         anim = pose.anim;

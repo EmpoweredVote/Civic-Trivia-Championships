@@ -51,6 +51,30 @@ export function pairUp(
   return pairs;
 }
 
+/**
+ * How far apart, in seconds, the room's reactions are allowed to spread.
+ *
+ * Without this every bobit changed pose on the same frame: the whole room went cheer -> clap
+ * -> high-five in lockstep, which reads as choreography rather than as a crowd reacting. Each
+ * bobit gets a stable offset inside this window, so the reaction spatters across the room.
+ *
+ * Note the sub-rhythms were ALREADY desynced -- the field paints each figure at `t + phase`,
+ * so no two were clapping on the same beat. What gave the parade-ground look was every bobit
+ * ENTERING the clap at the same instant. Timing the rhythm and timing the transition are two
+ * different things.
+ */
+export const REACTION_SPREAD = 0.55;
+
+/**
+ * A stable per-bobit offset inside the spread window.
+ *
+ * Derived from the id, like every other per-bobit property here, so a given bobit always
+ * reacts on his own beat rather than jittering frame to frame.
+ */
+export function reactionOffset(hash: number): number {
+  return ((hash >>> 7) % 1000) / 1000 * REACTION_SPREAD;
+}
+
 /** Phase boundaries within a celebration, in seconds from its start. */
 const CHEER_UNTIL = 0.8;
 const CLAP_UNTIL = 1.6;
@@ -84,13 +108,17 @@ function openingFor(tier: number): string {
  */
 export function celebrationPose(
   elapsed: number, tier: number, isCelebrant: boolean, paired: 'R' | 'L' | null,
+  offset = 0,
 ): { anim: string | null; hand?: 'R' | 'L' } {
-  if (tier <= 0 || elapsed >= HIGHFIVE_UNTIL) return { anim: null };
+  // The celebrant leads: the answer is his, so he reacts first and the room follows him.
+  const spent = isCelebrant ? elapsed : elapsed - offset;
+  // Before his turn, or after his chain is done, he is back to his own business.
+  if (tier <= 0 || spent < 0 || spent >= HIGHFIVE_UNTIL) return { anim: null };
 
-  if (elapsed < CHEER_UNTIL) {
+  if (spent < CHEER_UNTIL) {
     return { anim: openingFor(isCelebrant ? Math.min(5, tier + 1) : tier) };
   }
-  if (elapsed < CLAP_UNTIL) return { anim: 'clap' };
+  if (spent < CLAP_UNTIL) return { anim: 'clap' };
   if (!paired) return { anim: 'jump' };
   return { anim: 'highfive', hand: paired };
 }

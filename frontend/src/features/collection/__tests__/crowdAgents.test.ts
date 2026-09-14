@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY, makeRand,
+  startMove, MOVE_MIN_SEC,
 } from '../crowdAgents';
-import type { AgentOpts } from '../crowdAgents';
+import type { AgentOpts, AgentState } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
 import type { Rand } from '../../../components/bobbits/wanderReducer';
 
@@ -256,5 +257,62 @@ describe('homeSlot — measured width, not the nominal band width', () => {
     const ranked = Array.from({ length: 10 }, (_, i) => `q${i}`);
     const xs = ranked.map(id => homeSlot(id, ranked, W, ranked).x);
     expect(Math.max(...xs)).toBeGreaterThan(W * 0.85);
+  });
+});
+
+describe('station changes are walked, never snapped', () => {
+  it('takes a real walk even when only the DEPTH changes', () => {
+    // Regression: a move with no horizontal distance completed on its first frame, so a bobit
+    // jumped vertically between the stage and the ranks. That is the "odd walking up and down".
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    const front = { ...s0.a, depth: 0 };            // pin the start so the assertion is exact
+    const moving = { a: startMove(front, front.x, 1, opts) };
+    const after = agentsAdvance(moving, 1 / 60, opts);
+    expect(after.a.activity).toBe('moving');
+    expect(after.a.depth).toBeLessThan(0.1);        // barely started, nowhere near arrived
+  });
+
+  it('never finishes a station change faster than the minimum walk', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    let state: AgentState = { a: startMove(s0.a, s0.a.x, 1, opts) };
+    let elapsed = 0;
+    while (state.a.activity === 'moving' && elapsed < 10) {
+      state = agentsAdvance(state, 1 / 60, opts);
+      elapsed += 1 / 60;
+    }
+    expect(elapsed).toBeGreaterThanOrEqual(MOVE_MIN_SEC - 0.05);
+    expect(state.a.activity).toBe('rank');
+    expect(state.a.depth).toBe(1);
+  });
+
+  it('eases rather than moving at a constant rate', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    let state: AgentState = { a: startMove(s0.a, s0.a.x + 300, 1, opts) };
+    const at: number[] = [];
+    for (let i = 0; i < 90; i++) {
+      state = agentsAdvance(state, 1 / 60, opts);
+      at.push(state.a.x);
+    }
+    const early = Math.abs(at[3] - at[2]);
+    const middle = Math.abs(at[45] - at[44]);
+    expect(middle).toBeGreaterThan(early);     // accelerates out of a standstill
+  });
+
+  it('rotation sends both travellers across real ground, not straight up or down', () => {
+    const opts = OPTS();
+    const base = initAgents(['a', 'b', 'c'], opts);
+    const mixed = {
+      ...base,
+      a: { ...base.a, activity: 'rank' as const, depth: 1 },
+      b: { ...base.b, activity: 'rank' as const, depth: 1 },
+    };
+    const s = rotateCast(mixed, ROTATE_EVERY, opts);
+    for (const a of Object.values(s)) {
+      if (a.activity !== 'moving') continue;
+      expect(Math.abs(a.targetX - a.fromX)).toBeGreaterThan(20);
+    }
   });
 });

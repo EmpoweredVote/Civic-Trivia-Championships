@@ -13,10 +13,12 @@ import { RIPPLE_DUR } from './crowdReactions';
 export const ARRIVAL_DUR = 1.1;
 /**
  * Seconds the room celebrates a correct answer: cheer, clap, high-five.
- * MUST match HIGHFIVE_UNTIL in crowdReactions -- that module decides the poses, this one
- * decides how long they run, and a mismatch either truncates the chain or holds a dead pose.
+ *
+ * HIGHFIVE_UNTIL (2.4) is one bobit's chain; REACTION_SPREAD (0.55) is how late the last one
+ * may start it. The room is not done until its LAST member is, so this is the sum -- set it to
+ * the chain alone and the stragglers get cut off mid-clap.
  */
-export const CELEBRATE_DUR = 2.4;
+export const CELEBRATE_DUR = 2.95;
 
 // The loss sequence, from the spec: rise, burst, ~0.8s freeze, then look around and shrug,
 // with everyone back to normal inside ~2.5s of the burst.

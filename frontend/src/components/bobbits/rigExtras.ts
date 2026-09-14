@@ -162,12 +162,19 @@ export const EXTRA_ANIMATIONS: Record<string, Animation> = {
       const s = wave(t, 3.4);                 // fast: claps are quicker than a wave
       // Amplitude is set by VISIBILITY at band scale, not by anatomy: the band draws figures
       // at scale 0.2, so a 17-unit hand travel is ~3px and reads as standing still. 25 units
-      // of forearm swing moves the hands ~6px, which is the least that reads as clapping.
+      // of forearm swing moves the hands ~6px.
       const swing = -157 + s * 12;            // -169 apart .. -145 together
       p.armRU = 26; p.armRF = swing;
       p.armLU = -26; p.armLF = -swing;
-      p.headTilt = -4 + s * 2;
-      p.bob = p.bob - Math.abs(s) * 1.2;
+
+      // Six pixels of hand travel is still marginal on a 39px figure, and widening the arms
+      // further just reads as flapping. What carries at that size is the WHOLE SILHOUETTE
+      // moving, so the body dips and folds into each clap rather than only the forearms
+      // closing: a nod, a small crouch, and a shoulder curl, all on the clap's own beat.
+      const beat = Math.max(0, s);            // 0 between claps, 1 at the moment of contact
+      p.headTilt = -4 + s * 3;
+      p.hunch = p.hunch - beat * 6;           // folds in as the hands meet
+      p.bob = p.bob - beat * 4;               // and dips with it
       return p;
     },
   },

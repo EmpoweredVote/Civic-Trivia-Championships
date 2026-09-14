@@ -13,7 +13,7 @@
 import { initWander, wanderAdvance } from '../../components/bobbits/wanderReducer';
 import type { Wanderer, WanderState, Rand } from '../../components/bobbits/wanderReducer';
 import { slotOrder } from './crowdIdentity';
-import { CROWD_CAP } from './crowdLayout';
+import { CROWD_CAP, stageBounds } from './crowdLayout';
 import type { CrowdBand } from './crowdLayout';
 
 /**
@@ -29,6 +29,12 @@ export interface Agent extends Wanderer {
   /** Where a `moving` agent is walking to. Meaningless otherwise, but always defined. */
   targetX: number;
   targetDepth: number;
+  /** Where the current move started, so it can be interpolated rather than chased. */
+  fromX: number;
+  fromDepth: number;
+  /** Seconds elapsed into the current move, and how long it lasts. */
+  moveT: number;
+  moveDur: number;
 }
 
 export type AgentState = Record<string, Agent>;
@@ -46,6 +52,50 @@ export interface AgentOpts {
 
 /** px/s a transitioning agent walks at, matching the wander stroll so the gait reads right. */
 const MOVE_UNITS_PER_SEC = 100;
+
+/**
+ * Shortest a station change may take, in seconds.
+ *
+ * A move used to advance by horizontal distance alone, which made a change of DEPTH with no
+ * change of x complete on its first frame -- the agent snapped between the stage and the ranks
+ * in one tick. On screen that is a figure jumping vertically, and it is what "odd watching them
+ * walk up and down" was: not a walk at all, a teleport with a walk cycle either side of it.
+ *
+ * Moves are timed now rather than chased, and never finish faster than this, so even a purely
+ * vertical change reads as somebody strolling upstage.
+ */
+export const MOVE_MIN_SEC = 1.4;
+
+/** Ease in and out, so a bobit leans into a walk and settles out of it instead of snapping. */
+function smoothstep(k: number): number {
+  const c = Math.min(1, Math.max(0, k));
+  return c * c * (3 - 2 * c);
+}
+
+/**
+ * Begin a walk to a new station. Duration comes from the real 2D distance -- horizontal plus
+ * the vertical the depth change actually covers -- so a long walk takes longer, with a floor.
+ */
+export function startMove(
+  a: Agent, targetX: number, targetDepth: number, opts: AgentOpts,
+): Agent {
+  const { top, bottom } = stageBounds(opts.band);
+  const dx = targetX - a.x;
+  const dy = (targetDepth - a.depth) * (bottom - top);
+  const dist = Math.hypot(dx, dy);
+  const speed = MOVE_UNITS_PER_SEC * opts.band.scale;
+  return {
+    ...a,
+    activity: 'moving',
+    fromX: a.x,
+    fromDepth: a.depth,
+    targetX,
+    targetDepth,
+    moveT: 0,
+    moveDur: Math.max(MOVE_MIN_SEC, speed > 0 ? dist / speed : MOVE_MIN_SEC),
+    dir: dx >= 0 ? 1 : -1,
+  };
+}
 
 export function initAgents(ids: string[], opts: AgentOpts): AgentState {
   const { width, rand } = opts;
@@ -67,6 +117,10 @@ export function initAgents(ids: string[], opts: AgentOpts): AgentState {
       activity: 'wander',
       targetX: w.x,
       targetDepth: 0,
+      fromX: w.x,
+      fromDepth: 0,
+      moveT: 0,
+      moveDur: MOVE_MIN_SEC,
     };
   }
   return out;
@@ -91,8 +145,6 @@ export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): A
     rand: opts.rand,
   });
 
-  const step = MOVE_UNITS_PER_SEC * opts.band.scale * dt;
-
   for (const id of ids) {
     const a = state[id];
 
@@ -106,29 +158,30 @@ export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): A
       continue;
     }
 
-    // 'moving': walk toward the target, then settle into the ranks or onto the stage.
+    // 'moving': a TIMED walk between stations, interpolated from where it began. Timed rather
+    // than chased so a change of depth alone still takes a walk's worth of seconds instead of
+    // completing on its first frame.
     if (opts.greeting.has(id)) { out[id] = a; continue; }
 
-    const dx = a.targetX - a.x;
-    const ddepth = a.targetDepth - a.depth;
-    if (Math.abs(dx) <= step) {
+    const moveT = a.moveT + dt;
+    if (moveT >= a.moveDur) {
       out[id] = {
         ...a,
         x: a.targetX,
         depth: a.targetDepth,
         // targetDepth 1 is the ranks; anything shallower is a return to the stage.
         activity: a.targetDepth >= 1 ? 'rank' : 'wander',
+        moveT: a.moveDur,
         t: 0,
       };
       continue;
     }
-    const dir: 1 | -1 = dx > 0 ? 1 : -1;
-    const progress = step / Math.abs(dx);
+    const k = smoothstep(moveT / a.moveDur);
     out[id] = {
       ...a,
-      x: a.x + dir * step,
-      depth: a.depth + ddepth * progress,
-      dir,
+      moveT,
+      x: a.fromX + (a.targetX - a.fromX) * k,
+      depth: a.fromDepth + (a.targetDepth - a.fromDepth) * k,
     };
   }
 
@@ -184,10 +237,25 @@ export function homeSlot(id: string, residents: string[], width: number, ranked?
   return { x, depth: 1 };
 }
 
+/**
+ * A point to walk to that is a decent stroll away from where you are, and inside the band.
+ * Used when a bobit changes station without a slot of its own to head for.
+ */
+function strollTarget(x: number, opts: AgentOpts): number {
+  const margin = 34 * opts.band.scale;
+  const reach = Math.max(60, opts.width * 0.18);
+  const dir = x > opts.width / 2 ? -1 : 1;
+  const wobble = (opts.rand() - 0.5) * reach;
+  return Math.min(opts.width - margin, Math.max(margin, x + dir * reach + wobble));
+}
+
 /** The `moving`/`rank` target fields for a home slot, as a spreadable fragment. */
 function homeSlotTarget(id: string, residents: string[], width: number, ranked: string[]) {
   const home = homeSlot(id, residents, width, ranked);
-  return { x: home.x, targetX: home.x, targetDepth: home.depth };
+  return {
+    x: home.x, targetX: home.x, targetDepth: home.depth,
+    fromX: home.x, fromDepth: home.depth, moveT: 0, moveDur: MOVE_MIN_SEC,
+  };
 }
 
 /**
@@ -221,12 +289,14 @@ export function syncCast(
 
     if (wantsRank && !isRanked) {
       const home = homeSlot(id, residents, opts.width, rank);
-      out[id] = { ...a, activity: 'moving', targetX: home.x, targetDepth: home.depth };
+      out[id] = startMove(a, home.x, home.depth, opts);
       continue;
     }
 
     if (onStage.has(id) && isRanked) {
-      out[id] = { ...a, activity: 'moving', targetX: a.x, targetDepth: opts.rand() * 0.9 };
+      // Comes DOWN to somewhere with floor around it, not straight forward out of its slot:
+      // a move with no horizontal travel reads as rising rather than as walking.
+      out[id] = startMove(a, strollTarget(a.x, opts), opts.rand() * 0.9, opts);
       continue;
     }
 
@@ -259,10 +329,12 @@ export function rotateCast(state: AgentState, elapsed: number, opts: AgentOpts):
   const up = ranked[Math.floor(opts.rand() * ranked.length) % ranked.length];
   const down = roaming[Math.floor(opts.rand() * roaming.length) % roaming.length];
 
+  // Both journeys cross real ground. Sending someone to the x they already stand on makes the
+  // walk purely vertical, which reads as floating up or down rather than as ambling somewhere.
   return {
     ...state,
-    [up]: { ...state[up], activity: 'moving', targetX: state[up].x, targetDepth: opts.rand() * 0.9 },
-    [down]: { ...state[down], activity: 'moving', targetX: state[down].x, targetDepth: 1 },
+    [up]: startMove(state[up], strollTarget(state[up].x, opts), opts.rand() * 0.9, opts),
+    [down]: startMove(state[down], strollTarget(state[down].x, opts), 1, opts),
   };
 }
 
