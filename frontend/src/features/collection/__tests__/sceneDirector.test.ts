@@ -43,17 +43,17 @@ describe('directorStep', () => {
   it('runs a scene and then lets go of it', () => {
     let s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
     expect(castIds(s).has('a')).toBe(true);
-    s = directorStep(s, TINY.duration + 0.01, WIDTH, GROUND);
+    s = directorStep(s, TINY.duration + 0.01, GROUND);
     expect(s.running).toHaveLength(0);
     expect(castIds(s).has('a')).toBe(false);
   });
 
   it('applies the beat in force at the current time, not a later one', () => {
     let s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
-    s = directorStep(s, 0.5, WIDTH, GROUND);
-    expect(actorsOf(s, WIDTH, GROUND)[0].pose).toBe('splayed');
-    s = directorStep(s, 0.6, WIDTH, GROUND);
-    expect(actorsOf(s, WIDTH, GROUND)[0].pose).toBe('friendly');
+    s = directorStep(s, 0.5, GROUND);
+    expect(actorsOf(s, GROUND)[0].pose).toBe('splayed');
+    s = directorStep(s, 0.6, GROUND);
+    expect(actorsOf(s, GROUND)[0].pose).toBe('friendly');
   });
 
   it('walks between beat destinations rather than snapping', () => {
@@ -65,12 +65,12 @@ describe('directorStep', () => {
       ],
     };
     let s = startScene(directorInit(), walky, 'a', WIDTH, rand);
-    s = directorStep(s, 1.0, WIDTH, GROUND);
-    const start = actorsOf(s, WIDTH, GROUND)[0].x;
-    s = directorStep(s, 0.4, WIDTH, GROUND);
-    const mid = actorsOf(s, WIDTH, GROUND)[0].x;
-    s = directorStep(s, 2.0, WIDTH, GROUND);
-    const end = actorsOf(s, WIDTH, GROUND)[0].x;
+    s = directorStep(s, 1.0, GROUND);
+    const start = actorsOf(s, GROUND)[0].x;
+    s = directorStep(s, 0.4, GROUND);
+    const mid = actorsOf(s, GROUND)[0].x;
+    s = directorStep(s, 2.0, GROUND);
+    const end = actorsOf(s, GROUND)[0].x;
     expect(mid).toBeGreaterThan(start);
     expect(mid).toBeLessThan(end);
   });
@@ -85,14 +85,14 @@ describe('directorStep', () => {
       ],
     };
     let s = startScene(directorInit(), flying, 'a', WIDTH, rand);
-    s = directorStep(s, 1.0, WIDTH, GROUND);
-    const grounded = actorsOf(s, WIDTH, GROUND)[0].y;
-    s = directorStep(s, 0.5, WIDTH, GROUND);
-    const airborne = actorsOf(s, WIDTH, GROUND)[0];
+    s = directorStep(s, 1.0, GROUND);
+    const grounded = actorsOf(s, GROUND)[0].y;
+    s = directorStep(s, 0.5, GROUND);
+    const airborne = actorsOf(s, GROUND)[0];
     expect(airborne.y).toBeLessThan(grounded - 50);
     expect(airborne.layer).toBe('air');
-    s = directorStep(s, 1.0, WIDTH, GROUND);
-    const landed = actorsOf(s, WIDTH, GROUND)[0];
+    s = directorStep(s, 1.0, GROUND);
+    const landed = actorsOf(s, GROUND)[0];
     expect(landed.y).toBeCloseTo(GROUND, 0);
     expect(landed.layer).toBe('ground');
   });
@@ -107,11 +107,11 @@ describe('directorStep', () => {
       ],
     };
     let s = startScene(directorInit(), withProp, 'a', WIDTH, rand);
-    s = directorStep(s, 0.5, WIDTH, GROUND);
+    s = directorStep(s, 0.5, GROUND);
     expect(s.props).toHaveLength(0);
-    s = directorStep(s, 1.0, WIDTH, GROUND);
+    s = directorStep(s, 1.0, GROUND);
     expect(s.props).toHaveLength(1);
-    s = directorStep(s, 1.0, WIDTH, GROUND);
+    s = directorStep(s, 1.0, GROUND);
     expect(s.props).toHaveLength(0);
   });
 
@@ -124,9 +124,9 @@ describe('directorStep', () => {
       ],
     };
     let s = startScene(directorInit(), leaky, 'a', WIDTH, rand);
-    s = directorStep(s, 0.6, WIDTH, GROUND);
+    s = directorStep(s, 0.6, GROUND);
     expect(s.props).toHaveLength(1);
-    s = directorStep(s, 2, WIDTH, GROUND);
+    s = directorStep(s, 2, GROUND);
     expect(s.props).toHaveLength(0);
   });
 
@@ -139,9 +139,9 @@ describe('directorStep', () => {
       ],
     };
     let s = startScene(directorInit(), smoky, 'a', WIDTH, rand);
-    s = directorStep(s, 0.6, WIDTH, GROUND);
+    s = directorStep(s, 0.6, GROUND);
     expect(s.effects.length).toBeGreaterThan(0);
-    s = directorStep(s, 3, WIDTH, GROUND);
+    s = directorStep(s, 3, GROUND);
     expect(s.effects).toHaveLength(0);
   });
 
@@ -154,14 +154,14 @@ describe('directorStep', () => {
       ],
     };
     let s = startScene(directorInit(), smoky, 'a', WIDTH, rand);
-    for (let i = 0; i < 40; i++) s = directorStep(s, 1 / 60, WIDTH, GROUND);
+    for (let i = 0; i < 40; i++) s = directorStep(s, 1 / 60, GROUND);
     expect(s.effects).toHaveLength(1);
   });
 
   it('does not mutate the state it is given', () => {
     const s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
     const before = JSON.stringify(s);
-    directorStep(s, 0.5, WIDTH, GROUND);
+    directorStep(s, 0.5, GROUND);
     expect(JSON.stringify(s)).toBe(before);
   });
 });

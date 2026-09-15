@@ -186,7 +186,7 @@ function liftAt(beats: Beat[], role: string, t: number, duration: number): numbe
 }
 
 export function directorStep(
-  state: DirectorState, dt: number, width: number, groundY: number,
+  state: DirectorState, dt: number, groundY: number,
 ): DirectorState {
   const running: RunningScene[] = [];
   let props = [...state.props];
@@ -241,7 +241,7 @@ export function directorStep(
 }
 
 /** Everything the director currently wants drawn, as positions and poses. */
-export function actorsOf(state: DirectorState, width: number, groundY: number): Actor[] {
+export function actorsOf(state: DirectorState, groundY: number): Actor[] {
   const out: Actor[] = [];
   for (const r of state.running) {
     for (const role of r.scene.roles) {
