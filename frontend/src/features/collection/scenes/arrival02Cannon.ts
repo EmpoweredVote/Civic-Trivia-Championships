@@ -48,7 +48,10 @@ export const CANNON: Scene = {
     // FIRE. Out of the muzzle, flailing, up over the card and down the far end. This beat
     // carries the flight: arc, peak and the switch to the overlay, all from here.
     { at: 4.3, role: 'newcomer', hidden: false, pose: 'flail', moveTo: 0.95,
-      path: 'arc', arcPeak: 240, layer: 'air', smoke: { spread: 58 } },
+      // arcPeak MEASURED BY SCREENSHOT, 2026-09-14. At 240 the apex landed on the Next button,
+      // which is over a control but not over the question. 330 carries him across the card
+      // itself, which is the shot the scene is for.
+      path: 'arc', arcPeak: 330, layer: 'air', smoke: { spread: 58 } },
 
     // Lands in a heap, back on the floor and back on the band's own canvas.
     { at: 5.9, role: 'newcomer', pose: 'spent', layer: 'ground' },

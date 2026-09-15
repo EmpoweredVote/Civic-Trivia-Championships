@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BobitField } from '../../components/bobbits/BobitField';
-import type { FieldFigure } from '../../components/bobbits/fieldGeometry';
+import type { FieldFigure, FieldProp, FieldEffect } from '../../components/bobbits/fieldGeometry';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import { useAuthStore } from '../../store/authStore';
@@ -251,6 +251,18 @@ export function CollectionCrowd({
     );
   }, [band, darkMode, reducedMotion]);
 
+  // Props and effects come straight off the director. Stable identities so BobitField's refs
+  // are not rebuilt every render.
+  const propsFor = useMemo(() => (): FieldProp[] => directorRef.current.props.map(p => ({
+    id: p.id, kind: p.kind, x: p.x, groundY: p.groundY, scale: band.scale,
+    flip: p.flip, angle: p.angle,
+    // Light barrel on a dark ground and vice versa. A fixed dark cannon was invisible in dark
+    // mode -- it read as a smudge on the floor rather than as the joke it is.
+    color: darkMode ? '#9AA6B8' : '#4A5568',
+  })), [band, darkMode]);
+
+  const effectsFor = useMemo(() => (): FieldEffect[] => directorRef.current.effects, []);
+
   if (!slug) return null;
 
   // The overlay spans the game area down to the bottom of the band, so ONE coordinate system
@@ -306,7 +318,16 @@ export function CollectionCrowd({
           } 92%, transparent)`,
         }}
       />
-      <BobitField figures={[]} figuresFor={figuresFor} height={height} interactive />
+      <BobitField
+        figures={[]}
+        figuresFor={figuresFor}
+        // The director already stepped this frame inside figuresFor, which BobitField calls
+        // first, so both of these read state that is current rather than a frame stale.
+        propsFor={propsFor}
+        effectsFor={effectsFor}
+        height={height}
+        interactive
+      />
       {overflow > 0 && (
         <span
           style={{

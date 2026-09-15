@@ -69,8 +69,8 @@ interface BobitFieldProps {
   style?: CSSProperties;
 }
 
-/** Cannon barrel colour. Dark enough to read against both themes. */
-const CANNON_COLOR = '#3F4854';
+/** Fallback barrel colour, for a prop that did not name one. */
+const CANNON_COLOR = '#6B7686';
 
 /**
  * How long an effect lives, in seconds. The field fades them over these; the director owns
@@ -329,7 +329,9 @@ export function BobitField({
         : (propsListRef.current ?? []);
       for (const pr of propList) {
         if (pr.kind === 'cannon') {
-          drawCannon(ctx, pr.x, pr.groundY, pr.scale, pr.angle ?? -32, pr.flip, CANNON_COLOR);
+          drawCannon(
+            ctx, pr.x, pr.groundY, pr.scale, pr.angle ?? -32, pr.flip, pr.color || CANNON_COLOR,
+          );
         }
       }
 

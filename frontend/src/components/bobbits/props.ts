@@ -6,10 +6,17 @@
  * agree about how big the world is.
  */
 
-/** Barrel length in rig units, from the pivot. The muzzle is at its far end. */
-const BARREL_LEN = 96;
-const BARREL_R = 17;
-const WHEEL_R = 26;
+/**
+ * Barrel length in rig units, from the pivot. The muzzle is at its far end.
+ *
+ * SIZED BY SCREENSHOT, 2026-09-14. The first pass used 96/17/26, which is roughly a person's
+ * arm span -- on the band, against a 42px bobit, it rendered as a dark speck you had to look
+ * for. A cannon that fires a person should be bigger than the person, and the joke needs to be
+ * legible at a glance, so it is about 1.5x a figure now.
+ */
+const BARREL_LEN = 150;
+const BARREL_R = 26;
+const WHEEL_R = 40;
 
 /**
  * Where the barrel's mouth is, in field px.

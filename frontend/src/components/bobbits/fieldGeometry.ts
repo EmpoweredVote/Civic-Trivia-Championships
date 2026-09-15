@@ -114,6 +114,11 @@ export interface FieldProp {
   flip?: boolean;
   /** Degrees from horizontal for a cannon barrel; negative is nose-up. */
   angle?: number;
+  /**
+   * Body colour. Supplied by the caller because only it knows the theme -- a fixed dark barrel
+   * is all but invisible against a dark-mode background, which is how it first shipped.
+   */
+  color?: string;
 }
 
 /** A transient visual effect: a puff of smoke or a flash. Not a figure and not a prop. */

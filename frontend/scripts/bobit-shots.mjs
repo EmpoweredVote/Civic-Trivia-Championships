@@ -90,7 +90,7 @@ async function shoot(page, name) {
  */
 async function poseSheet(browser) {
   const context = await browser.newContext({
-    viewport: { width: 1200, height: 900 }, deviceScaleFactor: 2,
+    viewport: { width: 1240, height: 1180 }, deviceScaleFactor: 2,
   });
   const page = await context.newPage();
   await mockApi(page);
@@ -103,7 +103,7 @@ async function poseSheet(browser) {
       const { CFG, computePose, draw, drawShadow } = rig;
       const { ALL_ANIMATIONS, figColor } = extras;
 
-      const W = 1200, H = 900, S = 1.1;
+      const W = 1240, H = 1180, S = 1.1;
       const canvas = document.createElement('canvas');
       canvas.width = W * 2; canvas.height = H * 2;
       const c = canvas.getContext('2d');
@@ -144,12 +144,23 @@ async function poseSheet(browser) {
       ['cheer', 'jump', 'dance'].forEach((k, i) =>
         one(k, 900 + i * 110, 360, 0.3, undefined, k));
 
+      // Row 4: the entrance poses, on their own line with real spacing.
+      // splayed is deliberately a T-pose -- nothing in the tests can tell the intentional one
+      // from a mistake, which is exactly why it has to be looked at.
+      one('splayed', 130, 1130, 0.2, undefined, 'splayed (T-POSE ON PURPOSE)');
+
+      // flail across half a second: the arms must be out of phase at EVERY instant, or it
+      // reads as a jumping jack rather than panic.
+      [0, 0.09, 0.18, 0.27, 0.36, 0.45].forEach((t, i) =>
+        one('flail', 380 + i * 140, 1130, t, undefined, `t=${t}`));
+
       c.fillStyle = dark ? '#E2E8F0' : '#0F172A';
       c.textAlign = 'left';
       c.font = '600 15px system-ui, sans-serif';
       c.fillText('clap cycle', 40, 40);
       c.fillText('celebration ladder', 880, 40);
       c.fillText('high-five pairs (do the hands meet?)', 40, 430);
+      c.fillText('entrance poses', 40, 880);
 
       return canvas.toDataURL('image/png').split(',')[1];
     }, theme === 'dark');
