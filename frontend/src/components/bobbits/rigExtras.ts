@@ -202,6 +202,50 @@ export const EXTRA_ANIMATIONS: Record<string, Animation> = {
       return p;
     },
   },
+  // Held out by both arms and both legs, as if two people are stretching him -- the instant the
+  // flash leaves him hanging in mid-air, before he drops.
+  //
+  // Near-horizontal upper arms are CORRECT here. That is a T-pose, and this is the one pose in
+  // the catalogue that wants one: he is being held, not doing something with his hands. Both
+  // `carryGrip` and `clap` had to be rescued from exactly this shape, so it is worth saying out
+  // loud that here it is the point. Nothing in the tests can tell the deliberate one from a
+  // mistake -- only looking at it can.
+  splayed: {
+    label: "Splayed", mood: "...whoa",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const tremble = wave(t, 7.5);
+      p.armRU = 88 + tremble * 4; p.armRF = 92 + tremble * 5;
+      p.armLU = -88 - tremble * 4; p.armLF = -92 - tremble * 5;
+      p.legRU = 34 + tremble * 3; p.legRF = 12;
+      p.legLU = -34 - tremble * 3; p.legLF = -12;
+      p.hunch = 4;
+      p.headTilt = tremble * 5;
+      p.bob = -2;
+      return p;
+    },
+  },
+  // Airborne and panicking: arms windmilling right the way round, out of phase with each other,
+  // legs cycling. Used for the whole flight out of the cannon.
+  flail: {
+    label: "Flailing", mood: "AAAAAA",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const r = t * 6.5;                       // revolutions, fast
+      const l = r + 1.9;                       // out of phase: panic, not a jumping jack
+      p.armRU = Math.sin(r) * 120 + 40;
+      p.armRF = Math.sin(r + 0.5) * 90 + 30;
+      p.armLU = Math.sin(l) * -120 - 40;
+      p.armLF = Math.sin(l + 0.5) * -90 - 30;
+      p.legRU = 20 + Math.sin(r * 0.8) * 34;
+      p.legRF = -20 + Math.sin(r * 0.8 + 1) * 24;
+      p.legLU = -20 + Math.sin(l * 0.8) * 34;
+      p.legLF = 20 + Math.sin(l * 0.8 + 1) * 24;
+      p.hunch = -6;
+      p.headTilt = Math.sin(r * 0.5) * 14;
+      return p;
+    },
+  },
   offer: {
     label: "Offer", mood: "pick a collection, any collection",
     frame(t: number) {

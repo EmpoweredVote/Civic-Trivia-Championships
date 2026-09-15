@@ -5,8 +5,10 @@ import {
 import { ANIMATIONS, computePose, CFG } from '../leremyRig';
 
 describe('EXTRA_ANIMATIONS', () => {
-  it('holds exactly the seven CTC-only poses', () => {
-    expect(Object.keys(EXTRA_ANIMATIONS).sort()).toEqual(['carryGrip', 'cheer', 'clap', 'dance', 'highfive', 'offer', 'ponder']);
+  it('holds exactly the nine CTC-only poses', () => {
+    expect(Object.keys(EXTRA_ANIMATIONS).sort()).toEqual(
+      ['carryGrip', 'cheer', 'clap', 'dance', 'flail', 'highfive', 'offer', 'ponder', 'splayed'],
+    );
   });
 
   it('keeps them out of the ported rig', () => {
@@ -17,8 +19,8 @@ describe('EXTRA_ANIMATIONS', () => {
 });
 
 describe('ALL_ANIMATIONS', () => {
-  it('merges the 41 ported plus the walk alias plus the 7 extras', () => {
-    expect(Object.keys(ALL_ANIMATIONS).length).toBe(49);
+  it('merges the 41 ported plus the walk alias plus the 9 extras', () => {
+    expect(Object.keys(ALL_ANIMATIONS).length).toBe(51);
   });
 
   it('exposes both families', () => {
@@ -163,5 +165,57 @@ describe('drawSmokePuff', () => {
     const { ctx, calls } = recordingCtx();
     drawSmokePuff(ctx, 0, 0, 20, 1, 1, 0, SMOKE_PURPLE);
     expect(calls.filter(c => c === 'fill').length).toBeGreaterThan(4);
+  });
+});
+
+describe('splayed', () => {
+  it('is registered', () => {
+    expect(ALL_ANIMATIONS.splayed).toBeDefined();
+  });
+
+  it('holds all four limbs out, like something being stretched by them', () => {
+    const p = ALL_ANIMATIONS.splayed.frame(0);
+    // This is the ONE pose where near-horizontal arms are correct.
+    expect(Math.abs(p.armRU)).toBeGreaterThan(70);
+    expect(Math.abs(p.armLU)).toBeGreaterThan(70);
+    expect(Math.abs(p.legRU)).toBeGreaterThan(25);
+    expect(Math.abs(p.legLU)).toBeGreaterThan(25);
+  });
+
+  it('keeps left and right mirrored, so he hangs straight', () => {
+    const p = ALL_ANIMATIONS.splayed.frame(0.3);
+    expect(p.armRU).toBeCloseTo(-p.armLU, 5);
+    expect(p.legRU).toBeCloseTo(-p.legLU, 5);
+  });
+
+  it('trembles, rather than being a still frame', () => {
+    const a = ALL_ANIMATIONS.splayed.frame(0).armRU;
+    const b = ALL_ANIMATIONS.splayed.frame(0.25).armRU;
+    expect(a).not.toBeCloseTo(b, 3);
+  });
+});
+
+describe('flail', () => {
+  it('is registered', () => {
+    expect(ALL_ANIMATIONS.flail).toBeDefined();
+  });
+
+  it('windmills the arms out of phase with each other', () => {
+    // Both arms moving identically is a jumping-jack, not panic.
+    const offsets = [0, 0.1, 0.2, 0.3, 0.4].map(t => {
+      const p = ALL_ANIMATIONS.flail.frame(t);
+      return p.armRU + p.armLU;      // 0 for a perfectly mirrored pose
+    });
+    expect(Math.max(...offsets.map(Math.abs))).toBeGreaterThan(15);
+  });
+
+  it('travels a long way round, so it reads as windmilling', () => {
+    const samples = [0, 0.12, 0.25, 0.37, 0.5].map(t => ALL_ANIMATIONS.flail.frame(t).armRU);
+    expect(Math.max(...samples) - Math.min(...samples)).toBeGreaterThan(90);
+  });
+
+  it('kicks the legs too -- he is airborne, not standing', () => {
+    const samples = [0, 0.15, 0.3, 0.45].map(t => ALL_ANIMATIONS.flail.frame(t).legRU);
+    expect(Math.max(...samples) - Math.min(...samples)).toBeGreaterThan(25);
   });
 });
