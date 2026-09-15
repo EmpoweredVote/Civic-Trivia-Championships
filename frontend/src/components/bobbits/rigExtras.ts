@@ -299,3 +299,40 @@ export function drawTrophy(ctx: CanvasRenderingContext2D, x: number, y: number, 
 
   ctx.restore();
 }
+
+/** The arrival colour. Brand purple from FIG_COLORS, lightened so it reads as smoke. */
+export const SMOKE_PURPLE = '#9B7BE0';
+
+/**
+ * The rig's `drawSmoke`, with a colour.
+ *
+ * `leremyRig.drawSmoke` hardcodes '#8A8F98' and the rig is a mirror of ev-landing, so a
+ * variant lives here rather than a parameter being added there. Geometry is deliberately
+ * identical -- the same deterministic angle/radius scatter -- so the two read as one effect.
+ */
+export function drawSmokePuff(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  spread: number, alpha: number,
+  seed: number, t: number,
+  color: string,
+) {
+  if (!(alpha > 0) || !(spread > 0)) return;
+  const N = 9;
+  const DEG = Math.PI / 180;
+  ctx.save();
+  ctx.fillStyle = color;
+  for (let i = 0; i < N; i++) {
+    const ang = ((seed * 37 + i * 61) % 360) * DEG;
+    const rad = 0.35 + (((seed * 13 + i * 29) % 100) / 100) * 0.65;
+    const drift = Math.sin(t * (0.7 + i * 0.13) + i) * spread * 0.14;
+    const px = x + Math.cos(ang) * spread * rad + drift;
+    const py = y - Math.abs(Math.sin(ang)) * spread * rad * 0.85 - spread * 0.2;
+    const pr = spread * (0.26 + rad * 0.3);
+    ctx.globalAlpha = Math.min(1, alpha) * (0.4 + rad * 0.45);
+    ctx.beginPath();
+    ctx.arc(px, py, pr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}

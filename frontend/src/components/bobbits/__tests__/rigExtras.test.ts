@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { ALL_ANIMATIONS, EXTRA_ANIMATIONS, figColor, FIG_COLORS } from '../rigExtras';
+import {
+  ALL_ANIMATIONS, EXTRA_ANIMATIONS, figColor, FIG_COLORS, drawSmokePuff, SMOKE_PURPLE,
+} from '../rigExtras';
 import { ANIMATIONS, computePose, CFG } from '../leremyRig';
 
 describe('EXTRA_ANIMATIONS', () => {
@@ -114,5 +116,52 @@ describe('highfive', () => {
     const r = ALL_ANIMATIONS.highfive.frame(0, { hand: 'R' });
     const l = ALL_ANIMATIONS.highfive.frame(0, { hand: 'L' });
     expect(Math.sign(r.lean)).toBe(-Math.sign(l.lean));
+  });
+});
+
+/** Records the fillStyles and ops a draw call actually used. */
+function recordingCtx() {
+  const fills: string[] = [];
+  const calls: string[] = [];
+  return {
+    fills, calls,
+    ctx: {
+      save() { calls.push('save'); }, restore() { calls.push('restore'); },
+      beginPath() {}, fill() { calls.push('fill'); },
+      arc() {},
+      set fillStyle(v: string) { fills.push(v); },
+      get fillStyle() { return fills[fills.length - 1] ?? ''; },
+      globalAlpha: 1,
+    } as unknown as CanvasRenderingContext2D,
+  };
+}
+
+describe('drawSmokePuff', () => {
+  it('paints in the colour it is given, not the rig grey', () => {
+    const { ctx, fills } = recordingCtx();
+    drawSmokePuff(ctx, 0, 0, 20, 1, 1, 0, SMOKE_PURPLE);
+    expect(fills).toContain(SMOKE_PURPLE);
+    expect(fills).not.toContain('#8A8F98');
+  });
+
+  it('draws nothing at all when it has no alpha or no spread', () => {
+    for (const [spread, alpha] of [[20, 0], [0, 1], [-5, 1]]) {
+      const { ctx, calls } = recordingCtx();
+      drawSmokePuff(ctx, 0, 0, spread, alpha, 1, 0, SMOKE_PURPLE);
+      expect(calls).toEqual([]);
+    }
+  });
+
+  it('restores the context it was handed', () => {
+    const { ctx, calls } = recordingCtx();
+    drawSmokePuff(ctx, 0, 0, 20, 1, 1, 0, SMOKE_PURPLE);
+    expect(calls.filter(c => c === 'save').length)
+      .toBe(calls.filter(c => c === 'restore').length);
+  });
+
+  it('puts several puffs down, not one blob', () => {
+    const { ctx, calls } = recordingCtx();
+    drawSmokePuff(ctx, 0, 0, 20, 1, 1, 0, SMOKE_PURPLE);
+    expect(calls.filter(c => c === 'fill').length).toBeGreaterThan(4);
   });
 });
