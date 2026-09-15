@@ -210,3 +210,30 @@ describe('director figures', () => {
 function state0() {
   return crowdApply(crowdInit(), { type: 'seed', ids: [] });
 }
+
+describe('when the sky is closed', () => {
+  it('keeps a flying actor on the band instead of dropping him', () => {
+    // The timer is running, so nothing may pass in front of the question card. The scene still
+    // plays -- it just cannot use the sky. Skipping the actor entirely made him vanish in
+    // mid-flight and reappear on landing.
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    const grounded = crowdFigures(state0(), {}, BAND, false, dir, false);
+    expect(grounded.length).toBeGreaterThan(0);
+    for (const f of grounded) {
+      expect(f.groundY).toBeGreaterThanOrEqual(0);
+      expect(f.groundY).toBeLessThanOrEqual(BAND.height);
+    }
+  });
+
+  it('still routes him to the overlay when the sky is open', () => {
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    const ids = crowdFigures(state0(), {}, BAND, false, dir, true).map(f => f.id);
+    // Exact ids: a substring check matches the HOST too, whose generated id contains 'cannon'.
+    expect(ids).not.toContain('a');
+    expect(ids).not.toContain('scene:a');
+    const air = aerialFigures(dir, BAND, false);
+    expect(air.map(f => f.id)).toContain('air:a');
+  });
+});

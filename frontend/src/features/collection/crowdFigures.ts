@@ -16,6 +16,9 @@ export function overflowCount(state: CrowdState): number {
   return Math.max(0, state.residents.length - CROWD_CAP);
 }
 
+/** Highest a clamped-to-band figure's feet may go: keeps a whole figure on the canvas. */
+const TOP_MARGIN = 2;
+
 /** How close two bobits must be to slap hands, in rig units. */
 const HIGHFIVE_REACH_UNITS = 160;
 
@@ -61,6 +64,13 @@ export function aerialFigures(
 export function crowdFigures(
   state: CrowdState, agents: AgentState, band: CrowdBand, darkMode: boolean,
   director?: DirectorState,
+  /**
+   * Whether the overlay is available this frame. When it is NOT -- the timer is running and
+   * nothing may pass in front of the question card -- airborne actors are drawn on the band
+   * instead, clamped into it, rather than skipped. Skipping them made a bobit fired mid-answer
+   * vanish in flight and reappear on landing.
+   */
+  allowAir = true,
 ): FieldFigure[] {
   // Actors the director owns, indexed by the agent playing them. A cast agent is drawn from
   // its ACTOR -- pose and position both -- so the director and wanderAdvance can never fight
@@ -68,8 +78,13 @@ export function crowdFigures(
   const staged = new Map<string, ReturnType<typeof actorsOf>[number]>();
   const orphans: ReturnType<typeof actorsOf>[number][] = [];
   if (director) {
-    for (const a of actorsOf(director, sceneGroundY(band))) {
-      if (a.layer === 'air') continue;                   // the overlay's business
+    for (const raw of actorsOf(director, sceneGroundY(band))) {
+      let a = raw;
+      if (a.layer === 'air') {
+        if (allowAir) continue;                          // the overlay's business
+        // Grounded fallback: keep him inside the band rather than letting him fly off it.
+        a = { ...a, y: Math.max(TOP_MARGIN, a.y) };
+      }
       if (a.agentId && agents[a.agentId]) staged.set(a.agentId, a);
       else orphans.push(a);
     }

@@ -72,6 +72,8 @@ export function CollectionCrowd({
   // itself, so this starts nominal and is corrected on the first real frame.
   const laidOutAtRef = useRef(0);
   const directorRef = useRef<DirectorState>(directorInit());
+  // Read inside the frame loop, so the gate can change without rebuilding the loop.
+  const allowAirRef = useRef(aerialAllowed);
   // Air actors are published from the frame loop for React to mount the overlay with. Kept as
   // STATE rather than a ref because mounting the overlay is a render, not a paint.
   const [aerial, setAerial] = useState<FieldFigure[]>([]);
@@ -167,6 +169,8 @@ export function CollectionCrowd({
     setOverflow(overflowCount(stateRef.current));
   }, [lastAnswer, slug, store]);
 
+  useEffect(() => { allowAirRef.current = aerialAllowed; }, [aerialAllowed]);
+
   // Dev replay. The set pieces fire once per collection EVER, so there is otherwise no way to
   // see one twice -- not for building them, and not for reviewing them. That is why the spec
   // calls this a requirement rather than a convenience.
@@ -242,7 +246,9 @@ export function CollectionCrowd({
     // React bails out of a re-render when the value is the same empty array identity.
     setAerial(prev => (prev.length === 0 && air.length === 0 ? prev : air));
 
-    return crowdFigures(stateRef.current, agentsRef.current, band, darkMode, directorRef.current);
+    return crowdFigures(
+      stateRef.current, agentsRef.current, band, darkMode, directorRef.current, allowAirRef.current,
+    );
   }, [band, darkMode, reducedMotion]);
 
   if (!slug) return null;
