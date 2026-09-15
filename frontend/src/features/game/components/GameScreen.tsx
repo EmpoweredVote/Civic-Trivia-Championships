@@ -791,6 +791,9 @@ export function GameScreen({
             isMobile={isMobile}
             lastAnswer={lastAnswer}
             finished5of5={finished5of5}
+            // Bound 2 of the occlusion relaxation: a figure may only pass in front of the
+            // question card once the answer is revealed, never while the timer is running.
+            aerialAllowed={state.phase === 'revealing'}
           />
         </div>
       </div>

@@ -108,6 +108,18 @@ export function installMockGameApi() {
     return real(input, init);
   };
 
+  // ?scene=cannon replays a set piece once the crowd is mounted, and again every 14s, so it
+  // can be watched more than once without reloading.
+  const scene = params.get('scene');
+  if (scene) {
+    const fire = () => {
+      const w = window as unknown as { __bobitScene?: (id: string) => void };
+      if (w.__bobitScene) w.__bobitScene(scene);
+    };
+    setTimeout(fire, 2500);
+    setInterval(fire, 14000);
+  }
+
   // eslint-disable-next-line no-console
   console.info(
     '%c[mock api]%c serving a fake Milwaukee WI. A = correct, B = wrong. '

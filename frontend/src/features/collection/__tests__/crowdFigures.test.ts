@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { crowdFigures, overflowCount } from '../crowdFigures';
+import { crowdFigures, overflowCount, aerialFigures } from '../crowdFigures';
+import { directorInit, startScene, directorStep } from '../sceneDirector';
+import { SWIRL } from '../scenes/arrival01Swirl';
+import { CANNON } from '../scenes/arrival02Cannon';
 import { crowdInit, crowdApply, crowdStep, ARRIVAL_DUR } from '../crowdReducer';
 import { initAgents } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
@@ -146,3 +149,64 @@ describe('arrival', () => {
     expect(crowdFigures(state, agents, BAND, false)[0].anim).toBe('fall');
   });
 });
+
+describe('director figures', () => {
+  const dirWith = (id: string) =>
+    startScene(directorInit(), SWIRL, id, 1000, () => 0.5);
+
+  it('draws a scene actor even when no agent exists for it', () => {
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: [] });
+    // The swirl opens hidden, so step past the flash before looking.
+    const dir = directorStep(dirWith('newbie'), 1.2, BAND.height - 6);
+    expect(crowdFigures(state, {}, BAND, false, dir).length).toBeGreaterThan(0);
+  });
+
+  it('lets the director override the pose of an agent it has cast', () => {
+    const ids = ['a'];
+    const agents = initAgents(ids, OPTS);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids });
+    const dir = directorStep(dirWith('a'), 1.2, BAND.height - 6);
+    const fig = crowdFigures(state, agents, BAND, false, dir).find(f => f.id === 'a');
+    expect(fig!.anim).toBe('splayed');
+  });
+
+  it('draws a cast agent exactly once', () => {
+    const ids = ['a'];
+    const agents = initAgents(ids, OPTS);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids });
+    const dir = directorStep(dirWith('a'), 1.2, BAND.height - 6);
+    expect(crowdFigures(state, agents, BAND, false, dir).filter(f => f.id === 'a'))
+      .toHaveLength(1);
+  });
+
+  it('hides a role that has not materialised yet', () => {
+    // The swirl's opening beat is hidden:true -- smoke gathering around nobody.
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: [] });
+    const dir = directorStep(dirWith('newbie'), 0.4, BAND.height - 6);
+    expect(crowdFigures(state, {}, BAND, false, dir)).toHaveLength(0);
+  });
+
+  it('keeps airborne actors off the band entirely', () => {
+    // They belong to the overlay. Drawing them on both would double-paint the figure.
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);   // mid-flight
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: [] });
+    const ground = crowdFigures(state, {}, BAND, false, dir);
+    const air = aerialFigures(dir, BAND, false);
+    expect(air.length).toBeGreaterThan(0);
+    for (const a of air) expect(ground.map(g => g.id)).not.toContain(a.id);
+  });
+
+  it('gives airborne figures the hand variant the beat asked for', () => {
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 9.9, BAND.height - 6);   // the high-five
+    const figs = crowdFigures(state0(), {}, BAND, false, dir);
+    const five = figs.filter(f => f.anim === 'highfive');
+    expect(five.length).toBe(2);
+    expect(new Set(five.map(f => f.vars?.hand))).toEqual(new Set(['R', 'L']));
+  });
+});
+
+function state0() {
+  return crowdApply(crowdInit(), { type: 'seed', ids: [] });
+}

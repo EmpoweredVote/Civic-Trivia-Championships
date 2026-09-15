@@ -2,13 +2,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { BobitField } from '../../components/bobbits/BobitField';
 import type { FieldFigure } from '../../components/bobbits/fieldGeometry';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useWindowSize } from '../../hooks/useWindowSize';
 import { useAuthStore } from '../../store/authStore';
 import { useConfettiStore } from '../../store/confettiStore';
 import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
 import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
-import { crowdFigures, overflowCount } from './crowdFigures';
+import { crowdFigures, overflowCount, aerialFigures, sceneGroundY } from './crowdFigures';
+import {
+  directorInit, directorStep, startScene, canStage, castIds,
+} from './sceneDirector';
+import type { DirectorState } from './sceneDirector';
+import { sceneForArrival, ALL_SCENES } from './scenes';
 import { bandFor, CROWD_CAP, wanderCastFor, groundLineFromBottom } from './crowdLayout';
 import {
   initAgents, agentsAdvance, syncCast, rotateCast, makeRand, rescaleTo,
@@ -26,6 +32,14 @@ interface CollectionCrowdProps {
   lastAnswer: { questionId: string; correct: boolean; streak: number } | null;
   /** True once the match ends with every question correct. */
   finished5of5: boolean;
+  /**
+   * True only while an answer is revealed.
+   *
+   * Gates the aerial overlay. Nothing may pass in front of the question card while the timer
+   * is running and the player is aiming at an answer -- bound 2 of the four the spec's
+   * 2026-09-14 addendum puts on the occlusion relaxation.
+   */
+  aerialAllowed?: boolean;
 }
 
 /**
@@ -43,9 +57,12 @@ const localStore = createLocalProgressStore();
  * than merely arrange it.
  */
 export function CollectionCrowd({
-  slug, darkMode, isMobile, lastAnswer, finished5of5,
+  slug, darkMode, isMobile, lastAnswer, finished5of5, aerialAllowed = false,
 }: CollectionCrowdProps) {
   const reducedMotion = useReducedMotion();
+  // Resize-aware rather than a one-off window.innerHeight read: the overlay's height is a
+  // fraction of the viewport, and a stale one would put the arc's ceiling in the wrong place.
+  const { height: viewportH } = useWindowSize();
   const fireFireworks = useConfettiStore(s => s.fireFireworks);
   const userId = useAuthStore(s => s.user?.id ?? null);
   const stateRef = useRef<CrowdState>(crowdInit());
@@ -54,6 +71,10 @@ export function CollectionCrowd({
   // The width the current layout was built for. Agents are seeded before the field has measured
   // itself, so this starts nominal and is corrected on the first real frame.
   const laidOutAtRef = useRef(0);
+  const directorRef = useRef<DirectorState>(directorInit());
+  // Air actors are published from the frame loop for React to mount the overlay with. Kept as
+  // STATE rather than a ref because mounting the overlay is a render, not a paint.
+  const [aerial, setAerial] = useState<FieldFigure[]>([]);
   // Random by default; seedable via ?bobitSeed= so the screenshot sweep and the bench get the
   // SAME room every run. Math.random cannot be seeded, and a verification pass that cannot
   // reproduce its own input is not a verification pass.
@@ -79,6 +100,8 @@ export function CollectionCrowd({
     if (!slug) {
       stateRef.current = crowdInit();
       agentsRef.current = {};
+      directorRef.current = directorInit();
+      setAerial([]);
       setOverflow(0);
       return;
     }
@@ -97,6 +120,9 @@ export function CollectionCrowd({
       );
       rotateRef.current = 0;
       laidOutAtRef.current = band.width;
+      // A returning player's bobits are already standing there. Seeding must never fire the
+      // entrances -- forty owned questions would otherwise mean forty cannon shots on load.
+      directorRef.current = directorInit();
       setOverflow(overflowCount(stateRef.current));
     };
 
@@ -116,8 +142,22 @@ export function CollectionCrowd({
     if (!slug || !lastAnswer) return;
     const { questionId, correct, streak } = lastAnswer;
     if (correct) {
+      // The ordinal is how many this collection had already given the player, so 0 is the very
+      // first ever. Captured BEFORE the grant, and only a genuinely new bobit gets an entrance
+      // -- a question answered correctly a second time spawns nobody.
+      const ordinal = stateRef.current.residents.length;
+      const known = stateRef.current.residents.includes(questionId);
       stateRef.current = crowdApply(stateRef.current, { type: 'correct', id: questionId, streak });
       store.grant(slug, questionId);
+      if (!known && !reducedMotion) {
+        const scene = sceneForArrival(ordinal, randRef.current);
+        const w = laidOutAtRef.current || band.width;
+        if (canStage(directorRef.current, scene.span, w)) {
+          directorRef.current = startScene(
+            directorRef.current, scene, questionId, w, randRef.current,
+          );
+        }
+      }
     } else {
       stateRef.current = crowdApply(stateRef.current, { type: 'wrong', id: questionId });
       // Revoke unconditionally: revoking something never owned is a no-op, and checking first
@@ -126,6 +166,27 @@ export function CollectionCrowd({
     }
     setOverflow(overflowCount(stateRef.current));
   }, [lastAnswer, slug, store]);
+
+  // Dev replay. The set pieces fire once per collection EVER, so there is otherwise no way to
+  // see one twice -- not for building them, and not for reviewing them. That is why the spec
+  // calls this a requirement rather than a convenience.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const w = window as unknown as { __bobitScene?: (id: string) => void };
+    w.__bobitScene = (id: string) => {
+      const scene = ALL_SCENES.find(sc => sc.id === id);
+      if (!scene) {
+        // eslint-disable-next-line no-console
+        console.warn('[bobits] no such scene:', id, '— have:', ALL_SCENES.map(sc => sc.id));
+        return;
+      }
+      const w2 = laidOutAtRef.current || band.width;
+      directorRef.current = startScene(
+        directorRef.current, scene, `replay-${Date.now()}`, w2, randRef.current,
+      );
+    };
+    return () => { delete w.__bobitScene; };
+  }, [band]);
 
   // Confetti belongs to the finish, not to a tier.
   useEffect(() => {
@@ -145,10 +206,17 @@ export function CollectionCrowd({
         laidOutAtRef.current = measured;
       }
 
+      directorRef.current = directorStep(directorRef.current, dt, sceneGroundY(band));
+
+      // An agent the director owns is held exactly as a greeting one is: wanderAdvance must
+      // not walk somebody a scene is choreographing, or the two fight over his position.
+      const owned = castIds(directorRef.current);
+      const held = owned.size ? new Set([...greeting, ...owned]) : greeting;
+
       const opts = {
         band,
-        width: width || band.width,
-        greeting,
+        width: measured,
+        greeting: held,
         // The abduction's freeze stops feet as well as poses. Rewinding the animation phase
         // alone would pin everyone mid-stride and then slide them across the floor.
         frozen: isStunned(stateRef.current),
@@ -169,13 +237,50 @@ export function CollectionCrowd({
       agentsRef.current = agentsAdvance(agentsRef.current, dt, opts);
     }
 
-    return crowdFigures(stateRef.current, agentsRef.current, band, darkMode);
+    const air = aerialFigures(directorRef.current, band, darkMode);
+    // setState from the frame loop is cheap here because the array is empty almost always, and
+    // React bails out of a re-render when the value is the same empty array identity.
+    setAerial(prev => (prev.length === 0 && air.length === 0 ? prev : air));
+
+    return crowdFigures(stateRef.current, agentsRef.current, band, darkMode, directorRef.current);
   }, [band, darkMode, reducedMotion]);
 
   if (!slug) return null;
 
+  // The overlay spans the game area down to the bottom of the band, so ONE coordinate system
+  // covers both: a point at band-y `yb` is at overlay-y `overlayHeight - height + yb`. Without
+  // that the arc would jump at the hand-off between canvases.
+  const overlayHeight = Math.max(height, Math.round(viewportH * 0.62));
+  const bandToOverlay = overlayHeight - height;
+  const flying = aerialAllowed && aerial.length > 0;
+
   return (
     <div style={{ position: 'relative', width: '100%', flexShrink: 0 }}>
+      {/* The air.
+          A second canvas so a cannon shot can arc in front of the question card. Four bounds,
+          all load-bearing (spec, 2026-09-14 addendum):
+            1. Transient    -- only ever holds a figure mid-flight.
+            2. Reveal only  -- `aerialAllowed` is false while the answer timer runs.
+            3. Click-through -- pointerEvents none AND interactive={false}, so it installs no
+               document listeners and can never intercept a click meant for an answer.
+            4. Set pieces only -- pool entrances never set layer:'air'.
+          UNMOUNTED whenever nothing is airborne, so in the normal case there is no second
+          canvas on the page at all. */}
+      {flying && (
+        <div
+          aria-hidden
+          style={{
+            position: 'fixed', left: 0, right: 0, bottom: 0,
+            height: overlayHeight, pointerEvents: 'none', zIndex: 20,
+          }}
+        >
+          <BobitField
+            figures={aerial.map(f => ({ ...f, groundY: f.groundY + bandToOverlay }))}
+            height={overlayHeight}
+            interactive={false}
+          />
+        </div>
+      )}
       {/* The floor.
           Behind the canvas, so figures and their shadows sit ON it. It is not decoration: with
           depth gone the crowd had nothing to stand on, which is why a jump -- a real 48-unit

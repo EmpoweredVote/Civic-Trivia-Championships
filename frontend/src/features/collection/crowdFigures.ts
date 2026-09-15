@@ -8,6 +8,8 @@ import type { AgentState } from './crowdAgents';
 import { celebrationPose, ripplePose, pairUp, reactionOffset } from './crowdReactions';
 import { isStunned, LOSS_RISE } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
+import { actorsOf } from './sceneDirector';
+import type { DirectorState } from './sceneDirector';
 
 /** How many owned bobits are not being rendered because of the cap. */
 export function overflowCount(state: CrowdState): number {
@@ -24,9 +26,54 @@ const HIGHFIVE_REACH_UNITS = 160;
  * ranked bobit walks back to (see crowdAgents.homeSlot). What is left here is genuinely
  * translation: pick a pose, resolve a colour, and get out of the way.
  */
+/**
+ * The ground line the director stages on. Matches `agentPlacement`'s, so a scene actor and a
+ * wandering bobit stand on the same floor.
+ */
+export function sceneGroundY(band: CrowdBand): number {
+  return agentPlacement(0, band).groundY;
+}
+
+/**
+ * Figures the director wants on the OVERLAY, in band coordinates.
+ *
+ * Kept out of `crowdFigures` rather than filtered inside it, because the two go to different
+ * canvases. An airborne actor drawn on both would be painted twice.
+ */
+export function aerialFigures(
+  director: DirectorState, band: CrowdBand, darkMode: boolean,
+): FieldFigure[] {
+  return actorsOf(director, sceneGroundY(band))
+    .filter(a => a.layer === 'air' && !a.hidden)
+    .map(a => ({
+      id: `air:${a.agentId ?? a.role}`,
+      anim: a.pose,
+      color: figColor(toneOf(a.agentId ?? a.role), darkMode),
+      x: a.x,
+      groundY: a.y,
+      scale: band.scale,
+      poofable: false,
+      greetable: false,
+      vars: a.hand ? { hand: a.hand } : undefined,
+    }));
+}
+
 export function crowdFigures(
   state: CrowdState, agents: AgentState, band: CrowdBand, darkMode: boolean,
+  director?: DirectorState,
 ): FieldFigure[] {
+  // Actors the director owns, indexed by the agent playing them. A cast agent is drawn from
+  // its ACTOR -- pose and position both -- so the director and wanderAdvance can never fight
+  // over where it is.
+  const staged = new Map<string, ReturnType<typeof actorsOf>[number]>();
+  const orphans: ReturnType<typeof actorsOf>[number][] = [];
+  if (director) {
+    for (const a of actorsOf(director, sceneGroundY(band))) {
+      if (a.layer === 'air') continue;                   // the overlay's business
+      if (a.agentId && agents[a.agentId]) staged.set(a.agentId, a);
+      else orphans.push(a);
+    }
+  }
   // The cap is defended HERE, not only in syncCast, because it is a measured performance
   // ceiling (Stage 2: 105 was the 60fps floor on a mid-tier phone) and this is the last gate
   // before paint. syncCast already respects it on the live path; relying on that alone would
@@ -54,9 +101,46 @@ export function crowdFigures(
   const rippleX = state.ripple ? agents[state.ripple.from]?.x ?? null : null;
 
   const out: FieldFigure[] = [];
+
+  // Scene actors with no agent of their own: a bobit who has not joined the crowd yet.
+  for (const a of orphans) {
+    if (a.hidden) continue;
+    out.push({
+      id: `scene:${a.agentId ?? a.role}`,
+      anim: a.pose,
+      color: figColor(toneOf(a.agentId ?? a.role), darkMode),
+      x: a.x,
+      groundY: a.y,
+      scale: band.scale,
+      poofable: false,
+      greetable: false,
+      vars: a.hand ? { hand: a.hand } : undefined,
+    });
+  }
+
   for (const id of ids) {
     const a = agents[id];
     const victim = state.loss?.id === id;
+
+    // The director has this one: it plays what the scene says, where the scene says.
+    const act = staged.get(id);
+    if (act) {
+      if (act.hidden) continue;
+      out.push({
+        id,
+        anim: act.pose,
+        color: figColor(toneOf(id), darkMode),
+        x: act.x,
+        groundY: act.y,
+        scale: band.scale,
+        phase: (hashId(id) % 1000) / 250,
+        flip: false,
+        poofable: false,
+        greetable: true,
+        vars: act.hand ? { hand: act.hand } : undefined,
+      });
+      continue;
+    }
 
     // He holds his place but stops being drawn the moment the burst takes him.
     if (victim && !state.residents.includes(id)) continue;
