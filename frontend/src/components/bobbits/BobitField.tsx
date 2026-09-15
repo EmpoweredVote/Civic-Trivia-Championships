@@ -3,7 +3,9 @@ import type { CSSProperties } from 'react';
 import { CFG, computePose, draw, drawBatched, canBatch, drawShadow, drawSmoke } from './leremyRig';
 import { ALL_ANIMATIONS } from './rigExtras';
 import { pelvisOffset, sortByDepth, figureBounds, resolveX, resolveAnimKey } from './fieldGeometry';
-import type { FieldFigure } from './fieldGeometry';
+import type { FieldFigure, FieldProp, FieldEffect } from './fieldGeometry';
+import { drawCannon } from './props';
+import { drawSmokePuff } from './rigExtras';
 import { figureAtPoint } from './hitTest';
 import { greetReduce, isGreeting, greetClock, greetingIds } from './greetReducer';
 import type { GreetState } from './greetReducer';
@@ -57,9 +59,25 @@ interface BobitFieldProps {
   figuresFor?: (
     t: number, dt: number, width: number, greeting: ReadonlySet<string>,
   ) => FieldFigure[];
+  /** Scene props (a cannon). Painted BEHIND the figures, so a bobit can pass in front. */
+  propsList?: FieldProp[];
+  /** Per-frame prop source, called alongside `figuresFor`. */
+  propsFor?: (t: number, dt: number, width: number) => FieldProp[];
+  /** Per-frame effect source: smoke and flashes, painted in FRONT of the figures. */
+  effectsFor?: (t: number, dt: number, width: number) => FieldEffect[];
   className?: string;
   style?: CSSProperties;
 }
+
+/** Cannon barrel colour. Dark enough to read against both themes. */
+const CANNON_COLOR = '#3F4854';
+
+/**
+ * How long an effect lives, in seconds. The field fades them over these; the director owns
+ * when they are removed, and uses the same two numbers.
+ */
+const SMOKE_LIFE = 1.0;
+const FLASH_LIFE = 0.22;
 
 // ev-figures.js caps at 1.5 and CTC's old canvas capped at 2. 1.5 is the landing page's
 // measured choice and one of the levers the stage 2 spike will revisit.
@@ -70,6 +88,7 @@ const INK_PAD = 6;
 
 export function BobitField({
   figures, height, animate = true, interactive = false, onFigureClick, bubbles, figuresFor,
+  propsList, propsFor, effectsFor,
   className, style,
 }: BobitFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -103,10 +122,18 @@ export function BobitField({
   // figuresRef, or a hit test would use unresolved fractional x values as pixels.
   const resolvedRef = useRef<FieldFigure[]>(figures);
   const bubbleRef = useRef<BubbleState>({});
+  // Props and effects ride in refs for the same reason the figure source does: swapping the
+  // callback must not tear down and rebuild the animation loop.
+  const propsListRef = useRef(propsList);
+  const propsForRef = useRef(propsFor);
+  const effectsForRef = useRef(effectsFor);
 
   useEffect(() => { figuresRef.current = figures; }, [figures]);
   useEffect(() => { clickRef.current = onFigureClick; }, [onFigureClick]);
   useEffect(() => { figuresForRef.current = figuresFor; }, [figuresFor]);
+  useEffect(() => { propsListRef.current = propsList; }, [propsList]);
+  useEffect(() => { propsForRef.current = propsFor; }, [propsFor]);
+  useEffect(() => { effectsForRef.current = effectsFor; }, [effectsFor]);
 
   // Opening resets a bubble's lifetime, so only genuinely new or changed text re-arms it --
   // otherwise a parent re-render would hold every bubble open forever.
@@ -295,6 +322,17 @@ export function BobitField({
       // stillness is what sells the shock.
       const frozen = now.phase === 'stunned';
 
+      // Props first: they stand behind the crowd, so a bobit walking past the cannon reads
+      // correctly rather than vanishing behind it.
+      const propList = propsForRef.current
+        ? propsForRef.current(t, dtEff, w)
+        : (propsListRef.current ?? []);
+      for (const pr of propList) {
+        if (pr.kind === 'cannon') {
+          drawCannon(ctx, pr.x, pr.groundY, pr.scale, pr.angle ?? -32, pr.flip, CANNON_COLOR);
+        }
+      }
+
       for (const f of sortByDepth(visible)) {
         const run = fleeRef.current[f.id];
         if (run) {
@@ -316,6 +354,29 @@ export function BobitField({
         const b = bubbleRef.current[f.id];
         if (!b || fleeRef.current[f.id]) continue;
         drawBubble(ctx, f, b.text, b.ttl);
+      }
+
+      // Effects last: smoke and a flash belong in FRONT of whoever they are happening to.
+      const effectList = effectsForRef.current ? effectsForRef.current(t, dtEff, w) : [];
+      for (const e of effectList) {
+        if (e.kind === 'smoke') {
+          // Expands and fades over its life, so a puff reads as dispersing rather than as a
+          // disc that blinks out.
+          const alpha = Math.max(0, 1 - e.t / SMOKE_LIFE);
+          drawSmokePuff(
+            ctx, e.x, e.y, e.spread * (0.6 + e.t), alpha, e.id.length, t, e.color || '#8A8F98',
+          );
+        } else {
+          // A hard white disc that dies fast: the MOMENT of arrival, not a glow around it.
+          const k = Math.max(0, 1 - e.t / FLASH_LIFE);
+          ctx.save();
+          ctx.globalAlpha = k;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(e.x, e.y - e.spread * 0.4, e.spread * (1.6 - k), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
       }
 
       drawPoofSmoke(ctx, now, all);

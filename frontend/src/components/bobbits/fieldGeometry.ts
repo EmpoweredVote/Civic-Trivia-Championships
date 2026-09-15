@@ -101,6 +101,34 @@ export function figureBounds(f: FieldFigure) {
 }
 
 /**
+ * A scene prop standing on the field. Not a figure: it has no pose and no hit box, and the
+ * pointer never finds it.
+ */
+export interface FieldProp {
+  id: string;
+  kind: 'cannon';
+  x: number;
+  /** px from the field's top to the prop's ground contact line. */
+  groundY: number;
+  scale: number;
+  flip?: boolean;
+  /** Degrees from horizontal for a cannon barrel; negative is nose-up. */
+  angle?: number;
+}
+
+/** A transient visual effect: a puff of smoke or a flash. Not a figure and not a prop. */
+export interface FieldEffect {
+  id: string;
+  kind: 'smoke' | 'flash';
+  x: number;
+  y: number;
+  /** Seconds since it began. */
+  t: number;
+  spread: number;
+  color?: string;
+}
+
+/**
  * A walkable/climbable ledge in field space. Declared now, consumed by nothing yet -- the seam
  * exists so the later unlockable platforms, toys and buildings can be added without reworking
  * how figures are positioned.
