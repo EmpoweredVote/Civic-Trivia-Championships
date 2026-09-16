@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   slotPosition, rowsFor, CROWD_CAP, bandFor, stageBounds, agentPlacement, wanderCastFor,
-  HEADROOM_UNITS,
+  HEADROOM_UNITS, overlayOffset, overlayHeightFor,
 } from '../crowdLayout';
 import { MIN_SEPARATION } from '../../../components/bobbits/wanderReducer';
 
@@ -204,5 +204,48 @@ describe('one ground line', () => {
       const b = bandFor(mobile);
       expect(agentPlacement(0, b).groundY).toBeGreaterThanOrEqual(HEADROOM_UNITS * b.scale);
     }
+  });
+});
+
+describe('overlayOffset', () => {
+  const OVERLAY = 500;
+  const BAND_H = 96;
+
+  it('falls back to the flush mapping before the band has been measured', () => {
+    expect(overlayOffset(null, 800, OVERLAY, BAND_H)).toEqual({ dx: 0, dy: OVERLAY - BAND_H });
+  });
+
+  it('is the flush mapping when the band really is flush with the viewport', () => {
+    const rect = { left: 0, bottom: 800 };
+    expect(overlayOffset(rect, 800, OVERLAY, BAND_H)).toEqual({ dx: 0, dy: OVERLAY - BAND_H });
+  });
+
+  /**
+   * The bug. The crowd sits inside the game container's padding, so the band's box is inset
+   * from the left and lifted off the bottom; a figure handed between the canvases jumped by
+   * exactly these two numbers.
+   */
+  it('accounts for the padding the game container puts around the band', () => {
+    // 32px bottom padding (md:py-8) and 24px left padding (sm:px-6).
+    const rect = { left: 24, bottom: 800 - 32 };
+    const { dx, dy } = overlayOffset(rect, 800, OVERLAY, BAND_H);
+    expect(dx).toBe(24);
+    expect(dy).toBe(OVERLAY - BAND_H - 32);
+  });
+
+  /** A point on the band's ground line must land on the same pixel in either canvas. */
+  it('maps the band ground line to the same viewport y in both canvases', () => {
+    const viewportH = 900;
+    const rect = { left: 16, bottom: viewportH - 20 };
+    const overlayH = overlayHeightFor(viewportH, BAND_H);
+    const { dx, dy } = overlayOffset(rect, viewportH, overlayH, BAND_H);
+
+    const yInBand = 88;
+    const viewportYViaBand = rect.bottom - BAND_H + yInBand;
+    const viewportYViaOverlay = (viewportH - overlayH) + (yInBand + dy);
+    expect(viewportYViaOverlay).toBeCloseTo(viewportYViaBand, 6);
+
+    const xInBand = 300;
+    expect(xInBand + dx).toBeCloseTo(rect.left + xInBand, 6);
   });
 });

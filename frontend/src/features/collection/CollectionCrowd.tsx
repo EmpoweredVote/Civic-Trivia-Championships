@@ -17,7 +17,9 @@ import type { DirectorState } from './sceneDirector';
 import { sceneForArrival, ALL_SCENES } from './scenes';
 import { ROLE_HOST } from './scenes/types';
 import type { Scene } from './scenes/types';
-import { bandFor, CROWD_CAP, wanderCastFor, groundLineFromBottom } from './crowdLayout';
+import {
+  bandFor, CROWD_CAP, wanderCastFor, groundLineFromBottom, overlayHeightFor, overlayOffset,
+} from './crowdLayout';
 import {
   initAgents, agentsAdvance, syncCast, rotateCast, makeRand, rescaleTo, placeReleased,
   nearestAgent,
@@ -50,6 +52,9 @@ interface CollectionCrowdProps {
  * so there is nothing per-instance about it and rebuilding it would only re-read storage.
  */
 const localStore = createLocalProgressStore();
+
+/** Stable identity, so "nothing is flying" never causes a re-render. */
+const NO_AERIAL = { figures: [] as FieldFigure[], dx: 0, dy: 0 };
 
 /**
  * The collection crowd: one bobit per question this player has answered correctly, standing
@@ -103,7 +108,15 @@ export function CollectionCrowd({
   const allowAirRef = useRef(aerialAllowed);
   // Air actors are published from the frame loop for React to mount the overlay with. Kept as
   // STATE rather than a ref because mounting the overlay is a render, not a paint.
-  const [aerial, setAerial] = useState<FieldFigure[]>([]);
+  /**
+   * Airborne figures AND the band-to-overlay offset they were measured against, in one piece of
+   * state. Splitting them would let a frame paint this tick's figures against last tick's
+   * offset, which is a one-frame jump in exactly the place this mapping exists to prevent.
+   */
+  const [aerial, setAerial] = useState<{ figures: FieldFigure[]; dx: number; dy: number }>(
+    NO_AERIAL,
+  );
+  const wrapRef = useRef<HTMLDivElement>(null);
   // Random by default; seedable via ?bobitSeed= so the screenshot sweep and the bench get the
   // SAME room every run. Math.random cannot be seeded, and a verification pass that cannot
   // reproduce its own input is not a verification pass.
@@ -130,7 +143,7 @@ export function CollectionCrowd({
       stateRef.current = crowdInit();
       agentsRef.current = {};
       directorRef.current = directorInit();
-      setAerial([]);
+      setAerial(NO_AERIAL);
       setOverflow(0);
       return;
     }
@@ -277,9 +290,18 @@ export function CollectionCrowd({
     }
 
     const air = aerialFigures(directorRef.current, band, darkMode);
-    // setState from the frame loop is cheap here because the array is empty almost always, and
-    // React bails out of a re-render when the value is the same empty array identity.
-    setAerial(prev => (prev.length === 0 && air.length === 0 ? prev : air));
+    if (air.length === 0) {
+      // setState from the frame loop is cheap here because the array is empty almost always,
+      // and React bails out of a re-render when the value is the same identity.
+      setAerial(prev => (prev.figures.length === 0 ? prev : NO_AERIAL));
+    } else {
+      // Measured only while something is actually flying -- a handful of frames per match --
+      // so the layout read never lands on the ordinary path.
+      const r = wrapRef.current?.getBoundingClientRect() ?? null;
+      const vh = window.innerHeight;
+      const { dx, dy } = overlayOffset(r, vh, overlayHeightFor(vh, band.height), band.height);
+      setAerial({ figures: air, dx, dy });
+    }
 
     return crowdFigures(
       stateRef.current, agentsRef.current, band, darkMode, directorRef.current, allowAirRef.current,
@@ -301,14 +323,14 @@ export function CollectionCrowd({
   if (!slug) return null;
 
   // The overlay spans the game area down to the bottom of the band, so ONE coordinate system
-  // covers both: a point at band-y `yb` is at overlay-y `overlayHeight - height + yb`. Without
-  // that the arc would jump at the hand-off between canvases.
-  const overlayHeight = Math.max(height, Math.round(viewportH * 0.62));
-  const bandToOverlay = overlayHeight - height;
-  const flying = aerialAllowed && aerial.length > 0;
+  // covers both. The offsets come from `overlayOffset`, measured against the band's real box:
+  // the overlay is fixed to the VIEWPORT while the band sits inside the game container's
+  // padding, and assuming those were the same box drew a flying bobit low and to the left.
+  const overlayHeight = overlayHeightFor(viewportH, height);
+  const flying = aerialAllowed && aerial.figures.length > 0;
 
   return (
-    <div style={{ position: 'relative', width: '100%', flexShrink: 0 }}>
+    <div ref={wrapRef} style={{ position: 'relative', width: '100%', flexShrink: 0 }}>
       {/* The air.
           A second canvas so a cannon shot can arc in front of the question card. Four bounds,
           all load-bearing (spec, 2026-09-14 addendum):
@@ -328,7 +350,9 @@ export function CollectionCrowd({
           }}
         >
           <BobitField
-            figures={aerial.map(f => ({ ...f, groundY: f.groundY + bandToOverlay }))}
+            figures={aerial.figures.map(f => (
+              { ...f, x: f.x + aerial.dx, groundY: f.groundY + aerial.dy }
+            ))}
             height={overlayHeight}
             interactive={false}
           />

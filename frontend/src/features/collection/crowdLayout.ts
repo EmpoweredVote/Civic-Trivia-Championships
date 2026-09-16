@@ -155,3 +155,33 @@ export function agentPlacement(_depth: number, band: CrowdBand) {
   const { bottom } = stageBounds(band);
   return { groundY: bottom, scale: band.scale };
 }
+
+/**
+ * How tall the overlay is: enough to hold the whole arc, capped by the band itself.
+ */
+export function overlayHeightFor(viewportH: number, bandHeight: number): number {
+  return Math.max(bandHeight, Math.round(viewportH * 0.62));
+}
+
+/**
+ * Where the band sits inside the overlay, so one coordinate system really does cover both.
+ *
+ * The overlay is fixed to the VIEWPORT (left 0, bottom 0) and the band is not: the crowd lives
+ * inside the game container's padding, so the band's box is inset from the viewport's left edge
+ * and lifted off its bottom. Mapping with `overlayHeight - bandHeight` alone assumed those were
+ * the same box, which drew an airborne figure ~20-32px too low and ~16-24px sideways -- close
+ * to a whole body height of discontinuity at exactly the two frames a keyframe screenshot
+ * skips, takeoff and landing.
+ *
+ * `bandRect` is the band wrapper's viewport rect. Pass a null rect before it has been measured
+ * and the mapping falls back to the old viewport-flush assumption, which is wrong by the
+ * padding but never wrong by more.
+ */
+export function overlayOffset(
+  bandRect: { left: number; bottom: number } | null,
+  viewportH: number, overlayHeight: number, bandHeight: number,
+): { dx: number; dy: number } {
+  const base = overlayHeight - bandHeight;
+  if (!bandRect) return { dx: 0, dy: base };
+  return { dx: bandRect.left, dy: base - (viewportH - bandRect.bottom) };
+}
