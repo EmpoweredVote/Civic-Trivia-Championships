@@ -1,6 +1,6 @@
 # Bobit living room — handoff
 
-**Written:** 2026-09-15, updated after a review pass and the first two fixes from it.
+**Written:** 2026-09-15, after a review pass and the three fixes that came out of it.
 **Branch:** `feat/bobit-living-floor` — **36 commits, NOT pushed, nothing deployed.**
 Production is untouched. The frontend static site auto-deploys from `master`, so merging is a
 production deploy; do not merge without Chris saying so.
