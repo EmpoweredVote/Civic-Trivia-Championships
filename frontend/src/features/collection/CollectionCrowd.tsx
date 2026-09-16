@@ -17,7 +17,7 @@ import type { DirectorState } from './sceneDirector';
 import { sceneForArrival, ALL_SCENES } from './scenes';
 import { bandFor, CROWD_CAP, wanderCastFor, groundLineFromBottom } from './crowdLayout';
 import {
-  initAgents, agentsAdvance, syncCast, rotateCast, makeRand, rescaleTo,
+  initAgents, agentsAdvance, syncCast, rotateCast, makeRand, rescaleTo, placeReleased,
 } from './crowdAgents';
 import type { AgentState } from './crowdAgents';
 import type { Rand } from '../../components/bobbits/wanderReducer';
@@ -233,6 +233,11 @@ export function CollectionCrowd({
       agentsRef.current = syncCast(
         agentsRef.current, stateRef.current.residents, opts, wanderCastFor(opts.width, band),
       );
+
+      // AFTER syncCast, because the agent a released bobit is about to be placed on is the one
+      // syncCast has just created for him, and BEFORE agentsAdvance, so his first walking frame
+      // starts from his entrance's last position rather than from the seed at the band's centre.
+      agentsRef.current = placeReleased(agentsRef.current, directorRef.current.released);
 
       rotateRef.current += dt;
       const rotated = rotateCast(agentsRef.current, rotateRef.current, opts);

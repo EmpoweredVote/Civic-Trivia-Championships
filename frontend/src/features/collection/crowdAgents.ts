@@ -130,6 +130,41 @@ export function initAgents(ids: string[], opts: AgentOpts): AgentState {
   return out;
 }
 
+/**
+ * Take the positions a finished scene handed back and stand those agents on them.
+ *
+ * An agent is seeded at the centre of the band when his resident first appears, because at that
+ * moment there is nowhere better to put him. A bobit arriving through an entrance spends that
+ * whole time drawn from his ACTOR, so the seed is invisible -- right up until the scene ends and
+ * he is drawn from his agent again, a band's width from where his entrance left him.
+ *
+ * The move is cleared as well as the position: an agent left `moving` interpolates from `fromX`
+ * towards `targetX`, so writing x alone would let the next frame walk him straight back.
+ */
+export function placeReleased(
+  state: AgentState, released: readonly { agentId: string; x: number }[],
+): AgentState {
+  if (released.length === 0) return state;
+
+  let out: AgentState | null = null;
+  for (const { agentId, x } of released) {
+    const a = state[agentId];
+    // Roles a scene invented rather than cast -- the cannon's host -- have no agent to place.
+    if (!a) continue;
+    out ??= { ...state };
+    out[agentId] = {
+      ...a,
+      x,
+      fromX: x,
+      targetX: x,
+      activity: 'wander',
+      moveT: 0,
+      moveDur: 0,
+    };
+  }
+  return out ?? state;
+}
+
 export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): AgentState {
   if (opts.frozen) return state;
 

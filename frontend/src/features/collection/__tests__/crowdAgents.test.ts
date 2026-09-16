@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY, makeRand,
-  startMove, MOVE_MIN_SEC, rescaleTo,
+  startMove, MOVE_MIN_SEC, rescaleTo, placeReleased,
 } from '../crowdAgents';
 import type { AgentOpts, AgentState } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
@@ -377,5 +377,38 @@ describe('rescaleTo', () => {
     const s = initAgents(['a'], OPTS());
     expect(rescaleTo(s, 0, 1000)).toBe(s);
     expect(rescaleTo(s, 1000, 0)).toBe(s);
+  });
+});
+
+describe('placeReleased', () => {
+  it('moves an agent to where his scene left him', () => {
+    const before = initAgents(['a'], OPTS());
+    const after = placeReleased(before, [{ agentId: 'a', x: 123 }]);
+    expect(before.a.x).not.toBe(123);        // the seed really was somewhere else
+    expect(after.a.x).toBe(123);
+  });
+
+  /**
+   * Position alone is not enough. An agent mid-`moving` interpolates from `fromX` to `targetX`,
+   * so writing x and nothing else lets the very next frame drag him straight back off his mark.
+   */
+  it('clears any move that was in flight, so he does not slide off his mark', () => {
+    const seeded = initAgents(['a'], OPTS());
+    const walking = { ...seeded, a: startMove(seeded.a, 900, 1, OPTS()) };
+    const after = placeReleased(walking, [{ agentId: 'a', x: 123 }]);
+    expect(after.a.activity).toBe('wander');
+    expect(after.a.fromX).toBe(123);
+    expect(after.a.targetX).toBe(123);
+  });
+
+  it('ignores an id with no agent, such as a scene-invented host', () => {
+    const seeded = initAgents(['a'], OPTS());
+    const after = placeReleased(seeded, [{ agentId: 'cannon:host:42', x: 500 }]);
+    expect(Object.keys(after)).toEqual(['a']);
+  });
+
+  it('returns the same state object when nobody was released', () => {
+    const seeded = initAgents(['a'], OPTS());
+    expect(placeReleased(seeded, [])).toBe(seeded);
   });
 });

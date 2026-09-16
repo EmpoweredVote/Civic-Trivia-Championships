@@ -188,3 +188,29 @@ describe('a beat written at at:0', () => {
     expect(s.effects.filter(e => e.kind === 'smoke')).toHaveLength(1);
   });
 });
+
+describe('releasing a scene', () => {
+  it('reports nobody until a scene actually ends', () => {
+    expect(directorInit().released).toEqual([]);
+    let s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
+    s = directorStep(s, 1 / 60, GROUND);
+    expect(s.released).toEqual([]);
+  });
+
+  /**
+   * The whole point: a bobit's agent is seeded at the centre of the band and only his ACTOR
+   * knows where the scene walked him. Without a handoff he snaps back to centre the instant
+   * his entrance ends, which is the one thing the design forbids outright.
+   */
+  it('hands an actor back at the x his scene left him at', () => {
+    let s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
+    const slot = s.running[0];
+    for (let i = 0; i < 200 && s.released.length === 0; i++) {
+      s = directorStep(s, 1 / 60, GROUND);
+    }
+    expect(s.running).toHaveLength(0);
+    expect(s.released.map(r => r.agentId)).toEqual(['a']);
+    // TINY walks the newcomer to moveTo: 1 -- the far end of its own reserved slot.
+    expect(s.released[0].x).toBeCloseTo(slot.right, 0);
+  });
+});

@@ -51,10 +51,25 @@ export interface DirectorProp {
   flip: boolean;
 }
 
+/**
+ * An agent the director has just let go of, and the x his scene left him standing at.
+ *
+ * The crowd seeds an agent for a new resident at the centre of the band, because at the moment
+ * it is created there is nowhere better to put him. While a scene owns him that is invisible --
+ * he is drawn from his ACTOR. The frame the scene ends, he is drawn from his agent again, and
+ * without this handoff he snaps from wherever his entrance finished to the middle of the room.
+ */
+export interface ReleasedActor {
+  agentId: string;
+  x: number;
+}
+
 export interface DirectorState {
   running: RunningScene[];
   props: DirectorProp[];
   effects: DirectorEffect[];
+  /** Released by the most recent `directorStep`, and only by that one. */
+  released: ReleasedActor[];
 }
 
 /**
@@ -65,7 +80,7 @@ export const SMOKE_DUR = 1.0;
 export const FLASH_DUR = 0.22;
 
 export function directorInit(): DirectorState {
-  return { running: [], props: [], effects: [] };
+  return { running: [], props: [], effects: [], released: [] };
 }
 
 /** Every agent the director currently owns. `crowdAgents` must not advance these. */
@@ -189,6 +204,7 @@ export function directorStep(
   state: DirectorState, dt: number, groundY: number,
 ): DirectorState {
   const running: RunningScene[] = [];
+  const released: ReleasedActor[] = [];
   let props = [...state.props];
   let effects = state.effects.map(e => ({ ...e, t: e.t + dt }));
 
@@ -237,6 +253,15 @@ export function directorStep(
       // The scene's props leave with it, so a cannon can never outlive the scene that placed
       // it -- including when the scene forgot to clear it.
       props = props.filter(p => !p.id.startsWith(`${r.scene.id}:`));
+
+      // Hand every cast member back where the scene actually left him, measured at the
+      // scene's own end rather than at t1, which may have overshot it by part of a frame.
+      for (const role of r.scene.roles) {
+        const agentId = r.cast[role];
+        if (!agentId) continue;
+        const frac = fracAt(r.scene.beats, role, r.scene.duration, r.scene.duration);
+        released.push({ agentId, x: r.left + frac * (r.right - r.left) });
+      }
       continue;
     }
     running.push({ ...r, t: t1 });
@@ -244,7 +269,7 @@ export function directorStep(
 
   effects = effects.filter(e => e.t < (e.kind === 'flash' ? FLASH_DUR : SMOKE_DUR));
 
-  return { running, props, effects };
+  return { running, props, effects, released };
 }
 
 /** Everything the director currently wants drawn, as positions and poses. */
