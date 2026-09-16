@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BobitField } from '../../components/bobbits/BobitField';
 import type { FieldFigure, FieldProp, FieldEffect } from '../../components/bobbits/fieldGeometry';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -124,6 +124,15 @@ export function CollectionCrowd({
     new URLSearchParams(window.location.search).get('bobitSeed'),
   ));
   const [overflow, setOverflow] = useState(0);
+  /**
+   * Forces a repaint of the band when it is NOT animating.
+   *
+   * Under reduced motion there is no frame loop to pick changes up, so every edit that would
+   * otherwise be drawn on the next frame -- the initial seed, a bobit granted or lost mid-match
+   * -- has to say so explicitly.
+   */
+  const [repaintKey, setRepaintKey] = useState(0);
+  const repaint = useCallback(() => setRepaintKey(k => k + 1), []);
 
   // Signed in: progress lives on the account. Signed out: it lives in this browser, exactly
   // as it has since Stage 3. Keyed on the user id rather than merely on truthiness, so
@@ -166,6 +175,7 @@ export function CollectionCrowd({
       // entrances -- forty owned questions would otherwise mean forty cannon shots on load.
       directorRef.current = directorInit();
       setOverflow(overflowCount(stateRef.current));
+      repaint();
     };
 
     // No-op for the local driver, which has no hydrate: its mirror is already the truth.
@@ -208,7 +218,8 @@ export function CollectionCrowd({
       store.revoke(slug, questionId);
     }
     setOverflow(overflowCount(stateRef.current));
-  }, [lastAnswer, slug, store]);
+    repaint();
+  }, [lastAnswer, slug, store, repaint]);
 
   useEffect(() => { allowAirRef.current = aerialAllowed; }, [aerialAllowed]);
 
@@ -243,15 +254,22 @@ export function CollectionCrowd({
   const figuresFor = useMemo(() => (
     _t: number, dt: number, width: number, greeting: ReadonlySet<string>,
   ): FieldFigure[] => {
+    // Reconciliation happens either way. Only MOTION is skipped under reduced motion: an agent
+    // still has to exist for a resident, or the accessible path renders an empty band rather
+    // than a still one, which is not the same thing and is not what the spec asks for.
+    const measured = width || band.width;
+    if (laidOutAtRef.current && measured !== laidOutAtRef.current) {
+      agentsRef.current = rescaleTo(agentsRef.current, laidOutAtRef.current, measured);
+      laidOutAtRef.current = measured;
+    }
+    agentsRef.current = syncCast(
+      agentsRef.current, stateRef.current.residents,
+      { band, width: measured, greeting, frozen: false, rand: randRef.current },
+      wanderCastFor(measured, band),
+    );
+
     if (!reducedMotion) {
       stateRef.current = crowdStep(stateRef.current, dt);
-
-      // First real frame (and any resize): spread the room over the width it actually has.
-      const measured = width || band.width;
-      if (laidOutAtRef.current && measured !== laidOutAtRef.current) {
-        agentsRef.current = rescaleTo(agentsRef.current, laidOutAtRef.current, measured);
-        laidOutAtRef.current = measured;
-      }
 
       directorRef.current = directorStep(directorRef.current, dt, sceneGroundY(band));
 
@@ -269,13 +287,6 @@ export function CollectionCrowd({
         frozen: isStunned(stateRef.current),
         rand: randRef.current,
       };
-
-      // Reconcile first: a bobit granted this frame must exist before he is advanced. The
-      // cast is derived from the MEASURED width, so a phone gets a handful of wanderers and a
-      // wide desktop band gets a proper crowd -- it is floor space that limits this, not CPU.
-      agentsRef.current = syncCast(
-        agentsRef.current, stateRef.current.residents, opts, wanderCastFor(opts.width, band),
-      );
 
       // AFTER syncCast, because the agent a released bobit is about to be placed on is the one
       // syncCast has just created for him, and BEFORE agentsAdvance, so his first walking frame
@@ -386,6 +397,7 @@ export function CollectionCrowd({
         effectsFor={effectsFor}
         height={height}
         interactive
+        repaintKey={repaintKey}
       />
       {overflow > 0 && (
         <span

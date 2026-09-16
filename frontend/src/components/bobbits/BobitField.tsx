@@ -48,6 +48,16 @@ interface BobitFieldProps {
   /** Speech bubbles to show, keyed by figure id. Lifetimes are managed by the field. */
   bubbles?: Record<string, string>;
   /**
+   * Bump to force a repaint of a STATIC field (reduced motion, or `animate={false}`).
+   *
+   * A running field repaints every frame and ignores this. A static one paints exactly once,
+   * from an effect that React runs BEFORE the parent's own effects -- so whatever the parent
+   * seeds afterwards, or grants later in the match, would never be drawn. `figuresFor` cannot
+   * signal this itself: it is a memoised callback whose identity deliberately does not change
+   * when the figures behind it do.
+   */
+  repaintKey?: number;
+  /**
    * Per-frame figure source, called once at the top of each frame. `width` is the field's
    * measured width; `greeting` is the PREVIOUS frame's greeting set, because hover is resolved
    * after this call (hover needs positions, and positions would then need hover). One frame of
@@ -88,7 +98,7 @@ const INK_PAD = 6;
 
 export function BobitField({
   figures, height, animate = true, interactive = false, onFigureClick, bubbles, figuresFor,
-  propsList, propsFor, effectsFor,
+  propsList, propsFor, effectsFor, repaintKey,
   className, style,
 }: BobitFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -170,8 +180,9 @@ export function BobitField({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
+    // Observed AFTER renderFrame exists, so a static field can repaint on resize. Resizing a
+    // canvas clears it, and without a repaint the band simply went blank.
+    let ro: ResizeObserver | null = null;
 
     /** Draw one figure at its own place on the field. */
     const paint = (
@@ -384,9 +395,15 @@ export function BobitField({
       drawPoofSmoke(ctx, now, all);
     };
 
+    ro = new ResizeObserver(() => {
+      resize();
+      if (!running) renderFrame(0, 0);
+    });
+    ro.observe(canvas);
+
     if (!running) {
       renderFrame(0, 0);
-      return () => ro.disconnect();
+      return () => ro?.disconnect();
     }
 
     let rafId = 0;
@@ -401,10 +418,10 @@ export function BobitField({
     rafId = requestAnimationFrame(tick);
 
     return () => {
-      ro.disconnect();
+      ro?.disconnect();
       cancelAnimationFrame(rafId);
     };
-  }, [height, running, interactive]);
+  }, [height, running, interactive, repaintKey]);
 
   // ── pointer wiring ────────────────────────────────────────────────────────────────────
   useEffect(() => {
