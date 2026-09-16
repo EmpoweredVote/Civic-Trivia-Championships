@@ -19,6 +19,40 @@ const BARREL_R = 26;
 const WHEEL_R = 40;
 
 /**
+ * Everything below is sized against ONE constraint: the player sees this at `scale` 0.2, where
+ * the whole cannon is about 38px wide and the wheel is 16px across. A detail thinner than ~8
+ * rig units is under a pixel and a half there and may as well not exist -- which is what
+ * happened to the first pass. Nothing here is smaller than that.
+ */
+const MUZZLE_LEN = 18;          // the flare at the mouth
+const MUZZLE_R = BARREL_R * 1.32;
+const BAND_W = 10;              // reinforcing rings
+const TRAIL_W = 15;             // the beam from the axle back to the ground
+const HUB_R = 10;
+const SPOKE_W = 7;
+
+/**
+ * A detail colour that contrasts with the barrel, whichever theme is painting it.
+ *
+ * This was a hardcoded '#AAB2BF'. The field passes a light body in dark mode ('#9AA6B8'), so
+ * the accent and the body were within a few percent of each other and every detail vanished --
+ * a real part of why the prop read as a featureless tube rather than as a cannon.
+ */
+export function accentFor(body: string): string {
+  const LIGHT = '#C9D2E0';
+  const DARK = '#2B3440';
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(body.trim());
+  if (!m) return LIGHT;
+  const h = m[1].length === 3 ? m[1].split('').map(c => c + c).join('') : m[1];
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  // Rough perceptual luminance; exactness does not matter, only which side of the middle.
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.5 ? DARK : LIGHT;
+}
+
+/**
  * Where the barrel's mouth is, in field px.
  *
  * The cannon fires FROM here, so a flight has to start here -- otherwise the bobit appears out
@@ -37,10 +71,24 @@ export function cannonMuzzle(
 }
 
 /**
- * A stubby cartoon cannon: a wheel, a barrel on a pivot, and a firing knob on the breech.
+ * A stubby cartoon cannon: wheel and trail on the ground, barrel on the axle.
  *
  * `angle` is degrees from horizontal, NEGATIVE being nose-up, which matches `cannonMuzzle` --
  * the two must agree or the shot leaves from somewhere other than the barrel.
+ *
+ * The first version was a filled disc with a tapered tube on it, in one flat colour, and it
+ * read as a magnifying glass: the wheel and the barrel merged into a single blob because they
+ * were the same tone and touched. What makes the shape legible as a cannon, in rough order of
+ * how much each one earns at 38px:
+ *
+ *   1. The WHEEL is a ring with spokes, not a disc -- background shows through it, so the wheel
+ *      separates from the barrel instead of merging with it.
+ *   2. A TRAIL running back to the ground. After the barrel this is the most cannon-defining
+ *      line there is, and its absence was why the thing appeared to float.
+ *   3. A FLARED muzzle and a swelled breech, so the barrel has a direction. A plain taper does
+ *      not say which end fires.
+ *   4. A cascabel knob and two reinforcing bands: cheap, and they read as "cannon" even when
+ *      they are two pixels each.
  */
 export function drawCannon(
   ctx: CanvasRenderingContext2D,
@@ -49,6 +97,7 @@ export function drawCannon(
 ) {
   const a = (angle * Math.PI) / 180;
   const dir = flip ? -1 : 1;
+  const accent = accentFor(color);
 
   ctx.save();
   ctx.translate(x, groundY);
@@ -56,39 +105,81 @@ export function drawCannon(
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  // wheel
+  // ── trail: axle back to the ground, drawn first so the wheel sits over its end ──────────
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(0, -WHEEL_R, WHEEL_R, 0, Math.PI * 2);
+  ctx.moveTo(-6, -WHEEL_R - TRAIL_W * 0.5);
+  ctx.lineTo(-6, -WHEEL_R + TRAIL_W * 0.5);
+  ctx.lineTo(-78, -2);
+  ctx.lineTo(-78, -2 - TRAIL_W);
+  ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = '#AAB2BF';
+  // A foot, so the trail rests on the floor rather than stabbing through it.
   ctx.beginPath();
-  ctx.arc(0, -WHEEL_R, WHEEL_R * 0.34, 0, Math.PI * 2);
+  ctx.ellipse(-76, -4, 13, 6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // barrel, pivoted at the axle
+  // ── barrel, pivoted at the axle ────────────────────────────────────────────────────────
   ctx.save();
   ctx.translate(0, -WHEEL_R);
   ctx.rotate(a);
+
+  // Breech swell -> slight taper -> flare. Drawn as one path so the silhouette is unbroken.
+  const taperEnd = BARREL_LEN - MUZZLE_LEN;
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(-14, -BARREL_R);
-  ctx.lineTo(BARREL_LEN, -BARREL_R * 0.8);
-  ctx.lineTo(BARREL_LEN, BARREL_R * 0.8);
-  ctx.lineTo(-14, BARREL_R);
+  ctx.moveTo(-20, -BARREL_R);
+  ctx.lineTo(taperEnd, -BARREL_R * 0.78);
+  ctx.lineTo(taperEnd, -MUZZLE_R);
+  ctx.lineTo(BARREL_LEN, -MUZZLE_R);
+  ctx.lineTo(BARREL_LEN, MUZZLE_R);
+  ctx.lineTo(taperEnd, MUZZLE_R);
+  ctx.lineTo(taperEnd, BARREL_R * 0.78);
+  ctx.lineTo(-20, BARREL_R);
   ctx.closePath();
   ctx.fill();
-  // muzzle ring
-  ctx.fillStyle = '#AAB2BF';
+
+  // Cascabel: the knob at the very back of a real gun. Reads as "this end does not fire".
   ctx.beginPath();
-  ctx.ellipse(BARREL_LEN, 0, BARREL_R * 0.34, BARREL_R * 0.86, 0, 0, Math.PI * 2);
+  ctx.arc(-26, 0, 11, 0, Math.PI * 2);
   ctx.fill();
-  // firing knob on the breech
-  ctx.fillStyle = color;
+
+  // Two reinforcing bands.
+  ctx.fillStyle = accent;
+  for (const bx of [16, 74]) {
+    const halfH = BARREL_R * (bx < 40 ? 0.98 : 0.9);
+    ctx.fillRect(bx, -halfH, BAND_W, halfH * 2);
+  }
+
+  // The bore: an accent ellipse INSIDE the flare, so the mouth reads as an opening rather than
+  // as a highlight sitting on the end of a tube.
   ctx.beginPath();
-  ctx.arc(-18, 0, 9, 0, Math.PI * 2);
+  ctx.ellipse(BARREL_LEN - 2, 0, 5, MUZZLE_R * 0.66, 0, 0, Math.PI * 2);
   ctx.fill();
+
   ctx.restore();
+
+  // ── wheel: a RING, so the background separates it from the barrel ──────────────────────
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 13;
+  ctx.beginPath();
+  ctx.arc(0, -WHEEL_R, WHEEL_R - 6, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = SPOKE_W;
+  for (let i = 0; i < 6; i++) {
+    const t = (i / 6) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -WHEEL_R);
+    ctx.lineTo(Math.cos(t) * (WHEEL_R - 8), -WHEEL_R + Math.sin(t) * (WHEEL_R - 8));
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(0, -WHEEL_R, HUB_R, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.restore();
 }
