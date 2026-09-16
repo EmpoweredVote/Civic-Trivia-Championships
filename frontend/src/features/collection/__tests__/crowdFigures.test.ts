@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { crowdFigures, overflowCount, aerialFigures } from '../crowdFigures';
+import {
+  crowdFigures, overflowCount, aerialFigures, heightFactor, HEIGHT_SPREAD,
+} from '../crowdFigures';
 import { directorInit, startScene, directorStep } from '../sceneDirector';
 import { SWIRL } from '../scenes/arrival01Swirl';
 import { CANNON } from '../scenes/arrival02Cannon';
@@ -235,5 +237,58 @@ describe('when the sky is closed', () => {
     expect(ids).not.toContain('scene:a');
     const air = aerialFigures(dir, BAND, false);
     expect(air.map(f => f.id)).toContain('air:a');
+  });
+});
+
+describe('heightFactor', () => {
+  it('is stable for an id', () => {
+    expect(heightFactor('milwi-014')).toBe(heightFactor('milwi-014'));
+  });
+
+  it('stays inside the spread', () => {
+    for (let i = 0; i < 200; i++) {
+      const f = heightFactor(`milwi-${i}`);
+      expect(f).toBeGreaterThanOrEqual(1 - HEIGHT_SPREAD);
+      expect(f).toBeLessThanOrEqual(1 + HEIGHT_SPREAD);
+    }
+  });
+
+  it('actually varies, and both taller and shorter than standard occur', () => {
+    const fs = Array.from({ length: 60 }, (_, i) => heightFactor(`milwi-${i}`));
+    expect(new Set(fs).size).toBeGreaterThan(5);
+    expect(fs.some(f => f > 1.01)).toBe(true);
+    expect(fs.some(f => f < 0.99)).toBe(true);
+  });
+});
+
+describe('a bobit keeps his height', () => {
+  const roomOf2 = (ids: string[]) => ({
+    state: crowdApply(crowdInit(), { type: 'seed', ids }),
+    agents: initAgents(ids, OPTS),
+  });
+
+  it('gives two different bobits two different heights', () => {
+    const { state, agents } = roomOf2(['milwi-003', 'milwi-014']);
+    const figs = crowdFigures(state, agents, BAND, false);
+    expect(figs[0].scale).not.toBe(figs[1].scale);
+  });
+
+  /**
+   * The one that matters. A newcomer is drawn from his ACTOR during his entrance and from his
+   * AGENT the moment it ends; if those two paths size him differently he visibly changes
+   * height at the handoff, which is worse than the teleport it replaced.
+   */
+  it('at the same size whether his scene is staging him or not', () => {
+    const { state, agents } = roomOf2(['milwi-003', 'milwi-014']);
+    const loose = crowdFigures(state, agents, BAND, false)
+      .find(f => f.id === 'milwi-003');
+
+    let d = startScene(directorInit(), SWIRL, 'milwi-003', 1000, () => 0.5);
+    for (let i = 0; i < 120; i++) d = directorStep(d, 1 / 60, 80);   // past the 1.0s reveal
+    const staged = crowdFigures(state, agents, BAND, false, d, false)
+      .find(f => f.id === 'milwi-003');
+
+    expect(staged).toBeDefined();
+    expect(staged!.scale).toBe(loose!.scale);
   });
 });

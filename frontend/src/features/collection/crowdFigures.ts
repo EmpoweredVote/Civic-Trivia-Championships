@@ -23,6 +23,36 @@ const TOP_MARGIN = 2;
 const HIGHFIVE_REACH_UNITS = 160;
 
 /**
+ * How far a bobit's height may stray from standard, as a fraction of it.
+ *
+ * Depth was removed -- one ground line, one size -- because a bobit crossing the band on a
+ * diagonal had no perspective gait and read as sliding. That fix cost the room its only cue
+ * for telling one figure from another at a glance, which is why an entrance that is not a puff
+ * of smoke currently fails to register at all in a crowd of thirty.
+ *
+ * Height gives that cue back and brings none of depth's problem with it: everybody still walks
+ * the same line, so nothing slides. Kept modest on purpose -- past roughly a tenth the short
+ * ones stop reading as short people and start reading as children.
+ */
+export const HEIGHT_SPREAD = 0.1;
+
+/**
+ * A bobit's own height, as a multiplier on the band's scale.
+ *
+ * Derived from `hashId`, the same source as his colour and his animation phase, so height is
+ * stable for the life of his id and identical down every path that draws him. That matters
+ * more than it looks: a newcomer is drawn from his ACTOR during an entrance and from his AGENT
+ * the moment it ends, and a height that disagreed across those two would make him visibly
+ * change size at the handoff.
+ */
+export function heightFactor(id: string): number {
+  // A second, coarser slice of the hash than `toneOf` and the phase use, so height does not
+  // correlate with colour -- all the tall ones coming out teal would read as a bug.
+  const t = (Math.floor(hashId(id) / 1000) % 1000) / 999;
+  return 1 - HEIGHT_SPREAD + t * 2 * HEIGHT_SPREAD;
+}
+
+/**
  * Agents plus match state, rendered.
  *
  * Position now comes from the agent -- the fixed slot layout survives only as the home a
@@ -54,7 +84,7 @@ export function aerialFigures(
       color: figColor(toneOf(a.agentId ?? a.role), darkMode),
       x: a.x,
       groundY: a.y,
-      scale: band.scale,
+      scale: band.scale * heightFactor(a.agentId ?? a.role),
       poofable: false,
       greetable: false,
       vars: a.hand ? { hand: a.hand } : undefined,
@@ -126,7 +156,7 @@ export function crowdFigures(
       color: figColor(toneOf(a.agentId ?? a.role), darkMode),
       x: a.x,
       groundY: a.y,
-      scale: band.scale,
+      scale: band.scale * heightFactor(a.agentId ?? a.role),
       poofable: false,
       greetable: false,
       vars: a.hand ? { hand: a.hand } : undefined,
@@ -147,7 +177,7 @@ export function crowdFigures(
         color: figColor(toneOf(id), darkMode),
         x: act.x,
         groundY: act.y,
-        scale: band.scale,
+        scale: band.scale * heightFactor(id),
         phase: (hashId(id) % 1000) / 250,
         flip: false,
         poofable: false,
@@ -202,7 +232,7 @@ export function crowdFigures(
       color: figColor(toneOf(id), darkMode),
       x: a.x,
       groundY,
-      scale: place.scale,
+      scale: place.scale * heightFactor(id),
       // Phase from the id, so neighbours never breathe in lockstep. The stun rides on top.
       phase: (hashId(id) % 1000) / 250 - rewind,
       flip: a.dir === -1,
