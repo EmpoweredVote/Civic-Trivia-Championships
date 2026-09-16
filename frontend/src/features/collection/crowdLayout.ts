@@ -112,7 +112,10 @@ export function wanderCastFor(width: number, band: CrowdBand): number {
  * contain a wave. 240 covers the raised-arm poses with a little air.
  *
  * Exported because it is what sizes the band now that everyone is on one line: the band has to
- * be at least this tall or the celebration poses clip out of the top of the canvas.
+ * be at least this tall or the celebration poses clip out of the top of the canvas -- and
+ * because it is the envelope any VERTICAL CLAMP has to respect. `groundY` is the feet line and
+ * the body is drawn upward from it, so a clamp expressed on `groundY` alone pushes the whole
+ * figure off the top of the canvas. See `highestFeet` in crowdFigures.
  */
 export const HEADROOM_UNITS = 240;
 

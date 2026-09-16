@@ -10,6 +10,7 @@ import { initAgents } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
 import type { AgentOpts } from '../crowdAgents';
 import type { Rand } from '../../../components/bobbits/wanderReducer';
+import { figureBounds } from '../../../components/bobbits/fieldGeometry';
 
 function seq(values: number[]): Rand { let i = 0; return () => values[i++ % values.length]; }
 const BAND = bandFor(false);
@@ -225,6 +226,22 @@ describe('when the sky is closed', () => {
     for (const f of grounded) {
       expect(f.groundY).toBeGreaterThanOrEqual(0);
       expect(f.groundY).toBeLessThanOrEqual(BAND.height);
+    }
+  });
+
+  /**
+   * groundY is the FEET line and a figure is drawn UPWARD from it, so clamping the feet to the
+   * top of the canvas puts the entire body above it. Asserting the clamp's own range says
+   * nothing about whether anybody can see him; asserting his bounds does.
+   */
+  it('keeps the whole figure on the canvas, not just his feet', () => {
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    const grounded = crowdFigures(state0(), {}, BAND, false, dir, false);
+    expect(grounded.length).toBeGreaterThan(0);
+    for (const f of grounded) {
+      expect(figureBounds(f).top).toBeGreaterThanOrEqual(0);
+      expect(figureBounds(f).bottom).toBeLessThanOrEqual(BAND.height);
     }
   });
 

@@ -1,7 +1,7 @@
 import type { FieldFigure } from '../../components/bobbits/fieldGeometry';
 import { figColor } from '../../components/bobbits/rigExtras';
 import { toneOf, hashId, slotOrder } from './crowdIdentity';
-import { agentPlacement, CROWD_CAP } from './crowdLayout';
+import { agentPlacement, CROWD_CAP, HEADROOM_UNITS } from './crowdLayout';
 import type { CrowdBand } from './crowdLayout';
 import { agentAnim } from './crowdAgents';
 import type { AgentState } from './crowdAgents';
@@ -16,8 +16,21 @@ export function overflowCount(state: CrowdState): number {
   return Math.max(0, state.residents.length - CROWD_CAP);
 }
 
-/** Highest a clamped-to-band figure's feet may go: keeps a whole figure on the canvas. */
+/** Clearance left above a clamped figure's head. */
 const TOP_MARGIN = 2;
+
+/**
+ * Highest a clamped-to-band figure's FEET may go.
+ *
+ * `groundY` is the feet line and the body is drawn upward from it, so clamping the feet to the
+ * top of the canvas draws the entire figure above it. The previous clamp did exactly that: for
+ * most of a cannon flight with the sky closed the bobit was pinned at y=2 and invisible --
+ * precisely the "vanish in flight, reappear on landing" the fallback exists to prevent. He now
+ * arcs as high as the band can actually show and no higher.
+ */
+function highestFeet(band: CrowdBand): number {
+  return TOP_MARGIN + HEADROOM_UNITS * band.scale;
+}
 
 /** How close two bobits must be to slap hands, in rig units. */
 const HIGHFIVE_REACH_UNITS = 160;
@@ -113,7 +126,7 @@ export function crowdFigures(
       if (a.layer === 'air') {
         if (allowAir) continue;                          // the overlay's business
         // Grounded fallback: keep him inside the band rather than letting him fly off it.
-        a = { ...a, y: Math.max(TOP_MARGIN, a.y) };
+        a = { ...a, y: Math.max(highestFeet(band), a.y) };
       }
       if (a.agentId && agents[a.agentId]) staged.set(a.agentId, a);
       else orphans.push(a);
