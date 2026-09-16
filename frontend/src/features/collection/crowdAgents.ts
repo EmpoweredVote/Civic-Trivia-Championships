@@ -18,9 +18,10 @@ import type { CrowdBand } from './crowdLayout';
 
 /**
  * `wander` roams the stage. `rank` stands at a home slot. `moving` is walking between the two
- * -- the state that makes "no bobit ever teleports" true rather than merely intended.
+ * -- the state that makes "no bobit ever teleports" true rather than merely intended. `perch`
+ * is sitting on a Surface, off the floor entirely.
  */
-export type Activity = 'wander' | 'rank' | 'moving';
+export type Activity = 'wander' | 'rank' | 'moving' | 'perch';
 
 export interface Agent extends Wanderer {
   /** 0 = front of the stage (nearest), 1 = back. */
@@ -35,6 +36,13 @@ export interface Agent extends Wanderer {
   /** Seconds elapsed into the current move, and how long it lasts. */
   moveT: number;
   moveDur: number;
+  /**
+   * The Surface this agent is sitting on, or WALKING TO. Claimed at the moment he sets off, so
+   * two bobits can never be sent to the same branch, and held until he climbs down.
+   */
+  perchId?: string;
+  /** Seconds spent perched, so he eventually comes down again. */
+  perchT?: number;
 }
 
 export type AgentState = Record<string, Agent>;
@@ -195,6 +203,60 @@ export function placeReleased(
   return out ?? state;
 }
 
+/** Seconds a bobit stays up the tree before climbing down. */
+export const PERCH_DWELL_SEC = 26;
+
+/**
+ * Send one idle bobit to an empty branch.
+ *
+ * Perching is a DESTINATION, not a stunt (spec): somebody with nothing else to do walks to the
+ * tree and climbs it, and the room is quieter by one. Perched bobits also leave the floor's
+ * separation budget -- `agentsAdvance` only feeds `wander` agents to `wanderAdvance` -- so the
+ * tree buys back a little stage room as well.
+ *
+ * He WALKS. The branch is claimed the instant he sets off, which is what stops two bobits being
+ * sent to a one-bobit branch, but he does not reach it until his move completes. Putting him
+ * straight into the tree would be a teleport, and "no bobit ever teleports" is the one rule the
+ * spec restates as load-bearing.
+ *
+ * Capacity is one per Surface. With a single branch that means one bobit up the tree at a time,
+ * which is what keeps it an event rather than a queue.
+ */
+export function assignPerch(
+  state: AgentState, surfaces: readonly { id: string; left: number; right: number; y: number }[],
+  opts: AgentOpts,
+): AgentState {
+  if (surfaces.length === 0) return state;
+
+  const claimed = new Set<string>();
+  for (const id of Object.keys(state)) {
+    const p = state[id].perchId;
+    if (p) claimed.add(p);
+  }
+  const free = surfaces.find(s => !claimed.has(s.id));
+  if (!free) return state;
+
+  // Only somebody genuinely idle. A ranked bobit stands at his home slot on purpose, one that
+  // is `moving` is already going somewhere, and one the director has cast is mid-scene.
+  const candidates = Object.keys(state)
+    .filter(id => state[id].activity === 'wander' && !state[id].perchId)
+    .sort();
+  if (candidates.length === 0) return state;
+
+  const mid = (free.left + free.right) / 2;
+  let best = candidates[0];
+  let bestD = Math.abs(state[best].x - mid);
+  for (const id of candidates) {
+    const d = Math.abs(state[id].x - mid);
+    if (d < bestD) { best = id; bestD = d; }
+  }
+  // The walk is to the branch's x at floor level, at the room's own walking speed -- startMove
+  // derives that from `opts.band.scale`, so a fabricated band here would send him across the
+  // room five times too fast. Only the move's completion puts him in the tree.
+  const walking = startMove(state[best], mid, 0, opts);
+  return { ...state, [best]: { ...walking, perchId: free.id } };
+}
+
 export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): AgentState {
   if (opts.frozen) return state;
 
@@ -227,6 +289,17 @@ export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): A
       continue;
     }
 
+    if (a.activity === 'perch') {
+      const perchT = (a.perchT ?? 0) + dt;
+      if (perchT >= PERCH_DWELL_SEC) {
+        // Down he comes, back onto the floor and into the wander pool, releasing the branch.
+        out[id] = { ...a, activity: 'wander', perchId: undefined, perchT: undefined, t: 0 };
+      } else {
+        out[id] = { ...a, perchT };
+      }
+      continue;
+    }
+
     // 'moving': a TIMED walk between stations, interpolated from where it began. Timed rather
     // than chased so a change of depth alone still takes a walk's worth of seconds instead of
     // completing on its first frame.
@@ -238,8 +311,10 @@ export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): A
         ...a,
         x: a.targetX,
         depth: a.targetDepth,
-        // targetDepth 1 is the ranks; anything shallower is a return to the stage.
-        activity: a.targetDepth >= 1 ? 'rank' : 'wander',
+        // A bobit who set off for a branch climbs it now that he is standing under it.
+        // Otherwise: targetDepth 1 is the ranks, anything shallower a return to the stage.
+        activity: a.perchId ? 'perch' : (a.targetDepth >= 1 ? 'rank' : 'wander'),
+        perchT: a.perchId ? 0 : a.perchT,
         moveT: a.moveDur,
         t: 0,
       };
@@ -281,6 +356,7 @@ export function rescaleTo(state: AgentState, fromWidth: number, toWidth: number)
 
 /** Which rig animation an agent plays from its own activity alone. */
 export function agentAnim(a: Agent): string {
+  if (a.activity === 'perch') return 'sit';
   if (a.activity === 'rank') return 'standstill';
   if (a.activity === 'moving') return 'stroll';
   return a.phase === 'walk' ? 'stroll' : 'standstill';

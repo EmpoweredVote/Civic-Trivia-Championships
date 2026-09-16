@@ -325,3 +325,55 @@ describe('a bobit keeps his height', () => {
     expect(staged!.scale).toBe(loose!.scale);
   });
 });
+
+describe('a perched bobit', () => {
+  const BRANCH = [{ id: 'tree:branch', left: 800, right: 880, y: 40 }];
+
+  const perchedRoom = () => {
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: ['a'] });
+    const agents = initAgents(['a'], OPTS);
+    agents.a = { ...agents.a, x: 840, activity: 'perch', perchId: 'tree:branch', perchT: 1 };
+    return { state, agents };
+  };
+
+  it('sits on the branch, not on the floor', () => {
+    const { state, agents } = perchedRoom();
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, BRANCH);
+    expect(fig.groundY).toBe(40);
+  });
+
+  it('sits along the branch rather than wherever he was standing', () => {
+    const { state, agents } = perchedRoom();
+    agents.a = { ...agents.a, x: 120 };
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, BRANCH);
+    expect(fig.x).toBeGreaterThanOrEqual(BRANCH[0].left);
+    expect(fig.x).toBeLessThanOrEqual(BRANCH[0].right);
+  });
+
+  /**
+   * fieldGeometry documents this trap and it has now bitten three times, most recently in the
+   * prop sheet: bounds and the ink probe measure from the BASE anim while paint positions with
+   * the RESOLVED one, so a seated figure given a standing hoverAnim is drawn ~104 units away
+   * from its own hit box.
+   */
+  it('greets without leaving its hit box', () => {
+    const { state, agents } = perchedRoom();
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, BRANCH);
+    expect(fig.hoverAnim).toBe('greetseat');
+  });
+
+  it('falls back to the floor when the tree is gone', () => {
+    const { state, agents } = perchedRoom();
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, []);
+    expect(fig.groundY).toBeGreaterThan(40);
+    expect(fig.hoverAnim).toBeUndefined();
+  });
+
+  it('leaves a bobit on the floor alone', () => {
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: ['a'] });
+    const agents = initAgents(['a'], OPTS);
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, BRANCH);
+    expect(fig.groundY).toBeGreaterThan(40);
+    expect(fig.hoverAnim).toBeUndefined();
+  });
+});

@@ -8,6 +8,7 @@ import { useConfettiStore } from '../../store/confettiStore';
 import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
 import { createPeakStore } from './bobitPeak';
 import { treeX, TREE_GROW_SEC } from './treePlacement';
+import { treeSurfaces } from '../../components/bobbits/props';
 import { treeEarned } from './milestone';
 import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
@@ -25,9 +26,10 @@ import {
 } from './crowdLayout';
 import {
   initAgents, agentsAdvance, syncCast, rotateCast, makeRand, rescaleTo, placeReleased,
-  nearestAgent,
+  nearestAgent, assignPerch,
 } from './crowdAgents';
 import type { AgentState } from './crowdAgents';
+import type { Surface } from '../../components/bobbits/fieldGeometry';
 import type { Rand } from '../../components/bobbits/wanderReducer';
 import type { CrowdBand } from './crowdLayout';
 
@@ -164,6 +166,12 @@ export function CollectionCrowd({
    * with `questionCount` still null from its fetch.
    */
   const milestoneSettledRef = useRef(false);
+  /**
+   * The tree's branch, or nothing. Recomputed each frame: the band's measured width changes
+   * with the viewport and the trunk moves with it, so a Surface cached at mount would leave a
+   * perched bobit sitting in mid-air after a resize.
+   */
+  const surfacesRef = useRef<Surface[]>([]);
   useEffect(() => { earnedRef.current = earned; }, [earned]);
   /**
    * Forces a repaint of the band when it is NOT animating.
@@ -343,6 +351,10 @@ export function CollectionCrowd({
 
       if (earnedRef.current) growRef.current = Math.min(TREE_GROW_SEC, growRef.current + dt);
 
+      surfacesRef.current = earnedRef.current && !isMobile
+        ? treeSurfaces(treeX(measured, band.scale), sceneGroundY(band), band.scale)
+        : [];
+
       // An agent the director owns is held exactly as a greeting one is: wanderAdvance must
       // not walk somebody a scene is choreographing, or the two fight over his position.
       const owned = castIds(directorRef.current);
@@ -368,6 +380,12 @@ export function CollectionCrowd({
       if (rotated !== agentsRef.current) { agentsRef.current = rotated; rotateRef.current = 0; }
 
       agentsRef.current = agentsAdvance(agentsRef.current, dt, opts);
+
+      // After the advance, so a bobit who has just been released from a scene or finished a
+      // move is eligible this frame rather than next. A no-op while the branch is claimed.
+      if (surfacesRef.current.length > 0) {
+        agentsRef.current = assignPerch(agentsRef.current, surfacesRef.current, opts);
+      }
     }
 
     const air = aerialFigures(directorRef.current, band, darkMode);
@@ -385,7 +403,8 @@ export function CollectionCrowd({
     }
 
     return crowdFigures(
-      stateRef.current, agentsRef.current, band, darkMode, directorRef.current, allowAirRef.current,
+      stateRef.current, agentsRef.current, band, darkMode, directorRef.current,
+      allowAirRef.current, surfacesRef.current,
     );
   }, [band, darkMode, reducedMotion]);
 

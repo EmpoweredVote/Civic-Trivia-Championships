@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY, makeRand,
   startMove, MOVE_MIN_SEC, rescaleTo, placeReleased, nearestAgent,
+  assignPerch, PERCH_DWELL_SEC,
 } from '../crowdAgents';
 import type { AgentOpts, AgentState } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
@@ -447,5 +448,87 @@ describe('nearestAgent', () => {
   it('returns null when the room has nobody to cast', () => {
     expect(nearestAgent({}, 500)).toBeNull();
     expect(nearestAgent(at({ a: 100 }), 500, new Set(['a']))).toBeNull();
+  });
+});
+
+describe('assignPerch', () => {
+  const BRANCH = [{ id: 'tree:branch', left: 800, right: 880, y: 40 }];
+
+  const roomAt = (xs: Record<string, number>): AgentState => {
+    const base = initAgents(Object.keys(xs), OPTS());
+    const out: AgentState = {};
+    for (const id of Object.keys(xs)) out[id] = { ...base[id], x: xs[id] };
+    return out;
+  };
+
+  it('sends somebody towards an empty branch', () => {
+    const out = assignPerch(roomAt({ a: 100, b: 840 }), BRANCH, OPTS());
+    expect(Object.values(out).filter(ag => ag.perchId === 'tree:branch')).toHaveLength(1);
+  });
+
+  /**
+   * "No bobit ever teleports. Every position change is walked" is the one rule the spec
+   * restates as load-bearing. Claiming a branch starts a WALK to the trunk; it does not put
+   * anybody in the tree.
+   */
+  it('walks him there rather than putting him in the tree', () => {
+    const before = roomAt({ a: 840 });
+    const after = assignPerch(before, BRANCH, OPTS());
+    expect(after.a.activity).toBe('moving');
+    expect(after.a.x).toBe(before.a.x);
+    expect(after.a.targetX).toBeGreaterThanOrEqual(BRANCH[0].left);
+    expect(after.a.targetX).toBeLessThanOrEqual(BRANCH[0].right);
+  });
+
+  it('only reaches the branch when the walk finishes', () => {
+    let state = assignPerch(roomAt({ a: 200 }), BRANCH, OPTS());
+    expect(state.a.activity).toBe('moving');
+    // 640px at the room's own pace -- MOVE_UNITS_PER_SEC scaled by the band -- is about half a
+    // minute. Deliberately not hurried: it is the same walk a station change uses.
+    for (let i = 0; i < 4000 && state.a.activity === 'moving'; i++) {
+      state = agentsAdvance(state, 1 / 60, OPTS());
+    }
+    expect(state.a.activity).toBe('perch');
+    expect(state.a.perchId).toBe('tree:branch');
+  });
+
+  it('sends the NEAREST bobit, not an arbitrary one', () => {
+    const out = assignPerch(roomAt({ far: 100, near: 840 }), BRANCH, OPTS());
+    expect(out.near.perchId).toBe('tree:branch');
+    expect(out.far.perchId).toBeUndefined();
+  });
+
+  /** Capacity one. A second climber would sit inside the first. */
+  it('leaves a claimed branch alone', () => {
+    const first = assignPerch(roomAt({ a: 820, b: 840 }), BRANCH, OPTS());
+    const second = assignPerch(first, BRANCH, OPTS());
+    expect(Object.values(second).filter(ag => ag.perchId === 'tree:branch')).toHaveLength(1);
+  });
+
+  it('does nothing at all when there is no tree', () => {
+    const before = roomAt({ a: 100 });
+    expect(assignPerch(before, [], OPTS())).toBe(before);
+  });
+
+  it('never sends a bobit who is standing at his home slot', () => {
+    const room = roomAt({ a: 840 });
+    room.a = { ...room.a, activity: 'rank' };
+    const out = assignPerch(room, BRANCH, OPTS());
+    expect(out.a.perchId).toBeUndefined();
+  });
+
+  it('climbs down again after a dwell, and lets go of the branch', () => {
+    let state = assignPerch(roomAt({ a: 840 }), BRANCH, OPTS());
+    for (let i = 0; i < 4000 && state.a.activity === 'moving'; i++) {
+      state = agentsAdvance(state, 1 / 60, OPTS());
+    }
+    expect(state.a.activity).toBe('perch');
+    state = agentsAdvance(state, PERCH_DWELL_SEC + 0.1, OPTS());
+    expect(state.a.activity).toBe('wander');
+    expect(state.a.perchId).toBeUndefined();
+  });
+
+  it('dwells long enough to be worth watching', () => {
+    expect(PERCH_DWELL_SEC).toBeGreaterThan(10);
   });
 });

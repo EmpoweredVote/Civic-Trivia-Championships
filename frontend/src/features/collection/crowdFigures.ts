@@ -1,4 +1,4 @@
-import type { FieldFigure } from '../../components/bobbits/fieldGeometry';
+import type { FieldFigure, Surface } from '../../components/bobbits/fieldGeometry';
 import { figColor } from '../../components/bobbits/rigExtras';
 import { toneOf, hashId, slotOrder } from './crowdIdentity';
 import { agentPlacement, CROWD_CAP, HEADROOM_UNITS } from './crowdLayout';
@@ -114,6 +114,14 @@ export function crowdFigures(
    * vanish in flight and reappear on landing.
    */
   allowAir = true,
+  /**
+   * Surfaces a bobit may be sitting on. Empty when the room has no tree.
+   *
+   * A perched agent whose Surface is NOT in this list falls back to the floor rather than to
+   * nothing: scenery can disappear -- a narrower viewport, a different collection, a tree that
+   * belongs to a room this player has left -- and a bobit must not go with it.
+   */
+  surfaces: readonly Surface[] = [],
 ): FieldFigure[] {
   // Actors the director owns, indexed by the agent playing them. A cast agent is drawn from
   // its ACTOR -- pose and position both -- so the director and wanderAdvance can never fight
@@ -193,6 +201,11 @@ export function crowdFigures(
     if (onOverlay.has(id)) continue;
     const a = agents[id];
     const victim = state.loss?.id === id;
+    // Where he is sitting, if he is. `perchId` is claimed the moment he sets off walking, so
+    // only an agent who has actually ARRIVED (activity 'perch') is drawn off the floor.
+    const perch = a.activity === 'perch' && a.perchId
+      ? surfaces.find(sf => sf.id === a.perchId)
+      : undefined;
 
     // The director has this one: it plays what the scene says, where the scene says.
     const act = staged.get(id);
@@ -257,14 +270,20 @@ export function crowdFigures(
       id,
       anim,
       color: figColor(toneOf(id), darkMode),
-      x: a.x,
-      groundY,
+      // Sitting on a branch: the Surface decides both, and he sits along its middle rather
+      // than at the x he happened to walk in from.
+      x: perch ? (perch.left + perch.right) / 2 : a.x,
+      groundY: perch ? perch.y : groundY,
       scale: place.scale * heightFactor(id),
       // Phase from the id, so neighbours never breathe in lockstep. The stun rides on top.
       phase: (hashId(id) % 1000) / 250 - rewind,
       flip: a.dir === -1,
       poofable: false,
       greetable: true,
+      // A seated figure MUST carry a seated hoverAnim. fieldGeometry documents the trap:
+      // bounds measure from the BASE anim and paint positions with the RESOLVED one, so a
+      // standing greet on a seated pose draws ~104 units from its own hit box.
+      ...(perch ? { hoverAnim: 'greetseat' } : {}),
       vars,
     });
   }
