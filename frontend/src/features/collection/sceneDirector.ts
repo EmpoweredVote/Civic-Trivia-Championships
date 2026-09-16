@@ -198,8 +198,15 @@ export function directorStep(
 
     // A beat's one-shot side effects fire when the frame crosses its `at`, so each fires
     // exactly once however the frames happen to land.
+    //
+    // On a scene's FIRST step the window has to include its own start. A half-open window that
+    // begins at 0 silently drops every beat written at `at: 0` -- which is where an entrance
+    // puts the puff of smoke that announces it. `pool-stumble` shipped with no poof at all for
+    // exactly this reason, and the swirl and the cannon each lost the first of their puffs.
+    const from = t0 === 0 ? -1 : t0;
+
     for (const b of r.scene.beats) {
-      if (!(b.at > t0 && b.at <= t1)) continue;
+      if (!(b.at > from && b.at <= t1)) continue;
       const x = r.left
         + fracAt(r.scene.beats, b.role, b.at, r.scene.duration) * (r.right - r.left);
       const y = groundY - liftAt(r.scene.beats, b.role, b.at, r.scene.duration);

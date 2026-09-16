@@ -165,3 +165,26 @@ describe('directorStep', () => {
     expect(JSON.stringify(s)).toBe(before);
   });
 });
+
+describe('a beat written at at:0', () => {
+  /** pool-stumble's whole entrance is one such beat: its only smoke puff is at 0.0. */
+  const POOF: Scene = {
+    id: 'poof', duration: 1.5, span: 0.2, roles: ['newcomer'],
+    beats: [
+      { at: 0, role: 'newcomer', moveTo: 0.5, hidden: true, smoke: { spread: 30 } },
+      { at: 0.4, role: 'newcomer', hidden: false, pose: 'spent' },
+    ],
+  };
+
+  it('fires its side effect on the first step', () => {
+    let s = startScene(directorInit(), POOF, 'a', WIDTH, rand);
+    s = directorStep(s, 1 / 60, GROUND);
+    expect(s.effects.filter(e => e.kind === 'smoke')).toHaveLength(1);
+  });
+
+  it('still fires it exactly once', () => {
+    let s = startScene(directorInit(), POOF, 'a', WIDTH, rand);
+    for (let i = 0; i < 30; i++) s = directorStep(s, 1 / 60, GROUND);
+    expect(s.effects.filter(e => e.kind === 'smoke')).toHaveLength(1);
+  });
+});
