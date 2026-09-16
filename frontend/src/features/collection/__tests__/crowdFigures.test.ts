@@ -255,6 +255,22 @@ describe('when the sky is closed', () => {
     const air = aerialFigures(dir, BAND, false);
     expect(air.map(f => f.id)).toContain('air:a');
   });
+
+  /**
+   * The test above passes NO agents, so the band copy it should be guarding against cannot
+   * exist. With a real agent it does: an airborne actor was skipped when the overlay had him,
+   * which left his agent to be drawn normally -- so the bobit appeared twice for the whole
+   * flight, once arcing over the card and once standing at the band's centre.
+   */
+  it('does not also draw him on the band while the overlay has him', () => {
+    const agents = initAgents(['a'], OPTS);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: ['a'] });
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    const ids = crowdFigures(state, agents, BAND, false, dir, true).map(f => f.id);
+    expect(ids).not.toContain('a');
+    expect(aerialFigures(dir, BAND, false).map(f => f.id)).toContain('air:a');
+  });
 });
 
 describe('heightFactor', () => {

@@ -120,11 +120,24 @@ export function crowdFigures(
   // over where it is.
   const staged = new Map<string, ReturnType<typeof actorsOf>[number]>();
   const orphans: ReturnType<typeof actorsOf>[number][] = [];
+  /**
+   * Agents the OVERLAY is drawing this frame. They must be left out of the band entirely.
+   *
+   * Handing an airborne actor to the overlay is not the same as having nobody to draw: his
+   * agent still exists, and simply skipping the actor left the agent to be drawn the ordinary
+   * way -- so the bobit appeared twice for the whole flight, once arcing over the question card
+   * and once standing wherever his agent happened to be. The design forbids that double-paint
+   * explicitly, and it was visible in a screenshot of every cannon shot.
+   */
+  const onOverlay = new Set<string>();
   if (director) {
     for (const raw of actorsOf(director, sceneGroundY(band))) {
       let a = raw;
       if (a.layer === 'air') {
-        if (allowAir) continue;                          // the overlay's business
+        if (allowAir) {                                  // the overlay's business
+          if (a.agentId) onOverlay.add(a.agentId);
+          continue;
+        }
         // Grounded fallback: keep him inside the band rather than letting him fly off it.
         a = { ...a, y: Math.max(highestFeet(band), a.y) };
       }
@@ -177,6 +190,7 @@ export function crowdFigures(
   }
 
   for (const id of ids) {
+    if (onOverlay.has(id)) continue;
     const a = agents[id];
     const victim = state.loss?.id === id;
 
