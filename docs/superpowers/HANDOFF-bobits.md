@@ -1,7 +1,7 @@
 # Bobit living room — handoff
 
-**Written:** 2026-09-15, after a review pass and the nine fixes that came out of it.
-**Branch:** `feat/bobit-living-floor` — **45 commits, NOT pushed, nothing deployed.**
+**Written:** 2026-09-16, with plans 1, 2 and 3 all shipped on this branch.
+**Branch:** `feat/bobit-living-floor` — **55 commits, NOT pushed, nothing deployed.**
 Production is untouched. The frontend static site auto-deploys from `master`, so merging is a
 production deploy; do not merge without Chris saying so.
 
@@ -11,7 +11,9 @@ production deploy; do not merge without Chris saying so.
    2026-09-14 addendum**, which corrects four things and records the occlusion decision.
 2. `docs/superpowers/plans/2026-09-12-bobit-living-floor.md` — plan 1. **Done.**
 3. `docs/superpowers/plans/2026-09-14-bobit-entrances.md` — plan 2. **Done, and now reviewed.**
-4. Plan 3 — **not written.** Tree, perching, the 25% milestone.
+4. `docs/superpowers/plans/2026-09-15-bobit-tree-and-perching.md` — plan 3. **Done.**
+   Built against the spec's **2026-09-15 addendum**, which overrides the spec body on tree
+   height and on how the milestone is stored.
 
 ## State
 
@@ -23,7 +25,13 @@ now vary in height by ±10%.
 the cannon (arrival #2) and four pool entrances all exist and fire. The cannon's flight passes
 in front of the question card on an overlay canvas.
 
-**590 tests green, typecheck clean.**
+**Plan 3 (the tree, perching, the milestone): complete.** A collection earns a small tree at 25%
+of its questions, on a persisted high-water mark so it can never un-earn itself. `Surface` has
+its first consumer: a bobit with nothing to do walks to the trunk and sits on the branch, and
+greets from his seat. The room notices the tree arriving; a phone gets the same milestone as a
+crowd celebration instead, because a phone band has no room for a trunk.
+
+**653 tests green, typecheck clean.**
 
 A full code review ran on 2026-09-15 over `713fa75..796e12f`. Verdict: **merge with fixes**. The
 occlusion relaxation was the highest-risk part of the work and **all four bounds hold**, two of
@@ -84,6 +92,14 @@ The crowd at rest still never occludes anything. **Do not widen this without ask
   ~8 phone. Measurement showed the cast never constrained performance at all.
 - **Set pieces do not wait for floor.** The spec had a 4s wait; the full-bleed band made it
   unnecessary. `canStage` is checked once and the scene is skipped if busy.
+- **The tree has ONE branch, not the spec's 2-3.** 96px does not hold a second one. See the
+  spec's 2026-09-15 addendum.
+- **Nobody walks behind the tree.** The spec wanted depth ordering against it; props draw
+  BEHIND figures (`BobitField`, "Props first"), and depth is gone. A perched bobit drawing in
+  front of the trunk is what that order already gives, and is the part that matters.
+- **Scenes can be anchored.** `Scene.anchor: 'right'` was added for the milestone: `canStage`
+  packs from the left, so the set piece staged at the far end of the band and its cast
+  presented at an empty stretch of floor while the tree stood on the other side.
 
 ## How to run it
 
@@ -123,22 +139,33 @@ Other scripts:
 
 ## Open items, in the order I would take them
 
-1. **`pool-peek` and `pool-drop` do not work, and height variation does not help them.**
-   Peek is "a head appears from below the floor"; drop is "falls in from above". The 96px
-   full-bleed band has no space above or below the floor line, so peek has no peek — he is just
-   suddenly there — and drop's first 0.7s is a blank band before a puff and a dizzy bobit.
-   Both were written against the spec's 190px band. Needs either different choreography or
-   vertical room; it is a design decision, not a bug fix.
-2. **Plan 3 is unwritten:** the tree on the right border, perching (`Surface` is still
-   unconsumed), `questionCount` plumbing, the 25% milestone.
-3. Review Minors, the ones still open: the aerial gate is still read from two different copies
+1. **`pool-peek` and `pool-drop` do not work.** Peek is "a head appears from below the floor";
+   drop is "falls in from above". The 96px full-bleed band has no space above or below the
+   floor line, so peek has no peek and drop's first 0.7s is a blank band. Plan 3 did **not**
+   give them the room they need — the tree is sized to the same band. Needs either different
+   choreography or a taller band, and that is a design decision.
+2. **Review Minors, still open:** the aerial gate is read from two different copies
    (`allowAirRef` in the frame loop, the `aerialAllowed` prop in render) and can disagree for a
    frame; effect/prop ids key on scene id rather than scene instance (fine today, not once the
    entrance library grows); `SMOKE_DUR`/`SMOKE_LIFE` are duplicated across two modules; the
    costless-miss ripple starts at `slotOrder[0]` where the spec says the newest bobit;
    `cannonMuzzle` is tested but unused, so the flight does not start at the muzzle.
-4. `ResultsScreen` declares a `collectionQuestionCount` prop **no caller passes** — dead, always
-   falls back to 5. Worth fixing when the plumbing lands.
+3. **50% / 75% / 100% milestones.** Out of scope by the spec, and the seam is now real:
+   `milestone.ts` plus a scene file plus a prop. The tree is the worked example.
+4. **The high-water mark is local even for signed-in players.** `backend/` here is frozen and
+   ev-accounts is another repo, so a signed-in player who switches browsers re-earns the tree.
+
+## Decisions a fresh session should not re-litigate
+
+- **The tree is room-owned, not a Scene.** A permanent structure inside a transient scene
+  leaves when the scene does, the way a cannon leaves with its shot.
+- **The climb is not scripted.** `assignPerch` sends somebody up once the branch exists;
+  scripting it in the milestone scene too would put two bobits on a one-bobit branch.
+- **Growing is for the moment the tree is earned, and only then.** Getting that right took
+  three passes — see `042af8e`. A tree that sprouts on every mount, or on the first evaluation
+  against a real denominator, is the failure mode.
+- **Whether the cannon should have a host at all** is still genuinely open. Casting a real
+  neighbour settled what a host IS, not whether the scene wants one.
 
 ## What the review fixes changed, worth knowing
 
@@ -191,6 +218,14 @@ Other scripts:
   it where real pixels are needed has caused two separate bugs.
 - **Playwright matches routes in REVERSE registration order.** A catch-all must be registered
   first or it swallows everything.
+- **`Surface` positions a figure's SEAT, and a seated figure needs a seated `hoverAnim`.** The
+  standing and seated pelvis offsets are 112 and 8 — 104 units apart — and `figureBounds`
+  measures from the BASE anim while paint positions with the RESOLVED one. This has now caught
+  three separate things on this branch, most recently the prop sheet itself, which drew a
+  seated bobit straight through the top of the band. Never hardcode 112; ask `pelvisOffset()`.
+- **A test that asserts a span says nothing about where the scene lands.** The milestone's
+  "reserves the right quarter" test checked `span <= 0.25` and passed happily while the scene
+  played at the opposite end of the band. Stage the thing and assert the ground it took.
 - **A harness's sanity check must watch the quantity the variable actually drives.** The bench
   compared total frame cost (dominated by paint, flat across cast sizes) and cried vsync at a
   working harness. Separately, a column probe that sampled every 52px "proved" an empty band
