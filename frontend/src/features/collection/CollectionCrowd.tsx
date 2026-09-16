@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useConfettiStore } from '../../store/confettiStore';
 import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
 import { createPeakStore } from './bobitPeak';
+import { treeX, TREE_GROW_SEC } from './treePlacement';
 import { treeEarned } from './milestone';
 import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
@@ -146,6 +147,23 @@ export function CollectionCrowd({
    */
   const [earned, setEarned] = useState(false);
   const earnedRef = useRef(false);
+  /**
+   * Seconds the tree has been growing, starting at FULL HEIGHT.
+   *
+   * Growing is for the moment the milestone is earned, and for that moment only. Starting this
+   * at zero would sprout the tree out of the floor every time the game screen mounted, so a
+   * player who earned it weeks ago would watch it grow again on every match.
+   */
+  const growRef = useRef(TREE_GROW_SEC);
+  /**
+   * Has the milestone been evaluated for this collection with a REAL denominator yet?
+   *
+   * Without this, the first evaluation that finds the tree earned looks exactly like earning
+   * it: `earnedRef` starts false, so "false -> true" fires for a player who crossed 25% weeks
+   * ago. And it cannot simply be "the first call", because the first call almost always runs
+   * with `questionCount` still null from its fetch.
+   */
+  const milestoneSettledRef = useRef(false);
   useEffect(() => { earnedRef.current = earned; }, [earned]);
   /**
    * Forces a repaint of the band when it is NOT animating.
@@ -175,8 +193,15 @@ export function CollectionCrowd({
   const syncMilestone = useCallback((slugNow: string | null) => {
     if (!slugNow) { setEarned(false); return; }
     peakStore.record(slugNow, stateRef.current.residents.length);
-    setEarned(treeEarned(peakStore.peak(slugNow), questionCount ?? null));
-  }, [questionCount]);
+    const qc = questionCount ?? null;
+    const nowEarned = treeEarned(peakStore.peak(slugNow), qc);
+    // Sprout only when the milestone is crossed while the player is WATCHING. The first
+    // evaluation against a real denominator reports a state we inherited, not an event.
+    const crossedLive = nowEarned && !earnedRef.current && milestoneSettledRef.current;
+    if (crossedLive && !reducedMotion) growRef.current = 0;
+    if (qc !== null) milestoneSettledRef.current = true;
+    setEarned(nowEarned);
+  }, [questionCount, reducedMotion]);
 
   const band: CrowdBand = useMemo(() => bandFor(isMobile), [isMobile]);
   const height = band.height;
@@ -209,6 +234,8 @@ export function CollectionCrowd({
       // A returning player's bobits are already standing there. Seeding must never fire the
       // entrances -- forty owned questions would otherwise mean forty cannon shots on load.
       directorRef.current = directorInit();
+      growRef.current = TREE_GROW_SEC;
+      milestoneSettledRef.current = false;
       setOverflow(overflowCount(stateRef.current));
       syncMilestone(slug);
       repaint();
@@ -314,6 +341,8 @@ export function CollectionCrowd({
 
       directorRef.current = directorStep(directorRef.current, dt, sceneGroundY(band));
 
+      if (earnedRef.current) growRef.current = Math.min(TREE_GROW_SEC, growRef.current + dt);
+
       // An agent the director owns is held exactly as a greeting one is: wanderAdvance must
       // not walk somebody a scene is choreographing, or the two fight over his position.
       const owned = castIds(directorRef.current);
@@ -362,13 +391,35 @@ export function CollectionCrowd({
 
   // Props and effects come straight off the director. Stable identities so BobitField's refs
   // are not rebuilt every render.
-  const propsFor = useMemo(() => (): FieldProp[] => directorRef.current.props.map(p => ({
-    id: p.id, kind: p.kind, x: p.x, groundY: p.groundY, scale: band.scale,
-    flip: p.flip, angle: p.angle,
+  /**
+   * The director's set pieces PLUS the room's own permanent scenery.
+   *
+   * The cannon is scene-owned and transient -- it leaves with the scene that placed it. The
+   * tree is room-owned and persistent, which is why it is concatenated here rather than being
+   * a Scene beat: a scene would end and take it away again.
+   */
+  const propsFor = useMemo(() => (): FieldProp[] => {
     // Light barrel on a dark ground and vice versa. A fixed dark cannon was invisible in dark
     // mode -- it read as a smudge on the floor rather than as the joke it is.
-    color: darkMode ? '#9AA6B8' : '#4A5568',
-  })), [band, darkMode]);
+    const color = darkMode ? '#9AA6B8' : '#4A5568';
+    const out: FieldProp[] = directorRef.current.props.map(p => ({
+      id: p.id, kind: p.kind, x: p.x, groundY: p.groundY, scale: band.scale,
+      flip: p.flip, angle: p.angle, color,
+    }));
+    // Desktop only: a phone band has no horizontal room for a trunk beside a crowd.
+    if (earnedRef.current && !isMobile) {
+      out.push({
+        id: 'room:tree',
+        kind: 'tree',
+        x: treeX(laidOutAtRef.current || band.width, band.scale),
+        groundY: sceneGroundY(band),
+        scale: band.scale,
+        grow: growRef.current / TREE_GROW_SEC,
+        color,
+      });
+    }
+    return out;
+  }, [band, darkMode, isMobile]);
 
   const effectsFor = useMemo(() => (): FieldEffect[] => directorRef.current.effects, []);
 
