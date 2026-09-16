@@ -1,7 +1,7 @@
 # Bobit living room — handoff
 
-**Written:** 2026-09-15, after a review pass and the eight fixes that came out of it.
-**Branch:** `feat/bobit-living-floor` — **43 commits, NOT pushed, nothing deployed.**
+**Written:** 2026-09-15, after a review pass and the nine fixes that came out of it.
+**Branch:** `feat/bobit-living-floor` — **45 commits, NOT pushed, nothing deployed.**
 Production is untouched. The frontend static site auto-deploys from `master`, so merging is a
 production deploy; do not merge without Chris saying so.
 
@@ -23,7 +23,7 @@ now vary in height by ±10%.
 the cannon (arrival #2) and four pool entrances all exist and fire. The cannon's flight passes
 in front of the question card on an overlay canvas.
 
-**585 tests green, typecheck clean.**
+**590 tests green, typecheck clean.**
 
 A full code review ran on 2026-09-15 over `713fa75..796e12f`. Verdict: **merge with fixes**. The
 occlusion relaxation was the highest-risk part of the work and **all four bounds hold**, two of
@@ -114,6 +114,10 @@ Other scripts:
   `splayed`. `node scripts/bobit-scenes.mjs [sceneId…]`.
   The cannon is excluded by default: its flight needs `aerialAllowed`, so replaying it
   mid-question captures the air layer suppressed, which looks like a bug and is not one.
+- `scripts/bobit-props.mjs` — **prop sheet**: every prop at the 0.2 scale the player sees it,
+  beside a real bobit, and enlarged so the silhouette can be judged. Both themes, because the
+  field passes a LIGHT body colour in dark mode and a DARK one in light, and an accent that
+  contrasts in one can vanish in the other.
 - `scripts/bobit-shots.mjs` — pose sheet + page sweep.
 - `scripts/bobit-bench.mjs` — frame cost vs cast size.
 
@@ -125,18 +129,15 @@ Other scripts:
    suddenly there — and drop's first 0.7s is a blank band before a puff and a dizzy bobit.
    Both were written against the spec's 190px band. Needs either different choreography or
    vertical room; it is a design decision, not a bug fix.
-2. **The cannon prop is crude.** It reads as a plain grey tube, not a cannon. Visible and
-   correctly placed, but the silhouette needs art work — a proper carriage, a thicker breech,
-   maybe a muzzle flare. `frontend/src/components/bobbits/props.ts`.
-3. **Plan 3 is unwritten:** the tree on the right border, perching (`Surface` is still
+2. **Plan 3 is unwritten:** the tree on the right border, perching (`Surface` is still
    unconsumed), `questionCount` plumbing, the 25% milestone.
-4. Review Minors, the ones still open: the aerial gate is still read from two different copies
+3. Review Minors, the ones still open: the aerial gate is still read from two different copies
    (`allowAirRef` in the frame loop, the `aerialAllowed` prop in render) and can disagree for a
    frame; effect/prop ids key on scene id rather than scene instance (fine today, not once the
    entrance library grows); `SMOKE_DUR`/`SMOKE_LIFE` are duplicated across two modules; the
    costless-miss ripple starts at `slotOrder[0]` where the spec says the newest bobit;
    `cannonMuzzle` is tested but unused, so the flight does not start at the muzzle.
-5. `ResultsScreen` declares a `collectionQuestionCount` prop **no caller passes** — dead, always
+4. `ResultsScreen` declares a `collectionQuestionCount` prop **no caller passes** — dead, always
    falls back to 5. Worth fixing when the plumbing lands.
 
 ## What the review fixes changed, worth knowing
@@ -152,6 +153,10 @@ Other scripts:
   at all. The code no longer answers that by accident.
 - Reduced motion rendered an empty band, for two independent reasons (no agents were created,
   and a static field painted once before the parent had seeded it).
+- The cannon prop read as a magnifying glass: a filled disc and a tapered tube in one flat
+  colour, with nothing under either. It now has a spoked wheel ring, a trail to the ground, a
+  flared muzzle and a swelled breech. Its detail colour was also hardcoded light, so in dark
+  mode — where the BODY is light — every detail was invisible; it is derived from the body now.
 
 ## Chris's open questions, one of them now answered
 
