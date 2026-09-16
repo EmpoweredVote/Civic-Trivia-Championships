@@ -8,6 +8,7 @@ import { announce } from '../utils/announce';
 import { useAuthStore } from '../store/authStore';
 import { API_URL } from '../services/api';
 import { usePlayerXp } from '../hooks/usePlayerXp';
+import { useCollectionQuestionCount } from '../features/collections/hooks/useCollectionQuestionCount';
 import { XpStrip } from '../features/game/components/XpStrip';
 import { track } from '@empoweredvote/analytics';
 
@@ -41,6 +42,11 @@ export function Game() {
   // XP data for start screen and level-up detection
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const { xpData, isLoading: isXpLoading, isConnected: isXpConnected } = usePlayerXp(userId);
+
+  // The collection's size: the 25% milestone's denominator for the crowd, and Proficiency's on
+  // the results screen. Null while it loads and on failure; both consumers treat null as
+  // "unknown" rather than guessing.
+  const collectionQuestionCount = useCollectionQuestionCount(state.collectionSlug ?? null);
 
   // Capture level before game starts for level-up detection on end screen
   const [priorLevel, setPriorLevel] = useState<number | null>(null);
@@ -279,6 +285,7 @@ export function Game() {
         result={gameResult}
         questions={state.questions}
         collectionName={state.collectionName}
+        collectionQuestionCount={collectionQuestionCount}
         onPlayAgain={handlePlayAgain}
         onHome={handleHome}
         flaggedQuestions={flaggedQuestions}
@@ -302,6 +309,7 @@ export function Game() {
   return (
     <GameScreen
       state={state}
+      collectionQuestionCount={collectionQuestionCount}
       currentQuestion={currentQuestion}
       startGame={handleStartGame}
       selectAnswer={selectAnswer}

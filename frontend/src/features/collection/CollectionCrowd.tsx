@@ -38,6 +38,13 @@ interface CollectionCrowdProps {
   /** True once the match ends with every question correct. */
   finished5of5: boolean;
   /**
+   * Questions in this collection: the 25% milestone's denominator.
+   *
+   * Null means UNKNOWN, not zero, and an unknown denominator must never earn anything -- see
+   * `treeEarned`. It is null while the collection list is in flight and after a failed fetch.
+   */
+  questionCount?: number | null;
+  /**
    * True only while an answer is revealed.
    *
    * Gates the aerial overlay. Nothing may pass in front of the question card while the timer
