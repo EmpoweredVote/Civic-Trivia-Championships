@@ -15,9 +15,12 @@ import {
 } from './sceneDirector';
 import type { DirectorState } from './sceneDirector';
 import { sceneForArrival, ALL_SCENES } from './scenes';
+import { ROLE_HOST } from './scenes/types';
+import type { Scene } from './scenes/types';
 import { bandFor, CROWD_CAP, wanderCastFor, groundLineFromBottom } from './crowdLayout';
 import {
   initAgents, agentsAdvance, syncCast, rotateCast, makeRand, rescaleTo, placeReleased,
+  nearestAgent,
 } from './crowdAgents';
 import type { AgentState } from './crowdAgents';
 import type { Rand } from '../../components/bobbits/wanderReducer';
@@ -56,6 +59,30 @@ const localStore = createLocalProgressStore();
  * the answer options -- a hard requirement, and layout is the only way to guarantee it rather
  * than merely arrange it.
  */
+/**
+ * Cast a bobit who is actually in the room as a scene's host.
+ *
+ * `castOverrides` defaulted to `{}` and nothing ever passed one, so a `host` role was filled by
+ * a synthetic id and rendered as an orphan: an extra bobit who appeared from nowhere at t=0,
+ * performed, and evaporated when the scene ended. For the cannon that meant the newcomer was
+ * welcomed by a stranger who had never lived there.
+ *
+ * Picks the resident nearest the middle of the floor the scene is about to reserve, which is
+ * the spec's rule. Falls back to `{}` -- and so to the old synthetic id -- when there is
+ * genuinely nobody free, rather than dropping the scene.
+ */
+function hostFor(
+  director: DirectorState, agents: AgentState, scene: Scene, width: number, newcomerId: string,
+): Record<string, string> {
+  if (!scene.roles.includes(ROLE_HOST)) return {};
+  const slot = canStage(director, scene.span, width);
+  if (!slot) return {};
+  // The newcomer cannot host his own arrival, and a bobit busy in another scene is spoken for.
+  const exclude = new Set([...castIds(director), newcomerId]);
+  const host = nearestAgent(agents, (slot.left + slot.right) / 2, exclude);
+  return host ? { [ROLE_HOST]: host } : {};
+}
+
 export function CollectionCrowd({
   slug, darkMode, isMobile, lastAnswer, finished5of5, aerialAllowed = false,
 }: CollectionCrowdProps) {
@@ -157,6 +184,7 @@ export function CollectionCrowd({
         if (canStage(directorRef.current, scene.span, w)) {
           directorRef.current = startScene(
             directorRef.current, scene, questionId, w, randRef.current,
+            hostFor(directorRef.current, agentsRef.current, scene, w, questionId),
           );
         }
       }
@@ -185,8 +213,10 @@ export function CollectionCrowd({
         return;
       }
       const w2 = laidOutAtRef.current || band.width;
+      const newcomer = `replay-${Date.now()}`;
       directorRef.current = startScene(
-        directorRef.current, scene, `replay-${Date.now()}`, w2, randRef.current,
+        directorRef.current, scene, newcomer, w2, randRef.current,
+        hostFor(directorRef.current, agentsRef.current, scene, w2, newcomer),
       );
     };
     return () => { delete w.__bobitScene; };

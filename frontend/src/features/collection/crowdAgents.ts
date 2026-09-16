@@ -131,6 +131,36 @@ export function initAgents(ids: string[], opts: AgentOpts): AgentState {
 }
 
 /**
+ * The bobit standing nearest a mark, for a scene that needs somebody already in the room.
+ *
+ * A set piece with a `host` role was casting a synthetic id, because `castOverrides` defaulted
+ * to `{}` and nothing ever passed one. That made the cannon's host a phantom: an extra bobit
+ * who materialised at t=0 with no entrance, did the whole routine and vanished at t=10.6, so
+ * the newcomer's welcoming high-five was with a stranger who was never a resident.
+ *
+ * Ranked bobits are skipped -- they stand at the back, and a host is somebody on stage. Ties
+ * break by id so casting is deterministic and a replay looks the same twice.
+ *
+ * Returns null when there is genuinely nobody, which is a real case: the cannon fires at
+ * ordinal 1, so a player whose only bobit is away in another scene has no one to cast. The
+ * caller keeps the synthetic fallback for that.
+ */
+export function nearestAgent(
+  state: AgentState, x: number, exclude: ReadonlySet<string> = new Set(),
+): string | null {
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const id of Object.keys(state).sort()) {
+    if (exclude.has(id)) continue;
+    const a = state[id];
+    if (a.activity === 'rank') continue;
+    const d = Math.abs(a.x - x);
+    if (d < bestD) { best = id; bestD = d; }
+  }
+  return best;
+}
+
+/**
  * Take the positions a finished scene handed back and stand those agents on them.
  *
  * An agent is seeded at the centre of the band when his resident first appears, because at that

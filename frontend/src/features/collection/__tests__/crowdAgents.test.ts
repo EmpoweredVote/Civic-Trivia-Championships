@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY, makeRand,
-  startMove, MOVE_MIN_SEC, rescaleTo, placeReleased,
+  startMove, MOVE_MIN_SEC, rescaleTo, placeReleased, nearestAgent,
 } from '../crowdAgents';
 import type { AgentOpts, AgentState } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
@@ -410,5 +410,42 @@ describe('placeReleased', () => {
   it('returns the same state object when nobody was released', () => {
     const seeded = initAgents(['a'], OPTS());
     expect(placeReleased(seeded, [])).toBe(seeded);
+  });
+});
+
+describe('nearestAgent', () => {
+  /** Agents at chosen positions, everything else straight from initAgents. */
+  const at = (xs: Record<string, number>): AgentState => {
+    const base = initAgents(Object.keys(xs), OPTS());
+    const out: AgentState = {};
+    for (const id of Object.keys(xs)) out[id] = { ...base[id], x: xs[id] };
+    return out;
+  };
+
+  it('picks the agent closest to the mark', () => {
+    expect(nearestAgent(at({ a: 100, b: 500, c: 900 }), 520)).toBe('b');
+  });
+
+  it('breaks a tie by id, so casting is deterministic', () => {
+    const state = at({ zeta: 400, alpha: 600 });
+    expect(nearestAgent(state, 500)).toBe('alpha');
+    expect(nearestAgent(state, 500)).toBe('alpha');
+  });
+
+  it('skips anyone already excluded, such as the newcomer or another scene cast', () => {
+    const state = at({ a: 100, b: 500, c: 900 });
+    expect(nearestAgent(state, 520, new Set(['b']))).toBe('c');
+  });
+
+  /** Ranked bobits stand at the back. A host is somebody on stage. */
+  it('skips ranked agents', () => {
+    const state = at({ a: 100, b: 500 });
+    state.b = { ...state.b, activity: 'rank' };
+    expect(nearestAgent(state, 520)).toBe('a');
+  });
+
+  it('returns null when the room has nobody to cast', () => {
+    expect(nearestAgent({}, 500)).toBeNull();
+    expect(nearestAgent(at({ a: 100 }), 500, new Set(['a']))).toBeNull();
   });
 });
