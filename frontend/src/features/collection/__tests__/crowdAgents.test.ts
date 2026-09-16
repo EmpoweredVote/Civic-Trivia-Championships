@@ -445,6 +445,15 @@ describe('nearestAgent', () => {
     expect(nearestAgent(state, 520)).toBe('a');
   });
 
+  /** What makes castFromRoom safe: two roles in one scene can never be the same bobit. */
+  it('never returns an id already excluded', () => {
+    const state = initAgents(['a', 'b'], OPTS());
+    const first = nearestAgent(state, 500)!;
+    const second = nearestAgent(state, 500, new Set([first]));
+    expect(second).not.toBe(first);
+    expect(second).not.toBeNull();
+  });
+
   it('returns null when the room has nobody to cast', () => {
     expect(nearestAgent({}, 500)).toBeNull();
     expect(nearestAgent(at({ a: 100 }), 500, new Set(['a']))).toBeNull();

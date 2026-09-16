@@ -214,3 +214,41 @@ describe('releasing a scene', () => {
     expect(s.released[0].x).toBeCloseTo(slot.right, 0);
   });
 });
+
+describe('canStage anchoring', () => {
+  it('packs from the left by default', () => {
+    const slot = canStage(directorInit(), 0.25, WIDTH)!;
+    expect(slot.left).toBe(0);
+  });
+
+  /**
+   * A scene tied to a fixed piece of scenery has to stage NEXT TO IT. The milestone's bobits
+   * walk over and present at the tree, and the tree is on the right border -- staged from the
+   * left they admire an empty stretch of floor, which is what the first run of the scene sheet
+   * showed.
+   */
+  it('packs from the right when the scene asks for it', () => {
+    const slot = canStage(directorInit(), 0.25, WIDTH, 'right')!;
+    expect(slot.right).toBe(WIDTH);
+    expect(slot.left).toBeCloseTo(WIDTH * 0.75, 6);
+  });
+
+  it('still finds room on the right beside something already running', () => {
+    const busy = startScene(directorInit(), { ...TINY, span: 0.3 }, 'a', WIDTH, rand);
+    const slot = canStage(busy, 0.3, WIDTH, 'right')!;
+    expect(slot.right).toBe(WIDTH);
+    const [running] = busy.running;
+    expect(slot.left >= running.right || slot.right <= running.left).toBe(true);
+  });
+
+  it('refuses a right-anchored span that cannot fit', () => {
+    const busy = startScene(directorInit(), { ...TINY, span: 0.85 }, 'a', WIDTH, rand);
+    expect(canStage(busy, 0.85, WIDTH, 'right')).toBeNull();
+  });
+
+  it('honours a scene that declares its own anchor', () => {
+    const anchored = { ...TINY, span: 0.2, anchor: 'right' as const };
+    const s = startScene(directorInit(), anchored, 'a', WIDTH, rand);
+    expect(s.running[0].right).toBe(WIDTH);
+  });
+});

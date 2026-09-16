@@ -31,6 +31,7 @@ const SCENES = {
   'pool-trip': 3.0,
   'pool-peek': 2.8,
   'pool-drop': 2.6,
+  'milestone-tree': 7.0,
 };
 
 const FRAMES = 8;

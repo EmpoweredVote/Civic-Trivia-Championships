@@ -97,12 +97,26 @@ export function castIds(state: DirectorState): Set<string> {
  * thing stopping two of them happening on top of each other.
  */
 export function canStage(
-  state: DirectorState, span: number, width: number,
+  state: DirectorState, span: number, width: number, anchor: 'left' | 'right' = 'left',
 ): { left: number; right: number } | null {
   const need = Math.min(width, Math.max(1, span * width));
   const taken = state.running
     .map(r => ({ left: r.left, right: r.right }))
     .sort((a, b) => a.left - b.left);
+
+  // Right-anchored scenes scan inward from the far edge. A scene whose choreography points at
+  // something fixed -- the tree on the right border -- has to be staged beside it, not merely
+  // somewhere that fits.
+  if (anchor === 'right') {
+    let cursor = width;
+    for (let i = taken.length - 1; i >= 0; i--) {
+      const t = taken[i];
+      if (cursor - t.right >= need) return { left: cursor - need, right: cursor };
+      cursor = Math.min(cursor, t.left);
+    }
+    if (cursor >= need) return { left: cursor - need, right: cursor };
+    return null;
+  }
 
   let cursor = 0;
   for (const t of taken) {
@@ -124,7 +138,8 @@ export function startScene(
   state: DirectorState, scene: Scene, newcomerId: string, width: number, rand: Rand,
   castOverrides: Record<string, string> = {},
 ): DirectorState {
-  const slot = canStage(state, scene.span, width) ?? { left: 0, right: scene.span * width };
+  const slot = canStage(state, scene.span, width, scene.anchor)
+    ?? { left: 0, right: scene.span * width };
   const cast: Record<string, string> = { newcomer: newcomerId };
   for (const role of scene.roles) {
     if (role === 'newcomer') continue;

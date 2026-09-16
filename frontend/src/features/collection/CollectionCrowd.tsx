@@ -18,8 +18,8 @@ import {
   directorInit, directorStep, startScene, canStage, castIds,
 } from './sceneDirector';
 import type { DirectorState } from './sceneDirector';
-import { sceneForArrival, ALL_SCENES } from './scenes';
-import { ROLE_HOST } from './scenes/types';
+import { sceneForArrival, ALL_SCENES, TREE_MILESTONE } from './scenes';
+import { ROLE_NEWCOMER } from './scenes/types';
 import type { Scene } from './scenes/types';
 import {
   bandFor, CROWD_CAP, wanderCastFor, groundLineFromBottom, overlayHeightFor, overlayOffset,
@@ -83,27 +83,33 @@ const NO_AERIAL = { figures: [] as FieldFigure[], dx: 0, dy: 0 };
  * than merely arrange it.
  */
 /**
- * Cast a bobit who is actually in the room as a scene's host.
+ * Fill a scene's roles from bobits who already live here.
  *
- * `castOverrides` defaulted to `{}` and nothing ever passed one, so a `host` role was filled by
- * a synthetic id and rendered as an orphan: an extra bobit who appeared from nowhere at t=0,
- * performed, and evaporated when the scene ended. For the cannon that meant the newcomer was
- * welcomed by a stranger who had never lived there.
+ * `startScene` invents a synthetic id for any role an override does not cover, and a synthetic
+ * id renders as an ORPHAN -- a bobit who appears from nowhere, performs, and evaporates. That
+ * was the cannon's phantom host. A scene whose roles are all existing residents, like the
+ * milestone, would otherwise produce one phantom per role.
  *
- * Picks the resident nearest the middle of the floor the scene is about to reserve, which is
- * the spec's rule. Falls back to `{}` -- and so to the old synthetic id -- when there is
- * genuinely nobody free, rather than dropping the scene.
+ * `newcomer` is never cast here: `startScene` owns that name and fills it with the arriving
+ * bobit's own id. A scene with no arrival must not use it as a role name, and `scenes.test.ts`
+ * asserts the milestone does not.
  */
-function hostFor(
+function castFromRoom(
   director: DirectorState, agents: AgentState, scene: Scene, width: number, newcomerId: string,
 ): Record<string, string> {
-  if (!scene.roles.includes(ROLE_HOST)) return {};
   const slot = canStage(director, scene.span, width);
   if (!slot) return {};
-  // The newcomer cannot host his own arrival, and a bobit busy in another scene is spoken for.
-  const exclude = new Set([...castIds(director), newcomerId]);
-  const host = nearestAgent(agents, (slot.left + slot.right) / 2, exclude);
-  return host ? { [ROLE_HOST]: host } : {};
+  const mid = (slot.left + slot.right) / 2;
+  const taken = new Set([...castIds(director), newcomerId]);
+  const out: Record<string, string> = {};
+  for (const role of scene.roles) {
+    if (role === ROLE_NEWCOMER) continue;
+    const id = nearestAgent(agents, mid, taken);
+    if (!id) break;                 // nobody left; startScene falls back to a synthetic id
+    out[role] = id;
+    taken.add(id);                  // two roles must never be played by the same bobit
+  }
+  return out;
 }
 
 export function CollectionCrowd({
@@ -166,6 +172,8 @@ export function CollectionCrowd({
    * with `questionCount` still null from its fetch.
    */
   const milestoneSettledRef = useRef(false);
+  /** The milestone set piece is a one-off; a re-render must not restage it. */
+  const milestoneFiredRef = useRef(false);
   /**
    * The tree's branch, or nothing. Recomputed each frame: the band's measured width changes
    * with the viewport and the trunk moves with it, so a Surface cached at mount would leave a
@@ -192,6 +200,9 @@ export function CollectionCrowd({
     [userId],
   );
 
+  const band: CrowdBand = useMemo(() => bandFor(isMobile), [isMobile]);
+  const height = band.height;
+
   /**
    * Tell the latch how many bobits the room holds, and recompute.
    *
@@ -206,13 +217,26 @@ export function CollectionCrowd({
     // Sprout only when the milestone is crossed while the player is WATCHING. The first
     // evaluation against a real denominator reports a state we inherited, not an event.
     const crossedLive = nowEarned && !earnedRef.current && milestoneSettledRef.current;
-    if (crossedLive && !reducedMotion) growRef.current = 0;
+    if (crossedLive && !reducedMotion) {
+      growRef.current = 0;
+      // The ceremony belongs to the moment it is earned. A player who arrives already past 25%
+      // gets the tree without it, which is correct rather than a shortfall.
+      if (!milestoneFiredRef.current) {
+        milestoneFiredRef.current = true;
+        const w = laidOutAtRef.current || band.width;
+        const scene = TREE_MILESTONE;
+        if (canStage(directorRef.current, scene.span, w)) {
+          directorRef.current = startScene(
+            directorRef.current, scene, `milestone-${Date.now()}`, w, randRef.current,
+            castFromRoom(directorRef.current, agentsRef.current, scene, w, ''),
+          );
+        }
+      }
+    }
     if (qc !== null) milestoneSettledRef.current = true;
     setEarned(nowEarned);
-  }, [questionCount, reducedMotion]);
+  }, [questionCount, reducedMotion, band]);
 
-  const band: CrowdBand = useMemo(() => bandFor(isMobile), [isMobile]);
-  const height = band.height;
 
   // Seed from storage whenever the collection -- or the driver behind it -- changes.
   useEffect(() => {
@@ -244,6 +268,7 @@ export function CollectionCrowd({
       directorRef.current = directorInit();
       growRef.current = TREE_GROW_SEC;
       milestoneSettledRef.current = false;
+      milestoneFiredRef.current = false;
       setOverflow(overflowCount(stateRef.current));
       syncMilestone(slug);
       repaint();
@@ -278,7 +303,7 @@ export function CollectionCrowd({
         if (canStage(directorRef.current, scene.span, w)) {
           directorRef.current = startScene(
             directorRef.current, scene, questionId, w, randRef.current,
-            hostFor(directorRef.current, agentsRef.current, scene, w, questionId),
+            castFromRoom(directorRef.current, agentsRef.current, scene, w, questionId),
           );
         }
       }
@@ -316,7 +341,7 @@ export function CollectionCrowd({
       const newcomer = `replay-${Date.now()}`;
       directorRef.current = startScene(
         directorRef.current, scene, newcomer, w2, randRef.current,
-        hostFor(directorRef.current, agentsRef.current, scene, w2, newcomer),
+        castFromRoom(directorRef.current, agentsRef.current, scene, w2, newcomer),
       );
     };
     return () => { delete w.__bobitScene; };

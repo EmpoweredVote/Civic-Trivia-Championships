@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SWIRL } from '../scenes/arrival01Swirl';
 import { CANNON } from '../scenes/arrival02Cannon';
 import { POOL } from '../scenes/poolEntrances';
-import { sceneForArrival } from '../scenes/index';
+import { sceneForArrival, ALL_SCENES } from '../scenes/index';
 import type { Scene } from '../scenes/types';
 import { ALL_ANIMATIONS } from '../../../components/bobbits/rigExtras';
 import { directorInit, startScene, directorStep, actorsOf } from '../sceneDirector';
@@ -165,5 +165,46 @@ describe('the cannon', () => {
   it('gives the two partners opposite hands, so they reach for each other', () => {
     const hands = CANNON.beats.filter(b => b.pose === 'highfive').map(b => b.hand);
     expect(new Set(hands)).toEqual(new Set(['R', 'L']));
+  });
+});
+
+describe('the tree milestone scene', () => {
+  const scene = ALL_SCENES.find(s => s.id === 'milestone-tree')!;
+
+  it('is registered', () => {
+    expect(scene).toBeDefined();
+  });
+
+  /** Arrivals are ordinal-driven; this is not one, and must never be handed out as one. */
+  it('is never returned as an arrival', () => {
+    for (let ordinal = 0; ordinal < 60; ordinal++) {
+      expect(sceneForArrival(ordinal, () => 0.5).id).not.toBe('milestone-tree');
+    }
+  });
+
+  it('never reaches for the sky -- it is in-band scenery, not a set piece with an overlay', () => {
+    expect(scene.beats.every(b => b.layer !== 'air')).toBe(true);
+  });
+
+  /**
+   * Asserting the span alone says nothing about WHERE it lands -- and the first version of this
+   * test did exactly that while the scene staged at the far left, admiring empty floor. Stage
+   * it and check the reserved ground.
+   */
+  it('actually stages against the right border, where the trunk is', () => {
+    expect(scene.span).toBeLessThanOrEqual(0.25);
+    const staged = startScene(directorInit(), scene, 'x', 1000, () => 0.5);
+    expect(staged.running[0].right).toBe(1000);
+    expect(staged.running[0].left).toBeGreaterThanOrEqual(750);
+  });
+
+  /**
+   * `startScene` fills `newcomer` itself and applies overrides only to other roles, so a role
+   * by that name cannot be cast from the room -- it becomes a synthetic orphan. Both parts here
+   * are existing residents.
+   */
+  it('casts no role called newcomer', () => {
+    expect(scene.roles).not.toContain('newcomer');
+    expect(scene.beats.every(b => b.role !== 'newcomer')).toBe(true);
   });
 });

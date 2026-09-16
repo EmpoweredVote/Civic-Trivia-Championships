@@ -66,6 +66,14 @@ export interface Scene {
    * in reserved span.
    */
   span: number;
+  /**
+   * Which end of the band to reserve from. Left by default.
+   *
+   * Only matters for a scene tied to a fixed piece of scenery. The milestone's bobits walk over
+   * and present at the TREE, which stands on the right border -- packed from the left they
+   * admire an empty stretch of floor, which is exactly what the first scene sheet showed.
+   */
+  anchor?: 'left' | 'right';
   /** Roles this scene casts. `newcomer` is always the arriving bobit. */
   roles: string[];
   beats: Beat[];
