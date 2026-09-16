@@ -1,7 +1,7 @@
 # Bobit living room — handoff
 
-**Written:** 2026-09-15, after a review pass and the three fixes that came out of it.
-**Branch:** `feat/bobit-living-floor` — **36 commits, NOT pushed, nothing deployed.**
+**Written:** 2026-09-15, after a review pass and the eight fixes that came out of it.
+**Branch:** `feat/bobit-living-floor` — **43 commits, NOT pushed, nothing deployed.**
 Production is untouched. The frontend static site auto-deploys from `master`, so merging is a
 production deploy; do not merge without Chris saying so.
 
@@ -23,12 +23,12 @@ now vary in height by ±10%.
 the cannon (arrival #2) and four pool entrances all exist and fire. The cannon's flight passes
 in front of the question card on an overlay canvas.
 
-**574 tests green, typecheck clean.**
+**585 tests green, typecheck clean.**
 
 A full code review ran on 2026-09-15 over `713fa75..796e12f`. Verdict: **merge with fixes**. The
 occlusion relaxation was the highest-risk part of the work and **all four bounds hold**, two of
-them enforced by tests that will hold for future scenes. Two Criticals came out of it; both are
-fixed (commits `f4b9083`, `ec0c343`). The Importants are listed under open items below.
+them enforced by tests that will hold for future scenes. **Every finding from it is now fixed** —
+two Criticals, four Importants, and one Minor that turned out to be worse than reported.
 
 ## The harness bug that hid all of this (FIXED 2026-09-15, `d323902`)
 
@@ -128,30 +128,30 @@ Other scripts:
 2. **The cannon prop is crude.** It reads as a plain grey tube, not a cannon. Visible and
    correctly placed, but the silhouette needs art work — a proper carriage, a thicker breech,
    maybe a muzzle flare. `frontend/src/components/bobbits/props.ts`.
-3. **The review's Important findings**, none yet fixed:
-   - The overlay's coordinate mapping ignores the game container's padding in **both** axes
-     (`py-5 sm:py-6 md:py-8 px-4 sm:px-6`), so an airborne figure is drawn 20–32px too low and
-     16–24px sideways. That is close to a full body height of discontinuity at takeoff and at
-     landing. Only the two transition frames show it — screenshot those, not the apex.
-   - `TOP_MARGIN = 2` in `crowdFigures.ts` clamps the **feet**, and a figure is drawn upward
-     from there, so the closed-sky fallback draws the whole body off the top of the canvas —
-     the exact "vanish in flight" it exists to prevent. Reachable whenever a player hits Next
-     within ~4.3s of the reveal.
-   - The cannon's `host` is **always a phantom**: `castOverrides` is defaulted to `{}` and no
-     caller passes it, so the host is a synthetic id who materialises at t=0 with no entrance
-     and vanishes at t=10.6. The high-five is with a stranger. **Wants a yes/no from Chris
-     rather than a fix from whoever picks this up** — it changes what the scene means.
-   - Reduced motion renders an **empty band**: `syncCast` sits inside `if (!reducedMotion)`, so
-     no agent is ever created. The spec is explicit that this path should be today's behaviour.
-4. **Plan 3 is unwritten:** the tree on the right border, perching (`Surface` is still
+3. **Plan 3 is unwritten:** the tree on the right border, perching (`Surface` is still
    unconsumed), `questionCount` plumbing, the 25% milestone.
-5. Review Minors, all small: the aerial gate is read from two different copies one frame apart;
-   effect/prop ids key on scene id rather than scene instance (fine today, not once the
-   entrance library grows); `SMOKE_DUR`/`SMOKE_LIFE` are duplicated across two modules;
-   the costless-miss ripple starts at `slotOrder[0]` where the spec says the newest bobit;
+4. Review Minors, the ones still open: the aerial gate is still read from two different copies
+   (`allowAirRef` in the frame loop, the `aerialAllowed` prop in render) and can disagree for a
+   frame; effect/prop ids key on scene id rather than scene instance (fine today, not once the
+   entrance library grows); `SMOKE_DUR`/`SMOKE_LIFE` are duplicated across two modules; the
+   costless-miss ripple starts at `slotOrder[0]` where the spec says the newest bobit;
    `cannonMuzzle` is tested but unused, so the flight does not start at the muzzle.
-6. `ResultsScreen` declares a `collectionQuestionCount` prop **no caller passes** — dead, always
+5. `ResultsScreen` declares a `collectionQuestionCount` prop **no caller passes** — dead, always
    falls back to 5. Worth fixing when the plumbing lands.
+
+## What the review fixes changed, worth knowing
+
+- An airborne bobit was drawn on **both** canvases for the whole flight — arcing over the card
+  and standing on the band at once. Found by screenshot, not by the suite; the existing test
+  passed no agents, so the band copy it guarded against could not be produced. The review had
+  this as a Minor one-frame race. It was every frame of every shot.
+- The closed-sky clamp pinned the FEET at y=2, which draws the whole body off the top. Its test
+  asserted the clamp's own range and passed throughout.
+- The cannon's host was a synthetic id — a bobit who appeared from nowhere and evaporated. It is
+  now the nearest real resident. **Still open for Chris:** whether the cannon should have a host
+  at all. The code no longer answers that by accident.
+- Reduced motion rendered an empty band, for two independent reasons (no agents were created,
+  and a static field painted once before the parent had seeded it).
 
 ## Chris's open questions, one of them now answered
 
