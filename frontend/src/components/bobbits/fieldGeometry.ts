@@ -106,7 +106,7 @@ export function figureBounds(f: FieldFigure) {
  */
 export interface FieldProp {
   id: string;
-  kind: 'cannon';
+  kind: 'cannon' | 'tree';
   x: number;
   /** px from the field's top to the prop's ground contact line. */
   groundY: number;
@@ -114,6 +114,8 @@ export interface FieldProp {
   flip?: boolean;
   /** Degrees from horizontal for a cannon barrel; negative is nose-up. */
   angle?: number;
+  /** 0-1 for a tree that is still sprouting. Ignored by every other kind. */
+  grow?: number;
   /**
    * Body colour. Supplied by the caller because only it knows the theme -- a fixed dark barrel
    * is all but invisible against a dark-mode background, which is how it first shipped.

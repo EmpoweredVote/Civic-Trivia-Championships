@@ -35,10 +35,15 @@ async function sheet(page, theme) {
     const props = await import('/src/components/bobbits/props.ts');
     const rig = await import('/src/components/bobbits/leremyRig.ts');
     const extras = await import('/src/components/bobbits/rigExtras.ts');
+    const geom = await import('/src/components/bobbits/fieldGeometry.ts');
     const { CFG, computePose, draw, drawShadow } = rig;
     const { ALL_ANIMATIONS, figColor } = extras;
+    // NOT a hardcoded 112. A seated figure's pelvis is 8 units above its contact line and a
+    // standing one's is 112 -- the same 104-unit trap fieldGeometry documents for hoverAnim.
+    // Drawing `sit` with the standing offset floats the bobit a whole body above his branch.
+    const { pelvisOffset } = geom;
 
-    const W = 1300, H = 640;
+    const W = 1500, H = 700;
     const canvas = document.createElement('canvas');
     canvas.width = W * 2; canvas.height = H * 2;
     const c = canvas.getContext('2d');
@@ -63,7 +68,7 @@ async function sheet(page, theme) {
       const pose = ALL_ANIMATIONS.standstill.frame(0.2);
       drawShadow(c, bx + 62, by, 16 * 0.2);
       c.save();
-      c.translate(bx + 62, by - 112 * 0.2);
+      c.translate(bx + 62, by - pelvisOffset('standstill') * 0.2);
       c.scale(0.2, 0.2);
       draw(c, computePose(pose, CFG, { x: 0, y: 0 }), CFG, { color: figColor(0, isDark) });
       c.restore();
@@ -89,6 +94,61 @@ async function sheet(page, theme) {
       c.fillText(`${ang}deg`, bx - 20, by + 22);
     });
 
+    // ── the tree ──────────────────────────────────────────────────────────────────────────
+    c.fillStyle = label;
+    c.font = '13px system-ui, sans-serif';
+    c.fillText('the tree — at band scale beside a standing bobit, and enlarged', 660, 218);
+
+    // At the size the player sees it, with a standing bobit AND one seated on the branch. The
+    // seated figure is the whole question: the band is 96px and he has to fit inside it.
+    {
+      const bx = 800, by = 120;
+      props.drawTree(c, bx, by, 0.2, 1, body);
+      const stand = ALL_ANIMATIONS.standstill.frame(0.2);
+      drawShadow(c, bx - 64, by, 16 * 0.2);
+      c.save();
+      c.translate(bx - 64, by - pelvisOffset('standstill') * 0.2);
+      c.scale(0.2, 0.2);
+      draw(c, computePose(stand, CFG, { x: 0, y: 0 }), CFG, { color: figColor(0, isDark) });
+      c.restore();
+      const [branch] = props.treeSurfaces(bx, by, 0.2);
+      const seated = ALL_ANIMATIONS.sit.frame(0.3);
+      c.save();
+      c.translate((branch.left + branch.right) / 2, branch.y - pelvisOffset('sit') * 0.2);
+      c.scale(0.2, 0.2);
+      draw(c, computePose(seated, CFG, { x: 0, y: 0 }), CFG, { color: figColor(1, isDark) });
+      c.restore();
+      c.fillStyle = label;
+      c.font = '12px ui-monospace, monospace';
+      c.fillText('scale 0.2', bx - 90, by + 18);
+    }
+
+    // Enlarged, with the band's real top edge drawn in. The ground line sits GROUND_INSET (6px)
+    // above the band's bottom, so the top is 90px above it at scale 0.2 and 90 * (s / 0.2) away
+    // here. If the seated bobit crosses this line, the tree is too tall for the real band.
+    {
+      const bx = 1080, by = 620, s = 0.8;
+      props.drawTree(c, bx, by, s, 1, body);
+      const [branch] = props.treeSurfaces(bx, by, s);
+      const seated = ALL_ANIMATIONS.sit.frame(0.3);
+      c.save();
+      c.translate((branch.left + branch.right) / 2, branch.y - pelvisOffset('sit') * s);
+      c.scale(s, s);
+      draw(c, computePose(seated, CFG, { x: 0, y: 0 }), CFG, { color: figColor(1, isDark) });
+      c.restore();
+
+      const bandTopY = by - (96 - 6) * (s / 0.2);
+      c.strokeStyle = '#DC2626';
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(bx - 240, bandTopY);
+      c.lineTo(bx + 140, bandTopY);
+      c.stroke();
+      c.fillStyle = '#DC2626';
+      c.font = '12px ui-monospace, monospace';
+      c.fillText('band top — nothing may cross this', bx - 240, bandTopY - 6);
+    }
+
     return canvas.toDataURL('image/png').split(',')[1];
   }, [theme === 'dark', BODY[theme], ANGLES]);
 }
@@ -97,7 +157,7 @@ async function run() {
   await mkdir(OUT, { recursive: true });
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   const context = await browser.newContext({
-    viewport: { width: 1300, height: 640 }, deviceScaleFactor: 2,
+    viewport: { width: 1500, height: 700 }, deviceScaleFactor: 2,
   });
   const page = await context.newPage();
   // Any page of the real app will do -- this only needs Vite to serve the modules.

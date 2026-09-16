@@ -1,3 +1,5 @@
+import type { Surface } from './fieldGeometry';
+
 /**
  * Scene props: things that are not figures but stand on the same floor.
  *
@@ -180,6 +182,106 @@ export function drawCannon(
   ctx.beginPath();
   ctx.arc(0, -WHEEL_R, HUB_R, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.restore();
+}
+
+
+/**
+ * The tree, in rig units, sized to a 96px band and nothing larger.
+ *
+ * 240 units is a standing bobit (~48px at scale 0.2) and the band is 480 units tall, so the
+ * whole tree has to live in what is left after the crowd. That is why there is ONE branch: a
+ * second ledge above this one would put its occupant's head through the top of the canvas.
+ * See the spec's 2026-09-15 addendum.
+ *
+ *   480 ---- top of the band
+ *   430 ---- canopy top
+ *   300 ---- trunk top
+ *   250 ---- the branch            <- a seated bobit reaches ~400 from here
+ *   240 ---- a standing bobit's head, for scale
+ *     0 ---- the floor line
+ */
+const TREE_TRUNK_W = 34;
+export const TREE_TRUNK_H = 300;
+/** Height of the branch above the ground line, in rig units. */
+export const TREE_LEDGE_UP = 250;
+/** Half the tree's total footprint, for the trunk's own placement. */
+export const TREE_HALF_W = 90;
+const BRANCH_LEN = 78;
+const BRANCH_W = 16;
+const CANOPY_R = 88;
+
+/**
+ * Where a bobit can sit. The first and only consumer of `Surface`, which has waited in
+ * fieldGeometry.ts since Stage 1 for exactly this.
+ *
+ * The branch reaches LEFT out of the trunk, because the tree stands on the right border and a
+ * branch reaching right would hang off the edge of the viewport.
+ */
+export function treeSurfaces(x: number, groundY: number, scale: number): Surface[] {
+  return [{
+    id: 'tree:branch',
+    left: x - (TREE_TRUNK_W * 0.5 + BRANCH_LEN) * scale,
+    right: x - TREE_TRUNK_W * 0.25 * scale,
+    y: groundY - TREE_LEDGE_UP * scale,
+  }];
+}
+
+/**
+ * The tree.
+ *
+ * `grow` is 0-1. At 0 nothing is drawn at all, so a caller can animate it up out of the floor
+ * with no special case; at 1 it is full height. Growth scales the HEIGHT only -- a tree that
+ * also grew sideways read as a balloon inflating rather than as something sprouting.
+ */
+export function drawTree(
+  ctx: CanvasRenderingContext2D,
+  x: number, groundY: number, scale: number, grow = 1, color = '#3F4854',
+) {
+  const g = Math.max(0, Math.min(1, grow));
+  if (g <= 0) return;
+  const accent = accentFor(color);
+
+  ctx.save();
+  ctx.translate(x, groundY);
+  ctx.scale(scale, scale * g);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // Canopy first, so the trunk and the branch read on top of it.
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(-10, -TREE_TRUNK_H - 40, CANOPY_R, CANOPY_R * 0.78, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(-70, -TREE_TRUNK_H + 6, CANOPY_R * 0.56, CANOPY_R * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(52, -TREE_TRUNK_H - 6, CANOPY_R * 0.5, CANOPY_R * 0.46, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Trunk: wider at the base, so it sits on the floor rather than balancing on it.
+  ctx.beginPath();
+  ctx.moveTo(-TREE_TRUNK_W * 0.8, 0);
+  ctx.lineTo(-TREE_TRUNK_W * 0.42, -TREE_TRUNK_H);
+  ctx.lineTo(TREE_TRUNK_W * 0.42, -TREE_TRUNK_H);
+  ctx.lineTo(TREE_TRUNK_W * 0.8, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // The branch `treeSurfaces` describes. A bobit sits ON this, so its top edge and the
+  // Surface's `y` are the same line -- change one and you must change the other.
+  ctx.fillRect(
+    -(TREE_TRUNK_W * 0.5 + BRANCH_LEN), -TREE_LEDGE_UP - BRANCH_W,
+    BRANCH_LEN + TREE_TRUNK_W * 0.5, BRANCH_W,
+  );
+
+  // Two accent notches on the trunk, the tree's equivalent of the cannon's bands: cheap, and
+  // they stop it reading as a flat post at 60px.
+  ctx.fillStyle = accent;
+  ctx.fillRect(-TREE_TRUNK_W * 0.34, -TREE_TRUNK_H * 0.62, TREE_TRUNK_W * 0.68, 10);
+  ctx.fillRect(-TREE_TRUNK_W * 0.3, -TREE_TRUNK_H * 0.34, TREE_TRUNK_W * 0.6, 9);
 
   ctx.restore();
 }
