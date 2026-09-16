@@ -18,7 +18,9 @@ import {
   directorInit, directorStep, startScene, canStage, castIds,
 } from './sceneDirector';
 import type { DirectorState } from './sceneDirector';
-import { sceneForArrival, ALL_SCENES, TREE_MILESTONE } from './scenes';
+import {
+  sceneForArrival, ALL_SCENES, TREE_MILESTONE, TREE_MILESTONE_MOBILE,
+} from './scenes';
 import { ROLE_NEWCOMER } from './scenes/types';
 import type { Scene } from './scenes/types';
 import {
@@ -224,7 +226,10 @@ export function CollectionCrowd({
       if (!milestoneFiredRef.current) {
         milestoneFiredRef.current = true;
         const w = laidOutAtRef.current || band.width;
-        const scene = TREE_MILESTONE;
+        // A phone gets the crowd's version: no tree to gather around, so the room celebrates
+        // instead. Cutting the milestone along with the tree would leave a phone player with
+        // nothing but pool entrances for the rest of a collection.
+        const scene = isMobile ? TREE_MILESTONE_MOBILE : TREE_MILESTONE;
         if (canStage(directorRef.current, scene.span, w)) {
           directorRef.current = startScene(
             directorRef.current, scene, `milestone-${Date.now()}`, w, randRef.current,
@@ -235,7 +240,7 @@ export function CollectionCrowd({
     }
     if (qc !== null) milestoneSettledRef.current = true;
     setEarned(nowEarned);
-  }, [questionCount, reducedMotion, band]);
+  }, [questionCount, reducedMotion, band, isMobile]);
 
 
   // Seed from storage whenever the collection -- or the driver behind it -- changes.

@@ -208,3 +208,34 @@ describe('the tree milestone scene', () => {
     expect(scene.beats.every(b => b.role !== 'newcomer')).toBe(true);
   });
 });
+
+describe('the mobile milestone scene', () => {
+  const scene = ALL_SCENES.find(s => s.id === 'milestone-mobile')!;
+
+  it('is registered and is never handed out as an arrival', () => {
+    expect(scene).toBeDefined();
+    for (let ordinal = 0; ordinal < 60; ordinal++) {
+      expect(sceneForArrival(ordinal, () => 0.5).id).not.toBe('milestone-mobile');
+    }
+  });
+
+  it('fits a phone band', () => {
+    expect(scene.span).toBeLessThanOrEqual(0.5);
+  });
+
+  /** Two of the same hand reach the same way and the slap misses entirely. */
+  it('pairs its high-five hands', () => {
+    const hands = scene.beats.filter(b => b.pose === 'highfive').map(b => b.hand);
+    expect(hands).toHaveLength(2);
+    expect(new Set(hands)).toEqual(new Set(['R', 'L']));
+  });
+
+  it('casts no role called newcomer', () => {
+    expect(scene.roles).not.toContain('newcomer');
+  });
+
+  /** Nothing fixed to stand beside on a phone, so it must not fight for the right border. */
+  it('is not anchored', () => {
+    expect(scene.anchor).toBeUndefined();
+  });
+});
