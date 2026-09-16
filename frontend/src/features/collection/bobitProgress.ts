@@ -17,9 +17,9 @@ export interface BobitProgressStore {
   /**
    * Fill the mirror from wherever the truth lives, before the crowd is seeded.
    *
-   * Optional, and absent on the localStorage driver -- there the mirror IS the truth and is
-   * already populated by the time the store is constructed. Callers do `await
-   * store.hydrate?.(slug)`, which is a no-op for signed-out play.
+   * Optional, and absent on the localStorage driver -- there the mirror IS the truth, and it
+   * fills itself from storage on first use. Callers do `await store.hydrate?.(slug)`, which is
+   * a no-op for signed-out play.
    */
   hydrate?(slug: string): Promise<void>;
 }
@@ -41,7 +41,19 @@ export function createLocalProgressStore(storage?: Storage): BobitProgressStore 
 
   // The in-memory mirror is the source of truth for reads. It means a storage that throws --
   // private mode, a full quota -- costs persistence but never costs the player their match.
-  const data: Shape = read(backing);
+  //
+  // Filled on FIRST USE, not at construction. `localStore` in CollectionCrowd is a module
+  // singleton, so a snapshot taken in its constructor is really a snapshot taken whenever that
+  // module happens to be imported -- and main.tsx's static `import App` evaluates it before the
+  // module body runs, which is where the dev mock seeds `?owned=`. Reading eagerly made the
+  // whole room come up empty on the first load of ?mock=1 and populated on every load after,
+  // which is a miserable thing to debug and had gone unnoticed for long enough to leave five
+  // entrance scenes unreviewed. Deferring to first use makes that ordering stop mattering.
+  //
+  // Still exactly one read: the mirror owns the data once it is loaded, and `write` pushes
+  // changes outward. Re-reading later would resurrect a bobit the player had just lost.
+  let mirror: Shape | null = null;
+  const data = (): Shape => (mirror ??= read(backing));
 
   function read(s: Storage | null): Shape {
     if (!s) return {};
@@ -58,7 +70,7 @@ export function createLocalProgressStore(storage?: Storage): BobitProgressStore 
   function write() {
     if (!backing) return;
     try {
-      backing.setItem(STORAGE_KEY, JSON.stringify(data));
+      backing.setItem(STORAGE_KEY, JSON.stringify(data()));
     } catch {
       // Quota or private mode. The mirror already has the change; persistence is what is lost.
     }
@@ -66,24 +78,27 @@ export function createLocalProgressStore(storage?: Storage): BobitProgressStore 
 
   return {
     load(slug) {
-      return new Set(Object.keys(data[slug] ?? {}));
+      return new Set(Object.keys(data()[slug] ?? {}));
     },
     grant(slug, questionId) {
-      if (!data[slug]) data[slug] = {};
-      if (data[slug][questionId] === undefined) {
-        data[slug][questionId] = Date.now();
+      const d = data();
+      if (!d[slug]) d[slug] = {};
+      if (d[slug][questionId] === undefined) {
+        d[slug][questionId] = Date.now();
         write();
       }
     },
     revoke(slug, questionId) {
-      if (data[slug]?.[questionId] === undefined) return;
-      delete data[slug][questionId];
+      const d = data();
+      if (d[slug]?.[questionId] === undefined) return;
+      delete d[slug][questionId];
       write();
     },
     summary() {
+      const d = data();
       const out: Record<string, number> = {};
-      for (const slug of Object.keys(data)) {
-        const n = Object.keys(data[slug]).length;
+      for (const slug of Object.keys(d)) {
+        const n = Object.keys(d[slug]).length;
         if (n > 0) out[slug] = n;
       }
       return out;
