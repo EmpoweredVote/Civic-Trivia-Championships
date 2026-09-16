@@ -464,3 +464,50 @@ at a time — the director marks it `ground` or `air` — so nothing is ever pai
 
 This is what lets the cannon fire a bobit up over the question card and back down into the
 crowd without the layout moving a pixel.
+
+---
+
+## Addendum: what plan 3 must change (2026-09-15)
+
+Plans 1 and 2 shipped and were reviewed. Two things this spec says about the tree are no longer
+buildable as written, both because of decisions made after it was signed off.
+
+**The tree is short, and has ONE perch.** The spec asks for a trunk with "2-3 `Surface` ledges
+at different heights". That was written against a 190px band. The band shipped at **96px**, and
+a standing bobit is already ~48px of it — so there is about 42px of clear air above a bobit's
+head. One ledge above head height, plus a seated figure on it, plus any canopy, is already over
+budget. Two or three is not close.
+
+So: trunk on the right border at ~12% of band width, rising to about two thirds of the band; a
+**single** `Surface` ledge at roughly half the band height; canopy above it. A seated bobit on
+that ledge clears the top of the canvas by a few pixels and no more. **It will read as a small
+tree**, and that is accepted rather than worked around — the alternative was spending the
+question card's pixels to grow the band back, and those pixels were deliberately reclaimed.
+
+This is the same wall `pool-peek` and `pool-drop` hit: both were choreographed against vertical
+room the band no longer has, and both are still broken for that reason. **Anything in this spec
+that moves a figure off the floor line needs checking against 96px before it is built.**
+
+**The milestone is a high-water mark, and it is persisted.** The spec says the tree "persists
+from then on", and separately the room can LOSE bobits — a wrong answer on a question you own
+plays the abduction and takes one back. A tree derived from `owned >= 0.25 * questionCount`
+would therefore vanish mid-match whenever a player crossed back under the line, and return
+later. That reads as a bug, not as a rule.
+
+The trigger is the **best owned count ever reached** for that collection, compared against 25%.
+
+It lives in a **sibling localStorage key**, not inside `ctc.bobits.v1`: that key's shape is
+`{ [slug]: { [questionId]: epochMs } }` and widening it would break the existing parse for every
+player mid-collection. It stays local for signed-in players too. The high-water mark is
+cosmetic, the server driver reads from ev-accounts, and that service is outside this repo while
+`backend/` here is frozen — so there is nowhere to put it server-side without work this plan
+cannot do. A signed-in player who switches browsers re-earns the tree; that is a worse outcome
+than storing it properly and a much better one than blocking the feature on another service.
+
+**Still true, and not restated below:** perching as a destination rather than a stunt, branch
+capacity (now 1, since there is one branch), perched bobits leaving the floor's separation
+budget, the `+N more` label moving to bottom-left, the tree being desktop-only, and the mobile
+milestone being the crowd noticing rather than a structure arriving.
+
+**Already built, contrary to this spec's "Rig additions" section:** `climb`, `sit`, `read`,
+`peek` and `greetseat` all exist in the rig today. Plan 3 needs no new poses for perching.
