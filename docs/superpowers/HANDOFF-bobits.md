@@ -1,7 +1,7 @@
 # Bobit living room — handoff
 
 **Written:** 2026-09-15, updated after a review pass and the first two fixes from it.
-**Branch:** `feat/bobit-living-floor` — **34 commits, NOT pushed, nothing deployed.**
+**Branch:** `feat/bobit-living-floor` — **36 commits, NOT pushed, nothing deployed.**
 Production is untouched. The frontend static site auto-deploys from `master`, so merging is a
 production deploy; do not merge without Chris saying so.
 
@@ -23,31 +23,30 @@ now vary in height by ±10%.
 the cannon (arrival #2) and four pool entrances all exist and fire. The cannon's flight passes
 in front of the question card on an overlay canvas.
 
-**569 tests green, typecheck clean.**
+**574 tests green, typecheck clean.**
 
 A full code review ran on 2026-09-15 over `713fa75..796e12f`. Verdict: **merge with fixes**. The
 occlusion relaxation was the highest-risk part of the work and **all four bounds hold**, two of
 them enforced by tests that will hold for future scenes. Two Criticals came out of it; both are
 fixed (commits `f4b9083`, `ec0c343`). The Importants are listed under open items below.
 
-## READ THIS BEFORE YOU RUN ANYTHING
+## The harness bug that hid all of this (FIXED 2026-09-15, `d323902`)
 
-**`?mock=1&owned=N` renders an EMPTY ROOM on its first page load.** Not a rendering bug — module
-evaluation order:
+Worth knowing about even though it is fixed, because it explains the state you inherited.
 
-- `CollectionCrowd.tsx` creates `localStore` as a module-level singleton.
-- `createLocalProgressStore` snapshots localStorage **once, at construction**.
-- `main.tsx`'s static `import App` evaluates that module *before* its own body runs
-  `await import('./dev/mockGameApi')`, which is what seeds `&owned=`.
+`?mock=1&owned=N` used to render an **empty room on its first page load** and a correct one on
+every load after. `createLocalProgressStore` snapshotted localStorage in its constructor, and
+`localStore` in `CollectionCrowd.tsx` is a module singleton — so the snapshot was really taken
+whenever that module was first imported, and `main.tsx`'s static `import App` evaluates it
+before the module body runs the dev mock that seeds `&owned=`.
 
-So the seed lands after the snapshot. **Load the page twice** and the crowd appears; the seed
-persists, and the second load's singleton reads it. Measured: first load 0 ink on the band,
-second load 26,171.
+An empty band reads as a feature that does not work, not as a harness that lies. That is why
+the swirl and the four pool entrances shipped unreviewed. The mirror now fills on first use.
 
-This is why the swirl and the four pool entrances went unreviewed for so long — anyone who
-looked at them through the documented harness saw an empty band and a lone newcomer, and no
-part of that looks like a harness problem. **Not yet fixed.** `bobit-shots.mjs` was never
-affected because it seeds through `addInitScript`, before any page script runs.
+**The lesson generalises:** a module-level singleton that captures I/O at construction has, in
+effect, captured it at import time, and import order is not something callers can see or
+control. `bobit-shots.mjs` was immune only because it seeds through `addInitScript`, before any
+page script runs.
 
 ## THE STANDING INSTRUCTION THAT CHANGED
 
@@ -96,8 +95,6 @@ cd frontend && npm run dev
 http://localhost:5173/?mock=1&collection=milwaukee-wi
 ```
 
-**Load it twice** — see the harness section above.
-
 Options: `&owned=N` (default 30), `&bobitSeed=xyz`, `&scene=<id>` to replay an entrance on a
 14s loop. Scene ids: `swirl`, `cannon`, `pool-stumble`, `pool-trip`, `pool-peek`, `pool-drop`.
 
@@ -114,7 +111,7 @@ Other scripts:
 - `scripts/bobit-scenes.mjs` — **contact sheets for the entrances**, one PNG per scene per
   theme into `.shots/`. Frames are labelled with the elapsed time the *page* saw, because the
   naive schedule drifts half a second over eight frames and will label a `spent` frame as
-  `splayed`. Handles the two-load workaround itself. `node scripts/bobit-scenes.mjs [sceneId…]`.
+  `splayed`. `node scripts/bobit-scenes.mjs [sceneId…]`.
   The cannon is excluded by default: its flight needs `aerialAllowed`, so replaying it
   mid-question captures the air layer suppressed, which looks like a bug and is not one.
 - `scripts/bobit-shots.mjs` — pose sheet + page sweep.
@@ -122,19 +119,16 @@ Other scripts:
 
 ## Open items, in the order I would take them
 
-1. **Fix the `?mock=1` first-load bug.** Everything else in this list is harder to look at until
-   this is gone. Either seed before `App` is imported, or make the local store read lazily
-   instead of snapshotting at construction.
-2. **`pool-peek` and `pool-drop` do not work, and height variation does not help them.**
+1. **`pool-peek` and `pool-drop` do not work, and height variation does not help them.**
    Peek is "a head appears from below the floor"; drop is "falls in from above". The 96px
    full-bleed band has no space above or below the floor line, so peek has no peek — he is just
    suddenly there — and drop's first 0.7s is a blank band before a puff and a dizzy bobit.
    Both were written against the spec's 190px band. Needs either different choreography or
    vertical room; it is a design decision, not a bug fix.
-3. **The cannon prop is crude.** It reads as a plain grey tube, not a cannon. Visible and
+2. **The cannon prop is crude.** It reads as a plain grey tube, not a cannon. Visible and
    correctly placed, but the silhouette needs art work — a proper carriage, a thicker breech,
    maybe a muzzle flare. `frontend/src/components/bobbits/props.ts`.
-4. **The review's Important findings**, none yet fixed:
+3. **The review's Important findings**, none yet fixed:
    - The overlay's coordinate mapping ignores the game container's padding in **both** axes
      (`py-5 sm:py-6 md:py-8 px-4 sm:px-6`), so an airborne figure is drawn 20–32px too low and
      16–24px sideways. That is close to a full body height of discontinuity at takeoff and at
@@ -149,14 +143,14 @@ Other scripts:
      rather than a fix from whoever picks this up** — it changes what the scene means.
    - Reduced motion renders an **empty band**: `syncCast` sits inside `if (!reducedMotion)`, so
      no agent is ever created. The spec is explicit that this path should be today's behaviour.
-5. **Plan 3 is unwritten:** the tree on the right border, perching (`Surface` is still
+4. **Plan 3 is unwritten:** the tree on the right border, perching (`Surface` is still
    unconsumed), `questionCount` plumbing, the 25% milestone.
-6. Review Minors, all small: the aerial gate is read from two different copies one frame apart;
+5. Review Minors, all small: the aerial gate is read from two different copies one frame apart;
    effect/prop ids key on scene id rather than scene instance (fine today, not once the
    entrance library grows); `SMOKE_DUR`/`SMOKE_LIFE` are duplicated across two modules;
    the costless-miss ripple starts at `slotOrder[0]` where the spec says the newest bobit;
    `cannonMuzzle` is tested but unused, so the flight does not start at the muzzle.
-7. `ResultsScreen` declares a `collectionQuestionCount` prop **no caller passes** — dead, always
+6. `ResultsScreen` declares a `collectionQuestionCount` prop **no caller passes** — dead, always
    falls back to 5. Worth fixing when the plumbing lands.
 
 ## Chris's open questions, one of them now answered

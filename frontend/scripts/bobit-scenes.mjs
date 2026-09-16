@@ -153,16 +153,7 @@ async function run() {
     });
     await page.addInitScript(t => localStorage.setItem('ctc-theme', t), theme);
 
-    // TWO loads, deliberately. `localStore` in CollectionCrowd.tsx is a module singleton and
-    // createLocalProgressStore snapshots localStorage ONCE at construction -- and main.tsx's
-    // static `import App` evaluates that module before its own body awaits the mock and seeds
-    // `&owned=`. So the first load of ?mock=1 always renders an EMPTY room, and the seeded
-    // crowd only appears from the second load on. Capturing entrances against an empty room
-    // hides exactly the thing worth looking at, so warm the storage first.
-    const url = `${BASE}/?mock=1&collection=${SLUG}&owned=${OWNED}&bobitSeed=${SEED}`;
-    await page.goto(url);
-    await page.waitForTimeout(600);
-    await page.goto(url);
+    await page.goto(`${BASE}/?mock=1&collection=${SLUG}&owned=${OWNED}&bobitSeed=${SEED}`);
 
     const play = page.getByRole('button', { name: /play now|continue playing/i });
     await play.waitFor({ timeout: 15000 });
