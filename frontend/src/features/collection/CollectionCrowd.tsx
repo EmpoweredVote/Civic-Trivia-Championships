@@ -6,6 +6,8 @@ import { useWindowSize } from '../../hooks/useWindowSize';
 import { useAuthStore } from '../../store/authStore';
 import { useConfettiStore } from '../../store/confettiStore';
 import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
+import { createPeakStore } from './bobitPeak';
+import { treeEarned } from './milestone';
 import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
@@ -60,6 +62,12 @@ interface CollectionCrowdProps {
  */
 const localStore = createLocalProgressStore();
 
+/**
+ * The milestone latch. Local even for signed-in players -- see bobitPeak.ts for why, and what
+ * it costs (a tree re-earned after a browser change).
+ */
+const peakStore = createPeakStore();
+
 /** Stable identity, so "nothing is flying" never causes a re-render. */
 const NO_AERIAL = { figures: [] as FieldFigure[], dx: 0, dy: 0 };
 
@@ -97,6 +105,7 @@ function hostFor(
 
 export function CollectionCrowd({
   slug, darkMode, isMobile, lastAnswer, finished5of5, aerialAllowed = false,
+  questionCount = null,
 }: CollectionCrowdProps) {
   const reducedMotion = useReducedMotion();
   // Resize-aware rather than a one-off window.innerHeight read: the overlay's height is a
@@ -132,6 +141,13 @@ export function CollectionCrowd({
   ));
   const [overflow, setOverflow] = useState(0);
   /**
+   * Whether this collection has earned its tree. State rather than a ref, because the tree
+   * arriving has to cause a render -- the prop list is rebuilt from it.
+   */
+  const [earned, setEarned] = useState(false);
+  const earnedRef = useRef(false);
+  useEffect(() => { earnedRef.current = earned; }, [earned]);
+  /**
    * Forces a repaint of the band when it is NOT animating.
    *
    * Under reduced motion there is no frame loop to pick changes up, so every edit that would
@@ -149,6 +165,18 @@ export function CollectionCrowd({
     () => (userId ? createServerProgressStore() : localStore),
     [userId],
   );
+
+  /**
+   * Tell the latch how many bobits the room holds, and recompute.
+   *
+   * Called wherever the resident list changes -- the seed, and every answer. Recording is
+   * monotonic, so calling it with a smaller number after a loss is a no-op by design.
+   */
+  const syncMilestone = useCallback((slugNow: string | null) => {
+    if (!slugNow) { setEarned(false); return; }
+    peakStore.record(slugNow, stateRef.current.residents.length);
+    setEarned(treeEarned(peakStore.peak(slugNow), questionCount ?? null));
+  }, [questionCount]);
 
   const band: CrowdBand = useMemo(() => bandFor(isMobile), [isMobile]);
   const height = band.height;
@@ -182,6 +210,7 @@ export function CollectionCrowd({
       // entrances -- forty owned questions would otherwise mean forty cannon shots on load.
       directorRef.current = directorInit();
       setOverflow(overflowCount(stateRef.current));
+      syncMilestone(slug);
       repaint();
     };
 
@@ -225,10 +254,15 @@ export function CollectionCrowd({
       store.revoke(slug, questionId);
     }
     setOverflow(overflowCount(stateRef.current));
+    syncMilestone(slug);
     repaint();
-  }, [lastAnswer, slug, store, repaint]);
+  }, [lastAnswer, slug, store, repaint, syncMilestone]);
 
   useEffect(() => { allowAirRef.current = aerialAllowed; }, [aerialAllowed]);
+
+  // questionCount arrives from a fetch, so the first evaluation almost always happens with it
+  // null. Re-run when it lands, or a player at 30 of 120 would never see the tree this session.
+  useEffect(() => { syncMilestone(slug ?? null); }, [slug, questionCount, syncMilestone]);
 
   // Dev replay. The set pieces fire once per collection EVER, so there is otherwise no way to
   // see one twice -- not for building them, and not for reviewing them. That is why the spec
