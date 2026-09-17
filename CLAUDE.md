@@ -1,5 +1,22 @@
 # Civic Trivia Championship — working notes
 
+## How changes land (Chris, 2026-09-17)
+
+**Everything goes through a pull request — docs and CLAUDE.md included.** Not just
+product code.
+
+`master` has a ruleset requiring two build checks, and an admin bypass that lets a
+direct push through anyway. It reports `2 of 2 required status checks are expected`
+and lands the commit regardless. That bypass exists; **do not use it.** A docs change
+that skips the gate is still a change nobody reviewed, and doing it twice is how it
+stops being an exception.
+
+The rule is about the gate, not the merge: once a PR's checks are green it can be
+merged normally.
+
+Also relevant: **never rename the CI job names.** The ruleset matches them by name, so
+a rename silently stops the required checks from ever reporting.
+
 ## Health endpoints (learned the hard way, 2026-07-25)
 
 > **Where this applies now:** the service these rules were written for is suspended
