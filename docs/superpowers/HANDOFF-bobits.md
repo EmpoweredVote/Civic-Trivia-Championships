@@ -1,10 +1,19 @@
 # Bobit living room — handoff
 
-**Written:** 2026-09-16, with plans 1, 2 and 3 all shipped on this branch, the review's
-open Minors cleared, every entrance given a poof, and all six entrances working.
-**Branch:** `feat/bobit-living-floor` — **64 commits, NOT pushed, nothing deployed.**
-Production is untouched. The frontend static site auto-deploys from `master`, so merging is a
-production deploy; do not merge without Chris saying so.
+**Written:** 2026-09-16, updated 2026-09-17, with plans 1, 2 and 3 all shipped on this branch,
+the review's open Minors cleared, every entrance given a poof, and all six entrances working.
+
+**Branch:** `feat/bobit-living-floor` — **pushed, open as PR #113 against `master`, both
+required checks green, nothing deployed.** (An earlier version of this handoff said the branch
+was unpushed. It was wrong: `origin/feat/bobit-living-floor` and the PR both already existed.)
+
+`master` was merged IN on 2026-09-17, so the branch is current with it — that brought
+**vitest 3 → 4** (GHSA-82fw-gwwq-j7x9), `@empoweredvote/analytics` 0.3.0, `ev-ui` 0.11.1 and
+two SEO commits. The whole suite, the build, the smoke test and the entrance contact sheets
+were all re-run on vitest 4 afterwards. Nothing needed changing.
+
+Production is untouched. The frontend static site auto-deploys from `master`, so MERGING THE
+PR is a production deploy; do not merge without Chris saying so.
 
 ## Read these first, in this order
 
@@ -32,7 +41,8 @@ its first consumer: a bobit with nothing to do walks to the trunk and sits on th
 greets from his seat. The room notices the tree arriving; a phone gets the same milestone as a
 crowd celebration instead, because a phone band has no room for a trunk.
 
-**669 tests green, typecheck clean, production build clean, `npm run smoke` OK.**
+**669 tests green on vitest 4.1.11, typecheck clean, production build clean, `npm run smoke`
+OK, and CI green on both required checks.**
 
 A full code review ran on 2026-09-15 over `713fa75..796e12f`. Verdict: **merge with fixes**. The
 occlusion relaxation was the highest-risk part of the work and **all four bounds hold**, two of
