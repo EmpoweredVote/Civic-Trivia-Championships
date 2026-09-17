@@ -1,21 +1,25 @@
-# Bobit living room — handoff
+# Bobit living room — shipped, and what to know
 
-**Written:** 2026-09-16, updated 2026-09-17, with plans 1, 2 and 3 all shipped on this branch,
-the review's open Minors cleared, every entrance given a poof, and all six entrances working.
+> **SHIPPED TO PRODUCTION 2026-09-17.** This is no longer a handoff for work in flight. It is
+> the reference for a feature that is live: what it does, what is load-bearing about how it
+> does it, and what was left undone.
 
-**Branch:** `feat/bobit-living-floor` — **pushed, open as PR #113 against `master`, both
-required checks green, nothing deployed.** (An earlier version of this handoff said the branch
-was unpushed. It was wrong: `origin/feat/bobit-living-floor` and the PR both already existed.)
+**Landed as** PR #113, merged to `master` as `af6233f` — a merge commit, not a squash, because
+this document and the review record cite individual SHAs from the branch. `civic-trivia-frontend`
+(`srv-d6a0o4jnv86c73f71seg`) auto-deployed it in 28s and went live; production was verified in a
+real browser, not just by a green build. The branch `feat/bobit-living-floor` is deleted.
 
-`master` was merged IN on 2026-09-17, so the branch is current with it — that brought
-**vitest 3 → 4** (GHSA-82fw-gwwq-j7x9), `@empoweredvote/analytics` 0.3.0, `ev-ui` 0.11.1 and
-two SEO commits. The whole suite, the build, the smoke test and the entrance contact sheets
-were all re-run on vitest 4 afterwards. Nothing needed changing.
+Built on **vitest 4.1.11** — `master` was merged in first (bringing vitest 3→4 for
+GHSA-82fw-gwwq-j7x9, `@empoweredvote/analytics` 0.3.0 and `ev-ui` 0.11.1), and the suite, the
+build, the smoke test and the entrance contact sheets were all re-run on it. Nothing needed
+changing.
 
-Production is untouched. The frontend static site auto-deploys from `master`, so MERGING THE
-PR is a production deploy; do not merge without Chris saying so.
+**The frontend static site auto-deploys from `master`.** Any commit that touches this repo
+ships — including a docs-only one, which rebuilds the same frontend harmlessly. There is no
+staging environment. The backend here is still frozen and `civic-trivia-backend` still
+suspended; production gameplay runs through `ev-accounts`.
 
-## Read these first, in this order
+## How it was built, in order
 
 1. `docs/superpowers/specs/2026-09-12-bobit-living-room-design.md` — the design. **Read its
    2026-09-14 addendum**, which corrects four things and records the occlusion decision.
@@ -25,7 +29,7 @@ PR is a production deploy; do not merge without Chris saying so.
    Built against the spec's **2026-09-15 addendum**, which overrides the spec body on tree
    height and on how the milestone is stored.
 
-## State
+## What it does
 
 **Plan 1 (the living floor): complete.** Bobits wander on one ground line, greet on click,
 celebrate wins with a staggered cheer → clap → high-five, and shrug off costless misses. They
@@ -42,7 +46,7 @@ greets from his seat. The room notices the tree arriving; a phone gets the same 
 crowd celebration instead, because a phone band has no room for a trunk.
 
 **669 tests green on vitest 4.1.11, typecheck clean, production build clean, `npm run smoke`
-OK, and CI green on both required checks.**
+OK, CI green on both required checks, and the deployed site verified in a browser.**
 
 A full code review ran on 2026-09-15 over `713fa75..796e12f`. Verdict: **merge with fixes**. The
 occlusion relaxation was the highest-risk part of the work and **all four bounds hold**, two of
@@ -157,11 +161,13 @@ Other scripts:
 - `scripts/bobit-shots.mjs` — pose sheet + page sweep.
 - `scripts/bobit-bench.mjs` — frame cost vs cast size.
 
-## Open items, in the order I would take them
+## Left undone, in the order I would take them
+
+These shipped unfinished by choice, not by oversight. Nothing here is a defect in what is live.
 
 1. **50% / 75% / 100% milestones.** Out of scope by the spec, and the seam is now real:
    `milestone.ts` plus a scene file plus a prop. The tree is the worked example.
-3. **The high-water mark is local even for signed-in players.** `backend/` here is frozen and
+2. **The high-water mark is local even for signed-in players.** `backend/` here is frozen and
    ev-accounts is another repo, so a signed-in player who switches browsers re-earns the tree.
 
 ## Decisions a fresh session should not re-litigate
@@ -250,7 +256,7 @@ being lowered rather than falling.
 **A new rule guards the class:** no scene may play a seated pose on a beat that leaves the
 ground. The seated pelvis is 104 units off the standing one and `figureBounds` measures from
 the BASE anim, so such a figure is drawn nowhere near where the scene put him. That is the
-fourth time this trap has been recorded on this branch.
+fourth time this trap has been recorded in this work.
 
 ## Chris's open questions, one of them now answered
 
@@ -296,7 +302,7 @@ fourth time this trap has been recorded on this branch.
 - **`Surface` positions a figure's SEAT, and a seated figure needs a seated `hoverAnim`.** The
   standing and seated pelvis offsets are 112 and 8 — 104 units apart — and `figureBounds`
   measures from the BASE anim while paint positions with the RESOLVED one. This has now caught
-  three separate things on this branch, most recently the prop sheet itself, which drew a
+  three separate things in this work, most recently the prop sheet itself, which drew a
   seated bobit straight through the top of the band. Never hardcode 112; ask `pelvisOffset()`.
 - **A test that asserts a span says nothing about where the scene lands.** The milestone's
   "reserves the right quarter" test checked `span <= 0.25` and passed happily while the scene
