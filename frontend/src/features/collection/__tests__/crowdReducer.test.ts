@@ -161,6 +161,15 @@ describe('costless miss', () => {
     expect(next.ripple).toEqual({ from: 'a', t: 0 });
   });
 
+  // The spec puts the ripple's origin at the NEWEST bobit: the room turns to the person who
+  // just turned up. `residents` is in grant order, so that is its last entry. This shipped
+  // reading slotOrder[0] -- the alphabetically first id, which is a stranger across the room.
+  it('ripples from the most recently earned bobit, not the first in slot order', () => {
+    const s = crowdApply(seeded(['b', 'c']), { type: 'correct', id: 'd', streak: 1 });
+    const next = crowdApply(s, { type: 'wrong', id: 'never-owned' });
+    expect(next.ripple?.from).toBe('d');
+  });
+
   it('does not ripple when there is nobody to react', () => {
     const next = crowdApply(crowdInit(), { type: 'wrong', id: 'never-owned' });
     expect(next.ripple).toBeNull();

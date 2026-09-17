@@ -6,7 +6,6 @@
  * per-frame path stays outside the React render cycle entirely.
  */
 
-import { slotOrder } from './crowdIdentity';
 import { RIPPLE_DUR } from './crowdReactions';
 
 /** Seconds a newcomer spends walking in and waving before he settles. */
@@ -104,7 +103,11 @@ export function crowdApply(state: CrowdState, event: CrowdEvent): CrowdState {
       return {
         ...state,
         celebrating: 0, celebrateT: 0, celebrant: null,
-        ripple: { from: slotOrder(state.residents)[0], t: 0 },
+        // From the NEWEST bobit outward, per the spec: the room turns to the person who just
+        // turned up. `residents` is in grant order, so that is its last entry -- not
+        // `slotOrder[0]`, which is merely the alphabetically first id and reads as a stranger
+        // at the other end of the room shrugging at nothing.
+        ripple: { from: state.residents[state.residents.length - 1], t: 0 },
       };
     }
   }
