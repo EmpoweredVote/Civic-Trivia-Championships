@@ -381,7 +381,7 @@ export function CollectionCrowd({
     if (!reducedMotion) {
       stateRef.current = crowdStep(stateRef.current, dt);
 
-      directorRef.current = directorStep(directorRef.current, dt, sceneGroundY(band));
+      directorRef.current = directorStep(directorRef.current, dt, sceneGroundY(band), band.scale);
 
       if (earnedRef.current) growRef.current = Math.min(TREE_GROW_SEC, growRef.current + dt);
 

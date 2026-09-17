@@ -51,7 +51,7 @@ export const CANNON: Scene = {
       // arcPeak MEASURED BY SCREENSHOT, 2026-09-14. At 240 the apex landed on the Next button,
       // which is over a control but not over the question. 330 carries him across the card
       // itself, which is the shot the scene is for.
-      path: 'arc', arcPeak: 330, layer: 'air', smoke: { spread: 58 } },
+      path: 'arc', arcPeak: 330, layer: 'air', from: 'muzzle', smoke: { spread: 58 } },
 
     // Lands in a heap, back on the floor and back on the band's own canvas.
     { at: 5.9, role: 'newcomer', pose: 'spent', layer: 'ground' },

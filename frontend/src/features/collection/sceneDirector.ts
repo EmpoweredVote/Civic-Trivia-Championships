@@ -6,6 +6,7 @@
  * description of where somebody is and what they are doing; painting it is somebody else's
  * problem.
  */
+import { cannonMuzzle } from '../../components/bobbits/props';
 import { SMOKE_DUR, FLASH_DUR } from '../../components/bobbits/rigExtras';
 import type { Beat, Scene, SceneLayer } from './scenes/types';
 import type { Rand } from '../../components/bobbits/wanderReducer';
@@ -216,6 +217,30 @@ function fracAt(beats: Beat[], role: string, t: number, duration: number): numbe
   return start + (end - start) * k;
 }
 
+/**
+ * How far a role's active leg is displaced from the ground line by where it STARTED, in px.
+ *
+ * Only a leg carrying `from: 'muzzle'` has one. The displacement decays linearly to zero over
+ * the leg, which -- added to the straight interpolation the leg already does -- is exactly a
+ * straight line from the muzzle to the landing point. The arc's lift rides on top of it, and
+ * is zero at both ends, so he leaves the barrel's mouth and still lands on the floor.
+ *
+ * `scale` is the band's: the barrel is rig units long, and where its mouth ends up in field px
+ * depends on how big the room is drawing things.
+ */
+function launchOffset(
+  r: RunningScene, props: DirectorProp[], role: string, t: number, scale: number,
+): { dx: number; dy: number } {
+  const { prev, span } = legOf(r.scene.beats, role, t, r.scene.duration);
+  if (!prev || prev.from !== 'muzzle' || span <= 0) return { dx: 0, dy: 0 };
+  // This run's cannon, not some other run's: props are keyed by run for exactly this reason.
+  const cannon = props.find(p => p.id.startsWith(`${r.key}:`) && p.kind === 'cannon');
+  if (!cannon) return { dx: 0, dy: 0 };
+  const m = cannonMuzzle(cannon.x, cannon.groundY, scale, cannon.angle, cannon.flip);
+  const k = Math.min(1, Math.max(0, (t - prev.at) / span));
+  return { dx: (m.x - cannon.x) * (1 - k), dy: (m.y - cannon.groundY) * (1 - k) };
+}
+
 /** Height above the ground line at time t, for a role whose active leg is an arc. */
 function liftAt(beats: Beat[], role: string, t: number, duration: number): number {
   const { prev, span } = legOf(beats, role, t, duration);
@@ -226,6 +251,12 @@ function liftAt(beats: Beat[], role: string, t: number, duration: number): numbe
 
 export function directorStep(
   state: DirectorState, dt: number, groundY: number,
+  /**
+   * The band's scale. Only `from: 'muzzle'` legs read it -- everything else here is already in
+   * field px -- so the default is harmless for a caller with no cannon in it, and wrong for one
+   * that has. The live path passes `band.scale`.
+   */
+  scale = 1,
 ): DirectorState {
   const running: RunningScene[] = [];
   const released: ReleasedActor[] = [];
@@ -247,9 +278,11 @@ export function directorStep(
 
     for (const b of r.scene.beats) {
       if (!(b.at > from && b.at <= t1)) continue;
+      // Offset included, so the muzzle blast goes off at the muzzle rather than on the floor.
+      const off = launchOffset(r, props, b.role, b.at, scale);
       const x = r.left
-        + fracAt(r.scene.beats, b.role, b.at, r.scene.duration) * (r.right - r.left);
-      const y = groundY - liftAt(r.scene.beats, b.role, b.at, r.scene.duration);
+        + fracAt(r.scene.beats, b.role, b.at, r.scene.duration) * (r.right - r.left) + off.dx;
+      const y = groundY - liftAt(r.scene.beats, b.role, b.at, r.scene.duration) + off.dy;
 
       if (b.smoke) {
         effects.push({
@@ -299,17 +332,18 @@ export function directorStep(
 }
 
 /** Everything the director currently wants drawn, as positions and poses. */
-export function actorsOf(state: DirectorState, groundY: number): Actor[] {
+export function actorsOf(state: DirectorState, groundY: number, scale = 1): Actor[] {
   const out: Actor[] = [];
   for (const r of state.running) {
     for (const role of r.scene.roles) {
       const { pose, hand, layer, hidden } = settledAt(r.scene.beats, role, r.t);
       const frac = fracAt(r.scene.beats, role, r.t, r.scene.duration);
+      const off = launchOffset(r, state.props, role, r.t, scale);
       out.push({
         role,
         agentId: r.cast[role] ?? null,
-        x: r.left + frac * (r.right - r.left),
-        y: groundY - liftAt(r.scene.beats, role, r.t, r.scene.duration),
+        x: r.left + frac * (r.right - r.left) + off.dx,
+        y: groundY - liftAt(r.scene.beats, role, r.t, r.scene.duration) + off.dy,
         pose, hand, layer, hidden,
       });
     }

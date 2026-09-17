@@ -45,6 +45,16 @@ export interface Beat {
   path?: 'snap' | 'walk' | 'run' | 'arc';
   /** Peak height of an `arc`, in px above the ground line. Ignored for every other path. */
   arcPeak?: number;
+  /**
+   * Where this leg BEGINS, when that is not the ground line.
+   *
+   * `muzzle` starts it at the mouth of the cannon this scene placed, and the displacement
+   * decays to nothing over the leg -- so the journey is a straight line from the muzzle to the
+   * landing point, with the arc's lift on top. Without it a bobit fired from a cannon leaves
+   * from the floor UNDER the barrel and appears out of thin air beside it, which is the one
+   * thing the whole set piece exists to avoid.
+   */
+  from?: 'muzzle';
   /** Which canvas to draw on from this beat onward. */
   layer?: SceneLayer;
   /** A puff of smoke at this role's position. */

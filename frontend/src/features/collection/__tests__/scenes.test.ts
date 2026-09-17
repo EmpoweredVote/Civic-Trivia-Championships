@@ -6,6 +6,7 @@ import { sceneForArrival, ALL_SCENES } from '../scenes/index';
 import type { Scene } from '../scenes/types';
 import { ALL_ANIMATIONS } from '../../../components/bobbits/rigExtras';
 import { directorInit, startScene, directorStep, actorsOf } from '../sceneDirector';
+import { cannonMuzzle } from '../../../components/bobbits/props';
 
 const ALL: Scene[] = [SWIRL, CANNON, ...POOL];
 
@@ -148,6 +149,34 @@ describe('the cannon', () => {
       for (const a of actorsOf(d, 80)) highest = Math.min(highest, a.y);
     }
     expect(highest).toBeLessThan(-60);     // well above the band's own 96px
+  });
+
+  /**
+   * The muzzle is the whole point of drawing a cannon. Firing from the ground under it makes
+   * the bobit appear out of thin air beside the barrel -- which is precisely what the scene
+   * exists to avoid. `cannonMuzzle` has always known where the mouth is; nothing asked it.
+   */
+  it('launches the newcomer from the muzzle, not from the ground under it', () => {
+    const SCALE = 0.2;
+    let d = startScene(directorInit(), CANNON, 'x', 1000, () => 0.5);
+    const fire = CANNON.beats.find(b => b.path === 'arc')!.at;
+    d = directorStep(d, fire, 80, SCALE);
+    const cannon = d.props.find(p => p.kind === 'cannon')!;
+    const muzzle = cannonMuzzle(cannon.x, cannon.groundY, SCALE, cannon.angle, cannon.flip);
+    const flyer = actorsOf(d, 80, SCALE).find(a => a.role === 'newcomer')!;
+    expect(flyer.x).toBeCloseTo(muzzle.x, 3);
+    expect(flyer.y).toBeCloseTo(muzzle.y, 3);
+    // And the muzzle is somewhere the ground line is not, or this asserts nothing.
+    expect(muzzle.y).toBeLessThan(cannon.groundY - 4);
+  });
+
+  it('is back on the ground line by the time he lands', () => {
+    const SCALE = 0.2;
+    let d = startScene(directorInit(), CANNON, 'x', 1000, () => 0.5);
+    const land = CANNON.beats.find(b => b.pose === 'spent')!.at;
+    d = directorStep(d, land, 80, SCALE);
+    const flyer = actorsOf(d, 80, SCALE).find(a => a.role === 'newcomer')!;
+    expect(flyer.y).toBeCloseTo(80, 3);
   });
 
   it('takes the cannon away again after firing', () => {

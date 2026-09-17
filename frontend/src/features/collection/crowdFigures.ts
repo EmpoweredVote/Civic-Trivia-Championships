@@ -96,7 +96,7 @@ export function aerialFigures(
   director: DirectorState, band: CrowdBand, darkMode: boolean, allowAir = true,
 ): FieldFigure[] {
   if (!allowAir) return [];
-  return actorsOf(director, sceneGroundY(band))
+  return actorsOf(director, sceneGroundY(band), band.scale)
     .filter(a => a.layer === 'air' && !a.hidden)
     .map(a => ({
       id: `air:${a.agentId ?? a.role}`,
@@ -146,7 +146,7 @@ export function crowdFigures(
    */
   const onOverlay = new Set<string>();
   if (director) {
-    for (const raw of actorsOf(director, sceneGroundY(band))) {
+    for (const raw of actorsOf(director, sceneGroundY(band), band.scale)) {
       let a = raw;
       if (a.layer === 'air') {
         if (allowAir) {                                  // the overlay's business
