@@ -122,6 +122,12 @@ Options: `&owned=N` (default 30), `&bobitSeed=xyz`, `&scene=<id>` to replay an e
 - **A is always the correct answer.** Q1/Q2 are bobits you own (a miss takes one and plays the
   abduction); Q3–Q5 are new (a miss is the costless ripple).
 
+**Driving a REAL cannon.** `__bobitScene` replays mid-question, where `aerialAllowed` is false
+and the flight is suppressed onto the band — so the launch cannot be reviewed through the replay
+route at all. Do it the player's way: `&owned=1`, answer A, Next, answer A. The second grant is
+bobit #2, the reveal is up so the sky is open, and the shot happens for real. Take
+FULL-VIEWPORT screenshots, not the band canvas — the flight is on the fixed overlay.
+
 `scripts/bobit-play.mjs` opens a headed browser with the same mocks — but it costs ~500MB and
 was killed four times on a loaded machine. **Prefer the in-app mock.**
 
