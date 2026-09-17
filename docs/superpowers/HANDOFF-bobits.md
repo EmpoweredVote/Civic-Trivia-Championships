@@ -1,8 +1,8 @@
 # Bobit living room — handoff
 
 **Written:** 2026-09-16, with plans 1, 2 and 3 all shipped on this branch, the review's
-open Minors cleared, and every entrance given a poof.
-**Branch:** `feat/bobit-living-floor` — **63 commits, NOT pushed, nothing deployed.**
+open Minors cleared, every entrance given a poof, and all six entrances working.
+**Branch:** `feat/bobit-living-floor` — **64 commits, NOT pushed, nothing deployed.**
 Production is untouched. The frontend static site auto-deploys from `master`, so merging is a
 production deploy; do not merge without Chris saying so.
 
@@ -32,7 +32,7 @@ its first consumer: a bobit with nothing to do walks to the trunk and sits on th
 greets from his seat. The room notices the tree arriving; a phone gets the same milestone as a
 crowd celebration instead, because a phone band has no room for a trunk.
 
-**661 tests green, typecheck clean, production build clean, `npm run smoke` OK.**
+**669 tests green, typecheck clean, production build clean, `npm run smoke` OK.**
 
 A full code review ran on 2026-09-15 over `713fa75..796e12f`. Verdict: **merge with fixes**. The
 occlusion relaxation was the highest-risk part of the work and **all four bounds hold**, two of
@@ -87,8 +87,9 @@ The crowd at rest still never occludes anything. **Do not widen this without ask
   `stageBounds`/`agentPlacement` remain as the seam if it is ever wanted back.
 - **Height varies instead**, ±10% via `heightFactor(id)` in `crowdFigures.ts`. This is depth's
   distinguishing cue without depth's failure — nobody walks a diagonal, so nothing slides.
-- **Band is full-bleed, 96px desktop / 72px mobile** (was 190/100 in the spec). **This has
-  consequences the spec did not anticipate — see `pool-peek`/`pool-drop` under open items.**
+- **Band is full-bleed, 96px desktop / 72px mobile** (was 190/100 in the spec). It turned out
+  to be enough for everything, including the two entrances that move vertically — see
+  "`pool-peek` and `pool-drop`" below.
 - **There is a floor line** under the crowd. Without it `jump` — a real 48-unit lift — read as
   a wobble, because there was nothing to leave.
 - **`WANDER_CAST` is derived from width**, not fixed: `wanderCastFor(width, band)`, ~37 desktop,
@@ -148,12 +149,7 @@ Other scripts:
 
 ## Open items, in the order I would take them
 
-1. **`pool-peek` and `pool-drop` do not work.** Peek is "a head appears from below the floor";
-   drop is "falls in from above". The 96px full-bleed band has no space above or below the
-   floor line, so peek has no peek and drop's first 0.7s is a blank band. Plan 3 did **not**
-   give them the room they need — the tree is sized to the same band. Needs either different
-   choreography or a taller band, and that is a design decision.
-2. **50% / 75% / 100% milestones.** Out of scope by the spec, and the seam is now real:
+1. **50% / 75% / 100% milestones.** Out of scope by the spec, and the seam is now real:
    `milestone.ts` plus a scene file plus a prop. The tree is the worked example.
 3. **The high-water mark is local even for signed-in players.** `backend/` here is frozen and
    ev-accounts is another repo, so a signed-in player who switches browsers re-earns the tree.
@@ -215,6 +211,36 @@ All five are fixed, each one test-first, each one its own commit.
   blast moves with him. **Verified by driving a real grant** (`&owned=1`, answer A twice) rather
   than by the test, because the test asserts `cannonMuzzle`'s own arithmetic back at it — the
   screenshot shows him emerging from the barrel, in the blast.
+
+## `pool-peek` and `pool-drop` (FIXED 2026-09-16)
+
+Both were listed as blocked on the band's height. **They were not.** The band was never the
+problem, and the fix changed no layout at all.
+
+What was actually wrong was the same mistake twice: a pose chosen by its NAME rather than its
+frame function, in a scene that never moved a figure vertically.
+
+- `fall` is the rig's **"Fell down"** — a SEATED sprawl on the ground, `seated: true`. It is not
+  a body in the air. `pool-drop` opened on it, standing still, so the drop played as a bobit
+  sitting on the floor for 0.7s and then raising dust.
+- `peek` is **"Peeking over"** — craning forward over a ledge, looking DOWN. It is the opposite
+  gesture to a head coming up, and `pool-peek` played it standing on the floor.
+
+The band has ~90px above the floor line on desktop and 66 on a phone — two body heights and
+one and a half. **Below the floor there is nothing, but the canvas CLIPS at its own bottom
+edge**, so a figure whose feet are under it shows only his head. That is the whole trick for
+peek, and it costs no layout.
+
+The mechanism is the vertical twin of the muzzle origin: `from: { dy, ease }`, decaying to
+nothing by the leg's end. Negative (above) is clamped to the canvas top, so one number means
+"from as high as there is" on either band; positive (below) is deliberately NOT clamped.
+`ease: 'gravity'` leaves from rest and accelerates — at constant speed a 90px descent reads as
+being lowered rather than falling.
+
+**A new rule guards the class:** no scene may play a seated pose on a beat that leaves the
+ground. The seated pelvis is 104 units off the standing one and `figureBounds` measures from
+the BASE anim, so such a figure is drawn nowhere near where the scene put him. That is the
+fourth time this trap has been recorded on this branch.
 
 ## Chris's open questions, one of them now answered
 
