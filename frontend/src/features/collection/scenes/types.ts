@@ -46,15 +46,26 @@ export interface Beat {
   /** Peak height of an `arc`, in px above the ground line. Ignored for every other path. */
   arcPeak?: number;
   /**
-   * Where this leg BEGINS, when that is not the ground line.
+   * Where this leg BEGINS, when that is not the ground line. The displacement always decays to
+   * nothing by the leg's end, so whatever a beat starts off the floor, it finishes on it.
    *
-   * `muzzle` starts it at the mouth of the cannon this scene placed, and the displacement
-   * decays to nothing over the leg -- so the journey is a straight line from the muzzle to the
-   * landing point, with the arc's lift on top. Without it a bobit fired from a cannon leaves
-   * from the floor UNDER the barrel and appears out of thin air beside it, which is the one
-   * thing the whole set piece exists to avoid.
+   * `'muzzle'` starts it at the mouth of the cannon this scene placed -- the journey is then a
+   * straight line from the muzzle to the landing point with the arc's lift on top. Without it
+   * a bobit fired from a cannon leaves from the floor UNDER the barrel and appears out of thin
+   * air beside it, which is the one thing that set piece exists to avoid.
+   *
+   * `{ dy }` starts it that many px off the ground line: NEGATIVE is above, positive is below.
+   * This is the only way an entrance can move vertically at all -- the overlay is for set
+   * pieces only, so a fall or a climb has to happen inside the band. Above is clamped to the
+   * canvas top (a figure starting higher would appear out of nowhere partway down). Below is
+   * NOT clamped, deliberately: the canvas clips at its own bottom edge, so a figure whose feet
+   * are under it shows only his head, which is how a bobit comes up THROUGH the floor.
+   *
+   * `ease` shapes the decay. `'linear'` (the default, and what the muzzle uses) is constant
+   * speed; `'gravity'` starts from rest and accelerates, which is what makes a drop read as
+   * falling rather than descending.
    */
-  from?: 'muzzle';
+  from?: 'muzzle' | { dy: number; ease?: 'linear' | 'gravity' };
   /** Which canvas to draw on from this beat onward. */
   layer?: SceneLayer;
   /** A puff of smoke at this role's position. */

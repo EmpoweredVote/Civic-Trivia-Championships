@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
-  crowdFigures, overflowCount, aerialFigures, heightFactor, HEIGHT_SPREAD,
+  crowdFigures, overflowCount, aerialFigures, heightFactor, HEIGHT_SPREAD, sceneGroundY,
 } from '../crowdFigures';
 import { directorInit, startScene, directorStep } from '../sceneDirector';
 import { SWIRL } from '../scenes/arrival01Swirl';
 import { CANNON } from '../scenes/arrival02Cannon';
+import { POOL } from '../scenes/poolEntrances';
 import { crowdInit, crowdApply, crowdStep, ARRIVAL_DUR } from '../crowdReducer';
 import { initAgents } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
@@ -292,6 +293,36 @@ describe('when the sky is closed', () => {
         .filter(f => f.id === 'air:a').length;
       expect({ allowAir, drawn: onBand + inAir }).toEqual({ allowAir, drawn: 1 });
     }
+  });
+});
+
+describe('a bobit coming up through the floor', () => {
+  /**
+   * `pool-peek` has no room below the floor line -- six pixels, then the band's bottom edge.
+   * What makes it work is the canvas CLIPPING at that edge: his feet are under it and only his
+   * head is on it. Asserting the offset would say nothing about whether anybody can see him,
+   * so this asserts what is on the canvas and what is not.
+   */
+  it('puts his head on the canvas while his feet are under it', () => {
+    const PEEK = POOL.find(sc => sc.id === 'pool-peek')!;
+    let dir = startScene(directorInit(), PEEK, 'x', 1000, () => 0.5);
+    dir = directorStep(dir, 0.45, sceneGroundY(BAND), BAND.scale);
+    const fig = crowdFigures(state0(), {}, BAND, false, dir)[0];
+    expect(fig, 'nobody is drawn at all').toBeDefined();
+    expect(fig.groundY, 'his feet should be under the band').toBeGreaterThan(BAND.height);
+    const top = figureBounds(fig).top;
+    expect(top, 'his head should still be on it').toBeLessThan(BAND.height);
+    expect(top, 'only his head should be, not his whole body')
+      .toBeGreaterThan(BAND.height - 30);
+  });
+
+  it('has him standing on the floor like anyone else by the end', () => {
+    const PEEK = POOL.find(sc => sc.id === 'pool-peek')!;
+    let dir = startScene(directorInit(), PEEK, 'x', 1000, () => 0.5);
+    dir = directorStep(dir, PEEK.duration - 0.1, sceneGroundY(BAND), BAND.scale);
+    const fig = crowdFigures(state0(), {}, BAND, false, dir)[0];
+    expect(fig.groundY).toBeCloseTo(sceneGroundY(BAND), 1);
+    expect(figureBounds(fig).bottom).toBeLessThanOrEqual(BAND.height);
   });
 });
 

@@ -170,6 +170,60 @@ describe('directorStep', () => {
     expect(new Set(s.props.map(p => p.id)).size).toBe(3);
   });
 
+  // `from: {dy}` -- a leg that begins off the ground line and closes to it. The vertical twin
+  // of `from: 'muzzle'`, and the only way a 96px band can hold a fall or a climb: there is no
+  // overlay for a pool entrance, so the movement has to happen inside the band.
+  it('starts a leg off the ground line and closes it by the end of that leg', () => {
+    const dropIn: Scene = {
+      ...TINY, duration: 2,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0.5, from: { dy: -40 } },
+        { at: 1, role: 'newcomer', pose: 'friendly' },
+      ],
+    };
+    let s = startScene(directorInit(), dropIn, 'a', WIDTH, rand);
+    expect(actorsOf(s, GROUND)[0].y).toBeCloseTo(GROUND - 40, 3);
+    s = directorStep(s, 1, GROUND);
+    expect(actorsOf(s, GROUND)[0].y).toBeCloseTo(GROUND, 3);
+  });
+
+  /**
+   * The band is all the room there is. A scene asking to start higher than the canvas would
+   * open on an empty band and drop a figure into it out of nowhere, which is the bug this
+   * whole mechanism exists to fix.
+   */
+  it('never starts a leg above the canvas top, however high the scene asks', () => {
+    const tooHigh: Scene = {
+      ...TINY, duration: 2,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0.5, from: { dy: -900 } },
+        { at: 1, role: 'newcomer', pose: 'friendly' },
+      ],
+    };
+    const s = startScene(directorInit(), tooHigh, 'a', WIDTH, rand);
+    expect(actorsOf(s, GROUND)[0].y).toBe(0);
+  });
+
+  it('falls under gravity when asked: barely moving at the top, quickest at the bottom', () => {
+    const scene: Scene = {
+      ...TINY, duration: 2,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'flail', moveTo: 0.5,
+          from: { dy: -40, ease: 'gravity' } },
+        { at: 1, role: 'newcomer', pose: 'spent' },
+      ],
+    };
+    let s = startScene(directorInit(), scene, 'a', WIDTH, rand);
+    const ys = [actorsOf(s, GROUND)[0].y];
+    for (let i = 0; i < 4; i++) {
+      s = directorStep(s, 0.25, GROUND);
+      ys.push(actorsOf(s, GROUND)[0].y);
+    }
+    const firstQuarter = ys[1] - ys[0];
+    const lastQuarter = ys[4] - ys[3];
+    expect(lastQuarter).toBeGreaterThan(firstQuarter * 2);
+  });
+
   it('spawns an effect for a smoke beat and ages it out', () => {
     const smoky: Scene = {
       ...TINY, duration: 3,

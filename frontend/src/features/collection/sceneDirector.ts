@@ -230,15 +230,28 @@ function fracAt(beats: Beat[], role: string, t: number, duration: number): numbe
  */
 function launchOffset(
   r: RunningScene, props: DirectorProp[], role: string, t: number, scale: number,
+  groundY: number,
 ): { dx: number; dy: number } {
   const { prev, span } = legOf(r.scene.beats, role, t, r.scene.duration);
-  if (!prev || prev.from !== 'muzzle' || span <= 0) return { dx: 0, dy: 0 };
-  // This run's cannon, not some other run's: props are keyed by run for exactly this reason.
-  const cannon = props.find(p => p.id.startsWith(`${r.key}:`) && p.kind === 'cannon');
-  if (!cannon) return { dx: 0, dy: 0 };
-  const m = cannonMuzzle(cannon.x, cannon.groundY, scale, cannon.angle, cannon.flip);
+  if (!prev || !prev.from || span <= 0) return { dx: 0, dy: 0 };
   const k = Math.min(1, Math.max(0, (t - prev.at) / span));
-  return { dx: (m.x - cannon.x) * (1 - k), dy: (m.y - cannon.groundY) * (1 - k) };
+
+  if (prev.from === 'muzzle') {
+    // This run's cannon, not some other run's: props are keyed by run for exactly this reason.
+    const cannon = props.find(p => p.id.startsWith(`${r.key}:`) && p.kind === 'cannon');
+    if (!cannon) return { dx: 0, dy: 0 };
+    const m = cannonMuzzle(cannon.x, cannon.groundY, scale, cannon.angle, cannon.flip);
+    return { dx: (m.x - cannon.x) * (1 - k), dy: (m.y - cannon.groundY) * (1 - k) };
+  }
+
+  // Above the ground line is clamped to the canvas top: a figure starting higher would open on
+  // an empty band and then drop into it out of nowhere, which is the bug this replaced. Below
+  // is left alone -- being under the canvas is the whole point of a bobit coming up through
+  // the floor, and how far under decides how much of him shows.
+  const dy = Math.max(prev.from.dy, -groundY);
+  // (1 - k^2) leaves at rest and accelerates; (1 - k) is constant speed. Both land on zero.
+  const decay = prev.from.ease === 'gravity' ? 1 - k * k : 1 - k;
+  return { dx: 0, dy: dy * decay };
 }
 
 /** Height above the ground line at time t, for a role whose active leg is an arc. */
@@ -279,7 +292,7 @@ export function directorStep(
     for (const b of r.scene.beats) {
       if (!(b.at > from && b.at <= t1)) continue;
       // Offset included, so the muzzle blast goes off at the muzzle rather than on the floor.
-      const off = launchOffset(r, props, b.role, b.at, scale);
+      const off = launchOffset(r, props, b.role, b.at, scale, groundY);
       const x = r.left
         + fracAt(r.scene.beats, b.role, b.at, r.scene.duration) * (r.right - r.left) + off.dx;
       const y = groundY - liftAt(r.scene.beats, b.role, b.at, r.scene.duration) + off.dy;
@@ -338,7 +351,7 @@ export function actorsOf(state: DirectorState, groundY: number, scale = 1): Acto
     for (const role of r.scene.roles) {
       const { pose, hand, layer, hidden } = settledAt(r.scene.beats, role, r.t);
       const frac = fracAt(r.scene.beats, role, r.t, r.scene.duration);
-      const off = launchOffset(r, state.props, role, r.t, scale);
+      const off = launchOffset(r, state.props, role, r.t, scale, groundY);
       out.push({
         role,
         agentId: r.cast[role] ?? null,

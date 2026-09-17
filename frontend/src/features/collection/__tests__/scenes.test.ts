@@ -19,6 +19,22 @@ describe('every scene', () => {
     }
   });
 
+  /**
+   * The rig's seated poses put the pelvis 104 units lower than a standing one, and
+   * `fieldGeometry` measures bounds from the BASE anim while paint positions with the RESOLVED
+   * one. A figure in the air playing a seated pose is therefore drawn nowhere near where the
+   * scene put him -- which is exactly what `pool-drop` did: its opening pose was `fall`, the
+   * rig's "Fell down", a seated sprawl, so the drop played as a bobit sitting on the floor.
+   */
+  it('never plays a seated pose on a beat that leaves the ground', () => {
+    for (const s of ALL) for (const b of s.beats) {
+      if (!b.pose) continue;
+      if (!b.from && b.path !== 'arc') continue;
+      const anim = ALL_ANIMATIONS[b.pose] as { seated?: boolean };
+      expect(anim.seated, `${s.id} @${b.at}: ${b.pose} is seated`).toBeFalsy();
+    }
+  });
+
   it('keeps every beat inside its own duration', () => {
     for (const s of ALL) for (const b of s.beats) {
       expect(b.at, s.id).toBeGreaterThanOrEqual(0);
@@ -140,6 +156,35 @@ describe('the pool', () => {
     for (const s of POOL) for (const b of s.beats) {
       expect(b.layer ?? 'ground', s.id).toBe('ground');
     }
+  });
+});
+
+describe('pool-drop', () => {
+  const DROP = POOL.find(s => s.id === 'pool-drop')!;
+
+  it('starts him above the floor and lands him on it', () => {
+    let d = startScene(directorInit(), DROP, 'x', 1000, () => 0.5);
+    // Visible from the first frame, and well clear of the ground line.
+    const opening = actorsOf(d, 80)[0];
+    expect(opening.hidden).toBe(false);
+    expect(opening.y).toBeLessThan(80 - 40);
+    // By the beat that raises the dust he is standing on the floor, not still in the air.
+    const land = DROP.beats.find(b => b.pose === 'spent')!.at;
+    d = directorStep(d, land, 80);
+    expect(actorsOf(d, 80)[0].y).toBeCloseTo(80, 1);
+  });
+});
+
+describe('pool-peek', () => {
+  const PEEK = POOL.find(s => s.id === 'pool-peek')!;
+
+  it('has him under the floor while he peeks, and on it once he is out', () => {
+    let d = startScene(directorInit(), PEEK, 'x', 1000, () => 0.5);
+    d = directorStep(d, 0.45, 80);
+    const peeking = actorsOf(d, 80).find(a => !a.hidden)!;
+    expect(peeking.y).toBeGreaterThan(80 + 20);
+    d = directorStep(d, PEEK.duration - 0.5, 80);
+    expect(actorsOf(d, 80)[0].y).toBeCloseTo(80, 1);
   });
 });
 
