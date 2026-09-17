@@ -6,6 +6,7 @@
  * description of where somebody is and what they are doing; painting it is somebody else's
  * problem.
  */
+import { SMOKE_DUR, FLASH_DUR } from '../../components/bobbits/rigExtras';
 import type { Beat, Scene, SceneLayer } from './scenes/types';
 import type { Rand } from '../../components/bobbits/wanderReducer';
 
@@ -71,13 +72,6 @@ export interface DirectorState {
   /** Released by the most recent `directorStep`, and only by that one. */
   released: ReleasedActor[];
 }
-
-/**
- * Seconds a smoke puff or a flash lives. BobitField fades them over the same two numbers --
- * if they drifted apart an effect would either vanish mid-fade or linger fully transparent.
- */
-export const SMOKE_DUR = 1.0;
-export const FLASH_DUR = 0.22;
 
 export function directorInit(): DirectorState {
   return { running: [], props: [], effects: [], released: [] };

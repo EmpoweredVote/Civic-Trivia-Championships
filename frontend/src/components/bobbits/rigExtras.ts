@@ -348,6 +348,18 @@ export function drawTrophy(ctx: CanvasRenderingContext2D, x: number, y: number, 
 export const SMOKE_PURPLE = '#9B7BE0';
 
 /**
+ * Seconds a smoke puff and a flash live.
+ *
+ * ONE definition each, deliberately. Two things need these numbers and they are in different
+ * layers: the director decides when an effect is removed, BobitField fades it out over its
+ * life. They were separate constants that happened to agree, and had they ever drifted an
+ * effect would either blink out mid-fade or linger fully transparent. They live down here
+ * beside `drawSmokePuff` because that is the layer both consumers can already see.
+ */
+export const SMOKE_DUR = 1.0;
+export const FLASH_DUR = 0.22;
+
+/**
  * The rig's `drawSmoke`, with a colour.
  *
  * `leremyRig.drawSmoke` hardcodes '#8A8F98' and the rig is a mirror of ev-landing, so a

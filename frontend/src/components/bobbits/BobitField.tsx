@@ -5,7 +5,7 @@ import { ALL_ANIMATIONS } from './rigExtras';
 import { pelvisOffset, sortByDepth, figureBounds, resolveX, resolveAnimKey } from './fieldGeometry';
 import type { FieldFigure, FieldProp, FieldEffect } from './fieldGeometry';
 import { drawCannon, drawTree } from './props';
-import { drawSmokePuff } from './rigExtras';
+import { drawSmokePuff, SMOKE_DUR, FLASH_DUR } from './rigExtras';
 import { figureAtPoint } from './hitTest';
 import { greetReduce, isGreeting, greetClock, greetingIds } from './greetReducer';
 import type { GreetState } from './greetReducer';
@@ -81,13 +81,6 @@ interface BobitFieldProps {
 
 /** Fallback barrel colour, for a prop that did not name one. */
 const CANNON_COLOR = '#6B7686';
-
-/**
- * How long an effect lives, in seconds. The field fades them over these; the director owns
- * when they are removed, and uses the same two numbers.
- */
-const SMOKE_LIFE = 1.0;
-const FLASH_LIFE = 0.22;
 
 // ev-figures.js caps at 1.5 and CTC's old canvas capped at 2. 1.5 is the landing page's
 // measured choice and one of the levers the stage 2 spike will revisit.
@@ -378,13 +371,13 @@ export function BobitField({
         if (e.kind === 'smoke') {
           // Expands and fades over its life, so a puff reads as dispersing rather than as a
           // disc that blinks out.
-          const alpha = Math.max(0, 1 - e.t / SMOKE_LIFE);
+          const alpha = Math.max(0, 1 - e.t / SMOKE_DUR);
           drawSmokePuff(
             ctx, e.x, e.y, e.spread * (0.6 + e.t), alpha, e.id.length, t, e.color || '#8A8F98',
           );
         } else {
           // A hard white disc that dies fast: the MOMENT of arrival, not a glow around it.
-          const k = Math.max(0, 1 - e.t / FLASH_LIFE);
+          const k = Math.max(0, 1 - e.t / FLASH_DUR);
           ctx.save();
           ctx.globalAlpha = k;
           ctx.fillStyle = '#FFFFFF';
