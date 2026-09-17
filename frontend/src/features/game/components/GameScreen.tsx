@@ -37,6 +37,11 @@ const QUESTION_PREVIEW_MS = 1000; // show question before revealing options
 
 interface GameScreenProps {
   state: GameState;
+  /**
+   * Questions in this collection, for the crowd's 25% milestone. Null while the collection list
+   * is still loading and after a failed fetch.
+   */
+  collectionQuestionCount?: number | null;
   currentQuestion: Question | null;
   startGame: () => Promise<void>;
   selectAnswer: (optionIndex: number, timeRemaining?: number) => void;
@@ -62,6 +67,7 @@ interface GameScreenProps {
 
 export function GameScreen({
   state,
+  collectionQuestionCount,
   currentQuestion,
   startGame,
   selectAnswer,
@@ -781,13 +787,20 @@ export function GameScreen({
         {/* The collection crowd. In flow, never an overlay: it must not cover the question or
             any answer option. flex-shrink-0 keeps the band its full height and lets the
             content column above it take the compression instead. */}
-        <div className="mx-auto w-full flex-shrink-0" style={{ maxWidth: 'clamp(700px, 55vw, 1500px)' }}>
+        {/* FULL BLEED, unlike the question column above it: the crowd gets the whole viewport
+            width to walk in. Sharing the card's max-width penned them into a column down the
+            middle with empty margins either side. */}
+        <div className="w-full flex-shrink-0">
           <CollectionCrowd
             slug={state.collectionSlug}
             darkMode={darkMode}
             isMobile={isMobile}
             lastAnswer={lastAnswer}
             finished5of5={finished5of5}
+            questionCount={collectionQuestionCount}
+            // Bound 2 of the occlusion relaxation: a figure may only pass in front of the
+            // question card once the answer is revealed, never while the timer is running.
+            aerialAllowed={state.phase === 'revealing'}
           />
         </div>
       </div>

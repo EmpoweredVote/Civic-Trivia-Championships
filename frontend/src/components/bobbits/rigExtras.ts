@@ -127,6 +127,125 @@ export const EXTRA_ANIMATIONS: Record<string, Animation> = {
       return p;
     },
   },
+  // Hands meet in front of the chest and part again. Built on `present` rather than REST so
+  // the torso keeps its slight forward address -- a clap from a ramrod-straight body reads as
+  // a golf clap, which is the wrong note for a room celebrating you.
+  //
+  // BOTH angles are measured from the upper-body direction `ub`, not from each other: the
+  // forearm's angle is absolute, so it does NOT inherit the upper arm's. 0 deg points straight
+  // DOWN, +ve toward the viewer's right. The first draft read armRF as an elbow bend and used
+  // +96..+130, which swung both forearms past horizontal and produced a textbook T-POSE -- arms
+  // straight out to the sides, hands meeting at the fingertips. The joint tests passed it: they
+  // asserted the arms were symmetric and that the forearm angle travelled, and a T-pose
+  // satisfies both. A pose sheet caught it, exactly as the trophy-grip T-pose was caught.
+  //
+  // Tuned 2026-09-13 by solving for the hand gap over a grid (gap = hR.x - hL.x; 0 is hands
+  // touching, negative means they have crossed through each other):
+  //
+  //   armRU  armRF   hand.y   gap     note
+  //    58    +96..   --       --      the T-POSE; armRF read as an elbow bend
+  //    15    -80     44.8    -46.8    elbows pinned to the ribs, hands cross straight through
+  //    38    -50     58.5     +0.4    hands meet -- but at HIP height, elbows splayed: this
+  //                                   renders as hands-on-hips akimbo, not as clapping
+  //    26   -145      5.0     +0.9    hands meet at CHEST height, elbows down -- KEPT (closed)
+  //    26   -169      0.2     +31     the open end of the swing            -- KEPT (open)
+  //
+  // Note the counter-intuitive direction: pushing armRF FURTHER negative opens the hands
+  // rather than closing them, because past about -140 the forearm is swinging up toward
+  // vertical and the hand stops travelling inward. y=0 is the shoulder line, so hand.y near 5
+  // is upper chest and hand.y near 58 is the hip -- which is what made the second attempt read
+  // as akimbo despite the hands genuinely touching.
+  clap: {
+    label: "Clap", mood: "nice one",
+    frame(t: number) {
+      const p = ANIMATIONS.present.frame(t);
+      const s = wave(t, 3.4);                 // fast: claps are quicker than a wave
+      // Amplitude is set by VISIBILITY at band scale, not by anatomy: the band draws figures
+      // at scale 0.2, so a 17-unit hand travel is ~3px and reads as standing still. 25 units
+      // of forearm swing moves the hands ~6px.
+      const swing = -157 + s * 12;            // -169 apart .. -145 together
+      p.armRU = 26; p.armRF = swing;
+      p.armLU = -26; p.armLF = -swing;
+
+      // Six pixels of hand travel is still marginal on a 39px figure, and widening the arms
+      // further just reads as flapping. What carries at that size is the WHOLE SILHOUETTE
+      // moving, so the body dips and folds into each clap rather than only the forearms
+      // closing: a nod, a small crouch, and a shoulder curl, all on the clap's own beat.
+      const beat = Math.max(0, s);            // 0 between claps, 1 at the moment of contact
+      p.headTilt = -4 + s * 3;
+      p.hunch = p.hunch - beat * 6;           // folds in as the hands meet
+      p.bob = p.bob - beat * 4;               // and dips with it
+      return p;
+    },
+  },
+  // One arm up and across, body leaning into the partner. PER-SIDE via AnimVars.hand, the
+  // same contract `greet` and `carryGrip` use: pass 'R' for the partner standing to the LEFT
+  // (he reaches right) and 'L' for the one standing to the right.
+  //
+  // The non-slapping arm deliberately keeps its hang. Mirroring both arms reads as surrender,
+  // not a high-five -- the same trap `carryGrip` documents at length, where the symmetric pose
+  // is the intuitive choice and the wrong one.
+  highfive: {
+    label: "High five", mood: "up top",
+    frame(t: number, v?: AnimVars) {
+      const p = clonePose(REST);
+      const s = wave(t, 2.6);
+      p.hunch = -6;
+      p.headTilt = -8;
+      if (v?.hand === 'L') {
+        p.lean = -9;
+        p.armLU = -132 - s * 5; p.armLF = -38 - s * 4;
+      } else {
+        p.lean = 9;
+        p.armRU = 132 + s * 5; p.armRF = 38 + s * 4;
+      }
+      return p;
+    },
+  },
+  // Held out by both arms and both legs, as if two people are stretching him -- the instant the
+  // flash leaves him hanging in mid-air, before he drops.
+  //
+  // Near-horizontal upper arms are CORRECT here. That is a T-pose, and this is the one pose in
+  // the catalogue that wants one: he is being held, not doing something with his hands. Both
+  // `carryGrip` and `clap` had to be rescued from exactly this shape, so it is worth saying out
+  // loud that here it is the point. Nothing in the tests can tell the deliberate one from a
+  // mistake -- only looking at it can.
+  splayed: {
+    label: "Splayed", mood: "...whoa",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const tremble = wave(t, 7.5);
+      p.armRU = 88 + tremble * 4; p.armRF = 92 + tremble * 5;
+      p.armLU = -88 - tremble * 4; p.armLF = -92 - tremble * 5;
+      p.legRU = 34 + tremble * 3; p.legRF = 12;
+      p.legLU = -34 - tremble * 3; p.legLF = -12;
+      p.hunch = 4;
+      p.headTilt = tremble * 5;
+      p.bob = -2;
+      return p;
+    },
+  },
+  // Airborne and panicking: arms windmilling right the way round, out of phase with each other,
+  // legs cycling. Used for the whole flight out of the cannon.
+  flail: {
+    label: "Flailing", mood: "AAAAAA",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const r = t * 6.5;                       // revolutions, fast
+      const l = r + 1.9;                       // out of phase: panic, not a jumping jack
+      p.armRU = Math.sin(r) * 120 + 40;
+      p.armRF = Math.sin(r + 0.5) * 90 + 30;
+      p.armLU = Math.sin(l) * -120 - 40;
+      p.armLF = Math.sin(l + 0.5) * -90 - 30;
+      p.legRU = 20 + Math.sin(r * 0.8) * 34;
+      p.legRF = -20 + Math.sin(r * 0.8 + 1) * 24;
+      p.legLU = -20 + Math.sin(l * 0.8) * 34;
+      p.legLF = 20 + Math.sin(l * 0.8 + 1) * 24;
+      p.hunch = -6;
+      p.headTilt = Math.sin(r * 0.5) * 14;
+      return p;
+    },
+  },
   offer: {
     label: "Offer", mood: "pick a collection, any collection",
     frame(t: number) {
@@ -222,5 +341,54 @@ export function drawTrophy(ctx: CanvasRenderingContext2D, x: number, y: number, 
   // gold star on top, offset slightly left of center to match the source logo
   drawStar(ctx, -5.19 * s, -42.49 * s, 5.66 * s, TROPHY_GOLD);
 
+  ctx.restore();
+}
+
+/** The arrival colour. Brand purple from FIG_COLORS, lightened so it reads as smoke. */
+export const SMOKE_PURPLE = '#9B7BE0';
+
+/**
+ * Seconds a smoke puff and a flash live.
+ *
+ * ONE definition each, deliberately. Two things need these numbers and they are in different
+ * layers: the director decides when an effect is removed, BobitField fades it out over its
+ * life. They were separate constants that happened to agree, and had they ever drifted an
+ * effect would either blink out mid-fade or linger fully transparent. They live down here
+ * beside `drawSmokePuff` because that is the layer both consumers can already see.
+ */
+export const SMOKE_DUR = 1.0;
+export const FLASH_DUR = 0.22;
+
+/**
+ * The rig's `drawSmoke`, with a colour.
+ *
+ * `leremyRig.drawSmoke` hardcodes '#8A8F98' and the rig is a mirror of ev-landing, so a
+ * variant lives here rather than a parameter being added there. Geometry is deliberately
+ * identical -- the same deterministic angle/radius scatter -- so the two read as one effect.
+ */
+export function drawSmokePuff(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  spread: number, alpha: number,
+  seed: number, t: number,
+  color: string,
+) {
+  if (!(alpha > 0) || !(spread > 0)) return;
+  const N = 9;
+  const DEG = Math.PI / 180;
+  ctx.save();
+  ctx.fillStyle = color;
+  for (let i = 0; i < N; i++) {
+    const ang = ((seed * 37 + i * 61) % 360) * DEG;
+    const rad = 0.35 + (((seed * 13 + i * 29) % 100) / 100) * 0.65;
+    const drift = Math.sin(t * (0.7 + i * 0.13) + i) * spread * 0.14;
+    const px = x + Math.cos(ang) * spread * rad + drift;
+    const py = y - Math.abs(Math.sin(ang)) * spread * rad * 0.85 - spread * 0.2;
+    const pr = spread * (0.26 + rad * 0.3);
+    ctx.globalAlpha = Math.min(1, alpha) * (0.4 + rad * 0.45);
+    ctx.beginPath();
+    ctx.arc(px, py, pr, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.restore();
 }

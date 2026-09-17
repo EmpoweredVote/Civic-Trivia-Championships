@@ -166,3 +166,70 @@ frame-to-frame delta and reported exactly 16.7ms for every configuration, becaus
 have concluded that 154 was free everywhere. The harness now times the draw loop itself, with
 a 1×1 `getImageData` to force a flush (measured cost: 0.2ms), and cross-checks against raw
 frame count over a fixed wall-clock window.
+
+---
+
+## Addendum: the wandering cast (2026-09-13)
+
+Measured while building the living floor (`2026-09-12-bobit-living-room-design.md`, plan 1).
+Harness: `frontend/scripts/bobit-bench.mjs` — 100 residents, 4× CPU throttle, 600 timed frames
+per cell after 120 warm-up frames, timing the simulation and the paint separately.
+
+| cast | idle sim | idle paint | idle total | celebrating total |
+|---|---|---|---|---|
+| 0 | 0.35 | 4.02 | 4.37 | 4.05 |
+| 8 | 0.33 | 3.63 | 3.96 | 4.13 |
+| 16 | 0.41 | 3.66 | 4.07 | 4.22 |
+| 24 | 0.41 | 3.86 | 4.27 | 4.23 |
+| 32 | 0.45 | 3.85 | 4.30 | 4.29 |
+| 48 | 0.58 | 3.69 | 4.27 | 4.58 |
+| 100 | 0.82 | 3.77 | 4.59 | 4.48 |
+
+All figures in ms/frame, against a 16.7ms budget.
+
+### Prediction 5, falsified
+
+**"The wandering cast must be small, because `wanderAdvance`'s separation check is O(N²) —
+24 is 576 pairwise comparisons a frame where 100 would be 10,000."**
+
+10,000 comparisons cost **0.8ms** at 4× throttle. The worst case the bench could construct —
+every one of 100 residents wandering, mid-celebration — came in at **4.48ms, about 3.7× inside
+the budget.** The cast never constrained performance at any size.
+
+This is the fifth confident prediction about this rig to be wrong, and it was wrong in the same
+direction as prediction 1: assuming the pose/geometry maths is expensive. It is not. Paint
+dominates (≈3.4–4.0ms) and is **flat across every cast size**, because the room is always
+`CROWD_CAP` figures whether they walk or stand — consistent with the original finding that cost
+tracks canvas API call count, not what the figures are doing.
+
+### What actually constrains the cast: floor space
+
+`wanderAdvance` holds walkers `MIN_SEPARATION` (76 units) apart. At scale 0.2 that is 15.2px,
+so a 340px phone band fits **22 walkers at the absolute minimum gap** — and a fixed cast of 24
+put them permanently jammed, turning away from each other every frame. The same 24 looked fine
+on a 1440px desktop band, which fits 94.
+
+So `WANDER_CAST` became `wanderCastFor(width, band)`: `width / (MIN_SEPARATION × scale × 2.5)`,
+which is ~37 on desktop and ~8 on a phone. Both are far inside the performance ceiling. **The
+number is a visual decision, not a budget one** — it can be raised freely if a denser room looks
+better.
+
+### Methodology note, again
+
+The first version of this bench cried vsync at a harness that was working. Its sanity check
+compared **total** frame cost across cast sizes, saw it flat, and refused to report — but total
+is dominated by paint, and paint does not depend on the cast at all. The check now compares the
+simulation, which is the quantity the cast is supposed to move. The lesson from the original
+spike generalises: a sanity check has to watch the quantity the variable actually drives, not
+the headline number.
+
+### Two rendering bugs the bench did not catch
+
+Both were found by screenshotting, after every unit test was green — the same lesson as the
+trophy-grip T-pose:
+
+1. `stageBounds` put mobile's back row at 40px in a 100px band, where a figure stands ~42px
+   tall. The back row rendered **with its heads sliced off flat.**
+2. `homeSlot` positioned ranked bobits against `band.width` — a nominal 1000 used for
+   proportional placement — instead of the measured width. On a 340px phone most of the back
+   row sat **off the right edge of the canvas**; on desktop it squeezed into the left 70%.

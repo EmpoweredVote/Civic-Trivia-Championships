@@ -1,81 +1,272 @@
-import type { FieldFigure } from '../../components/bobbits/fieldGeometry';
+import type { FieldFigure, Surface } from '../../components/bobbits/fieldGeometry';
 import { figColor } from '../../components/bobbits/rigExtras';
-import { slotOrder, toneOf, hashId } from './crowdIdentity';
-import { slotPosition, CROWD_CAP } from './crowdLayout';
+import { toneOf, hashId, slotOrder } from './crowdIdentity';
+import { agentPlacement, CROWD_CAP, HEADROOM_UNITS } from './crowdLayout';
 import type { CrowdBand } from './crowdLayout';
+import { agentAnim } from './crowdAgents';
+import type { AgentState } from './crowdAgents';
+import { celebrationPose, ripplePose, pairUp, reactionOffset } from './crowdReactions';
 import { isStunned, LOSS_RISE } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
-
-/**
- * The escalation ladder, as poses. Tier is the in-match streak, 1-5.
- *
- * Confetti is deliberately absent here: it fires only at a 5/5 finish, from the component,
- * so the top rung differs in kind and not merely in degree.
- */
-export function animForTier(tier: number): string {
-  switch (tier) {
-    case 0: return 'standstill';
-    case 1: return 'friendly';   // a nod and a wave
-    case 2: return 'cheer';      // arms up
-    case 3: return 'cheer';
-    case 4: return 'jump';
-    default: return 'dance';
-  }
-}
+import { actorsOf } from './sceneDirector';
+import type { DirectorState } from './sceneDirector';
 
 /** How many owned bobits are not being rendered because of the cap. */
 export function overflowCount(state: CrowdState): number {
   return Math.max(0, state.residents.length - CROWD_CAP);
 }
 
-/**
- * `t` is the field's shared clock. Nothing here reads it directly -- pose timing reaches the
- * canvas through each figure's `phase`, and the stun's rewind is expressed against the stun's
- * own elapsed time rather than against wall time, which keeps it exact in floating point. It
- * stays in the signature because it is the field's per-frame contract and because the arrival
- * and celebration work that will read it lives one change away.
- */
-export function crowdFigures(
-  state: CrowdState, _t: number, band: CrowdBand, darkMode: boolean,
-): FieldFigure[] {
-  // Slots are laid out over the residents PLUS whoever is currently being lost, so the room
-  // does not close ranks the instant he bursts. Everyone keeps the spot he had, and the gap
-  // reads as one particular person missing rather than as a smaller crowd -- which is the
-  // whole point of the sequence. The room compacts only once the loss clears.
-  const ordered = slotOrder(
-    state.loss && !state.residents.includes(state.loss.id)
-      ? [...state.residents, state.loss.id]
-      : state.residents,
-  );
-  const shown = ordered.slice(0, CROWD_CAP);
-  const total = shown.length;
+/** Clearance left above a clamped figure's head. */
+const TOP_MARGIN = 2;
 
-  // While the room is stunned every figure holds its pose. The field paints a figure at
-  // `t + phase`, so the freeze has to reach it through the phase: rewinding by exactly how
-  // long the stun has run pins `t + phase` at the value it had the instant the stun began,
-  // since the two advance together. Continuous at onset -- the stun's clock starts at zero.
+/**
+ * Highest a clamped-to-band figure's FEET may go.
+ *
+ * `groundY` is the feet line and the body is drawn upward from it, so clamping the feet to the
+ * top of the canvas draws the entire figure above it. The previous clamp did exactly that: for
+ * most of a cannon flight with the sky closed the bobit was pinned at y=2 and invisible --
+ * precisely the "vanish in flight, reappear on landing" the fallback exists to prevent. He now
+ * arcs as high as the band can actually show and no higher.
+ */
+function highestFeet(band: CrowdBand): number {
+  return TOP_MARGIN + HEADROOM_UNITS * band.scale;
+}
+
+/** How close two bobits must be to slap hands, in rig units. */
+const HIGHFIVE_REACH_UNITS = 160;
+
+/**
+ * How far a bobit's height may stray from standard, as a fraction of it.
+ *
+ * Depth was removed -- one ground line, one size -- because a bobit crossing the band on a
+ * diagonal had no perspective gait and read as sliding. That fix cost the room its only cue
+ * for telling one figure from another at a glance, which is why an entrance that is not a puff
+ * of smoke currently fails to register at all in a crowd of thirty.
+ *
+ * Height gives that cue back and brings none of depth's problem with it: everybody still walks
+ * the same line, so nothing slides. Kept modest on purpose -- past roughly a tenth the short
+ * ones stop reading as short people and start reading as children.
+ */
+export const HEIGHT_SPREAD = 0.1;
+
+/**
+ * A bobit's own height, as a multiplier on the band's scale.
+ *
+ * Derived from `hashId`, the same source as his colour and his animation phase, so height is
+ * stable for the life of his id and identical down every path that draws him. That matters
+ * more than it looks: a newcomer is drawn from his ACTOR during an entrance and from his AGENT
+ * the moment it ends, and a height that disagreed across those two would make him visibly
+ * change size at the handoff.
+ */
+export function heightFactor(id: string): number {
+  // A second, coarser slice of the hash than `toneOf` and the phase use, so height does not
+  // correlate with colour -- all the tall ones coming out teal would read as a bug.
+  const t = (Math.floor(hashId(id) / 1000) % 1000) / 999;
+  return 1 - HEIGHT_SPREAD + t * 2 * HEIGHT_SPREAD;
+}
+
+/**
+ * Agents plus match state, rendered.
+ *
+ * Position now comes from the agent -- the fixed slot layout survives only as the home a
+ * ranked bobit walks back to (see crowdAgents.homeSlot). What is left here is genuinely
+ * translation: pick a pose, resolve a colour, and get out of the way.
+ */
+/**
+ * The ground line the director stages on. Matches `agentPlacement`'s, so a scene actor and a
+ * wandering bobit stand on the same floor.
+ */
+export function sceneGroundY(band: CrowdBand): number {
+  return agentPlacement(0, band).groundY;
+}
+
+/**
+ * Figures the director wants on the OVERLAY, in band coordinates.
+ *
+ * Kept out of `crowdFigures` rather than filtered inside it, because the two go to different
+ * canvases. An airborne actor drawn on both would be painted twice.
+ *
+ * Takes the same `allowAir` gate `crowdFigures` does, and for the same reason it is a
+ * parameter rather than something the caller applies afterwards: the two functions PARTITION
+ * the airborne actors between them, and a partition only holds if both are answering the same
+ * question. The component used to gate this one with the `aerialAllowed` prop and the other
+ * with a ref, and the two could disagree for a frame.
+ */
+export function aerialFigures(
+  director: DirectorState, band: CrowdBand, darkMode: boolean, allowAir = true,
+): FieldFigure[] {
+  if (!allowAir) return [];
+  return actorsOf(director, sceneGroundY(band), band.scale)
+    .filter(a => a.layer === 'air' && !a.hidden)
+    .map(a => ({
+      id: `air:${a.agentId ?? a.role}`,
+      anim: a.pose,
+      color: figColor(toneOf(a.agentId ?? a.role), darkMode),
+      x: a.x,
+      groundY: a.y,
+      scale: band.scale * heightFactor(a.agentId ?? a.role),
+      poofable: false,
+      greetable: false,
+      vars: a.hand ? { hand: a.hand } : undefined,
+    }));
+}
+
+export function crowdFigures(
+  state: CrowdState, agents: AgentState, band: CrowdBand, darkMode: boolean,
+  director?: DirectorState,
+  /**
+   * Whether the overlay is available this frame. When it is NOT -- the timer is running and
+   * nothing may pass in front of the question card -- airborne actors are drawn on the band
+   * instead, clamped into it, rather than skipped. Skipping them made a bobit fired mid-answer
+   * vanish in flight and reappear on landing.
+   */
+  allowAir = true,
+  /**
+   * Surfaces a bobit may be sitting on. Empty when the room has no tree.
+   *
+   * A perched agent whose Surface is NOT in this list falls back to the floor rather than to
+   * nothing: scenery can disappear -- a narrower viewport, a different collection, a tree that
+   * belongs to a room this player has left -- and a bobit must not go with it.
+   */
+  surfaces: readonly Surface[] = [],
+): FieldFigure[] {
+  // Actors the director owns, indexed by the agent playing them. A cast agent is drawn from
+  // its ACTOR -- pose and position both -- so the director and wanderAdvance can never fight
+  // over where it is.
+  const staged = new Map<string, ReturnType<typeof actorsOf>[number]>();
+  const orphans: ReturnType<typeof actorsOf>[number][] = [];
+  /**
+   * Agents the OVERLAY is drawing this frame. They must be left out of the band entirely.
+   *
+   * Handing an airborne actor to the overlay is not the same as having nobody to draw: his
+   * agent still exists, and simply skipping the actor left the agent to be drawn the ordinary
+   * way -- so the bobit appeared twice for the whole flight, once arcing over the question card
+   * and once standing wherever his agent happened to be. The design forbids that double-paint
+   * explicitly, and it was visible in a screenshot of every cannon shot.
+   */
+  const onOverlay = new Set<string>();
+  if (director) {
+    for (const raw of actorsOf(director, sceneGroundY(band), band.scale)) {
+      let a = raw;
+      if (a.layer === 'air') {
+        if (allowAir) {                                  // the overlay's business
+          if (a.agentId) onOverlay.add(a.agentId);
+          continue;
+        }
+        // Grounded fallback: keep him inside the band rather than letting him fly off it.
+        a = { ...a, y: Math.max(highestFeet(band), a.y) };
+      }
+      if (a.agentId && agents[a.agentId]) staged.set(a.agentId, a);
+      else orphans.push(a);
+    }
+  }
+  // The cap is defended HERE, not only in syncCast, because it is a measured performance
+  // ceiling (Stage 2: 105 was the 60fps floor on a mid-tier phone) and this is the last gate
+  // before paint. syncCast already respects it on the live path; relying on that alone would
+  // make the ceiling a convention every future caller has to know about. Sliced in id order
+  // so which bobits are dropped is stable rather than dependent on insertion.
+  const all = Object.keys(agents);
+  const ids = all.length <= CROWD_CAP ? all : slotOrder(all).slice(0, CROWD_CAP);
+
+  // While the room is stunned every figure holds its pose. The field paints at `t + phase`,
+  // so the freeze reaches it through the phase: rewinding by exactly how long the stun has
+  // run pins `t + phase` at the value it had when the stun began, since the two advance
+  // together. Continuous at onset -- the stun's clock starts at zero.
   const rewind = isStunned(state) && state.loss ? state.loss.t : 0;
 
-  const out: FieldFigure[] = [];
-  for (let i = 0; i < total; i++) {
-    const id = shown[i];
-    const pos = slotPosition(i, total, band);
-    const arriving = state.arriving[id] !== undefined;
-    const victim = state.loss?.id === id;
+  // Pairs are recomputed every frame from positions, which is safe because pairUp is
+  // deterministic in id order: the same neighbours produce the same pairing, so partners do
+  // not flicker between each other mid-slap.
+  const celebrating = state.celebrating > 0;
+  const pairs = celebrating
+    ? pairUp(ids.map(id => ({ id, x: agents[id].x })), HIGHFIVE_REACH_UNITS * band.scale)
+    : [];
+  const hands = new Map<string, 'R' | 'L'>();
+  for (const [left, right] of pairs) { hands.set(left, 'R'); hands.set(right, 'L'); }
 
-    // He holds his slot but stops being drawn the moment the burst takes him.
+  const rippleX = state.ripple ? agents[state.ripple.from]?.x ?? null : null;
+
+  const out: FieldFigure[] = [];
+
+  // Scene actors with no agent of their own: a bobit who has not joined the crowd yet.
+  for (const a of orphans) {
+    if (a.hidden) continue;
+    out.push({
+      id: `scene:${a.agentId ?? a.role}`,
+      anim: a.pose,
+      color: figColor(toneOf(a.agentId ?? a.role), darkMode),
+      x: a.x,
+      groundY: a.y,
+      scale: band.scale * heightFactor(a.agentId ?? a.role),
+      poofable: false,
+      greetable: false,
+      vars: a.hand ? { hand: a.hand } : undefined,
+    });
+  }
+
+  for (const id of ids) {
+    if (onOverlay.has(id)) continue;
+    const a = agents[id];
+    const victim = state.loss?.id === id;
+    // Where he is sitting, if he is. `perchId` is claimed the moment he sets off walking, so
+    // only an agent who has actually ARRIVED (activity 'perch') is drawn off the floor.
+    const perch = a.activity === 'perch' && a.perchId
+      ? surfaces.find(sf => sf.id === a.perchId)
+      : undefined;
+
+    // The director has this one: it plays what the scene says, where the scene says.
+    const act = staged.get(id);
+    if (act) {
+      if (act.hidden) continue;
+      out.push({
+        id,
+        anim: act.pose,
+        color: figColor(toneOf(id), darkMode),
+        x: act.x,
+        groundY: act.y,
+        scale: band.scale * heightFactor(id),
+        phase: (hashId(id) % 1000) / 250,
+        flip: false,
+        poofable: false,
+        greetable: true,
+        vars: act.hand ? { hand: act.hand } : undefined,
+      });
+      continue;
+    }
+
+    // He holds his place but stops being drawn the moment the burst takes him.
     if (victim && !state.residents.includes(id)) continue;
 
-    let anim: string;
-    if (victim) anim = 'fall';                      // limp, being lifted
-    else if (arriving) anim = 'friendly';           // walks in and waves
-    else if (state.celebrant === id && state.celebrating > 0) {
-      // Whoever this answer belongs to celebrates one rung harder than the room -- that is
-      // what a repeat correct answer looks like when it spawns nobody.
-      anim = animForTier(Math.min(5, state.celebrating + 1));
-    } else anim = animForTier(state.celebrating);
+    const place = agentPlacement(a.depth, band);
+    let anim = agentAnim(a);
+    // Pose VARIANT, not a prop: highfive reaches with the named arm. See FieldFigure.vars.
+    let vars: FieldFigure['vars'];
 
-    let groundY = pos.groundY;
+    if (victim) {
+      anim = 'fall';                                   // limp, being lifted
+    } else if (state.arriving[id] !== undefined) {
+      // Just turned up: he waves hello rather than joining the applause for himself. The ROOM
+      // celebrates him -- that is the difference between a new bobit and one you already had.
+      //
+      // The reducer has always tracked this window; the agents rewrite stopped reading it, so
+      // newcomers simply appeared for a while. The proper entrances (smoke, the flash, the
+      // cannon) replace this branch in plan 2 -- until then a wave beats materialising.
+      anim = 'friendly';
+    } else if (celebrating) {
+      const pose = celebrationPose(
+        state.celebrateT, state.celebrating, state.celebrant === id, hands.get(id) ?? null,
+        reactionOffset(hashId(id)),
+      );
+      if (pose.anim) {
+        anim = pose.anim;
+        if (pose.hand) vars = { hand: pose.hand };
+      }
+    } else if (state.ripple && rippleX !== null) {
+      const pose = ripplePose(Math.abs(a.x - rippleX), state.ripple.t, band.scale);
+      if (pose) anim = pose;
+    }
+
+    let groundY = place.groundY;
     if (victim && state.loss?.phase === 'rising') {
       // Floats up, accelerating, over the rise. He is drawn until the burst takes him.
       const k = Math.min(1, state.loss.t / LOSS_RISE);
@@ -86,15 +277,21 @@ export function crowdFigures(
       id,
       anim,
       color: figColor(toneOf(id), darkMode),
-      x: pos.x,
-      groundY,
-      scale: band.scale,
-      // Phase from the id, so neighbours never move in lockstep and a given bobit always
-      // breathes on his own beat. The stun's rewind rides on top of it.
+      // Sitting on a branch: the Surface decides both, and he sits along its middle rather
+      // than at the x he happened to walk in from.
+      x: perch ? (perch.left + perch.right) / 2 : a.x,
+      groundY: perch ? perch.y : groundY,
+      scale: place.scale * heightFactor(id),
+      // Phase from the id, so neighbours never breathe in lockstep. The stun rides on top.
       phase: (hashId(id) % 1000) / 250 - rewind,
-      flip: hashId(id) % 2 === 0,
+      flip: a.dir === -1,
       poofable: false,
-      greetable: false,
+      greetable: true,
+      // A seated figure MUST carry a seated hoverAnim. fieldGeometry documents the trap:
+      // bounds measure from the BASE anim and paint positions with the RESOLVED one, so a
+      // standing greet on a seated pose draws ~104 units from its own hit box.
+      ...(perch ? { hoverAnim: 'greetseat' } : {}),
+      vars,
     });
   }
   return out;

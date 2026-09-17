@@ -1,0 +1,348 @@
+import { describe, it, expect } from 'vitest';
+import {
+  directorInit, canStage, startScene, directorStep, actorsOf, castIds,
+} from '../sceneDirector';
+import type { Scene } from '../scenes/types';
+
+const WIDTH = 1000;
+const GROUND = 80;
+const rand = () => 0.5;
+
+const TINY: Scene = {
+  id: 'tiny', duration: 2, span: 0.2, roles: ['newcomer'],
+  beats: [
+    { at: 0, role: 'newcomer', pose: 'splayed', moveTo: 0, layer: 'ground' },
+    { at: 1, role: 'newcomer', pose: 'friendly', moveTo: 1, path: 'walk' },
+  ],
+};
+
+describe('canStage', () => {
+  it('finds floor in an empty room', () => {
+    expect(canStage(directorInit(), 0.3, WIDTH)).not.toBeNull();
+  });
+
+  it('refuses a span that cannot fit beside what is already running', () => {
+    const s = startScene(directorInit(), { ...TINY, span: 0.85 }, 'a', WIDTH, rand);
+    expect(canStage(s, 0.85, WIDTH)).toBeNull();
+  });
+
+  it('finds room beside a narrow scene', () => {
+    const s = startScene(directorInit(), { ...TINY, span: 0.2 }, 'a', WIDTH, rand);
+    expect(canStage(s, 0.2, WIDTH)).not.toBeNull();
+  });
+
+  it('never returns overlapping ground', () => {
+    let s = startScene(directorInit(), { ...TINY, span: 0.3 }, 'a', WIDTH, rand);
+    s = startScene(s, { ...TINY, id: 'b', span: 0.3 }, 'b', WIDTH, rand);
+    const [p, q] = s.running;
+    expect(p.right <= q.left || q.right <= p.left).toBe(true);
+  });
+});
+
+describe('directorStep', () => {
+  it('runs a scene and then lets go of it', () => {
+    let s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
+    expect(castIds(s).has('a')).toBe(true);
+    s = directorStep(s, TINY.duration + 0.01, GROUND);
+    expect(s.running).toHaveLength(0);
+    expect(castIds(s).has('a')).toBe(false);
+  });
+
+  it('applies the beat in force at the current time, not a later one', () => {
+    let s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
+    s = directorStep(s, 0.5, GROUND);
+    expect(actorsOf(s, GROUND)[0].pose).toBe('splayed');
+    s = directorStep(s, 0.6, GROUND);
+    expect(actorsOf(s, GROUND)[0].pose).toBe('friendly');
+  });
+
+  it('walks between beat destinations rather than snapping', () => {
+    const walky: Scene = {
+      ...TINY, duration: 4,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'stroll', moveTo: 0 },
+        { at: 1, role: 'newcomer', pose: 'stroll', moveTo: 1, path: 'walk' },
+      ],
+    };
+    let s = startScene(directorInit(), walky, 'a', WIDTH, rand);
+    s = directorStep(s, 1.0, GROUND);
+    const start = actorsOf(s, GROUND)[0].x;
+    s = directorStep(s, 0.4, GROUND);
+    const mid = actorsOf(s, GROUND)[0].x;
+    s = directorStep(s, 2.0, GROUND);
+    const end = actorsOf(s, GROUND)[0].x;
+    expect(mid).toBeGreaterThan(start);
+    expect(mid).toBeLessThan(end);
+  });
+
+  it('lifts an arc off the ground and puts it back down', () => {
+    const flying: Scene = {
+      ...TINY, duration: 4,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'flail', moveTo: 0 },
+        { at: 1, role: 'newcomer', pose: 'flail', moveTo: 1, path: 'arc', arcPeak: 200, layer: 'air' },
+        { at: 2, role: 'newcomer', pose: 'spent', layer: 'ground' },
+      ],
+    };
+    let s = startScene(directorInit(), flying, 'a', WIDTH, rand);
+    s = directorStep(s, 1.0, GROUND);
+    const grounded = actorsOf(s, GROUND)[0].y;
+    s = directorStep(s, 0.5, GROUND);
+    const airborne = actorsOf(s, GROUND)[0];
+    expect(airborne.y).toBeLessThan(grounded - 50);
+    expect(airborne.layer).toBe('air');
+    s = directorStep(s, 1.0, GROUND);
+    const landed = actorsOf(s, GROUND)[0];
+    expect(landed.y).toBeCloseTo(GROUND, 0);
+    expect(landed.layer).toBe('ground');
+  });
+
+  it('places and removes props on cue', () => {
+    const withProp: Scene = {
+      ...TINY, duration: 3,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0 },
+        { at: 1, role: 'newcomer', prop: { kind: 'cannon', angle: -32 } },
+        { at: 2, role: 'newcomer', prop: null },
+      ],
+    };
+    let s = startScene(directorInit(), withProp, 'a', WIDTH, rand);
+    s = directorStep(s, 0.5, GROUND);
+    expect(s.props).toHaveLength(0);
+    s = directorStep(s, 1.0, GROUND);
+    expect(s.props).toHaveLength(1);
+    s = directorStep(s, 1.0, GROUND);
+    expect(s.props).toHaveLength(0);
+  });
+
+  it('takes a scene prop away with the scene, even if it was never cleared', () => {
+    const leaky: Scene = {
+      ...TINY, duration: 2,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0 },
+        { at: 0.5, role: 'newcomer', prop: { kind: 'cannon', angle: -32 } },
+      ],
+    };
+    let s = startScene(directorInit(), leaky, 'a', WIDTH, rand);
+    s = directorStep(s, 0.6, GROUND);
+    expect(s.props).toHaveLength(1);
+    s = directorStep(s, 2, GROUND);
+    expect(s.props).toHaveLength(0);
+  });
+
+  // Two runs of the SAME scene can overlap -- the pool is four entrances and a busy room
+  // grants bobits back to back. Keying a scene's props on its id alone makes the two runs one
+  // owner: the first to finish takes the second's cannon away with it.
+  it('keeps two concurrent runs of the same scene from taking each other apart', () => {
+    const leaky: Scene = {
+      ...TINY, duration: 2,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0 },
+        { at: 0.2, role: 'newcomer', prop: { kind: 'cannon', angle: -32 } },
+      ],
+    };
+    let s = startScene(directorInit(), leaky, 'a', WIDTH, rand);
+    s = directorStep(s, 1.5, GROUND);
+    s = startScene(s, leaky, 'b', WIDTH, rand);
+    s = directorStep(s, 0.3, GROUND);          // b's prop is up while a is still running
+    expect(s.props).toHaveLength(2);
+    s = directorStep(s, 0.3, GROUND);          // a reaches its end and lets go
+    expect(s.running).toHaveLength(1);
+    expect(s.props).toHaveLength(1);
+  });
+
+  // Stepped BETWEEN each start, because runs in the real room begin frames apart. Whatever
+  // distinguishes one run from the next has to survive a step to be worth anything.
+  it('gives concurrent runs of the same scene distinct prop ids, across steps', () => {
+    const withProp: Scene = {
+      ...TINY, duration: 4,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0 },
+        { at: 0.2, role: 'newcomer', prop: { kind: 'cannon', angle: -32 } },
+      ],
+    };
+    let s = directorInit();
+    for (const id of ['a', 'b', 'c']) {
+      s = startScene(s, { ...withProp, span: 0.2 }, id, WIDTH, rand);
+      s = directorStep(s, 0.3, GROUND);
+    }
+    expect(s.running).toHaveLength(3);
+    expect(new Set(s.props.map(p => p.id)).size).toBe(3);
+  });
+
+  // `from: {dy}` -- a leg that begins off the ground line and closes to it. The vertical twin
+  // of `from: 'muzzle'`, and the only way a 96px band can hold a fall or a climb: there is no
+  // overlay for a pool entrance, so the movement has to happen inside the band.
+  it('starts a leg off the ground line and closes it by the end of that leg', () => {
+    const dropIn: Scene = {
+      ...TINY, duration: 2,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0.5, from: { dy: -40 } },
+        { at: 1, role: 'newcomer', pose: 'friendly' },
+      ],
+    };
+    let s = startScene(directorInit(), dropIn, 'a', WIDTH, rand);
+    expect(actorsOf(s, GROUND)[0].y).toBeCloseTo(GROUND - 40, 3);
+    s = directorStep(s, 1, GROUND);
+    expect(actorsOf(s, GROUND)[0].y).toBeCloseTo(GROUND, 3);
+  });
+
+  /**
+   * The band is all the room there is. A scene asking to start higher than the canvas would
+   * open on an empty band and drop a figure into it out of nowhere, which is the bug this
+   * whole mechanism exists to fix.
+   */
+  it('never starts a leg above the canvas top, however high the scene asks', () => {
+    const tooHigh: Scene = {
+      ...TINY, duration: 2,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0.5, from: { dy: -900 } },
+        { at: 1, role: 'newcomer', pose: 'friendly' },
+      ],
+    };
+    const s = startScene(directorInit(), tooHigh, 'a', WIDTH, rand);
+    expect(actorsOf(s, GROUND)[0].y).toBe(0);
+  });
+
+  it('falls under gravity when asked: barely moving at the top, quickest at the bottom', () => {
+    const scene: Scene = {
+      ...TINY, duration: 2,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'flail', moveTo: 0.5,
+          from: { dy: -40, ease: 'gravity' } },
+        { at: 1, role: 'newcomer', pose: 'spent' },
+      ],
+    };
+    let s = startScene(directorInit(), scene, 'a', WIDTH, rand);
+    const ys = [actorsOf(s, GROUND)[0].y];
+    for (let i = 0; i < 4; i++) {
+      s = directorStep(s, 0.25, GROUND);
+      ys.push(actorsOf(s, GROUND)[0].y);
+    }
+    const firstQuarter = ys[1] - ys[0];
+    const lastQuarter = ys[4] - ys[3];
+    expect(lastQuarter).toBeGreaterThan(firstQuarter * 2);
+  });
+
+  it('spawns an effect for a smoke beat and ages it out', () => {
+    const smoky: Scene = {
+      ...TINY, duration: 3,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0 },
+        { at: 0.5, role: 'newcomer', smoke: { spread: 40 } },
+      ],
+    };
+    let s = startScene(directorInit(), smoky, 'a', WIDTH, rand);
+    s = directorStep(s, 0.6, GROUND);
+    expect(s.effects.length).toBeGreaterThan(0);
+    s = directorStep(s, 3, GROUND);
+    expect(s.effects).toHaveLength(0);
+  });
+
+  it('fires each one-shot beat exactly once, however the frames fall', () => {
+    const smoky: Scene = {
+      ...TINY, duration: 3,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0 },
+        { at: 0.5, role: 'newcomer', smoke: { spread: 40 } },
+      ],
+    };
+    let s = startScene(directorInit(), smoky, 'a', WIDTH, rand);
+    for (let i = 0; i < 40; i++) s = directorStep(s, 1 / 60, GROUND);
+    expect(s.effects).toHaveLength(1);
+  });
+
+  it('does not mutate the state it is given', () => {
+    const s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
+    const before = JSON.stringify(s);
+    directorStep(s, 0.5, GROUND);
+    expect(JSON.stringify(s)).toBe(before);
+  });
+});
+
+describe('a beat written at at:0', () => {
+  /** pool-stumble's whole entrance is one such beat: its only smoke puff is at 0.0. */
+  const POOF: Scene = {
+    id: 'poof', duration: 1.5, span: 0.2, roles: ['newcomer'],
+    beats: [
+      { at: 0, role: 'newcomer', moveTo: 0.5, hidden: true, smoke: { spread: 30 } },
+      { at: 0.4, role: 'newcomer', hidden: false, pose: 'spent' },
+    ],
+  };
+
+  it('fires its side effect on the first step', () => {
+    let s = startScene(directorInit(), POOF, 'a', WIDTH, rand);
+    s = directorStep(s, 1 / 60, GROUND);
+    expect(s.effects.filter(e => e.kind === 'smoke')).toHaveLength(1);
+  });
+
+  it('still fires it exactly once', () => {
+    let s = startScene(directorInit(), POOF, 'a', WIDTH, rand);
+    for (let i = 0; i < 30; i++) s = directorStep(s, 1 / 60, GROUND);
+    expect(s.effects.filter(e => e.kind === 'smoke')).toHaveLength(1);
+  });
+});
+
+describe('releasing a scene', () => {
+  it('reports nobody until a scene actually ends', () => {
+    expect(directorInit().released).toEqual([]);
+    let s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
+    s = directorStep(s, 1 / 60, GROUND);
+    expect(s.released).toEqual([]);
+  });
+
+  /**
+   * The whole point: a bobit's agent is seeded at the centre of the band and only his ACTOR
+   * knows where the scene walked him. Without a handoff he snaps back to centre the instant
+   * his entrance ends, which is the one thing the design forbids outright.
+   */
+  it('hands an actor back at the x his scene left him at', () => {
+    let s = startScene(directorInit(), TINY, 'a', WIDTH, rand);
+    const slot = s.running[0];
+    for (let i = 0; i < 200 && s.released.length === 0; i++) {
+      s = directorStep(s, 1 / 60, GROUND);
+    }
+    expect(s.running).toHaveLength(0);
+    expect(s.released.map(r => r.agentId)).toEqual(['a']);
+    // TINY walks the newcomer to moveTo: 1 -- the far end of its own reserved slot.
+    expect(s.released[0].x).toBeCloseTo(slot.right, 0);
+  });
+});
+
+describe('canStage anchoring', () => {
+  it('packs from the left by default', () => {
+    const slot = canStage(directorInit(), 0.25, WIDTH)!;
+    expect(slot.left).toBe(0);
+  });
+
+  /**
+   * A scene tied to a fixed piece of scenery has to stage NEXT TO IT. The milestone's bobits
+   * walk over and present at the tree, and the tree is on the right border -- staged from the
+   * left they admire an empty stretch of floor, which is what the first run of the scene sheet
+   * showed.
+   */
+  it('packs from the right when the scene asks for it', () => {
+    const slot = canStage(directorInit(), 0.25, WIDTH, 'right')!;
+    expect(slot.right).toBe(WIDTH);
+    expect(slot.left).toBeCloseTo(WIDTH * 0.75, 6);
+  });
+
+  it('still finds room on the right beside something already running', () => {
+    const busy = startScene(directorInit(), { ...TINY, span: 0.3 }, 'a', WIDTH, rand);
+    const slot = canStage(busy, 0.3, WIDTH, 'right')!;
+    expect(slot.right).toBe(WIDTH);
+    const [running] = busy.running;
+    expect(slot.left >= running.right || slot.right <= running.left).toBe(true);
+  });
+
+  it('refuses a right-anchored span that cannot fit', () => {
+    const busy = startScene(directorInit(), { ...TINY, span: 0.85 }, 'a', WIDTH, rand);
+    expect(canStage(busy, 0.85, WIDTH, 'right')).toBeNull();
+  });
+
+  it('honours a scene that declares its own anchor', () => {
+    const anchored = { ...TINY, span: 0.2, anchor: 'right' as const };
+    const s = startScene(directorInit(), anchored, 'a', WIDTH, rand);
+    expect(s.running[0].right).toBe(WIDTH);
+  });
+});

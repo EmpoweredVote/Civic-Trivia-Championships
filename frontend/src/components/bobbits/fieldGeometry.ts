@@ -1,4 +1,4 @@
-import type { DrawOpts } from './leremyRig';
+import type { DrawOpts, AnimVars } from './leremyRig';
 
 /**
  * One inhabitant of a BobitField. Positions are in field space (CSS px from the field's own
@@ -41,6 +41,17 @@ export interface FieldFigure {
    */
   hoverAnim?: string;
   props?: DrawOpts;
+  /**
+   * Pose variant, passed to `Animation.frame(t, v)`.
+   *
+   * Distinct from `props`, which is `DrawOpts` and decorates a figure with objects (a book, a
+   * cane, a quiz card). `vars` changes the POSE itself -- which arm a per-side animation
+   * reaches with. `greet`, `carryGrip` and `highfive` all take `{ hand }`.
+   *
+   * Figures drawn on their own canvas (BobbitTrophyCarry) call `frame(t, v)` directly; before
+   * this field, a figure on the shared field had no way to say the same thing.
+   */
+  vars?: AnimVars;
 }
 
 /**
@@ -87,6 +98,41 @@ export function figureBounds(f: FieldFigure) {
     top: pelvis - ABOVE_PELVIS * f.scale,
     bottom: f.groundY + 10 * f.scale,
   };
+}
+
+/**
+ * A scene prop standing on the field. Not a figure: it has no pose and no hit box, and the
+ * pointer never finds it.
+ */
+export interface FieldProp {
+  id: string;
+  kind: 'cannon' | 'tree';
+  x: number;
+  /** px from the field's top to the prop's ground contact line. */
+  groundY: number;
+  scale: number;
+  flip?: boolean;
+  /** Degrees from horizontal for a cannon barrel; negative is nose-up. */
+  angle?: number;
+  /** 0-1 for a tree that is still sprouting. Ignored by every other kind. */
+  grow?: number;
+  /**
+   * Body colour. Supplied by the caller because only it knows the theme -- a fixed dark barrel
+   * is all but invisible against a dark-mode background, which is how it first shipped.
+   */
+  color?: string;
+}
+
+/** A transient visual effect: a puff of smoke or a flash. Not a figure and not a prop. */
+export interface FieldEffect {
+  id: string;
+  kind: 'smoke' | 'flash';
+  x: number;
+  y: number;
+  /** Seconds since it began. */
+  t: number;
+  spread: number;
+  color?: string;
 }
 
 /**

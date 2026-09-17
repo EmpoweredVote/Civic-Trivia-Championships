@@ -3,6 +3,7 @@ import {
   crowdInit, crowdApply, crowdStep, isStunned,
   ARRIVAL_DUR, CELEBRATE_DUR, LOSS_RISE, LOSS_BURST, LOSS_STUN, LOSS_RECOVER,
 } from '../crowdReducer';
+import { RIPPLE_DUR } from '../crowdReactions';
 
 const seeded = (ids: string[]) => crowdApply(crowdInit(), { type: 'seed', ids });
 
@@ -149,5 +150,39 @@ describe('purity', () => {
     const s0 = crowdApply(seeded([]), { type: 'correct', id: 'a', streak: 1 });
     crowdStep(s0, 5);
     expect(s0.arriving.a).toBe(0);
+  });
+});
+
+describe('costless miss', () => {
+  it('starts a ripple when the player never owned the question', () => {
+    const s = seeded(['a']);
+    const next = crowdApply(s, { type: 'wrong', id: 'never-owned' });
+    expect(next.loss).toBeNull();
+    expect(next.ripple).toEqual({ from: 'a', t: 0 });
+  });
+
+  // The spec puts the ripple's origin at the NEWEST bobit: the room turns to the person who
+  // just turned up. `residents` is in grant order, so that is its last entry. This shipped
+  // reading slotOrder[0] -- the alphabetically first id, which is a stranger across the room.
+  it('ripples from the most recently earned bobit, not the first in slot order', () => {
+    const s = crowdApply(seeded(['b', 'c']), { type: 'correct', id: 'd', streak: 1 });
+    const next = crowdApply(s, { type: 'wrong', id: 'never-owned' });
+    expect(next.ripple?.from).toBe('d');
+  });
+
+  it('does not ripple when there is nobody to react', () => {
+    const next = crowdApply(crowdInit(), { type: 'wrong', id: 'never-owned' });
+    expect(next.ripple).toBeNull();
+  });
+
+  it('prefers the abduction when the question WAS owned', () => {
+    const next = crowdApply(seeded(['a']), { type: 'wrong', id: 'a' });
+    expect(next.loss).not.toBeNull();
+    expect(next.ripple).toBeNull();
+  });
+
+  it('clears the ripple once it has run its course', () => {
+    const s = crowdApply(seeded(['a']), { type: 'wrong', id: 'never-owned' });
+    expect(crowdStep(s, RIPPLE_DUR + 0.1).ripple).toBeNull();
   });
 });

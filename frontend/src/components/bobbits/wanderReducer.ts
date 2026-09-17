@@ -26,6 +26,15 @@ export const PAUSE_MIN = 1.2;
 export const PAUSE_MAX = 3.0;
 
 /**
+ * Seconds a figure stops for when somebody is in its way.
+ *
+ * Shorter than a normal pause -- this is "oh, sorry", not "let me take in the view" -- but it
+ * has to be long enough to break the encounter, or the two just meet again immediately.
+ */
+export const YIELD_MIN = 0.45;
+export const YIELD_MAX = 1.1;
+
+/**
  * Closest two wanderers may come, in rig units. fieldGeometry's HALF_W is 34, so two figures
  * at 68 are already touching; 76 leaves a visible sliver between them.
  */
@@ -45,6 +54,12 @@ export interface Wanderer {
   t: number;
   /** Seconds the current phase lasts. */
   next: number;
+  /**
+   * This pause was forced by somebody in the way, and the direction already chosen is the way
+   * out. Leaving the pause must KEEP that direction instead of re-rolling it, or the figure
+   * turns straight back into whoever it just stopped for.
+   */
+  hold?: boolean;
 }
 
 export type WanderState = Record<string, Wanderer>;
@@ -100,11 +115,16 @@ export function wanderAdvance(state: WanderState, dt: number, opts: WanderOpts):
       const phase: WanderPhase = e.phase === 'walk' ? 'pause' : 'walk';
       // A fresh direction is chosen on the way OUT of a pause, so the look-around beat is
       // what hides the turn.
-      const dir: 1 | -1 = phase === 'walk' ? (rand() < 0.5 ? -1 : 1) : e.dir;
+      // Leaving a yield keeps the direction that yield chose; leaving an ordinary pause rolls
+      // a fresh one. Re-rolling after a yield would send the figure back into whoever it just
+      // stopped for, half the time.
+      const dir: 1 | -1 = phase === 'walk'
+        ? (e.hold ? e.dir : (rand() < 0.5 ? -1 : 1))
+        : e.dir;
       const next = phase === 'walk'
         ? span(WALK_MIN, WALK_MAX, rand)
         : span(PAUSE_MIN, PAUSE_MAX, rand);
-      out[id] = { ...e, phase, dir, t: 0, next };
+      out[id] = { ...e, phase, dir, t: 0, next, hold: false };
       continue;
     }
 
@@ -118,18 +138,39 @@ export function wanderAdvance(state: WanderState, dt: number, opts: WanderOpts):
     if (x < margin) { x = margin; dir = 1; }
     else if (x > width - margin) { x = width - margin; dir = -1; }
 
-    // Hold position and turn rather than closing inside the minimum gap. Compared against
-    // each other figure's already-committed position this frame where one exists, and its
-    // previous position otherwise, so two figures walking at each other both turn together.
+    // Somebody in the way: stop, and turn away. Compared against each other figure's
+    // already-committed position this frame where one exists, and its previous position
+    // otherwise, so two figures walking at each other both yield together.
+    //
+    // The NEAREST blocker decides, not the first one found. Breaking on the first meant a
+    // figure standing between two others got a different blocker on alternating frames and
+    // flipped direction on every one of them -- and since a figure is drawn mirrored by its
+    // direction, that renders as a stick figure vibrating in place. It also held position
+    // while blocked, so it never escaped the encounter that was causing it.
+    let blockerX: number | null = null;
+    let blockerGap = Infinity;
     for (const other of ids) {
       if (other === id) continue;
       const ox = (out[other] ?? state[other]).x;
-      const closing = Math.abs(x - ox) < Math.abs(e.x - ox);
-      if (Math.abs(x - ox) < minGap && closing) {
-        x = e.x;
-        dir = e.x < ox ? -1 : 1;
-        break;
-      }
+      const gap = Math.abs(x - ox);
+      const closing = gap < Math.abs(e.x - ox);
+      if (gap < minGap && closing && gap < blockerGap) { blockerX = ox; blockerGap = gap; }
+    }
+
+    if (blockerX !== null) {
+      // Yield as a short PAUSE rather than an instant about-face. The pause is what makes it
+      // read as noticing someone instead of glitching, and because a paused figure skips this
+      // whole branch next frame, it also ends the oscillation outright.
+      out[id] = {
+        ...e,
+        x: e.x,
+        dir: e.x < blockerX ? -1 : 1,
+        phase: 'pause',
+        t: 0,
+        next: span(YIELD_MIN, YIELD_MAX, rand),
+        hold: true,
+      };
+      continue;
     }
 
     out[id] = { ...e, x, dir, t };

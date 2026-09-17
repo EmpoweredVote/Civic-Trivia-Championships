@@ -1,131 +1,432 @@
 import { describe, it, expect } from 'vitest';
-import { crowdFigures, overflowCount, animForTier } from '../crowdFigures';
-import { crowdInit, crowdApply, crowdStep } from '../crowdReducer';
-import { CROWD_CAP } from '../crowdLayout';
-import type { FieldFigure } from '../../../components/bobbits/fieldGeometry';
+import {
+  crowdFigures, overflowCount, aerialFigures, heightFactor, HEIGHT_SPREAD, sceneGroundY,
+} from '../crowdFigures';
+import { directorInit, startScene, directorStep } from '../sceneDirector';
+import { SWIRL } from '../scenes/arrival01Swirl';
+import { CANNON } from '../scenes/arrival02Cannon';
+import { POOL } from '../scenes/poolEntrances';
+import { crowdInit, crowdApply, crowdStep, ARRIVAL_DUR } from '../crowdReducer';
+import { initAgents } from '../crowdAgents';
+import { bandFor, CROWD_CAP } from '../crowdLayout';
+import type { AgentOpts } from '../crowdAgents';
+import type { Rand } from '../../../components/bobbits/wanderReducer';
+import { figureBounds } from '../../../components/bobbits/fieldGeometry';
 
-const band = { width: 1000, height: 90, scale: 0.22 };
-const seeded = (ids: string[]) => crowdApply(crowdInit(), { type: 'seed', ids });
-const many = (n: number) => Array.from({ length: n }, (_, i) => `q-${String(i).padStart(4, '0')}`);
+function seq(values: number[]): Rand { let i = 0; return () => values[i++ % values.length]; }
+const BAND = bandFor(false);
+const OPTS: AgentOpts = {
+  band: BAND, width: 1000, greeting: new Set(), frozen: false, rand: seq([0.5]),
+};
+
+describe('overflowCount', () => {
+  it('is zero while the room fits under the cap', () => {
+    expect(overflowCount(crowdApply(crowdInit(), { type: 'seed', ids: ['a'] }))).toBe(0);
+  });
+
+  it('counts everyone past the cap', () => {
+    const ids = Array.from({ length: CROWD_CAP + 7 }, (_, i) => `q${i}`);
+    expect(overflowCount(crowdApply(crowdInit(), { type: 'seed', ids }))).toBe(7);
+  });
+});
 
 describe('crowdFigures', () => {
-  it('renders nobody for an empty crowd', () => {
-    expect(crowdFigures(crowdInit(), 0, band, false)).toEqual([]);
+  const roomOf = (ids: string[]) => ({
+    state: crowdApply(crowdInit(), { type: 'seed', ids }),
+    agents: initAgents(ids, OPTS),
   });
 
-  it('renders one figure per resident', () => {
-    expect(crowdFigures(seeded(['a', 'b', 'c']), 0, band, false).length).toBe(3);
+  it('renders one figure per agent', () => {
+    const { state, agents } = roomOf(['a', 'b']);
+    expect(crowdFigures(state, agents, BAND, false)).toHaveLength(2);
   });
 
-  it('marks every collection bobit unpoofable', () => {
-    // A poof on the game screen must always mean "you got this wrong".
-    for (const f of crowdFigures(seeded(['a', 'b']), 0, band, false)) {
+  it('takes each figure position from its agent, not from a slot', () => {
+    const { state, agents } = roomOf(['a']);
+    const [fig] = crowdFigures(state, agents, BAND, false);
+    expect(fig.x).toBeCloseTo(agents.a.x, 5);
+  });
+
+  it('makes every crowd figure greetable and never poofable', () => {
+    const { state, agents } = roomOf(['a', 'b']);
+    for (const f of crowdFigures(state, agents, BAND, false)) {
+      expect(f.greetable).toBe(true);
       expect(f.poofable).toBe(false);
     }
   });
 
-  it('caps the rendered population', () => {
-    expect(crowdFigures(seeded(many(154)), 0, band, false).length).toBe(CROWD_CAP);
+  it('gives each bobit a stable colour and its own phase', () => {
+    const { state, agents } = roomOf(['a', 'b']);
+    const figs = crowdFigures(state, agents, BAND, false);
+    expect(figs[0].color).not.toBe(figs[1].color);
+    expect(figs[0].phase).not.toBe(figs[1].phase);
   });
 
-  it('reports the overflow', () => {
-    expect(overflowCount(seeded(many(154)))).toBe(54);
-    expect(overflowCount(seeded(many(80)))).toBe(0);
+  it('walks a wandering agent with a stroll and stands a ranked one still', () => {
+    const { state, agents } = roomOf(['a']);
+    const walking = { a: { ...agents.a, phase: 'walk' as const } };
+    const ranked = { a: { ...agents.a, activity: 'rank' as const } };
+    expect(crowdFigures(state, walking, BAND, false)[0].anim).toBe('stroll');
+    expect(crowdFigures(state, ranked, BAND, false)[0].anim).toBe('standstill');
   });
 
-  it('gives a figure the same id it was seeded with', () => {
-    const ids = crowdFigures(seeded(['b', 'a']), 0, band, false).map(f => f.id);
-    expect(ids.slice().sort()).toEqual(['a', 'b']);
+  it('celebrates a correct answer across the room', () => {
+    const { agents } = roomOf(['a', 'b']);
+    const state = crowdApply(
+      crowdApply(crowdInit(), { type: 'seed', ids: ['a', 'b'] }),
+      { type: 'correct', id: 'a', streak: 3 },
+    );
+    const anims = crowdFigures(state, agents, BAND, false).map(f => f.anim);
+    expect(anims.every(a => a === 'stroll' || a === 'standstill')).toBe(false);
   });
 
-  it('keeps a figure in the same place as the crowd grows', () => {
-    const before = crowdFigures(seeded(['a', 'b']), 0, band, false).find(f => f.id === 'a')!;
-    const after = crowdFigures(seeded(['a', 'b', 'c', 'd']), 0, band, false).find(f => f.id === 'a')!;
-    expect(after.x).toBe(before.x);
-    expect(after.groundY).toBe(before.groundY);
-  });
-
-  it('gives a figure the same colour every time', () => {
-    const a = crowdFigures(seeded(['a']), 0, band, false)[0];
-    const b = crowdFigures(seeded(['a', 'z']), 5, band, false).find(f => f.id === 'a')!;
-    expect(b.color).toBe(a.color);
-  });
-
-  it('uses a different palette in dark mode', () => {
-    const light = crowdFigures(seeded(['a']), 0, band, false)[0];
-    const dark = crowdFigures(seeded(['a']), 0, band, true)[0];
-    expect(dark.color).not.toBe(light.color);
-  });
-
-  it('freezes the phase while the room is stunned', () => {
-    let s = crowdApply(seeded(['a', 'b']), { type: 'wrong', id: 'a' });
-    s = { ...s, loss: { id: 'a', phase: 'stunned', t: 0.1 } };
-    const at1 = crowdFigures(s, 1, band, false).find(f => f.id === 'b')!;
-    const at2 = crowdFigures(s, 2, band, false).find(f => f.id === 'b')!;
-    expect(at2.phase).toBe(at1.phase);
+  it('stops drawing the victim once the burst takes him', () => {
+    const ids = ['a', 'b'];
+    const { agents } = roomOf(ids);
+    let state = crowdApply(crowdInit(), { type: 'seed', ids });
+    state = crowdApply(state, { type: 'wrong', id: 'a' });
+    state = { ...state, residents: ['b'], loss: { id: 'a', phase: 'burst', t: 0 } };
+    expect(crowdFigures(state, agents, BAND, false).map(f => f.id)).toEqual(['b']);
   });
 
   it('lifts the victim off the ground while he rises', () => {
-    let s = crowdApply(seeded(['a']), { type: 'wrong', id: 'a' });
-    const start = crowdFigures(s, 0, band, false).find(f => f.id === 'a')!;
-    s = { ...s, loss: { id: 'a', phase: 'rising', t: 0.6 } };
-    const later = crowdFigures(s, 0.6, band, false).find(f => f.id === 'a')!;
-    expect(later.groundY).toBeLessThan(start.groundY);
-  });
-
-  it('holds the lost slot open for the whole loss sequence', () => {
-    // The gap is the point: it has to read as one specific person missing, not as a smaller
-    // crowd. Everyone else stays exactly where they were until the sequence clears.
-    const ids = ['q-1', 'q-2', 'q-3', 'q-4'];
-    const before = crowdFigures(seeded(ids), 0, band, false);
-    const xOf = (figs: FieldFigure[], id: string) => figs.find(f => f.id === id)?.x;
-
-    let s = crowdApply(seeded(ids), { type: 'wrong', id: 'q-1' });
-    const seen: string[] = [];
-    // Walk the whole sequence in small steps, checking the room on every frame.
-    for (let i = 0; i < 60 && s.loss; i++) {
-      const figs = crowdFigures(s, i * 0.1, band, false);
-      for (const id of ['q-2', 'q-3', 'q-4']) {
-        expect(xOf(figs, id)).toBe(xOf(before, id));
-      }
-      if (!seen.includes(s.loss.phase)) seen.push(s.loss.phase);
-      // The victim is drawn while he rises and gone from the burst onwards -- but his slot
-      // stays his, which is why nobody above moved.
-      expect(figs.some(f => f.id === 'q-1')).toBe(s.loss.phase === 'rising');
-      s = crowdStep(s, 0.1);
-    }
-    expect(seen).toEqual(['rising', 'burst', 'stunned', 'recovering']);
-    expect(s.loss).toBeNull();
-  });
-
-  it('lets the room close ranks once the loss sequence clears', () => {
-    // Only after the sequence ends -- by then the gap has been read, and a permanent hole
-    // would leave the band ragged for every later match.
-    const survivors = crowdFigures(seeded(['q-2', 'q-3', 'q-4']), 0, band, false);
-    const full = crowdFigures(seeded(['q-1', 'q-2', 'q-3', 'q-4']), 0, band, false);
-    expect(survivors.find(f => f.id === 'q-2')!.x).toBe(full.find(f => f.id === 'q-1')!.x);
-  });
-
-  it('gives the celebrant a bigger pose than the room', () => {
-    const s = crowdApply(seeded(['a', 'b']), { type: 'correct', id: 'a', streak: 1 });
-    const figs = crowdFigures(s, 0, band, false);
-    const celebrant = figs.find(f => f.id === 'a')!;
-    const bystander = figs.find(f => f.id === 'b')!;
-    expect(celebrant.anim).not.toBe(bystander.anim);
+    const ids = ['a'];
+    const { agents } = roomOf(ids);
+    let state = crowdApply(crowdInit(), { type: 'seed', ids });
+    state = crowdApply(state, { type: 'wrong', id: 'a' });
+    const start = crowdFigures(state, agents, BAND, false)[0].groundY;
+    const later = crowdFigures(
+      { ...state, loss: { id: 'a', phase: 'rising', t: 0.5 } }, agents, BAND, false,
+    )[0].groundY;
+    expect(later).toBeLessThan(start);
   });
 });
 
-describe('animForTier', () => {
-  it('escalates through distinct poses', () => {
-    const poses = [1, 2, 3, 4, 5].map(animForTier);
-    expect(new Set(poses).size).toBeGreaterThan(2);
+describe('crowdFigures — the cap', () => {
+  it('never paints more than the cap, even given more agents than that', () => {
+    const ids = Array.from({ length: CROWD_CAP + 12 }, (_, i) => `q${i}`);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids });
+    const agents = initAgents(ids, OPTS);
+    expect(crowdFigures(state, agents, BAND, false)).toHaveLength(CROWD_CAP);
   });
 
-  it('idles when nobody is celebrating', () => {
-    expect(animForTier(0)).toBe('standstill');
+  it('drops the same bobits every time rather than depending on insertion order', () => {
+    const ids = Array.from({ length: CROWD_CAP + 12 }, (_, i) => `q${i}`);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids });
+    const forward = initAgents(ids, OPTS);
+    const backward = initAgents([...ids].reverse(), OPTS);
+    const idsOf = (a: typeof forward) =>
+      crowdFigures(state, a, BAND, false).map(f => f.id).sort();
+    expect(idsOf(forward)).toEqual(idsOf(backward));
+  });
+});
+
+describe('arrival', () => {
+  it('waves hello instead of celebrating itself', () => {
+    // Regression: the reducer tracked the arrival window all along, but the translator stopped
+    // reading it, so a newly earned bobit just materialised and stood there.
+    const ids = ['a'];
+    const agents = initAgents(ids, OPTS);
+    const state = crowdApply(crowdInit(), { type: 'correct', id: 'a', streak: 3 });
+    expect(state.arriving.a).toBeDefined();
+    expect(crowdFigures(state, agents, BAND, false)[0].anim).toBe('friendly');
   });
 
-  it('gives the top tier the biggest pose', () => {
-    expect(animForTier(5)).toBe('dance');
+  it('stops waving once the arrival window closes, and joins the room', () => {
+    const ids = ['a', 'b'];
+    const agents = initAgents(ids, OPTS);
+    let state = crowdApply(crowdInit(), { type: 'seed', ids: ['b'] });
+    state = crowdApply(state, { type: 'correct', id: 'a', streak: 3 });
+    const settled = crowdStep(state, ARRIVAL_DUR + 0.01);
+    expect(settled.arriving.a).toBeUndefined();
+    expect(crowdFigures(settled, agents, BAND, false)
+      .find(f => f.id === 'a')!.anim).not.toBe('friendly');
+  });
+
+  it('never overrides the abduction -- a victim is a victim', () => {
+    const ids = ['a'];
+    const agents = initAgents(ids, OPTS);
+    const state = {
+      ...crowdApply(crowdInit(), { type: 'correct', id: 'a', streak: 1 }),
+      loss: { id: 'a', phase: 'rising' as const, t: 0 },
+    };
+    expect(crowdFigures(state, agents, BAND, false)[0].anim).toBe('fall');
+  });
+});
+
+describe('director figures', () => {
+  const dirWith = (id: string) =>
+    startScene(directorInit(), SWIRL, id, 1000, () => 0.5);
+
+  it('draws a scene actor even when no agent exists for it', () => {
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: [] });
+    // The swirl opens hidden, so step past the flash before looking.
+    const dir = directorStep(dirWith('newbie'), 1.2, BAND.height - 6);
+    expect(crowdFigures(state, {}, BAND, false, dir).length).toBeGreaterThan(0);
+  });
+
+  it('lets the director override the pose of an agent it has cast', () => {
+    const ids = ['a'];
+    const agents = initAgents(ids, OPTS);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids });
+    const dir = directorStep(dirWith('a'), 1.2, BAND.height - 6);
+    const fig = crowdFigures(state, agents, BAND, false, dir).find(f => f.id === 'a');
+    expect(fig!.anim).toBe('splayed');
+  });
+
+  it('draws a cast agent exactly once', () => {
+    const ids = ['a'];
+    const agents = initAgents(ids, OPTS);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids });
+    const dir = directorStep(dirWith('a'), 1.2, BAND.height - 6);
+    expect(crowdFigures(state, agents, BAND, false, dir).filter(f => f.id === 'a'))
+      .toHaveLength(1);
+  });
+
+  it('hides a role that has not materialised yet', () => {
+    // The swirl's opening beat is hidden:true -- smoke gathering around nobody.
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: [] });
+    const dir = directorStep(dirWith('newbie'), 0.4, BAND.height - 6);
+    expect(crowdFigures(state, {}, BAND, false, dir)).toHaveLength(0);
+  });
+
+  it('keeps airborne actors off the band entirely', () => {
+    // They belong to the overlay. Drawing them on both would double-paint the figure.
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);   // mid-flight
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: [] });
+    const ground = crowdFigures(state, {}, BAND, false, dir);
+    const air = aerialFigures(dir, BAND, false);
+    expect(air.length).toBeGreaterThan(0);
+    for (const a of air) expect(ground.map(g => g.id)).not.toContain(a.id);
+  });
+
+  it('gives airborne figures the hand variant the beat asked for', () => {
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 9.9, BAND.height - 6);   // the high-five
+    const figs = crowdFigures(state0(), {}, BAND, false, dir);
+    const five = figs.filter(f => f.anim === 'highfive');
+    expect(five.length).toBe(2);
+    expect(new Set(five.map(f => f.vars?.hand))).toEqual(new Set(['R', 'L']));
+  });
+});
+
+function state0() {
+  return crowdApply(crowdInit(), { type: 'seed', ids: [] });
+}
+
+describe('when the sky is closed', () => {
+  it('keeps a flying actor on the band instead of dropping him', () => {
+    // The timer is running, so nothing may pass in front of the question card. The scene still
+    // plays -- it just cannot use the sky. Skipping the actor entirely made him vanish in
+    // mid-flight and reappear on landing.
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    const grounded = crowdFigures(state0(), {}, BAND, false, dir, false);
+    expect(grounded.length).toBeGreaterThan(0);
+    for (const f of grounded) {
+      expect(f.groundY).toBeGreaterThanOrEqual(0);
+      expect(f.groundY).toBeLessThanOrEqual(BAND.height);
+    }
+  });
+
+  /**
+   * groundY is the FEET line and a figure is drawn UPWARD from it, so clamping the feet to the
+   * top of the canvas puts the entire body above it. Asserting the clamp's own range says
+   * nothing about whether anybody can see him; asserting his bounds does.
+   */
+  it('keeps the whole figure on the canvas, not just his feet', () => {
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    const grounded = crowdFigures(state0(), {}, BAND, false, dir, false);
+    expect(grounded.length).toBeGreaterThan(0);
+    for (const f of grounded) {
+      expect(figureBounds(f).top).toBeGreaterThanOrEqual(0);
+      expect(figureBounds(f).bottom).toBeLessThanOrEqual(BAND.height);
+    }
+  });
+
+  it('still routes him to the overlay when the sky is open', () => {
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    const ids = crowdFigures(state0(), {}, BAND, false, dir, true).map(f => f.id);
+    // Exact ids: a substring check matches the HOST too, whose generated id contains 'cannon'.
+    expect(ids).not.toContain('a');
+    expect(ids).not.toContain('scene:a');
+    const air = aerialFigures(dir, BAND, false);
+    expect(air.map(f => f.id)).toContain('air:a');
+  });
+
+  /**
+   * The test above passes NO agents, so the band copy it should be guarding against cannot
+   * exist. With a real agent it does: an airborne actor was skipped when the overlay had him,
+   * which left his agent to be drawn normally -- so the bobit appeared twice for the whole
+   * flight, once arcing over the card and once standing at the band's centre.
+   */
+  it('does not also draw him on the band while the overlay has him', () => {
+    const agents = initAgents(['a'], OPTS);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: ['a'] });
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    const ids = crowdFigures(state, agents, BAND, false, dir, true).map(f => f.id);
+    expect(ids).not.toContain('a');
+    expect(aerialFigures(dir, BAND, false).map(f => f.id)).toContain('air:a');
+  });
+
+  /**
+   * The two canvases are gated by ONE value. They used to be gated by two copies of it -- a ref
+   * the frame loop read and the prop the render read -- which could disagree for a frame, and a
+   * frame is long enough to paint a bobit on both canvases or on neither.
+   *
+   * Making `aerialFigures` take the gate too means the pure layer cannot be asked an
+   * inconsistent question: hand both functions the same value and the answer partitions.
+   */
+  it('puts an airborne bobit on exactly one canvas, whichever way the gate is set', () => {
+    const agents = initAgents(['a'], OPTS);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: ['a'] });
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    for (const allowAir of [true, false]) {
+      const onBand = crowdFigures(state, agents, BAND, false, dir, allowAir)
+        .filter(f => f.id === 'a').length;
+      const inAir = aerialFigures(dir, BAND, false, allowAir)
+        .filter(f => f.id === 'air:a').length;
+      expect({ allowAir, drawn: onBand + inAir }).toEqual({ allowAir, drawn: 1 });
+    }
+  });
+});
+
+describe('a bobit coming up through the floor', () => {
+  /**
+   * `pool-peek` has no room below the floor line -- six pixels, then the band's bottom edge.
+   * What makes it work is the canvas CLIPPING at that edge: his feet are under it and only his
+   * head is on it. Asserting the offset would say nothing about whether anybody can see him,
+   * so this asserts what is on the canvas and what is not.
+   */
+  it('puts his head on the canvas while his feet are under it', () => {
+    const PEEK = POOL.find(sc => sc.id === 'pool-peek')!;
+    let dir = startScene(directorInit(), PEEK, 'x', 1000, () => 0.5);
+    dir = directorStep(dir, 0.45, sceneGroundY(BAND), BAND.scale);
+    const fig = crowdFigures(state0(), {}, BAND, false, dir)[0];
+    expect(fig, 'nobody is drawn at all').toBeDefined();
+    expect(fig.groundY, 'his feet should be under the band').toBeGreaterThan(BAND.height);
+    const top = figureBounds(fig).top;
+    expect(top, 'his head should still be on it').toBeLessThan(BAND.height);
+    expect(top, 'only his head should be, not his whole body')
+      .toBeGreaterThan(BAND.height - 30);
+  });
+
+  it('has him standing on the floor like anyone else by the end', () => {
+    const PEEK = POOL.find(sc => sc.id === 'pool-peek')!;
+    let dir = startScene(directorInit(), PEEK, 'x', 1000, () => 0.5);
+    dir = directorStep(dir, PEEK.duration - 0.1, sceneGroundY(BAND), BAND.scale);
+    const fig = crowdFigures(state0(), {}, BAND, false, dir)[0];
+    expect(fig.groundY).toBeCloseTo(sceneGroundY(BAND), 1);
+    expect(figureBounds(fig).bottom).toBeLessThanOrEqual(BAND.height);
+  });
+});
+
+describe('heightFactor', () => {
+  it('is stable for an id', () => {
+    expect(heightFactor('milwi-014')).toBe(heightFactor('milwi-014'));
+  });
+
+  it('stays inside the spread', () => {
+    for (let i = 0; i < 200; i++) {
+      const f = heightFactor(`milwi-${i}`);
+      expect(f).toBeGreaterThanOrEqual(1 - HEIGHT_SPREAD);
+      expect(f).toBeLessThanOrEqual(1 + HEIGHT_SPREAD);
+    }
+  });
+
+  it('actually varies, and both taller and shorter than standard occur', () => {
+    const fs = Array.from({ length: 60 }, (_, i) => heightFactor(`milwi-${i}`));
+    expect(new Set(fs).size).toBeGreaterThan(5);
+    expect(fs.some(f => f > 1.01)).toBe(true);
+    expect(fs.some(f => f < 0.99)).toBe(true);
+  });
+});
+
+describe('a bobit keeps his height', () => {
+  const roomOf2 = (ids: string[]) => ({
+    state: crowdApply(crowdInit(), { type: 'seed', ids }),
+    agents: initAgents(ids, OPTS),
+  });
+
+  it('gives two different bobits two different heights', () => {
+    const { state, agents } = roomOf2(['milwi-003', 'milwi-014']);
+    const figs = crowdFigures(state, agents, BAND, false);
+    expect(figs[0].scale).not.toBe(figs[1].scale);
+  });
+
+  /**
+   * The one that matters. A newcomer is drawn from his ACTOR during his entrance and from his
+   * AGENT the moment it ends; if those two paths size him differently he visibly changes
+   * height at the handoff, which is worse than the teleport it replaced.
+   */
+  it('at the same size whether his scene is staging him or not', () => {
+    const { state, agents } = roomOf2(['milwi-003', 'milwi-014']);
+    const loose = crowdFigures(state, agents, BAND, false)
+      .find(f => f.id === 'milwi-003');
+
+    let d = startScene(directorInit(), SWIRL, 'milwi-003', 1000, () => 0.5);
+    for (let i = 0; i < 120; i++) d = directorStep(d, 1 / 60, 80);   // past the 1.0s reveal
+    const staged = crowdFigures(state, agents, BAND, false, d, false)
+      .find(f => f.id === 'milwi-003');
+
+    expect(staged).toBeDefined();
+    expect(staged!.scale).toBe(loose!.scale);
+  });
+});
+
+describe('a perched bobit', () => {
+  const BRANCH = [{ id: 'tree:branch', left: 800, right: 880, y: 40 }];
+
+  const perchedRoom = () => {
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: ['a'] });
+    const agents = initAgents(['a'], OPTS);
+    agents.a = { ...agents.a, x: 840, activity: 'perch', perchId: 'tree:branch', perchT: 1 };
+    return { state, agents };
+  };
+
+  it('sits on the branch, not on the floor', () => {
+    const { state, agents } = perchedRoom();
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, BRANCH);
+    expect(fig.groundY).toBe(40);
+  });
+
+  it('sits along the branch rather than wherever he was standing', () => {
+    const { state, agents } = perchedRoom();
+    agents.a = { ...agents.a, x: 120 };
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, BRANCH);
+    expect(fig.x).toBeGreaterThanOrEqual(BRANCH[0].left);
+    expect(fig.x).toBeLessThanOrEqual(BRANCH[0].right);
+  });
+
+  /**
+   * fieldGeometry documents this trap and it has now bitten three times, most recently in the
+   * prop sheet: bounds and the ink probe measure from the BASE anim while paint positions with
+   * the RESOLVED one, so a seated figure given a standing hoverAnim is drawn ~104 units away
+   * from its own hit box.
+   */
+  it('greets without leaving its hit box', () => {
+    const { state, agents } = perchedRoom();
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, BRANCH);
+    expect(fig.hoverAnim).toBe('greetseat');
+  });
+
+  it('falls back to the floor when the tree is gone', () => {
+    const { state, agents } = perchedRoom();
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, []);
+    expect(fig.groundY).toBeGreaterThan(40);
+    expect(fig.hoverAnim).toBeUndefined();
+  });
+
+  it('leaves a bobit on the floor alone', () => {
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: ['a'] });
+    const agents = initAgents(['a'], OPTS);
+    const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, BRANCH);
+    expect(fig.groundY).toBeGreaterThan(40);
+    expect(fig.hoverAnim).toBeUndefined();
   });
 });

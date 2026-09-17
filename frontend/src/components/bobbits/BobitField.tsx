@@ -3,7 +3,9 @@ import type { CSSProperties } from 'react';
 import { CFG, computePose, draw, drawBatched, canBatch, drawShadow, drawSmoke } from './leremyRig';
 import { ALL_ANIMATIONS } from './rigExtras';
 import { pelvisOffset, sortByDepth, figureBounds, resolveX, resolveAnimKey } from './fieldGeometry';
-import type { FieldFigure } from './fieldGeometry';
+import type { FieldFigure, FieldProp, FieldEffect } from './fieldGeometry';
+import { drawCannon, drawTree } from './props';
+import { drawSmokePuff, SMOKE_DUR, FLASH_DUR } from './rigExtras';
 import { figureAtPoint } from './hitTest';
 import { greetReduce, isGreeting, greetClock, greetingIds } from './greetReducer';
 import type { GreetState } from './greetReducer';
@@ -46,6 +48,16 @@ interface BobitFieldProps {
   /** Speech bubbles to show, keyed by figure id. Lifetimes are managed by the field. */
   bubbles?: Record<string, string>;
   /**
+   * Bump to force a repaint of a STATIC field (reduced motion, or `animate={false}`).
+   *
+   * A running field repaints every frame and ignores this. A static one paints exactly once,
+   * from an effect that React runs BEFORE the parent's own effects -- so whatever the parent
+   * seeds afterwards, or grants later in the match, would never be drawn. `figuresFor` cannot
+   * signal this itself: it is a memoised callback whose identity deliberately does not change
+   * when the figures behind it do.
+   */
+  repaintKey?: number;
+  /**
    * Per-frame figure source, called once at the top of each frame. `width` is the field's
    * measured width; `greeting` is the PREVIOUS frame's greeting set, because hover is resolved
    * after this call (hover needs positions, and positions would then need hover). One frame of
@@ -57,9 +69,18 @@ interface BobitFieldProps {
   figuresFor?: (
     t: number, dt: number, width: number, greeting: ReadonlySet<string>,
   ) => FieldFigure[];
+  /** Scene props (a cannon). Painted BEHIND the figures, so a bobit can pass in front. */
+  propsList?: FieldProp[];
+  /** Per-frame prop source, called alongside `figuresFor`. */
+  propsFor?: (t: number, dt: number, width: number) => FieldProp[];
+  /** Per-frame effect source: smoke and flashes, painted in FRONT of the figures. */
+  effectsFor?: (t: number, dt: number, width: number) => FieldEffect[];
   className?: string;
   style?: CSSProperties;
 }
+
+/** Fallback barrel colour, for a prop that did not name one. */
+const CANNON_COLOR = '#6B7686';
 
 // ev-figures.js caps at 1.5 and CTC's old canvas capped at 2. 1.5 is the landing page's
 // measured choice and one of the levers the stage 2 spike will revisit.
@@ -70,6 +91,7 @@ const INK_PAD = 6;
 
 export function BobitField({
   figures, height, animate = true, interactive = false, onFigureClick, bubbles, figuresFor,
+  propsList, propsFor, effectsFor, repaintKey,
   className, style,
 }: BobitFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -103,10 +125,18 @@ export function BobitField({
   // figuresRef, or a hit test would use unresolved fractional x values as pixels.
   const resolvedRef = useRef<FieldFigure[]>(figures);
   const bubbleRef = useRef<BubbleState>({});
+  // Props and effects ride in refs for the same reason the figure source does: swapping the
+  // callback must not tear down and rebuild the animation loop.
+  const propsListRef = useRef(propsList);
+  const propsForRef = useRef(propsFor);
+  const effectsForRef = useRef(effectsFor);
 
   useEffect(() => { figuresRef.current = figures; }, [figures]);
   useEffect(() => { clickRef.current = onFigureClick; }, [onFigureClick]);
   useEffect(() => { figuresForRef.current = figuresFor; }, [figuresFor]);
+  useEffect(() => { propsListRef.current = propsList; }, [propsList]);
+  useEffect(() => { propsForRef.current = propsFor; }, [propsFor]);
+  useEffect(() => { effectsForRef.current = effectsFor; }, [effectsFor]);
 
   // Opening resets a bubble's lifetime, so only genuinely new or changed text re-arms it --
   // otherwise a parent re-render would hold every bubble open forever.
@@ -143,8 +173,9 @@ export function BobitField({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
+    // Observed AFTER renderFrame exists, so a static field can repaint on resize. Resizing a
+    // canvas clears it, and without a repaint the band simply went blank.
+    let ro: ResizeObserver | null = null;
 
     /** Draw one figure at its own place on the field. */
     const paint = (
@@ -154,7 +185,7 @@ export function BobitField({
       const anim = ALL_ANIMATIONS[animKey] || ALL_ANIMATIONS[f.anim];
       if (!anim) return;
 
-      const pose = anim.frame(greeting ? gclock : t + (f.phase || 0));
+      const pose = anim.frame(greeting ? gclock : t + (f.phase || 0), f.vars);
       const groundY = f.groundY;
       if (f.shadow !== false) drawShadow(c, f.x, groundY, 16 * f.scale);
 
@@ -295,6 +326,22 @@ export function BobitField({
       // stillness is what sells the shock.
       const frozen = now.phase === 'stunned';
 
+      // Props first: they stand behind the crowd, so a bobit walking past the cannon reads
+      // correctly rather than vanishing behind it.
+      const propList = propsForRef.current
+        ? propsForRef.current(t, dtEff, w)
+        : (propsListRef.current ?? []);
+      for (const pr of propList) {
+        if (pr.kind === 'cannon') {
+          drawCannon(
+            ctx, pr.x, pr.groundY, pr.scale, pr.angle ?? -32, pr.flip, pr.color || CANNON_COLOR,
+          );
+        }
+        if (pr.kind === 'tree') {
+          drawTree(ctx, pr.x, pr.groundY, pr.scale, pr.grow ?? 1, pr.color || CANNON_COLOR);
+        }
+      }
+
       for (const f of sortByDepth(visible)) {
         const run = fleeRef.current[f.id];
         if (run) {
@@ -318,12 +365,41 @@ export function BobitField({
         drawBubble(ctx, f, b.text, b.ttl);
       }
 
+      // Effects last: smoke and a flash belong in FRONT of whoever they are happening to.
+      const effectList = effectsForRef.current ? effectsForRef.current(t, dtEff, w) : [];
+      for (const e of effectList) {
+        if (e.kind === 'smoke') {
+          // Expands and fades over its life, so a puff reads as dispersing rather than as a
+          // disc that blinks out.
+          const alpha = Math.max(0, 1 - e.t / SMOKE_DUR);
+          drawSmokePuff(
+            ctx, e.x, e.y, e.spread * (0.6 + e.t), alpha, e.id.length, t, e.color || '#8A8F98',
+          );
+        } else {
+          // A hard white disc that dies fast: the MOMENT of arrival, not a glow around it.
+          const k = Math.max(0, 1 - e.t / FLASH_DUR);
+          ctx.save();
+          ctx.globalAlpha = k;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(e.x, e.y - e.spread * 0.4, e.spread * (1.6 - k), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
       drawPoofSmoke(ctx, now, all);
     };
 
+    ro = new ResizeObserver(() => {
+      resize();
+      if (!running) renderFrame(0, 0);
+    });
+    ro.observe(canvas);
+
     if (!running) {
       renderFrame(0, 0);
-      return () => ro.disconnect();
+      return () => ro?.disconnect();
     }
 
     let rafId = 0;
@@ -338,10 +414,10 @@ export function BobitField({
     rafId = requestAnimationFrame(tick);
 
     return () => {
-      ro.disconnect();
+      ro?.disconnect();
       cancelAnimationFrame(rafId);
     };
-  }, [height, running, interactive]);
+  }, [height, running, interactive, repaintKey]);
 
   // ── pointer wiring ────────────────────────────────────────────────────────────────────
   useEffect(() => {

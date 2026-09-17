@@ -1,0 +1,543 @@
+import { describe, it, expect } from 'vitest';
+import {
+  initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY, makeRand,
+  startMove, MOVE_MIN_SEC, rescaleTo, placeReleased, nearestAgent,
+  assignPerch, PERCH_DWELL_SEC,
+} from '../crowdAgents';
+import type { AgentOpts, AgentState } from '../crowdAgents';
+import { bandFor, CROWD_CAP } from '../crowdLayout';
+import type { Rand } from '../../../components/bobbits/wanderReducer';
+
+function seq(values: number[]): Rand {
+  let i = 0;
+  return () => values[i++ % values.length];
+}
+
+const OPTS = (over: Partial<AgentOpts> = {}): AgentOpts => ({
+  band: bandFor(false),
+  width: 1000,
+  greeting: new Set<string>(),
+  frozen: false,
+  rand: seq([0.5]),
+  ...over,
+});
+
+describe('initAgents', () => {
+  it('seeds every id wandering, spread across the width', () => {
+    const s = initAgents(['a', 'b', 'c'], OPTS());
+    expect(Object.keys(s)).toEqual(['a', 'b', 'c']);
+    for (const id of ['a', 'b', 'c']) expect(s[id].activity).toBe('wander');
+    expect(s.a.x).not.toBe(s.b.x);
+  });
+
+  it('gives each agent a depth inside 0..1', () => {
+    const s = initAgents(['a', 'b'], OPTS({ rand: seq([0, 0.25, 1, 0.75]) }));
+    for (const id of ['a', 'b']) {
+      expect(s[id].depth).toBeGreaterThanOrEqual(0);
+      expect(s[id].depth).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('is deterministic for the same ids and seed', () => {
+    const a = initAgents(['x', 'y'], OPTS({ rand: seq([0.3, 0.7]) }));
+    const b = initAgents(['x', 'y'], OPTS({ rand: seq([0.3, 0.7]) }));
+    expect(a).toEqual(b);
+  });
+});
+
+describe('agentsAdvance', () => {
+  it('moves wandering agents', () => {
+    const s0 = initAgents(['a'], OPTS());
+    const s1 = agentsAdvance(s0, 0.5, OPTS());
+    expect(s1.a.x).not.toBeCloseTo(s0.a.x, 5);
+  });
+
+  it('holds a greeting agent exactly still', () => {
+    const s0 = initAgents(['a'], OPTS());
+    const s1 = agentsAdvance(s0, 0.5, OPTS({ greeting: new Set(['a']) }));
+    expect(s1.a).toEqual(s0.a);
+  });
+
+  it('holds EVERY agent still while the room is frozen', () => {
+    const s0 = initAgents(['a', 'b'], OPTS());
+    const s1 = agentsAdvance(s0, 0.5, OPTS({ frozen: true }));
+    expect(s1).toEqual(s0);
+  });
+
+  it('leaves ranked agents standing at their slot', () => {
+    const s0 = initAgents(['a'], OPTS());
+    const ranked = { a: { ...s0.a, activity: 'rank' as const, targetX: 300 } };
+    const s1 = agentsAdvance(ranked, 0.5, OPTS());
+    expect(s1.a.x).toBe(ranked.a.x);
+    expect(s1.a.activity).toBe('rank');
+  });
+
+  it('does not mutate the state it is given', () => {
+    const s0 = initAgents(['a'], OPTS());
+    const before = JSON.parse(JSON.stringify(s0));
+    agentsAdvance(s0, 0.5, OPTS());
+    expect(s0).toEqual(before);
+  });
+});
+
+describe('castFor', () => {
+  it('puts everyone on stage while the room is small', () => {
+    const { stage, rank } = castFor(['a', 'b', 'c'], 24);
+    expect(stage).toEqual(['a', 'b', 'c']);
+    expect(rank).toEqual([]);
+  });
+
+  it('gives the stage to the MOST RECENT arrivals once the room outgrows the cast', () => {
+    const residents = Array.from({ length: 30 }, (_, i) => `q${i}`);   // grant order
+    const { stage, rank } = castFor(residents, 24);
+    expect(stage).toHaveLength(24);
+    expect(rank).toHaveLength(6);
+    expect(stage[stage.length - 1]).toBe('q29');
+    expect(rank).toEqual(['q0', 'q1', 'q2', 'q3', 'q4', 'q5']);
+  });
+
+  it('never exceeds the crowd cap', () => {
+    const residents = Array.from({ length: 140 }, (_, i) => `q${i}`);
+    const { stage, rank } = castFor(residents, 24);
+    expect(stage.length + rank.length).toBe(CROWD_CAP);
+  });
+});
+
+describe('homeSlot', () => {
+  it('derives a slot from the ID-SORTED order, not from grant order', () => {
+    // Same set, different grant order -> identical home slot. This is what stops a lost and
+    // re-earned bobit from moving everyone else's house.
+    const a = homeSlot('q2', ['q1', 'q2', 'q3'], 1000);
+    const b = homeSlot('q2', ['q3', 'q1', 'q2'], 1000);
+    expect(a).toEqual(b);
+  });
+
+  it('puts ranked bobits at the back, behind the stage', () => {
+    expect(homeSlot('q1', ['q1', 'q2'], 1000).depth).toBe(1);
+  });
+});
+
+describe('syncCast', () => {
+  it('adds an agent for a new resident', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    const s1 = syncCast(s0, ['a', 'b'], opts, 24);
+    expect(Object.keys(s1).sort()).toEqual(['a', 'b']);
+  });
+
+  it('drops an agent who is no longer a resident', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a', 'b'], opts);
+    const s1 = syncCast(s0, ['a'], opts, 24);
+    expect(Object.keys(s1)).toEqual(['a']);
+  });
+
+  it('demotes by WALKING, never by teleporting', () => {
+    const opts = OPTS();
+    const residents = ['a', 'b', 'c'];
+    const s0 = initAgents(residents, opts);
+    const s1 = syncCast(s0, residents, opts, 1);   // only 'c' keeps the stage
+    expect(s1.a.activity).toBe('moving');
+    expect(s1.a.x).toBe(s0.a.x);                   // has not moved yet
+    expect(s1.a.targetDepth).toBe(1);
+    expect(s1.c.activity).toBe('wander');
+  });
+
+  it('leaves an already-correct agent untouched', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    const s1 = syncCast(s0, ['a'], opts, 24);
+    expect(s1.a).toBe(s0.a);
+  });
+});
+
+describe('rotateCast', () => {
+  const mixed = (opts: AgentOpts) => {
+    const s = initAgents(['a', 'b', 'c'], opts);
+    return {
+      ...s,
+      a: { ...s.a, activity: 'rank' as const, depth: 1 },
+      b: { ...s.b, activity: 'rank' as const, depth: 1 },
+    };
+  };
+
+  it('does nothing before the interval elapses', () => {
+    const opts = OPTS();
+    const s = mixed(opts);
+    expect(rotateCast(s, ROTATE_EVERY - 0.01, opts)).toBe(s);
+  });
+
+  it('sends one ranked bobit walking to the stage and one stage bobit back', () => {
+    const opts = OPTS();
+    const s = rotateCast(mixed(opts), ROTATE_EVERY, opts);
+    const moving = Object.values(s).filter(a => a.activity === 'moving');
+    expect(moving).toHaveLength(2);
+    expect(moving.some(a => a.targetDepth >= 1)).toBe(true);    // one heading back
+    expect(moving.some(a => a.targetDepth < 1)).toBe(true);     // one coming forward
+  });
+
+  it('does nothing when there are no ranks to rotate with', () => {
+    const opts = OPTS();
+    const s = initAgents(['a', 'b'], opts);
+    expect(rotateCast(s, ROTATE_EVERY, opts)).toBe(s);
+  });
+});
+
+describe('makeRand', () => {
+  it('gives the same sequence for the same seed', () => {
+    const a = makeRand('milwaukee');
+    const b = makeRand('milwaukee');
+    expect([a(), a(), a()]).toEqual([b(), b(), b()]);
+  });
+
+  it('gives different sequences for different seeds', () => {
+    expect(makeRand('a')()).not.toBe(makeRand('b')());
+  });
+
+  it('stays inside 0..1', () => {
+    const r = makeRand('seed');
+    for (let i = 0; i < 50; i++) {
+      const v = r();
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThan(1);
+    }
+  });
+
+  it('falls through to a working generator with no seed', () => {
+    const r = makeRand(null);
+    expect(typeof r()).toBe('number');
+  });
+});
+
+describe('homeSlot — the ranks spread across the band', () => {
+  it('spans the whole width rather than packing into the first few slots', () => {
+    // Regression: indexing over ALL residents put the six ranked bobits in a rigid line at
+    // the far left while twenty-four wandered the rest of the band. Screenshot caught it.
+    const W = 1440;
+    const ranked = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'];
+    const xs = ranked.map(id => homeSlot(id, ranked, W, ranked).x).sort((a, b) => a - b);
+    expect(xs[0]).toBeLessThan(W * 0.2);
+    expect(xs[xs.length - 1]).toBeGreaterThan(W * 0.8);
+  });
+
+  it('never stands anyone flush against an edge', () => {
+    const W = 340;
+    const ranked = ['q1', 'q2'];
+    for (const id of ranked) {
+      const { x } = homeSlot(id, ranked, W, ranked);
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThan(W);
+    }
+  });
+
+  it('keeps ranks in id order, so the back row does not shuffle', () => {
+    const ranked = ['q3', 'q1', 'q2'];
+    const x1 = homeSlot('q1', ranked, 1000, ranked).x;
+    const x2 = homeSlot('q2', ranked, 1000, ranked).x;
+    const x3 = homeSlot('q3', ranked, 1000, ranked).x;
+    expect(x1).toBeLessThan(x2);
+    expect(x2).toBeLessThan(x3);
+  });
+});
+
+describe('homeSlot — measured width, not the nominal band width', () => {
+  it('keeps every ranked bobit inside a narrow phone band', () => {
+    // Regression: positioning against band.width (a nominal 1000) put most of a phone's back
+    // row past the right edge of a 340px canvas, so only a handful were ever visible.
+    const W = 340;
+    const ranked = Array.from({ length: 22 }, (_, i) => `q${String(i).padStart(2, '0')}`);
+    for (const id of ranked) {
+      const { x } = homeSlot(id, ranked, W, ranked);
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThan(W);
+    }
+  });
+
+  it('uses the whole of a wide desktop band', () => {
+    const W = 1440;
+    const ranked = Array.from({ length: 10 }, (_, i) => `q${i}`);
+    const xs = ranked.map(id => homeSlot(id, ranked, W, ranked).x);
+    expect(Math.max(...xs)).toBeGreaterThan(W * 0.85);
+  });
+});
+
+describe('station changes are walked, never snapped', () => {
+  it('takes a real walk even when only the DEPTH changes', () => {
+    // Regression: a move with no horizontal distance completed on its first frame, so a bobit
+    // jumped vertically between the stage and the ranks. That is the "odd walking up and down".
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    const front = { ...s0.a, depth: 0 };            // pin the start so the assertion is exact
+    const moving = { a: startMove(front, front.x, 1, opts) };
+    const after = agentsAdvance(moving, 1 / 60, opts);
+    expect(after.a.activity).toBe('moving');
+    expect(after.a.depth).toBeLessThan(0.1);        // barely started, nowhere near arrived
+  });
+
+  it('never finishes a station change faster than the minimum walk', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    let state: AgentState = { a: startMove(s0.a, s0.a.x, 1, opts) };
+    let elapsed = 0;
+    while (state.a.activity === 'moving' && elapsed < 10) {
+      state = agentsAdvance(state, 1 / 60, opts);
+      elapsed += 1 / 60;
+    }
+    expect(elapsed).toBeGreaterThanOrEqual(MOVE_MIN_SEC - 0.05);
+    expect(state.a.activity).toBe('rank');
+    expect(state.a.depth).toBe(1);
+  });
+
+  it('eases rather than moving at a constant rate', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    let state: AgentState = { a: startMove(s0.a, s0.a.x + 300, 1, opts) };
+    const at: number[] = [];
+    for (let i = 0; i < 90; i++) {
+      state = agentsAdvance(state, 1 / 60, opts);
+      at.push(state.a.x);
+    }
+    const early = Math.abs(at[3] - at[2]);
+    const middle = Math.abs(at[45] - at[44]);
+    expect(middle).toBeGreaterThan(early);     // accelerates out of a standstill
+  });
+
+  it('rotation sends both travellers across real ground, not straight up or down', () => {
+    const opts = OPTS();
+    const base = initAgents(['a', 'b', 'c'], opts);
+    const mixed = {
+      ...base,
+      a: { ...base.a, activity: 'rank' as const, depth: 1 },
+      b: { ...base.b, activity: 'rank' as const, depth: 1 },
+    };
+    const s = rotateCast(mixed, ROTATE_EVERY, opts);
+    for (const a of Object.values(s)) {
+      if (a.activity !== 'moving') continue;
+      expect(Math.abs(a.targetX - a.fromX)).toBeGreaterThan(20);
+    }
+  });
+});
+
+describe('initAgents — the room does not resolve into standoffs', () => {
+  it('does not alternate direction by index', () => {
+    // Alternating sends every adjacent pair straight at each other, and with the separation
+    // rule working they meet, yield, and stay put: a row of evenly spaced couples rather than
+    // a crowd. Random directions mean roughly half of any neighbouring pair walk the same way.
+    const ids = Array.from({ length: 24 }, (_, i) => `q${i}`);
+    const s = initAgents(ids, OPTS({ rand: makeRand('standoff') }));
+    let alternations = 0;
+    for (let i = 1; i < ids.length; i++) {
+      if (s[ids[i]].dir !== s[ids[i - 1]].dir) alternations++;
+    }
+    expect(alternations).toBeLessThan(ids.length - 4);
+  });
+
+  it('still points some each way, rather than marching the room one direction', () => {
+    const ids = Array.from({ length: 24 }, (_, i) => `q${i}`);
+    const s = initAgents(ids, OPTS({ rand: makeRand('spread') }));
+    const right = ids.filter(id => s[id].dir === 1).length;
+    expect(right).toBeGreaterThan(3);
+    expect(right).toBeLessThan(ids.length - 3);
+  });
+});
+
+describe('rescaleTo', () => {
+  it('spreads a room seeded at the nominal width across the real one', () => {
+    // Agents are seeded before the field measures itself, so they are laid out against the
+    // nominal 1000 and then live in a canvas that may be 1900 wide. Without this the whole
+    // crowd sat in the left two thirds of a full-bleed band.
+    const ids = Array.from({ length: 10 }, (_, i) => `q${i}`);
+    const s = initAgents(ids, OPTS({ width: 1000 }));
+    const wide = rescaleTo(s, 1000, 2000);
+    expect(Math.max(...ids.map(i => wide[i].x))).toBeGreaterThan(1500);
+  });
+
+  it('keeps the room in the same relative shape', () => {
+    const ids = ['a', 'b', 'c'];
+    const s = initAgents(ids, OPTS({ width: 1000 }));
+    const before = ids.map(i => s[i].x);
+    const after = ids.map(i => rescaleTo(s, 1000, 2500)[i].x);
+    for (let i = 0; i < ids.length; i++) expect(after[i]).toBeCloseTo(before[i] * 2.5, 5);
+  });
+
+  it('carries a walk in progress with it, so nobody is left heading off-canvas', () => {
+    const opts = OPTS({ width: 1000 });
+    const s0 = initAgents(['a'], opts);
+    const moving = { a: startMove(s0.a, 900, 1, opts) };
+    const wide = rescaleTo(moving, 1000, 2000);
+    expect(wide.a.targetX).toBeCloseTo(1800, 5);
+    expect(wide.a.fromX).toBeCloseTo(moving.a.fromX * 2, 5);
+  });
+
+  it('ignores sub-pixel jitter from the resize observer', () => {
+    const s = initAgents(['a'], OPTS());
+    expect(rescaleTo(s, 1000, 1005)).toBe(s);
+  });
+
+  it('refuses nonsense widths rather than producing NaN positions', () => {
+    const s = initAgents(['a'], OPTS());
+    expect(rescaleTo(s, 0, 1000)).toBe(s);
+    expect(rescaleTo(s, 1000, 0)).toBe(s);
+  });
+});
+
+describe('placeReleased', () => {
+  it('moves an agent to where his scene left him', () => {
+    const before = initAgents(['a'], OPTS());
+    const after = placeReleased(before, [{ agentId: 'a', x: 123 }]);
+    expect(before.a.x).not.toBe(123);        // the seed really was somewhere else
+    expect(after.a.x).toBe(123);
+  });
+
+  /**
+   * Position alone is not enough. An agent mid-`moving` interpolates from `fromX` to `targetX`,
+   * so writing x and nothing else lets the very next frame drag him straight back off his mark.
+   */
+  it('clears any move that was in flight, so he does not slide off his mark', () => {
+    const seeded = initAgents(['a'], OPTS());
+    const walking = { ...seeded, a: startMove(seeded.a, 900, 1, OPTS()) };
+    const after = placeReleased(walking, [{ agentId: 'a', x: 123 }]);
+    expect(after.a.activity).toBe('wander');
+    expect(after.a.fromX).toBe(123);
+    expect(after.a.targetX).toBe(123);
+  });
+
+  it('ignores an id with no agent, such as a scene-invented host', () => {
+    const seeded = initAgents(['a'], OPTS());
+    const after = placeReleased(seeded, [{ agentId: 'cannon:host:42', x: 500 }]);
+    expect(Object.keys(after)).toEqual(['a']);
+  });
+
+  it('returns the same state object when nobody was released', () => {
+    const seeded = initAgents(['a'], OPTS());
+    expect(placeReleased(seeded, [])).toBe(seeded);
+  });
+});
+
+describe('nearestAgent', () => {
+  /** Agents at chosen positions, everything else straight from initAgents. */
+  const at = (xs: Record<string, number>): AgentState => {
+    const base = initAgents(Object.keys(xs), OPTS());
+    const out: AgentState = {};
+    for (const id of Object.keys(xs)) out[id] = { ...base[id], x: xs[id] };
+    return out;
+  };
+
+  it('picks the agent closest to the mark', () => {
+    expect(nearestAgent(at({ a: 100, b: 500, c: 900 }), 520)).toBe('b');
+  });
+
+  it('breaks a tie by id, so casting is deterministic', () => {
+    const state = at({ zeta: 400, alpha: 600 });
+    expect(nearestAgent(state, 500)).toBe('alpha');
+    expect(nearestAgent(state, 500)).toBe('alpha');
+  });
+
+  it('skips anyone already excluded, such as the newcomer or another scene cast', () => {
+    const state = at({ a: 100, b: 500, c: 900 });
+    expect(nearestAgent(state, 520, new Set(['b']))).toBe('c');
+  });
+
+  /** Ranked bobits stand at the back. A host is somebody on stage. */
+  it('skips ranked agents', () => {
+    const state = at({ a: 100, b: 500 });
+    state.b = { ...state.b, activity: 'rank' };
+    expect(nearestAgent(state, 520)).toBe('a');
+  });
+
+  /** What makes castFromRoom safe: two roles in one scene can never be the same bobit. */
+  it('never returns an id already excluded', () => {
+    const state = initAgents(['a', 'b'], OPTS());
+    const first = nearestAgent(state, 500)!;
+    const second = nearestAgent(state, 500, new Set([first]));
+    expect(second).not.toBe(first);
+    expect(second).not.toBeNull();
+  });
+
+  it('returns null when the room has nobody to cast', () => {
+    expect(nearestAgent({}, 500)).toBeNull();
+    expect(nearestAgent(at({ a: 100 }), 500, new Set(['a']))).toBeNull();
+  });
+});
+
+describe('assignPerch', () => {
+  const BRANCH = [{ id: 'tree:branch', left: 800, right: 880, y: 40 }];
+
+  const roomAt = (xs: Record<string, number>): AgentState => {
+    const base = initAgents(Object.keys(xs), OPTS());
+    const out: AgentState = {};
+    for (const id of Object.keys(xs)) out[id] = { ...base[id], x: xs[id] };
+    return out;
+  };
+
+  it('sends somebody towards an empty branch', () => {
+    const out = assignPerch(roomAt({ a: 100, b: 840 }), BRANCH, OPTS());
+    expect(Object.values(out).filter(ag => ag.perchId === 'tree:branch')).toHaveLength(1);
+  });
+
+  /**
+   * "No bobit ever teleports. Every position change is walked" is the one rule the spec
+   * restates as load-bearing. Claiming a branch starts a WALK to the trunk; it does not put
+   * anybody in the tree.
+   */
+  it('walks him there rather than putting him in the tree', () => {
+    const before = roomAt({ a: 840 });
+    const after = assignPerch(before, BRANCH, OPTS());
+    expect(after.a.activity).toBe('moving');
+    expect(after.a.x).toBe(before.a.x);
+    expect(after.a.targetX).toBeGreaterThanOrEqual(BRANCH[0].left);
+    expect(after.a.targetX).toBeLessThanOrEqual(BRANCH[0].right);
+  });
+
+  it('only reaches the branch when the walk finishes', () => {
+    let state = assignPerch(roomAt({ a: 200 }), BRANCH, OPTS());
+    expect(state.a.activity).toBe('moving');
+    // 640px at the room's own pace -- MOVE_UNITS_PER_SEC scaled by the band -- is about half a
+    // minute. Deliberately not hurried: it is the same walk a station change uses.
+    for (let i = 0; i < 4000 && state.a.activity === 'moving'; i++) {
+      state = agentsAdvance(state, 1 / 60, OPTS());
+    }
+    expect(state.a.activity).toBe('perch');
+    expect(state.a.perchId).toBe('tree:branch');
+  });
+
+  it('sends the NEAREST bobit, not an arbitrary one', () => {
+    const out = assignPerch(roomAt({ far: 100, near: 840 }), BRANCH, OPTS());
+    expect(out.near.perchId).toBe('tree:branch');
+    expect(out.far.perchId).toBeUndefined();
+  });
+
+  /** Capacity one. A second climber would sit inside the first. */
+  it('leaves a claimed branch alone', () => {
+    const first = assignPerch(roomAt({ a: 820, b: 840 }), BRANCH, OPTS());
+    const second = assignPerch(first, BRANCH, OPTS());
+    expect(Object.values(second).filter(ag => ag.perchId === 'tree:branch')).toHaveLength(1);
+  });
+
+  it('does nothing at all when there is no tree', () => {
+    const before = roomAt({ a: 100 });
+    expect(assignPerch(before, [], OPTS())).toBe(before);
+  });
+
+  it('never sends a bobit who is standing at his home slot', () => {
+    const room = roomAt({ a: 840 });
+    room.a = { ...room.a, activity: 'rank' };
+    const out = assignPerch(room, BRANCH, OPTS());
+    expect(out.a.perchId).toBeUndefined();
+  });
+
+  it('climbs down again after a dwell, and lets go of the branch', () => {
+    let state = assignPerch(roomAt({ a: 840 }), BRANCH, OPTS());
+    for (let i = 0; i < 4000 && state.a.activity === 'moving'; i++) {
+      state = agentsAdvance(state, 1 / 60, OPTS());
+    }
+    expect(state.a.activity).toBe('perch');
+    state = agentsAdvance(state, PERCH_DWELL_SEC + 0.1, OPTS());
+    expect(state.a.activity).toBe('wander');
+    expect(state.a.perchId).toBeUndefined();
+  });
+
+  it('dwells long enough to be worth watching', () => {
+    expect(PERCH_DWELL_SEC).toBeGreaterThan(10);
+  });
+});
