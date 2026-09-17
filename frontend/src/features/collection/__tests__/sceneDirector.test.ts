@@ -130,6 +130,46 @@ describe('directorStep', () => {
     expect(s.props).toHaveLength(0);
   });
 
+  // Two runs of the SAME scene can overlap -- the pool is four entrances and a busy room
+  // grants bobits back to back. Keying a scene's props on its id alone makes the two runs one
+  // owner: the first to finish takes the second's cannon away with it.
+  it('keeps two concurrent runs of the same scene from taking each other apart', () => {
+    const leaky: Scene = {
+      ...TINY, duration: 2,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0 },
+        { at: 0.2, role: 'newcomer', prop: { kind: 'cannon', angle: -32 } },
+      ],
+    };
+    let s = startScene(directorInit(), leaky, 'a', WIDTH, rand);
+    s = directorStep(s, 1.5, GROUND);
+    s = startScene(s, leaky, 'b', WIDTH, rand);
+    s = directorStep(s, 0.3, GROUND);          // b's prop is up while a is still running
+    expect(s.props).toHaveLength(2);
+    s = directorStep(s, 0.3, GROUND);          // a reaches its end and lets go
+    expect(s.running).toHaveLength(1);
+    expect(s.props).toHaveLength(1);
+  });
+
+  // Stepped BETWEEN each start, because runs in the real room begin frames apart. Whatever
+  // distinguishes one run from the next has to survive a step to be worth anything.
+  it('gives concurrent runs of the same scene distinct prop ids, across steps', () => {
+    const withProp: Scene = {
+      ...TINY, duration: 4,
+      beats: [
+        { at: 0, role: 'newcomer', pose: 'standstill', moveTo: 0 },
+        { at: 0.2, role: 'newcomer', prop: { kind: 'cannon', angle: -32 } },
+      ],
+    };
+    let s = directorInit();
+    for (const id of ['a', 'b', 'c']) {
+      s = startScene(s, { ...withProp, span: 0.2 }, id, WIDTH, rand);
+      s = directorStep(s, 0.3, GROUND);
+    }
+    expect(s.running).toHaveLength(3);
+    expect(new Set(s.props.map(p => p.id)).size).toBe(3);
+  });
+
   it('spawns an effect for a smoke beat and ages it out', () => {
     const smoky: Scene = {
       ...TINY, duration: 3,

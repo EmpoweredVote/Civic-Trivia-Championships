@@ -25,6 +25,15 @@ export interface Actor {
 
 export interface RunningScene {
   scene: Scene;
+  /**
+   * Unique per RUN, not per scene. Everything this run owns -- its props, its effects -- is
+   * named after it.
+   *
+   * Two runs of the same scene can overlap: the pool is four entrances and a busy room grants
+   * bobits back to back. Keyed on the scene id alone the two are one owner, and the first to
+   * finish sweeps up the second's cannon on its way out.
+   */
+  key: string;
   t: number;
   /** Reserved floor, in px. */
   left: number;
@@ -66,6 +75,8 @@ export interface ReleasedActor {
 }
 
 export interface DirectorState {
+  /** Runs started so far, ever. The source of each run's unique key, and nothing else. */
+  seq: number;
   running: RunningScene[];
   props: DirectorProp[];
   effects: DirectorEffect[];
@@ -74,7 +85,7 @@ export interface DirectorState {
 }
 
 export function directorInit(): DirectorState {
-  return { running: [], props: [], effects: [], released: [] };
+  return { seq: 0, running: [], props: [], effects: [], released: [] };
 }
 
 /** Every agent the director currently owns. `crowdAgents` must not advance these. */
@@ -139,9 +150,13 @@ export function startScene(
     if (role === 'newcomer') continue;
     cast[role] = castOverrides[role] ?? `${scene.id}:${role}:${Math.floor(rand() * 1e6)}`;
   }
+  const seq = state.seq + 1;
   return {
     ...state,
-    running: [...state.running, { scene, t: 0, left: slot.left, right: slot.right, cast }],
+    seq,
+    running: [...state.running, {
+      scene, key: `${scene.id}#${seq}`, t: 0, left: slot.left, right: slot.right, cast,
+    }],
   };
 }
 
@@ -238,21 +253,21 @@ export function directorStep(
 
       if (b.smoke) {
         effects.push({
-          id: `${r.scene.id}:${b.role}:${b.at}:smoke`,
+          id: `${r.key}:${b.role}:${b.at}:smoke`,
           kind: 'smoke', x, y, t: 0, spread: b.smoke.spread, color: b.smoke.color,
         });
       }
       if (b.flash) {
         effects.push({
-          id: `${r.scene.id}:${b.role}:${b.at}:flash`,
+          id: `${r.key}:${b.role}:${b.at}:flash`,
           kind: 'flash', x, y, t: 0, spread: b.smoke?.spread ?? 40,
         });
       }
       if (b.prop === null) {
-        props = props.filter(p => !p.id.startsWith(`${r.scene.id}:`));
+        props = props.filter(p => !p.id.startsWith(`${r.key}:`));
       } else if (b.prop) {
         props = [...props, {
-          id: `${r.scene.id}:${b.role}:prop`, kind: b.prop.kind,
+          id: `${r.key}:${b.role}:prop`, kind: b.prop.kind,
           x, groundY, angle: b.prop.angle, flip: false,
         }];
       }
@@ -261,7 +276,7 @@ export function directorStep(
     if (t1 >= r.scene.duration) {
       // The scene's props leave with it, so a cannon can never outlive the scene that placed
       // it -- including when the scene forgot to clear it.
-      props = props.filter(p => !p.id.startsWith(`${r.scene.id}:`));
+      props = props.filter(p => !p.id.startsWith(`${r.key}:`));
 
       // Hand every cast member back where the scene actually left him, measured at the
       // scene's own end rather than at t1, which may have overshot it by part of a frame.
@@ -278,7 +293,9 @@ export function directorStep(
 
   effects = effects.filter(e => e.t < (e.kind === 'flash' ? FLASH_DUR : SMOKE_DUR));
 
-  return { running, props, effects, released };
+  // `seq` carries across the step: it is the run counter, and resetting it would start handing
+  // out keys that a still-running scene already owns.
+  return { seq: state.seq, running, props, effects, released };
 }
 
 /** Everything the director currently wants drawn, as positions and poses. */
