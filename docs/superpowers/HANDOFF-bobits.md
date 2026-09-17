@@ -1,7 +1,8 @@
 # Bobit living room — handoff
 
-**Written:** 2026-09-16, with plans 1, 2 and 3 all shipped on this branch.
-**Branch:** `feat/bobit-living-floor` — **55 commits, NOT pushed, nothing deployed.**
+**Written:** 2026-09-16, with plans 1, 2 and 3 all shipped on this branch, the review's
+open Minors cleared, and every entrance given a poof.
+**Branch:** `feat/bobit-living-floor` — **63 commits, NOT pushed, nothing deployed.**
 Production is untouched. The frontend static site auto-deploys from `master`, so merging is a
 production deploy; do not merge without Chris saying so.
 
@@ -31,12 +32,14 @@ its first consumer: a bobit with nothing to do walks to the trunk and sits on th
 greets from his seat. The room notices the tree arriving; a phone gets the same milestone as a
 crowd celebration instead, because a phone band has no room for a trunk.
 
-**653 tests green, typecheck clean.**
+**661 tests green, typecheck clean, production build clean, `npm run smoke` OK.**
 
 A full code review ran on 2026-09-15 over `713fa75..796e12f`. Verdict: **merge with fixes**. The
 occlusion relaxation was the highest-risk part of the work and **all four bounds hold**, two of
 them enforced by tests that will hold for future scenes. **Every finding from it is now fixed** —
 two Criticals, four Importants, and one Minor that turned out to be worse than reported.
+**The five Minors left open after that pass are now fixed too** — see "What the Minors turned
+out to be", below.
 
 ## The harness bug that hid all of this (FIXED 2026-09-15, `d323902`)
 
@@ -144,15 +147,9 @@ Other scripts:
    floor line, so peek has no peek and drop's first 0.7s is a blank band. Plan 3 did **not**
    give them the room they need — the tree is sized to the same band. Needs either different
    choreography or a taller band, and that is a design decision.
-2. **Review Minors, still open:** the aerial gate is read from two different copies
-   (`allowAirRef` in the frame loop, the `aerialAllowed` prop in render) and can disagree for a
-   frame; effect/prop ids key on scene id rather than scene instance (fine today, not once the
-   entrance library grows); `SMOKE_DUR`/`SMOKE_LIFE` are duplicated across two modules; the
-   costless-miss ripple starts at `slotOrder[0]` where the spec says the newest bobit;
-   `cannonMuzzle` is tested but unused, so the flight does not start at the muzzle.
-3. **50% / 75% / 100% milestones.** Out of scope by the spec, and the seam is now real:
+2. **50% / 75% / 100% milestones.** Out of scope by the spec, and the seam is now real:
    `milestone.ts` plus a scene file plus a prop. The tree is the worked example.
-4. **The high-water mark is local even for signed-in players.** `backend/` here is frozen and
+3. **The high-water mark is local even for signed-in players.** `backend/` here is frozen and
    ev-accounts is another repo, so a signed-in player who switches browsers re-earns the tree.
 
 ## Decisions a fresh session should not re-litigate
@@ -185,6 +182,34 @@ Other scripts:
   flared muzzle and a swelled breech. Its detail colour was also hardcoded light, so in dark
   mode — where the BODY is light — every detail was invisible; it is derived from the body now.
 
+## What the Minors turned out to be
+
+All five are fixed, each one test-first, each one its own commit.
+
+- **The aerial gate really could disagree with itself.** The band read `allowAirRef` in the
+  frame loop and the render read the `aerialAllowed` prop. `aerialFigures` now TAKES the gate,
+  the way `crowdFigures` already did: the two partition the airborne actors between them, and a
+  partition only holds if both are answering the same question. The component reads it once per
+  frame and feeds both; `flying` is derived from what that pass produced. The mirror is a layout
+  effect now, so the ref is current before the next rAF rather than after it — a passive effect
+  could leave the sky open for a frame past the end of the reveal, which is bound 2.
+- **Props belonged to the scene id, so two runs of one scene were one owner.** The first to
+  finish swept up the second's cannon. Each run carries a `key` now. Worth knowing: the first
+  version of that test started both runs in a single pass and passed happily against a counter
+  that reset on every step — the counter has to survive a step, so the test starts three runs
+  with a step between each.
+- **`SMOKE_DUR`/`SMOKE_LIFE` are one constant now**, in `rigExtras` beside the colour, imported
+  by both the director that removes an effect and the field that fades it.
+- **The ripple started at `slotOrder[0]`** — the alphabetically first id, a stranger at the far
+  end of the room. It starts at `residents[length - 1]` now, which is the newest bobit, which is
+  what the spec says.
+- **`cannonMuzzle` has a consumer.** A beat can say `from: 'muzzle'`; the displacement decays to
+  zero over the leg, which added to the interpolation the leg already does is exactly a straight
+  line from the barrel's mouth to the landing point, with the arc's lift on top. The muzzle
+  blast moves with him. **Verified by driving a real grant** (`&owned=1`, answer A twice) rather
+  than by the test, because the test asserts `cannonMuzzle`'s own arithmetic back at it — the
+  screenshot shows him emerging from the barrel, in the blast.
+
 ## Chris's open questions, one of them now answered
 
 - **"Does the flat overlap read badly now that depth is gone?"** — Partly, but that is the
@@ -192,8 +217,16 @@ Other scripts:
   figures on one line, an entrance that is not a poof or a flash does not register at all.
   `pool-trip`'s stroll-in is indistinguishable from ambient walking. The two entrances that do
   read (swirl, drop) read because of *smoke*, not pose. Height variation was added in response;
-  whether it is enough is worth a fresh look. Consider giving every pool entrance a poof as its
-  arrival marker. Three-plus figure overlaps do go muddy, but that is secondary.
+  whether it is enough is worth a fresh look. Three-plus figure overlaps do go muddy, but that
+  is secondary.
+
+  **ANSWERED 2026-09-16 (Chris): smoke for every new person.** Every entrance now arrives in a
+  poof, and `scenes.test.ts` holds the rule for whatever gets added next by playing each scene
+  and looking for a live puff. `pool-trip` and `pool-peek` are the two that gained one.
+  `pool-trip` also arrives a little way INTO its span rather than at fraction 0: `canStage`
+  packs from the left, so a quiet room stages a scene at the band's edge and a puff at 0 is
+  centred on that edge with half of it off the screen. The contact sheet showed it; a second
+  test now forbids it.
 - **"Is the yield pause (0.45–1.1s) too polite?"** — still unanswered.
 
 ## Gotchas this work hit, worth not rediscovering
