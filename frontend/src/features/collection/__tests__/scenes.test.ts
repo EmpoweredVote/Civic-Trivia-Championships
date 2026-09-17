@@ -85,6 +85,47 @@ describe('every scene', () => {
   });
 });
 
+describe('every entrance', () => {
+  /**
+   * Findability, not decoration.
+   *
+   * In a room of ~35 same-size, same-palette figures on one line, an entrance that is neither
+   * a poof nor a flash does not register at all: `pool-trip`'s stroll-in was indistinguishable
+   * from ambient walking. The two entrances that DO read -- the swirl and the drop -- read
+   * because of smoke, not because of pose. So every new person arrives in smoke.
+   *
+   * Played through the director rather than read off the beats, because what has to be true is
+   * that a puff EXISTS and is still alive while the player is looking at the arrival.
+   */
+  it('marks the arrival with smoke the player can still see', () => {
+    for (const s of [SWIRL, CANNON, ...POOL]) {
+      let d = startScene(directorInit(), s, 'x', 1000, () => 0.5);
+      const step = 1 / 60;
+      for (let t = 0; t < 0.9; t += step) d = directorStep(d, step, 80, 0.2);
+      expect(d.effects.some(e => e.kind === 'smoke'), `${s.id} arrives unannounced`).toBe(true);
+    }
+  });
+
+  /**
+   * A marker you can only half see is half a marker.
+   *
+   * `canStage` packs from the left, so an entrance in an otherwise quiet room stages AT the
+   * band's left edge -- and a puff emitted at fraction 0 of that span is then centred on the
+   * edge itself, with half of it off the screen. It has to sit at least its own radius inside.
+   */
+  it('puts the whole of the arrival puff on the band, even staged at the edge', () => {
+    for (const s of [SWIRL, CANNON, ...POOL]) {
+      let d = startScene(directorInit(), s, 'x', 1000, () => 0.5);
+      expect(d.running[0].left, `${s.id} did not stage at the edge`).toBe(0);
+      d = directorStep(d, 1 / 60, 80, 0.2);
+      const puff = d.effects.find(e => e.kind === 'smoke');
+      if (!puff) continue;          // its marker comes later; the test above covers existence
+      expect(puff.x, `${s.id}'s puff hangs off the left edge`)
+        .toBeGreaterThanOrEqual(puff.spread);
+    }
+  });
+});
+
 describe('the pool', () => {
   it('has four entrances, all short', () => {
     expect(POOL).toHaveLength(4);
