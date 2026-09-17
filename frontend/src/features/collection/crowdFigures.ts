@@ -85,10 +85,17 @@ export function sceneGroundY(band: CrowdBand): number {
  *
  * Kept out of `crowdFigures` rather than filtered inside it, because the two go to different
  * canvases. An airborne actor drawn on both would be painted twice.
+ *
+ * Takes the same `allowAir` gate `crowdFigures` does, and for the same reason it is a
+ * parameter rather than something the caller applies afterwards: the two functions PARTITION
+ * the airborne actors between them, and a partition only holds if both are answering the same
+ * question. The component used to gate this one with the `aerialAllowed` prop and the other
+ * with a ref, and the two could disagree for a frame.
  */
 export function aerialFigures(
-  director: DirectorState, band: CrowdBand, darkMode: boolean,
+  director: DirectorState, band: CrowdBand, darkMode: boolean, allowAir = true,
 ): FieldFigure[] {
+  if (!allowAir) return [];
   return actorsOf(director, sceneGroundY(band))
     .filter(a => a.layer === 'air' && !a.hidden)
     .map(a => ({

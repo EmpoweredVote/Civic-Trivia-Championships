@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BobitField } from '../../components/bobbits/BobitField';
 import type { FieldFigure, FieldProp, FieldEffect } from '../../components/bobbits/fieldGeometry';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -323,7 +323,11 @@ export function CollectionCrowd({
     repaint();
   }, [lastAnswer, slug, store, repaint, syncMilestone]);
 
-  useEffect(() => { allowAirRef.current = aerialAllowed; }, [aerialAllowed]);
+  // LAYOUT effect, so the ref is current before the next animation frame rather than after it.
+  // The frame loop runs on rAF; a passive effect can land after that, which would leave the
+  // sky open for one frame past the end of the reveal -- a small breach of bound 2, but bound
+  // 2 is the one that says nothing may cross the card while the timer runs.
+  useLayoutEffect(() => { allowAirRef.current = aerialAllowed; }, [aerialAllowed]);
 
   // questionCount arrives from a fetch, so the first evaluation almost always happens with it
   // null. Re-run when it lands, or a player at 30 of 120 would never see the tree this session.
@@ -418,7 +422,12 @@ export function CollectionCrowd({
       }
     }
 
-    const air = aerialFigures(directorRef.current, band, darkMode);
+    // ONE read of the gate per frame, feeding BOTH canvases. The band used to take it from
+    // this ref while the render took it from the `aerialAllowed` prop, and the two could
+    // disagree for a frame -- long enough to paint an airborne bobit on both canvases, or on
+    // neither. `flying` below is now derived from what this pass produced, not from the prop.
+    const allowAir = allowAirRef.current;
+    const air = aerialFigures(directorRef.current, band, darkMode, allowAir);
     if (air.length === 0) {
       // setState from the frame loop is cheap here because the array is empty almost always,
       // and React bails out of a re-render when the value is the same identity.
@@ -434,7 +443,7 @@ export function CollectionCrowd({
 
     return crowdFigures(
       stateRef.current, agentsRef.current, band, darkMode, directorRef.current,
-      allowAirRef.current, surfacesRef.current,
+      allowAir, surfacesRef.current,
     );
   }, [band, darkMode, reducedMotion]);
 
@@ -479,7 +488,9 @@ export function CollectionCrowd({
   // the overlay is fixed to the VIEWPORT while the band sits inside the game container's
   // padding, and assuming those were the same box drew a flying bobit low and to the left.
   const overlayHeight = overlayHeightFor(viewportH, height);
-  const flying = aerialAllowed && aerial.figures.length > 0;
+  // No `aerialAllowed` here: the frame loop has already applied the gate, so a non-empty
+  // `aerial.figures` IS the statement that the overlay should be up this frame.
+  const flying = aerial.figures.length > 0;
 
   return (
     <div ref={wrapRef} style={{ position: 'relative', width: '100%', flexShrink: 0 }}>

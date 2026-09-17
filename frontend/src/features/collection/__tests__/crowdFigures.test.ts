@@ -271,6 +271,28 @@ describe('when the sky is closed', () => {
     expect(ids).not.toContain('a');
     expect(aerialFigures(dir, BAND, false).map(f => f.id)).toContain('air:a');
   });
+
+  /**
+   * The two canvases are gated by ONE value. They used to be gated by two copies of it -- a ref
+   * the frame loop read and the prop the render read -- which could disagree for a frame, and a
+   * frame is long enough to paint a bobit on both canvases or on neither.
+   *
+   * Making `aerialFigures` take the gate too means the pure layer cannot be asked an
+   * inconsistent question: hand both functions the same value and the answer partitions.
+   */
+  it('puts an airborne bobit on exactly one canvas, whichever way the gate is set', () => {
+    const agents = initAgents(['a'], OPTS);
+    const state = crowdApply(crowdInit(), { type: 'seed', ids: ['a'] });
+    let dir = startScene(directorInit(), CANNON, 'a', 1000, () => 0.5);
+    dir = directorStep(dir, 5.0, BAND.height - 6);
+    for (const allowAir of [true, false]) {
+      const onBand = crowdFigures(state, agents, BAND, false, dir, allowAir)
+        .filter(f => f.id === 'a').length;
+      const inAir = aerialFigures(dir, BAND, false, allowAir)
+        .filter(f => f.id === 'air:a').length;
+      expect({ allowAir, drawn: onBand + inAir }).toEqual({ allowAir, drawn: 1 });
+    }
+  });
 });
 
 describe('heightFactor', () => {
