@@ -45,14 +45,33 @@ budget, not a formality.
 
 ## Render
 
-**Verified 2026-09-09.**
+**Verified 2026-09-09; the deploy-filter bullet re-verified 2026-09-17.**
 
 - Backend service `srv-d69ubnk9c44c738h8fh0` (`civic-trivia-backend`) is
   **suspended**, with `autoDeploy: no` and `autoDeployTrigger: off`. It serves no
   traffic and a push to `master` will not deploy it. Production CTC is served by
   the `ev-accounts` engine at `https://api.empowered.vote` (`/ctc`, `/api/trivia`).
-- The **frontend** static site is the only live Render service fed by this repo,
-  and it does auto-deploy from `master`. A commit touching `frontend/` ships.
+- The **frontend** static site (`srv-d6a0o4jnv86c73f71seg`, `civic-trivia-frontend`)
+  is the only live Render service fed by this repo, and it auto-deploys from
+  `master`. Merging to `master` is therefore a production deploy; there is no
+  staging environment.
+- **Its Root Directory is `frontend`, and that filters deploys BOTH ways.** A
+  commit touching `frontend/` ships. A commit touching nothing under `frontend/`
+  — a docs-only change, a CLAUDE.md edit, this very bullet — creates **no deploy
+  at all.** Not a slow one: none. Render never builds it and the deploy list
+  never mentions the commit.
+
+  Verified 2026-09-17 against the whole deploy history: every deploy corresponds
+  to a commit with at least one file under `frontend/`, and the one commit
+  without (`b3d1bb8`, a docs rewrite) produced nothing. Beware the misleading
+  case — `713fa75` is titled `docs(bobits): ...` and did deploy, because it also
+  changed `BobbitCivicFactSitter.tsx`. **Judge by the file list, never the commit
+  message.**
+
+  Consequences: doc commits to this repo are free and cannot break production;
+  and if you ever need to force a rebuild without a code change, an empty commit
+  will NOT do it — touch a file under `frontend/` or trigger the deploy from the
+  dashboard.
 - Starter plan does **not** spin down, so uptime pings are for alerting, not
   keepalive. (Historical — applies to the suspended service and to whatever plan
   ev-accounts runs on.)
