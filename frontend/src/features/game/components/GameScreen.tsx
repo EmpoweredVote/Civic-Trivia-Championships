@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKeyPress } from '../hooks/useKeyPress';
 import { GameTimer } from './GameTimer';
@@ -139,47 +139,78 @@ export function GameScreen({
    * Measured HERE because this component owns the column. CollectionCrowd does not reach up
    * into its parent's layout for it.
    */
-  const shellRef = useRef<HTMLDivElement>(null);
-  const columnRef = useRef<HTMLDivElement>(null);
+  const shellEl = useRef<HTMLDivElement | null>(null);
+  const columnEl = useRef<HTMLDivElement | null>(null);
+  const roRef = useRef<ResizeObserver | null>(null);
   const [marginBox, setMarginBox] = useState<MarginBox | null>(null);
 
-  useLayoutEffect(() => {
-    const col = columnRef.current;
-    const shell = shellRef.current;
+  const measureMargin = useCallback(() => {
+    const col = columnEl.current;
+    const shell = shellEl.current;
     if (!col || !shell) return;
-    const measure = () => {
-      const c = col.getBoundingClientRect();
-      const s = shell.getBoundingClientRect();
-      // The shell's rect is its BORDER box, so its bottom is outside the padding the band sits
-      // inside. The band is the last flex child, so its bottom edge is the content-box bottom,
-      // and its floor line is `groundLineFromBottom()` above that.
-      const cs = getComputedStyle(shell);
-      const padBottom = parseFloat(cs.paddingBottom) || 0;
-      const padRight = parseFloat(cs.paddingRight) || 0;
-      const floorY = s.bottom - padBottom - groundLineFromBottom();
-      setMarginBox(prev => {
-        // To the CONTENT-box right edge, not the border-box one. The band -- and therefore the
-        // tree's canvas, which is flush with it -- lives inside this shell's `px-4 sm:px-6`.
-        // Measuring to `s.right` overstates the margin by that padding, and since the canvas
-        // is positioned from its RIGHT edge the surplus comes off the left: the canvas would
-        // start ~24px inside the question column, which is bound 1 breached by arithmetic.
-        const width = Math.max(0, Math.round((s.right - padRight) - c.right));
-        // Top of the content box down to the floor line. The column is the first child, so its
-        // own top IS the content top -- and the HUD shares this column, so the tree may rise
-        // past the score row without ever being over it.
-        const height = Math.max(0, Math.round(floorY - c.top));
-        // Same identity when nothing moved, so a ResizeObserver firing on every frame of a
-        // drag does not re-render the crowd for no reason.
-        if (prev && prev.width === width && prev.height === height) return prev;
-        return { width, height };
-      });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
+    const c = col.getBoundingClientRect();
+    const sh = shell.getBoundingClientRect();
+    // A detached node measures all zeros. Publishing that would collapse the margin and
+    // silently demote the tree to its in-band fallback -- see the attach note below.
+    if (sh.width <= 0 || c.width <= 0) return;
+    // The shell's rect is its BORDER box, so its bottom is outside the padding the band sits
+    // inside. The band is the last flex child, so its bottom edge is the content-box bottom,
+    // and its floor line is `groundLineFromBottom()` above that.
+    const cs = getComputedStyle(shell);
+    const padBottom = parseFloat(cs.paddingBottom) || 0;
+    const padRight = parseFloat(cs.paddingRight) || 0;
+    const floorY = sh.bottom - padBottom - groundLineFromBottom();
+    setMarginBox(prev => {
+      // To the CONTENT-box right edge, not the border-box one. The band -- and therefore the
+      // tree's canvas, which is flush with it -- lives inside this shell's `px-4 sm:px-6`.
+      // Measuring to `sh.right` overstates the margin by that padding, and since the canvas is
+      // positioned from its RIGHT edge the surplus comes off the left: the canvas would start
+      // ~24px inside the question column, which is bound 1 breached by arithmetic.
+      const width = Math.max(0, Math.round((sh.right - padRight) - c.right));
+      // Top of the content box down to the floor line. The column is the first child, so its
+      // own top IS the content top -- and the HUD shares this column, so the tree may rise
+      // past the score row without ever being over it.
+      const height = Math.max(0, Math.round(floorY - c.top));
+      // Same identity when nothing moved, so a ResizeObserver firing on every frame of a drag
+      // does not re-render the crowd for no reason.
+      if (prev && prev.width === width && prev.height === height) return prev;
+      return { width, height };
+    });
+  }, []);
+
+  /**
+   * (Re)bind the observer whenever either node attaches or detaches.
+   *
+   * CALLBACK REFS, not a mount-time effect. GameScreen EARLY-RETURNS the wager screen and the
+   * idle screen before its main shell, so the shell and the column are torn out and put back
+   * during an ordinary match. A `useLayoutEffect(..., [])` runs once, keeps observing the
+   * detached nodes -- which report all zeros -- and never re-runs when the real ones return.
+   * The observable symptom was the margin tree silently demoting to its in-band fallback from
+   * the wager screen onward, for the rest of the match. Found by screenshot; nothing failed.
+   */
+  const attachMargin = useCallback(() => {
+    roRef.current?.disconnect();
+    roRef.current = null;
+    const col = columnEl.current;
+    const shell = shellEl.current;
+    if (!col || !shell) return;
+    measureMargin();
+    const ro = new ResizeObserver(measureMargin);
     ro.observe(col);
     ro.observe(shell);
-    return () => ro.disconnect();
-  }, []);
+    roRef.current = ro;
+  }, [measureMargin]);
+
+  const shellRef = useCallback((el: HTMLDivElement | null) => {
+    shellEl.current = el;
+    attachMargin();
+  }, [attachMargin]);
+  const columnRef = useCallback((el: HTMLDivElement | null) => {
+    columnEl.current = el;
+    attachMargin();
+  }, [attachMargin]);
+
+  useEffect(() => () => { roRef.current?.disconnect(); }, []);
 
   // Calculate adjusted durations based on multiplier
   const questionDuration = Math.round(QUESTION_DURATION * timerMultiplier);
