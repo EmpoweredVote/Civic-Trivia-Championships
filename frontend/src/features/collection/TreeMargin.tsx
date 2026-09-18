@@ -7,8 +7,15 @@ import type { MarginBox } from './treePlacement';
 interface TreeMarginProps {
   box: MarginBox;
   scale: number;
-  /** 0-1 while the tree is still sprouting. */
-  grow: number;
+  /**
+   * 0-1 while the tree is still sprouting, read PER FRAME.
+   *
+   * A callback, not a value: a number passed as a prop is frozen at the last React render, and
+   * the sprout advances on the rAF clock. Passing it by value stalled the tree part-grown at
+   * whatever height the last render happened to catch -- which a unit test cannot see and a
+   * screenshot shows immediately.
+   */
+  growFor: () => number;
   darkMode: boolean;
   /** Everyone perched, climbing or descending, in THIS canvas's coordinates. */
   figuresFor: () => FieldFigure[];
@@ -40,7 +47,7 @@ interface TreeMarginProps {
  * extends upward, out of the band's flow box and into the margin, taking none of the question
  * card's allowance.
  */
-export function TreeMargin({ box, scale, grow, darkMode, figuresFor }: TreeMarginProps) {
+export function TreeMargin({ box, scale, growFor, darkMode, figuresFor }: TreeMarginProps) {
   // Light trunk on a dark ground and vice versa, exactly as the cannon learned to be: a fixed
   // dark prop is a smudge in dark mode.
   const color = darkMode ? '#9AA6B8' : '#4A5568';
@@ -52,7 +59,7 @@ export function TreeMargin({ box, scale, grow, darkMode, figuresFor }: TreeMargi
     // ground the crowd walks on.
     groundY: box.height,
     scale,
-    grow,
+    grow: growFor(),
     color,
   }];
 

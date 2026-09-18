@@ -435,7 +435,13 @@ export function CollectionCrowd({
       // In the coordinate system of whichever canvas holds them. The margin tree's branches are
       // the TREE canvas's; the in-band fallback's one branch is the BAND's. An agent's perchId
       // belongs to exactly one list, which is what `onTheTree` partitions on.
-      surfacesRef.current = !earnedRef.current || isMobile
+      // NOTHING to sit on until the tree has finished growing. The branches are DRAWN at
+      // `grow` height while the Surfaces are computed at full height, so during the 3s sprout
+      // the two disagree -- and a bobit placed on a Surface hangs in the air above a branch
+      // that has not reached him yet. Seen in a screenshot of a real milestone: three figures
+      // floating beside a half-grown tree.
+      const grown = growRef.current >= TREE_GROW_SEC;
+      surfacesRef.current = !earnedRef.current || isMobile || !grown
         ? []
         : mScale !== null && mBox !== null
           ? marginTreeSurfaces(marginTreeX(mBox.width, mScale), mBox.height, mScale)
@@ -559,6 +565,8 @@ export function CollectionCrowd({
    * `propsFor` already uses for the director's props.
    */
   const treeFiguresForCanvas = useMemo(() => (): FieldFigure[] => treeFiguresRef.current, []);
+  /** The sprout's progress, read per frame for the same reason the figures are. */
+  const growForCanvas = useMemo(() => (): number => growRef.current / TREE_GROW_SEC, []);
 
   if (!slug) return null;
 
@@ -609,7 +617,7 @@ export function CollectionCrowd({
         <TreeMargin
           box={marginBox}
           scale={marginScale as number}
-          grow={growRef.current / TREE_GROW_SEC}
+          growFor={growForCanvas}
           darkMode={darkMode}
           figuresFor={treeFiguresForCanvas}
         />
