@@ -528,3 +528,40 @@ export function makeRand(seed: string | null): Rand {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+
+/** px/s a bobit climbs a trunk. The ASCENT leg's speed, not the whole climb's. */
+export const CLIMB_PX_PER_SEC = 180;
+/** Fraction of the climb spent going up the trunk; the rest walks out along the branch. */
+export const CLIMB_ASCENT_FRAC = 0.75;
+export const CLIMB_MIN_SEC = 0.6;
+/**
+ * Five seconds, not four: the tallest branch of a 1920x1080 tree is ~600px up, which at
+ * CLIMB_PX_PER_SEC over CLIMB_ASCENT_FRAC of the climb is 4.44s. A four-second cap would
+ * silently speed the top branch up and break the one property this module promises.
+ */
+export const CLIMB_MAX_SEC = 5;
+
+/**
+ * How long a climb of `dy` pixels takes.
+ *
+ * Derived, not fixed, so the same function gives sane numbers on a 1920px tree and on the
+ * shorter width-bound one a 1280px viewport produces. Sign is ignored: coming down covers the
+ * same distance as going up.
+ */
+export function climbDurFor(dy: number): number {
+  const ascent = Math.abs(dy) / CLIMB_PX_PER_SEC;
+  return Math.min(CLIMB_MAX_SEC, Math.max(CLIMB_MIN_SEC, ascent / CLIMB_ASCENT_FRAC));
+}
+
+/**
+ * Where a climber is, as two 0-1 fractions: `up` the trunk, then `out` along the branch.
+ *
+ * Two legs rather than a diagonal because a tree is climbed at the trunk and then walked out
+ * along the limb. A single interpolation from the floor to the branch seat would slide him up
+ * through open air, which is the same failure the in-band tree's teleport had, just slower.
+ */
+export function climbProgress(k: number): { up: number; out: number } {
+  const t = Math.max(0, Math.min(1, k));
+  if (t <= CLIMB_ASCENT_FRAC) return { up: t / CLIMB_ASCENT_FRAC, out: 0 };
+  return { up: 1, out: (t - CLIMB_ASCENT_FRAC) / (1 - CLIMB_ASCENT_FRAC) };
+}
