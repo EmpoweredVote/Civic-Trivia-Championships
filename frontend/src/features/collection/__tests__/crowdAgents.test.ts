@@ -541,3 +541,39 @@ describe('assignPerch', () => {
     expect(PERCH_DWELL_SEC).toBeGreaterThan(10);
   });
 });
+
+describe('assignPerch — the branch ROOT is where a climber arrives', () => {
+  it('walks the climber to the branch ROOT, not its middle', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    // A branch reaching left out of a trunk at x=900: middle is 820, root is 890.
+    const s1 = assignPerch(s0, [{ id: 'b0', left: 740, right: 900, y: 40, rootX: 890 }], opts);
+    expect(s1.a.activity).toBe('moving');
+    expect(s1.a.targetX).toBe(890);
+    expect(s1.a.perchId).toBe('b0');
+  });
+
+  it('falls back to the middle for a surface with no root, as the in-band tree has', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    const s1 = assignPerch(s0, [{ id: 'b0', left: 700, right: 900, y: 40 }], opts);
+    expect(s1.a.targetX).toBe(800);
+  });
+
+  it('fills three branches and never doubles one up', () => {
+    const opts = OPTS();
+    const surfaces = [
+      { id: 'b0', left: 740, right: 900, y: 300, rootX: 890 },
+      { id: 'b1', left: 900, right: 1040, y: 200, rootX: 910 },
+      { id: 'b2', left: 780, right: 900, y: 100, rootX: 890 },
+    ];
+    let s = initAgents(['a', 'b', 'c', 'd'], opts);
+    // One claim per call, by design -- the room does not send a delegation up the tree.
+    for (let i = 0; i < 4; i++) s = assignPerch(s, surfaces, opts);
+    const claimed = Object.keys(s)
+      .map(id => s[id].perchId)
+      .filter((p): p is string => Boolean(p));
+    expect(new Set(claimed).size).toBe(claimed.length);   // no branch claimed twice
+    expect(claimed).toHaveLength(3);                       // and no fourth climber
+  });
+});

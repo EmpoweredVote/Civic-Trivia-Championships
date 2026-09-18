@@ -223,7 +223,8 @@ export const PERCH_DWELL_SEC = 26;
  * which is what keeps it an event rather than a queue.
  */
 export function assignPerch(
-  state: AgentState, surfaces: readonly { id: string; left: number; right: number; y: number }[],
+  state: AgentState,
+  surfaces: readonly { id: string; left: number; right: number; y: number; rootX?: number }[],
   opts: AgentOpts,
 ): AgentState {
   if (surfaces.length === 0) return state;
@@ -243,17 +244,21 @@ export function assignPerch(
     .sort();
   if (candidates.length === 0) return state;
 
+  // Where he ARRIVES: the branch's trunk-side end, because a branch is climbed at the trunk.
+  // Walking him to the midpoint instead would send him up through open air beside it. Absent
+  // `rootX` means the middle, which is what the one-branch in-band tree wants.
   const mid = (free.left + free.right) / 2;
+  const arrive = free.rootX ?? mid;
   let best = candidates[0];
-  let bestD = Math.abs(state[best].x - mid);
+  let bestD = Math.abs(state[best].x - arrive);
   for (const id of candidates) {
-    const d = Math.abs(state[id].x - mid);
+    const d = Math.abs(state[id].x - arrive);
     if (d < bestD) { best = id; bestD = d; }
   }
   // The walk is to the branch's x at floor level, at the room's own walking speed -- startMove
   // derives that from `opts.band.scale`, so a fabricated band here would send him across the
   // room five times too fast. Only the move's completion puts him in the tree.
-  const walking = startMove(state[best], mid, 0, opts);
+  const walking = startMove(state[best], arrive, 0, opts);
   return { ...state, [best]: { ...walking, perchId: free.id } };
 }
 
