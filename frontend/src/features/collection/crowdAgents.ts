@@ -19,9 +19,11 @@ import type { CrowdBand } from './crowdLayout';
 /**
  * `wander` roams the stage. `rank` stands at a home slot. `moving` is walking between the two
  * -- the state that makes "no bobit ever teleports" true rather than merely intended. `perch`
- * is sitting on a Surface, off the floor entirely.
+ * is sitting on a Surface, off the floor entirely, and `climbing`/`descending` are how he gets
+ * there and back: the vertical half of the same promise. Going straight from `moving` to
+ * `perch` is a teleport, and at the margin tree's 600px it is a visible one.
  */
-export type Activity = 'wander' | 'rank' | 'moving' | 'perch';
+export type Activity = 'wander' | 'rank' | 'moving' | 'climbing' | 'descending' | 'perch';
 
 export interface Agent extends Wanderer {
   /** 0 = front of the stage (nearest), 1 = back. */
@@ -43,6 +45,21 @@ export interface Agent extends Wanderer {
   perchId?: string;
   /** Seconds spent perched, so he eventually comes down again. */
   perchT?: number;
+  /** Seconds into the current climb, up or down. */
+  climbT?: number;
+  /** How long this climb takes, from `climbDurFor`. Set by whoever starts the climb. */
+  climbDur?: number;
+  /**
+   * The climb's endpoints, in the coordinates of the canvas the Surface lives in.
+   *
+   * Recorded by `assignPerch`, which is the only place holding the Surface, so nothing
+   * downstream has to reconstruct them -- and therefore nothing downstream can reconstruct
+   * them differently.
+   */
+  climbFromY?: number;
+  climbToY?: number;
+  climbFromX?: number;
+  climbToX?: number;
 }
 
 export type AgentState = Record<string, Agent>;
@@ -226,6 +243,14 @@ export function assignPerch(
   state: AgentState,
   surfaces: readonly { id: string; left: number; right: number; y: number; rootX?: number }[],
   opts: AgentOpts,
+  /**
+   * The floor line of the canvas these surfaces are in, in that canvas's coordinates.
+   *
+   * NOT derivable from `opts.band`: the margin tree's floor is its own canvas's height, ~868px,
+   * while the band's is 90. Defaulted to the band's, which is where the in-band tree's one
+   * branch has always been measured from.
+   */
+  floorY: number = stageBounds(opts.band).bottom,
 ): AgentState {
   if (surfaces.length === 0) return state;
 
@@ -259,7 +284,21 @@ export function assignPerch(
   // derives that from `opts.band.scale`, so a fabricated band here would send him across the
   // room five times too fast. Only the move's completion puts him in the tree.
   const walking = startMove(state[best], arrive, 0, opts);
-  return { ...state, [best]: { ...walking, perchId: free.id } };
+  return {
+    ...state,
+    [best]: {
+      ...walking,
+      perchId: free.id,
+      // Both endpoints AND the duration, recorded here because this is the only place holding
+      // the Surface. Nothing downstream has to reconstruct them, so nothing downstream can
+      // reconstruct them differently.
+      climbFromX: arrive,
+      climbToX: mid,
+      climbFromY: floorY,
+      climbToY: free.y,
+      climbDur: climbDurFor(free.y - floorY),
+    },
+  };
 }
 
 export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): AgentState {
@@ -294,11 +333,54 @@ export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): A
       continue;
     }
 
+    if (a.activity === 'climbing' || a.activity === 'descending') {
+      // `climbDur` is always set by whoever started the climb -- assignPerch on the way up, the
+      // dwell expiry on the way down -- so there is nothing to recompute here. A fallback would
+      // be a second opinion about the same climb, which is how two readers come to disagree.
+      const dur = a.climbDur ?? CLIMB_MIN_SEC;
+      const climbT = (a.climbT ?? 0) + dt;
+      if (climbT >= dur) {
+        if (a.activity === 'climbing') {
+          // Seated at last. `perchT` starts the dwell clock; from here his position comes from
+          // the Surface rather than from the climb.
+          out[id] = {
+            ...a, activity: 'perch', perchT: 0, climbT: undefined, climbDur: undefined, t: 0,
+          };
+        } else {
+          // Feet down. Only NOW is the branch released, or a second climber claims a taken limb.
+          out[id] = {
+            ...a, activity: 'wander', perchId: undefined, perchT: undefined,
+            climbT: undefined, climbDur: undefined,
+            climbFromX: undefined, climbToX: undefined,
+            climbFromY: undefined, climbToY: undefined,
+            t: 0,
+          };
+        }
+        continue;
+      }
+      out[id] = { ...a, climbT, climbDur: dur };
+      continue;
+    }
+
     if (a.activity === 'perch') {
       const perchT = (a.perchT ?? 0) + dt;
       if (perchT >= PERCH_DWELL_SEC) {
-        // Down he comes, back onto the floor and into the wander pool, releasing the branch.
-        out[id] = { ...a, activity: 'wander', perchId: undefined, perchT: undefined, t: 0 };
+        // Down he CLIMBS. Flipping straight to 'wander' dropped him from the branch to the
+        // floor in one frame, which is the same teleport the ascent had, in reverse. The branch
+        // stays claimed until his feet are down.
+        const fromY = a.climbToY ?? 0;
+        const toY = a.climbFromY ?? 0;
+        out[id] = {
+          ...a,
+          activity: 'descending',
+          perchT: undefined,
+          climbT: 0,
+          climbDur: climbDurFor(toY - fromY),
+          // Reversed: he starts where he sat and ends where he set off from.
+          climbFromX: a.climbToX, climbToX: a.climbFromX,
+          climbFromY: fromY, climbToY: toY,
+          t: 0,
+        };
       } else {
         out[id] = { ...a, perchT };
       }
@@ -316,10 +398,13 @@ export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): A
         ...a,
         x: a.targetX,
         depth: a.targetDepth,
-        // A bobit who set off for a branch climbs it now that he is standing under it.
+        // A bobit who set off for a branch CLIMBS it now that he is standing under it. He used
+        // to be placed on it outright, which at the in-band tree's 50px looked like a step and
+        // at the margin tree's 600 is a figure blinking into the canopy.
         // Otherwise: targetDepth 1 is the ranks, anything shallower a return to the stage.
-        activity: a.perchId ? 'perch' : (a.targetDepth >= 1 ? 'rank' : 'wander'),
-        perchT: a.perchId ? 0 : a.perchT,
+        activity: a.perchId ? 'climbing' : (a.targetDepth >= 1 ? 'rank' : 'wander'),
+        perchT: a.perchId ? undefined : a.perchT,
+        climbT: a.perchId ? 0 : a.climbT,
         moveT: a.moveDur,
         t: 0,
       };
@@ -362,6 +447,11 @@ export function rescaleTo(state: AgentState, fromWidth: number, toWidth: number)
 /** Which rig animation an agent plays from its own activity alone. */
 export function agentAnim(a: Agent): string {
   if (a.activity === 'perch') return 'sit';
+  // The rig's own `climb`: a spiderman wall-climb, limbs ratcheting up one at a time, headTilt
+  // 16 so the eyes are on the next hold. Built from REST, so it is STANDING -- which is the
+  // point. A seated pose on a beat that leaves the ground draws the figure 104 units from where
+  // it was put, and that trap has now been recorded four times in this feature.
+  if (a.activity === 'climbing' || a.activity === 'descending') return 'climb';
   if (a.activity === 'rank') return 'standstill';
   if (a.activity === 'moving') return 'stroll';
   return a.phase === 'walk' ? 'stroll' : 'standstill';
