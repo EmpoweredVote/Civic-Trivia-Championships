@@ -213,6 +213,17 @@ const BRANCH_W = 16;
 const CANOPY_R = 88;
 
 /**
+ * Total height of the MARGIN tree's rig, floor line to top of canopy.
+ *
+ * Distinct from `TREE_TRUNK_H` (300) above, which is frozen: that tree still ships as the
+ * fallback under `MIN_TREE_MARGIN` and its constants must not move.
+ */
+export const MARGIN_TREE_RIG_H = 1000;
+
+/** Half the margin tree's total ink footprint, in rig units. Its placement divides by this. */
+export const MARGIN_TREE_HALF_W = 200;
+
+/**
  * Where a bobit can sit. The first and only consumer of `Surface`, which has waited in
  * fieldGeometry.ts since Stage 1 for exactly this.
  *
