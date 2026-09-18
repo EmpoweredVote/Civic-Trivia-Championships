@@ -4,7 +4,7 @@ import { CFG, computePose, draw, drawBatched, canBatch, drawShadow, drawSmoke } 
 import { ALL_ANIMATIONS } from './rigExtras';
 import { pelvisOffset, sortByDepth, figureBounds, resolveX, resolveAnimKey } from './fieldGeometry';
 import type { FieldFigure, FieldProp, FieldEffect } from './fieldGeometry';
-import { drawCannon, drawTree } from './props';
+import { drawCannon, drawTree, drawMarginTree } from './props';
 import { drawSmokePuff, SMOKE_DUR, FLASH_DUR } from './rigExtras';
 import { figureAtPoint } from './hitTest';
 import { greetReduce, isGreeting, greetClock, greetingIds } from './greetReducer';
@@ -339,6 +339,11 @@ export function BobitField({
         }
         if (pr.kind === 'tree') {
           drawTree(ctx, pr.x, pr.groundY, pr.scale, pr.grow ?? 1, pr.color || CANNON_COLOR);
+        }
+        if (pr.kind === 'marginTree') {
+          drawMarginTree(
+            ctx, pr.x, pr.groundY, pr.scale, pr.grow ?? 1, pr.color || CANNON_COLOR,
+          );
         }
       }
 

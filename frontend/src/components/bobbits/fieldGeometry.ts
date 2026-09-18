@@ -106,7 +106,7 @@ export function figureBounds(f: FieldFigure) {
  */
 export interface FieldProp {
   id: string;
-  kind: 'cannon' | 'tree';
+  kind: 'cannon' | 'tree' | 'marginTree';
   x: number;
   /** px from the field's top to the prop's ground contact line. */
   groundY: number;
@@ -145,6 +145,14 @@ export interface Surface {
   left: number;
   right: number;
   y: number;
+  /**
+   * Where a figure arrives at this surface and leaves it from, if that is not the middle.
+   *
+   * A branch is climbed at the TRUNK, not at its midpoint: `assignPerch` walks the climber to
+   * this x at floor level and the climb goes straight up from it. Absent means "the middle",
+   * which is what the in-band one-branch tree wants and how it behaved before this existed.
+   */
+  rootX?: number;
 }
 
 /**

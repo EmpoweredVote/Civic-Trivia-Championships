@@ -296,3 +296,180 @@ export function drawTree(
 
   ctx.restore();
 }
+
+/**
+ * The MARGIN tree, in rig units, sized to the empty strip beside the question column.
+ *
+ * Separate from the in-band tree above, which is NOT re-authored: it still ships as the
+ * fallback under `MIN_TREE_MARGIN` and its constants must not move. Two renderers is the
+ * accepted cost (spec, section 2).
+ *
+ * The 96px band forced ONE branch -- a second ledge would have put its occupant's head through
+ * the top of the canvas. That constraint is gone here, so the spec's original 2-3 branches come
+ * back as three.
+ *
+ *  1000 ---- MARGIN_TREE_RIG_H, the budget
+ *   967 ---- top of the canopy, with a little air under the ceiling
+ *   760 ---- trunk top
+ *   690 ---- branch 3   (reaches left)
+ *   470 ---- branch 2   (reaches right)
+ *   250 ---- branch 1   (reaches left, toward the card -- the closest ink to it)
+ *   240 ---- a standing bobit's head, for scale. He is drawn at BAND scale, ~4.3x smaller
+ *            than this rig, so he reads as a climber in a big tree rather than a giant.
+ *     0 ---- the floor line, shared with the band
+ *
+ * Every number below is constrained by two budgets, and `marginTree.test.ts` holds both: the
+ * ink box must fit inside +/- MARGIN_TREE_HALF_W horizontally, and inside MARGIN_TREE_RIG_H
+ * vertically. Widening a branch or a canopy lobe without checking the other side of the tree
+ * is how a canopy comes to be clipped flat against an edge.
+ */
+const MARGIN_TRUNK_W = 74;
+const MARGIN_TRUNK_H = 760;
+/** Branch heights above the floor, lowest first. Indices line up with `marginTreeSurfaces`. */
+export const MARGIN_BRANCH_UP = [250, 470, 690];
+/** Reach of each branch out from the trunk's surface, same order. */
+const MARGIN_BRANCH_LEN = [160, 145, 115];
+/** Which way each branch reaches. -1 is left, toward the question column. */
+const MARGIN_BRANCH_DIR = [-1, 1, -1];
+const MARGIN_BRANCH_W = 26;
+
+/**
+ * The canopy, as [cx, cy, r]. `cy` is measured up from the floor; the ellipse is r wide and
+ * 0.78r tall, so a lobe's top is cy + 0.78r and that is what the height budget sees.
+ */
+const MARGIN_CANOPY: ReadonlyArray<readonly [number, number, number]> = [
+  [-14, MARGIN_TRUNK_H + 70, 175],
+  [-100, MARGIN_TRUNK_H + 5, 95],
+  [95, MARGIN_TRUNK_H + 20, 92],
+];
+
+/** Leftmost ink the rig puts down, in rig units. The longest left branch, or the canopy. */
+const MARGIN_INK_LEFT = Math.min(
+  -(MARGIN_TRUNK_W * 0.8),
+  ...MARGIN_BRANCH_UP.map((_, i) => (
+    MARGIN_BRANCH_DIR[i] < 0 ? -(MARGIN_TRUNK_W * 0.5 + MARGIN_BRANCH_LEN[i]) : 0
+  )),
+  ...MARGIN_CANOPY.map(([cx, , r]) => cx - r),
+);
+
+/** Rightmost ink the rig puts down, in rig units. */
+const MARGIN_INK_RIGHT = Math.max(
+  MARGIN_TRUNK_W * 0.8,
+  ...MARGIN_BRANCH_UP.map((_, i) => (
+    MARGIN_BRANCH_DIR[i] > 0 ? MARGIN_TRUNK_W * 0.5 + MARGIN_BRANCH_LEN[i] : 0
+  )),
+  ...MARGIN_CANOPY.map(([cx, , r]) => cx + r),
+);
+
+/** Highest ink the rig puts down, in rig units above the floor. */
+const MARGIN_INK_TOP = Math.max(
+  MARGIN_TRUNK_H,
+  ...MARGIN_CANOPY.map(([, cy, r]) => cy + r * 0.78),
+);
+
+/**
+ * The trunk's x inside its own canvas.
+ *
+ * Placed so the RIGHTMOST ink is flush with the canvas's right edge, which is the container's
+ * edge. Combined with `treeScale` taking the min of the height and width fits -- and with the
+ * ink box being narrower than the nominal footprint it divides by -- that is what makes bound 1
+ * hold by construction rather than by care.
+ */
+export function marginTreeX(canvasW: number, scale: number): number {
+  return canvasW - MARGIN_INK_RIGHT * scale;
+}
+
+/** The leftmost pixel the tree puts ink on, in canvas coordinates. The bound-1 quantity. */
+export function marginTreeLeftmost(canvasW: number, scale: number): number {
+  return marginTreeX(canvasW, scale) + MARGIN_INK_LEFT * scale;
+}
+
+/** The rightmost pixel the tree puts ink on, in canvas coordinates. */
+export function marginTreeRightmost(canvasW: number, scale: number): number {
+  return marginTreeX(canvasW, scale) + MARGIN_INK_RIGHT * scale;
+}
+
+/** How tall the tree actually draws, in px above its floor line. */
+export function marginTreeTop(scale: number): number {
+  return MARGIN_INK_TOP * scale;
+}
+
+/**
+ * The three branches a bobit can sit on, lowest first.
+ *
+ * Lowest first matters: `assignPerch` claims the first unclaimed surface, so the tree fills
+ * from the bottom and a lone climber is never parked in the canopy.
+ */
+export function marginTreeSurfaces(x: number, groundY: number, scale: number): Surface[] {
+  return MARGIN_BRANCH_UP.map((up, i) => {
+    const dir = MARGIN_BRANCH_DIR[i];
+    const tip = x + dir * (MARGIN_TRUNK_W * 0.5 + MARGIN_BRANCH_LEN[i]) * scale;
+    const root = x + dir * MARGIN_TRUNK_W * 0.2 * scale;
+    return {
+      id: `margin-tree:branch${i}`,
+      left: Math.min(tip, root),
+      right: Math.max(tip, root),
+      y: groundY - up * scale,
+      // The trunk-side end. A branch is climbed at the trunk, not at its midpoint.
+      rootX: root,
+    };
+  });
+}
+
+/**
+ * The margin tree.
+ *
+ * `grow` is 0-1 exactly as `drawTree`'s is, and scales the HEIGHT only -- a tree that also grew
+ * sideways read as a balloon inflating rather than as something sprouting.
+ */
+export function drawMarginTree(
+  ctx: CanvasRenderingContext2D,
+  x: number, groundY: number, scale: number, grow = 1, color = '#3F4854',
+) {
+  const g = Math.max(0, Math.min(1, grow));
+  if (g <= 0) return;
+  const accent = accentFor(color);
+
+  ctx.save();
+  ctx.translate(x, groundY);
+  ctx.scale(scale, scale * g);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // Canopy first, so the trunk and the branches read on top of it.
+  ctx.fillStyle = color;
+  for (const [cx, cy, r] of MARGIN_CANOPY) {
+    ctx.beginPath();
+    ctx.ellipse(cx, -cy, r, r * 0.78, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Trunk: wider at the base, so it sits on the floor rather than balancing on it.
+  ctx.beginPath();
+  ctx.moveTo(-MARGIN_TRUNK_W * 0.8, 0);
+  ctx.lineTo(-MARGIN_TRUNK_W * 0.4, -MARGIN_TRUNK_H);
+  ctx.lineTo(MARGIN_TRUNK_W * 0.4, -MARGIN_TRUNK_H);
+  ctx.lineTo(MARGIN_TRUNK_W * 0.8, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // The three branches `marginTreeSurfaces` describes. A bobit sits ON these, so each one's
+  // TOP edge and its Surface's `y` are the same line -- change one and you must change the
+  // other, or he sits in mid-air or inside the wood.
+  MARGIN_BRANCH_UP.forEach((up, i) => {
+    const dir = MARGIN_BRANCH_DIR[i];
+    const len = MARGIN_BRANCH_LEN[i] + MARGIN_TRUNK_W * 0.5;
+    const x0 = dir < 0 ? -len : 0;
+    ctx.fillRect(x0, -up - MARGIN_BRANCH_W, len, MARGIN_BRANCH_W);
+  });
+
+  // Accent notches, the tree's equivalent of the cannon's bands. Derived from the body colour,
+  // never hardcoded: the field passes a LIGHT body in dark mode and a DARK one in light, and a
+  // fixed light detail was invisible in dark mode on the cannon for exactly this reason.
+  ctx.fillStyle = accent;
+  for (const up of [MARGIN_TRUNK_H * 0.28, MARGIN_TRUNK_H * 0.58]) {
+    ctx.fillRect(-MARGIN_TRUNK_W * 0.3, -up, MARGIN_TRUNK_W * 0.6, 22);
+  }
+
+  ctx.restore();
+}
