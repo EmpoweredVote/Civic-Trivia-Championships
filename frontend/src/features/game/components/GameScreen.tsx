@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKeyPress } from '../hooks/useKeyPress';
 import { GameTimer } from './GameTimer';
@@ -18,6 +18,8 @@ import { AdminArchiveButton } from './AdminArchiveButton';
 import { CelebrationEffects } from '../../../components/animations/CelebrationEffects';
 import { DegradedBanner } from '../../../components/DegradedBanner';
 import { CollectionCrowd } from '../../collection/CollectionCrowd';
+import type { MarginBox } from '../../collection/treePlacement';
+import { groundLineFromBottom } from '../../collection/crowdLayout';
 import { useAuthStore } from '../../../store/authStore';
 import { useConfettiStore } from '../../../store/confettiStore';
 import { useThemeStore } from '../../../store/themeStore';
@@ -125,6 +127,59 @@ export function GameScreen({
   const timerSizeSmall = Math.round(56 * timerScale);
   // Same breakpoint BobbitCivicFactSitter uses to pick a bobit scale.
   const isMobile = viewportWidth < 640;
+
+  /**
+   * The empty strip beside the question column, for the milestone tree to stand in.
+   *
+   * MEASURED, never recomputed from `clamp(700px, 55vw, 1500px)`. Two reasons: a nominal used
+   * where real pixels are needed has caused two bugs in the bobit work already, and the real
+   * margin is narrower than the arithmetic by the scrollbar the question area carries
+   * (`overflow-y-auto`), which no clamp calculation knows about.
+   *
+   * Measured HERE because this component owns the column. CollectionCrowd does not reach up
+   * into its parent's layout for it.
+   */
+  const shellRef = useRef<HTMLDivElement>(null);
+  const columnRef = useRef<HTMLDivElement>(null);
+  const [marginBox, setMarginBox] = useState<MarginBox | null>(null);
+
+  useLayoutEffect(() => {
+    const col = columnRef.current;
+    const shell = shellRef.current;
+    if (!col || !shell) return;
+    const measure = () => {
+      const c = col.getBoundingClientRect();
+      const s = shell.getBoundingClientRect();
+      // The shell's rect is its BORDER box, so its bottom is outside the padding the band sits
+      // inside. The band is the last flex child, so its bottom edge is the content-box bottom,
+      // and its floor line is `groundLineFromBottom()` above that.
+      const cs = getComputedStyle(shell);
+      const padBottom = parseFloat(cs.paddingBottom) || 0;
+      const padRight = parseFloat(cs.paddingRight) || 0;
+      const floorY = s.bottom - padBottom - groundLineFromBottom();
+      setMarginBox(prev => {
+        // To the CONTENT-box right edge, not the border-box one. The band -- and therefore the
+        // tree's canvas, which is flush with it -- lives inside this shell's `px-4 sm:px-6`.
+        // Measuring to `s.right` overstates the margin by that padding, and since the canvas
+        // is positioned from its RIGHT edge the surplus comes off the left: the canvas would
+        // start ~24px inside the question column, which is bound 1 breached by arithmetic.
+        const width = Math.max(0, Math.round((s.right - padRight) - c.right));
+        // Top of the content box down to the floor line. The column is the first child, so its
+        // own top IS the content top -- and the HUD shares this column, so the tree may rise
+        // past the score row without ever being over it.
+        const height = Math.max(0, Math.round(floorY - c.top));
+        // Same identity when nothing moved, so a ResizeObserver firing on every frame of a
+        // drag does not re-render the crowd for no reason.
+        if (prev && prev.width === width && prev.height === height) return prev;
+        return { width, height };
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(col);
+    ro.observe(shell);
+    return () => ro.disconnect();
+  }, []);
 
   // Calculate adjusted durations based on multiplier
   const questionDuration = Math.round(QUESTION_DURATION * timerMultiplier);
@@ -520,10 +575,13 @@ export function GameScreen({
       <CelebrationEffects streak={state.currentStreak} />
 
       {/* Main content container */}
-      <div className="relative h-full flex flex-col py-5 sm:py-6 md:py-8 px-4 sm:px-6">
+      <div ref={shellRef} className="relative h-full flex flex-col py-5 sm:py-6 md:py-8 px-4 sm:px-6">
 
-        {/* Top HUD — fixed in flow, never moves */}
-        <div className="flex flex-col mx-auto w-full flex-shrink-0" style={{ gap: '16px', marginBottom: '32px', maxWidth: 'clamp(700px, 55vw, 1500px)' }}>
+        {/* Top HUD — fixed in flow, never moves.
+            ALSO the column the margin tree is measured against: the HUD, the question card
+            and the buttons all share this one max-width, and this one is present in every
+            phase. See `marginBox` below. */}
+        <div ref={columnRef} className="flex flex-col mx-auto w-full flex-shrink-0" style={{ gap: '16px', marginBottom: '32px', maxWidth: 'clamp(700px, 55vw, 1500px)' }}>
           {/* Three-column row: score | timer | question */}
           <div className="grid grid-cols-3 items-center w-full">
 
@@ -801,6 +859,9 @@ export function GameScreen({
             // Bound 2 of the occlusion relaxation: a figure may only pass in front of the
             // question card once the answer is revealed, never while the timer is running.
             aerialAllowed={state.phase === 'revealing'}
+            // The empty strip beside the question column, measured here because this is
+            // where that column lives. CollectionCrowd does not reach up for it.
+            marginBox={marginBox}
           />
         </div>
       </div>
