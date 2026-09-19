@@ -45,7 +45,18 @@ export const GRIP_HAND_SPAN_UNITS = 50;
 const BOW_FOLD = 0.5;
 const BOW_HOLD = 0.4;
 const BOW_RISE = 0.5;
-const BOW_STAND = 1.2;
+/**
+ * 0.6, not the 1.2 this shipped with first.
+ *
+ * At 1.2 the cycle was 2.6s and a bower stood upright for 46% of it -- and since every bower
+ * carries his own phase offset, that meant about half the cast was standing at any instant,
+ * indistinguishable from an audience member between claps. Counted on a contact sheet: 4 of 5
+ * bowing at one instant, 2 of 3 at another, exactly what the duty cycle predicts.
+ *
+ * At 0.6 the cycle is 2.0s and he is folded 70% of the time, while 0.6s upright is still a
+ * clear beat between bows rather than a continuous bob.
+ */
+const BOW_STAND = 0.6;
 export const BOW_CYCLE = BOW_FOLD + BOW_HOLD + BOW_RISE + BOW_STAND;
 
 /** Ease in and out, so he leans into the bow and settles out of it rather than snapping. */

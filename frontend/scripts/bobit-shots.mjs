@@ -148,8 +148,9 @@ async function poseSheet(browser) {
       // What to look for: he folds at the WAIST rather than tipping like a plank, his hands
       // hang rather than sticking out (armRF is not an elbow bend), his head is the lowest
       // part of him at the bottom, and he is fully upright again by the end of the cycle.
-      // BOW_CYCLE is 2.6s; these six samples walk the fold, the hold, the rise and the stand.
-      [0, 0.3, 0.6, 0.9, 1.3, 2.0].forEach((t, i) =>
+      // BOW_CYCLE is 2.0s -- fold 0-0.5, hold 0.5-0.9, rise 0.9-1.4, stand 1.4-2.0 -- and
+      // these six samples walk one of each.
+      [0, 0.25, 0.5, 0.8, 1.2, 1.6].forEach((t, i) =>
         one('bow', 120 + i * 150, 700, t, undefined, `bow t=${t}`));
 
       // Row 4: the entrance poses, on their own line with real spacing.
