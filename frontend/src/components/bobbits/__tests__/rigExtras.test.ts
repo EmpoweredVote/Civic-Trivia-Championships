@@ -5,22 +5,23 @@ import {
 import { ANIMATIONS, computePose, CFG } from '../leremyRig';
 
 describe('EXTRA_ANIMATIONS', () => {
-  it('holds exactly the nine CTC-only poses', () => {
+  it('holds exactly the ten CTC-only poses', () => {
     expect(Object.keys(EXTRA_ANIMATIONS).sort()).toEqual(
-      ['carryGrip', 'cheer', 'clap', 'dance', 'flail', 'highfive', 'offer', 'ponder', 'splayed'],
+      ['bow', 'carryGrip', 'cheer', 'clap', 'dance', 'flail', 'highfive', 'offer', 'ponder',
+       'splayed'],
     );
   });
 
   it('keeps them out of the ported rig', () => {
-    for (const k of ['carryGrip', 'cheer', 'dance', 'offer', 'ponder']) {
+    for (const k of ['bow', 'carryGrip', 'cheer', 'dance', 'offer', 'ponder']) {
       expect(ANIMATIONS[k], `${k} leaked into the ported rig`).toBeUndefined();
     }
   });
 });
 
 describe('ALL_ANIMATIONS', () => {
-  it('merges the 41 ported plus the walk alias plus the 9 extras', () => {
-    expect(Object.keys(ALL_ANIMATIONS).length).toBe(51);
+  it('merges the 41 ported plus the walk alias plus the 10 extras', () => {
+    expect(Object.keys(ALL_ANIMATIONS).length).toBe(52);
   });
 
   it('exposes both families', () => {
