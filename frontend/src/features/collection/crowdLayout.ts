@@ -120,6 +120,22 @@ export function wanderCastFor(width: number, band: CrowdBand): number {
 export const HEADROOM_UNITS = 240;
 
 /**
+ * How much of a band is empty sky above even the tallest pose, in px.
+ *
+ * A figure standing on the floor line occupies `HEADROOM_UNITS` of rig height -- enough for
+ * `cheer`, `jump` and `dance`, which put the arms overhead -- plus the `GROUND_INSET` under his
+ * feet. Anything above that is guaranteed blank.
+ *
+ * Exists so the recap band can be pulled up into the layout above it WITHOUT clipping anybody:
+ * the lift is derived from this rather than guessed, and a test holds the relationship. Note it
+ * is much smaller on a phone (18px against the desktop's 42), which is exactly why deriving it
+ * beats picking a number that happened to look right on a desktop.
+ */
+export function bandHeadroomSpare(band: CrowdBand): number {
+  return Math.max(0, band.height - (HEADROOM_UNITS * band.scale + GROUND_INSET));
+}
+
+/**
  * ONE GROUND LINE.
  *
  * The crowd used to occupy a depth band -- agents sat anywhere in the lower 60% and scaled

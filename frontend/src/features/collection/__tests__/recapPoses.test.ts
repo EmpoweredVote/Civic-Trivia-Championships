@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { recapPose, AUDIENCE_CYCLE } from '../recapPoses';
+import { bandFor, bandHeadroomSpare, HEADROOM_UNITS } from '../crowdLayout';
+import { MAX_LIFT_PX } from '../RecapCrowd';
 
 const ROSTER = Array.from({ length: 200 }, (_, i) => `milwi-${String(i).padStart(3, '0')}`);
 
@@ -100,5 +102,38 @@ describe('recapPose — the audience', () => {
 
   it('cycles slowly enough that a pose is legible before it changes', () => {
     expect(AUDIENCE_CYCLE).toBeGreaterThan(2);
+  });
+});
+
+describe('the recap band reclaims only sky it is not using', () => {
+  /**
+   * The band pulls itself up into the layout above it to keep the collapsed recap inside one
+   * viewport. That lift is only safe while it stays inside the band's EMPTY headroom -- the
+   * part no pose can reach. A number picked to make one width fit would clip raised arms at
+   * another, which is exactly what this holds.
+   */
+  it('never lifts past the empty headroom, on either band', () => {
+    for (const isMobile of [false, true]) {
+      const band = bandFor(isMobile);
+      const spare = bandHeadroomSpare(band);
+      const lift = Math.min(MAX_LIFT_PX, spare);
+      expect(lift, `lift on ${isMobile ? 'mobile' : 'desktop'}`).toBeLessThanOrEqual(spare);
+      expect(lift).toBeGreaterThan(0);
+    }
+  });
+
+  it('leaves room for the tallest pose plus the ground inset', () => {
+    for (const isMobile of [false, true]) {
+      const band = bandFor(isMobile);
+      // Whatever is left after the lift must still hold a figure with his arms overhead.
+      const usable = band.height - Math.min(MAX_LIFT_PX, bandHeadroomSpare(band));
+      expect(usable, `usable band on ${isMobile ? 'mobile' : 'desktop'}`)
+        .toBeGreaterThanOrEqual(HEADROOM_UNITS * band.scale);
+    }
+  });
+
+  it('is tighter on a phone than on a desktop, without a breakpoint', () => {
+    expect(bandHeadroomSpare(bandFor(true)))
+      .toBeLessThan(bandHeadroomSpare(bandFor(false)));
   });
 });
