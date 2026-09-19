@@ -90,7 +90,7 @@ async function shoot(page, name) {
  */
 async function poseSheet(browser) {
   const context = await browser.newContext({
-    viewport: { width: 1240, height: 1180 }, deviceScaleFactor: 2,
+    viewport: { width: 1240, height: 1560 }, deviceScaleFactor: 2,
   });
   const page = await context.newPage();
   await mockApi(page);
@@ -103,7 +103,7 @@ async function poseSheet(browser) {
       const { CFG, computePose, draw, drawShadow } = rig;
       const { ALL_ANIMATIONS, figColor } = extras;
 
-      const W = 1240, H = 1180, S = 1.1;
+      const W = 1240, H = 1560, S = 1.1;
       const canvas = document.createElement('canvas');
       canvas.width = W * 2; canvas.height = H * 2;
       const c = canvas.getContext('2d');
@@ -131,36 +131,45 @@ async function poseSheet(browser) {
 
       // Row 1: clap through one full cycle -- the hands must visibly meet and part.
       [0, 0.07, 0.15, 0.22, 0.29].forEach((t, i) =>
-        one('clap', 120 + i * 150, 360, t, undefined, `clap t=${t}`));
+        one('clap', 120 + i * 150, 330, t, undefined, `clap t=${t}`));
 
       // Row 2: high-five PAIRS at the real pairing distance (HIGHFIVE_REACH is 160 units).
       [0, 0.1, 0.2].forEach((t, i) => {
         const cx = 220 + i * 340;
-        one('highfive', cx - 55, 780, t, { hand: 'R' }, null);
-        one('highfive', cx + 55, 780, t, { hand: 'L' }, `highfive pair t=${t}`);
+        one('highfive', cx - 55, 1070, t, { hand: 'R' }, null);
+        one('highfive', cx + 55, 1070, t, { hand: 'L' }, `highfive pair t=${t}`);
       });
 
       // Row 3 (right): the celebration ladder's other rungs, for comparison.
       ['cheer', 'jump', 'dance'].forEach((k, i) =>
-        one(k, 900 + i * 110, 360, 0.3, undefined, k));
+        one(k, 900 + i * 110, 330, 0.3, undefined, k));
+
+      // Row 3b: the BOW across one full cycle -- the recap's cast pose.
+      // What to look for: he folds at the WAIST rather than tipping like a plank, his hands
+      // hang rather than sticking out (armRF is not an elbow bend), his head is the lowest
+      // part of him at the bottom, and he is fully upright again by the end of the cycle.
+      // BOW_CYCLE is 2.6s; these six samples walk the fold, the hold, the rise and the stand.
+      [0, 0.3, 0.6, 0.9, 1.3, 2.0].forEach((t, i) =>
+        one('bow', 120 + i * 150, 700, t, undefined, `bow t=${t}`));
 
       // Row 4: the entrance poses, on their own line with real spacing.
       // splayed is deliberately a T-pose -- nothing in the tests can tell the intentional one
       // from a mistake, which is exactly why it has to be looked at.
-      one('splayed', 130, 1130, 0.2, undefined, 'splayed (T-POSE ON PURPOSE)');
+      one('splayed', 130, 1470, 0.2, undefined, 'splayed (T-POSE ON PURPOSE)');
 
       // flail across half a second: the arms must be out of phase at EVERY instant, or it
       // reads as a jumping jack rather than panic.
       [0, 0.09, 0.18, 0.27, 0.36, 0.45].forEach((t, i) =>
-        one('flail', 380 + i * 140, 1130, t, undefined, `t=${t}`));
+        one('flail', 380 + i * 140, 1470, t, undefined, `t=${t}`));
 
       c.fillStyle = dark ? '#E2E8F0' : '#0F172A';
       c.textAlign = 'left';
       c.font = '600 15px system-ui, sans-serif';
       c.fillText('clap cycle', 40, 40);
       c.fillText('celebration ladder', 880, 40);
-      c.fillText('high-five pairs (do the hands meet?)', 40, 430);
-      c.fillText('entrance poses', 40, 880);
+      c.fillText('bow cycle (waist not plank? hands hanging? head lowest?)', 40, 400);
+      c.fillText('high-five pairs (do the hands meet?)', 40, 770);
+      c.fillText('entrance poses', 40, 1140);
 
       return canvas.toDataURL('image/png').split(',')[1];
     }, theme === 'dark');
