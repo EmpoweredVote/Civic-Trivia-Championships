@@ -8,7 +8,9 @@ import type { BobitProgressStore } from './bobitProgress';
 import { toneOf, hashId, slotOrder } from './crowdIdentity';
 import { heightFactor } from './crowdFigures';
 import { pairUp } from './crowdReactions';
-import { bandFor, CROWD_CAP, groundLineFromBottom, agentPlacement } from './crowdLayout';
+import {
+  bandFor, CROWD_CAP, groundLineFromBottom, agentPlacement, bandHeadroomSpare,
+} from './crowdLayout';
 import { recapPose } from './recapPoses';
 
 /**
@@ -19,6 +21,17 @@ const localStore = createLocalProgressStore();
 
 /** How close two bobits must be to slap hands, in rig units. Matches crowdFigures. */
 const HIGHFIVE_REACH_UNITS = 160;
+
+/**
+ * Most the band will pull itself up into the layout above it, in px.
+ *
+ * The recap page overflowed its viewport by 43px at 1280x800 once this band was added, and
+ * the band is 96px of which only 54 can ever hold a figure. Rather than shrink the band or
+ * restyle the panels, it reclaims the empty sky it is not using -- CLAMPED to
+ * `bandHeadroomSpare`, so it can never rise far enough to clip a raised arm. On a phone the
+ * spare is 18px, not the desktop's 42, and the clamp handles that without a breakpoint.
+ */
+export const MAX_LIFT_PX = 24;
 
 interface RecapCrowdProps {
   /** Collection just played. Null renders nothing. */
@@ -129,8 +142,13 @@ export function RecapCrowd({ slug, darkMode, isMobile, newBobitIds }: RecapCrowd
 
   if (!slug || owned.length === 0) return null;
 
+  // Derived, never a magic number: the band cannot rise past the sky it is not using.
+  const lift = Math.min(MAX_LIFT_PX, bandHeadroomSpare(band));
+
   return (
-    <div style={{ position: 'relative', width: '100%', flexShrink: 0 }}>
+    <div style={{
+      position: 'relative', width: '100%', flexShrink: 0, marginTop: -lift,
+    }}>
       {/* The floor, faded at both ends because the band is full-bleed and a hard rule edge to
           edge would read as a divider. Same treatment as the play band's. */}
       <div

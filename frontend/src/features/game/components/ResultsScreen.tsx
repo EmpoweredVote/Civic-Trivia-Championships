@@ -174,7 +174,11 @@ export function ResultsScreen({
           flex: 1,
           display: 'flex',
           width: '100%',
-          padding: '20px 24px 40px',
+          // No bottom padding: it existed to give the page a visual terminus when nothing
+          // followed the panels, and the recap crowd is now that terminus. Keeping it left
+          // 40px of empty space directly above the band and pushed the page past the
+          // viewport at 1280x800.
+          padding: '20px 24px 0',
           gap: '16px',
           boxSizing: 'border-box',
         }}
