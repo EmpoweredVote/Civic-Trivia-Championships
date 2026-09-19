@@ -70,6 +70,17 @@ interface CollectionCrowdProps {
    * up into its parent's layout. Null until the first measurement, and ignored on mobile.
    */
   marginBox?: MarginBox | null;
+  /**
+   * Fired once for each bobit the player EARNS in this session -- a correct answer to a
+   * question this collection had not already given him.
+   *
+   * Exists so the recap screen knows who to have bow. It deliberately reuses the decision this
+   * component already makes to choose an entrance, rather than letting the recap take its own
+   * snapshot of the owned set: a second snapshot would race `hydrate()` for signed-in players,
+   * and would be a second opinion about who is new that could disagree with the entrance the
+   * player actually watched.
+   */
+  onBobitEarned?: (questionId: string) => void;
 }
 
 /**
@@ -127,7 +138,7 @@ function castFromRoom(
 
 export function CollectionCrowd({
   slug, darkMode, isMobile, lastAnswer, finished5of5, aerialAllowed = false,
-  questionCount = null, marginBox = null,
+  questionCount = null, marginBox = null, onBobitEarned,
 }: CollectionCrowdProps) {
   const reducedMotion = useReducedMotion();
   // Resize-aware rather than a one-off window.innerHeight read: the overlay's height is a
@@ -337,6 +348,13 @@ export function CollectionCrowd({
       // -- a question answered correctly a second time spawns nobody.
       const ordinal = stateRef.current.residents.length;
       const known = stateRef.current.residents.includes(questionId);
+      // Report the earn from the SAME test that decides whether he gets an entrance, so
+      // "walked in" and "bows at the recap" can never disagree about who is new.
+      //
+      // NOT gated on reducedMotion, unlike the entrance below: a player with reduced motion
+      // still earns the bobit and still deserves to see him on the recap. Only the ENTRANCE
+      // is a motion effect.
+      if (!known) onBobitEarned?.(questionId);
       stateRef.current = crowdApply(stateRef.current, { type: 'correct', id: questionId, streak });
       store.grant(slug, questionId);
       if (!known && !reducedMotion) {
@@ -358,7 +376,7 @@ export function CollectionCrowd({
     setOverflow(overflowCount(stateRef.current));
     syncMilestone(slug);
     repaint();
-  }, [lastAnswer, slug, store, repaint, syncMilestone]);
+  }, [lastAnswer, slug, store, repaint, syncMilestone, onBobitEarned]);
 
   // LAYOUT effect, so the ref is current before the next animation frame rather than after it.
   // The frame loop runs on rAF; a passive effect can land after that, which would leave the

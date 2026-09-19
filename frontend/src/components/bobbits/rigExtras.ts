@@ -36,6 +36,45 @@ export function figColor(i: number, darkMode: boolean): string {
  */
 export const GRIP_HAND_SPAN_UNITS = 50;
 
+/**
+ * The bow's cycle: fold down, hold, rise, then stand before the next one.
+ *
+ * The STAND is what makes it read as repeated bowing rather than as a bobbing idle -- without
+ * a real pause the figure just oscillates. Chris asked for "bow, repeatedly".
+ */
+const BOW_FOLD = 0.5;
+const BOW_HOLD = 0.4;
+const BOW_RISE = 0.5;
+/**
+ * 0.6, not the 1.2 this shipped with first.
+ *
+ * At 1.2 the cycle was 2.6s and a bower stood upright for 46% of it -- and since every bower
+ * carries his own phase offset, that meant about half the cast was standing at any instant,
+ * indistinguishable from an audience member between claps. Counted on a contact sheet: 4 of 5
+ * bowing at one instant, 2 of 3 at another, exactly what the duty cycle predicts.
+ *
+ * At 0.6 the cycle is 2.0s and he is folded 70% of the time, while 0.6s upright is still a
+ * clear beat between bows rather than a continuous bob.
+ */
+const BOW_STAND = 0.6;
+export const BOW_CYCLE = BOW_FOLD + BOW_HOLD + BOW_RISE + BOW_STAND;
+
+/** Ease in and out, so he leans into the bow and settles out of it rather than snapping. */
+function bowEase(k: number): number {
+  const c = Math.min(1, Math.max(0, k));
+  return c * c * (3 - 2 * c);
+}
+
+/** How deep into the bow he is, 0 standing to 1 fully folded, across one cycle. */
+function bowDepth(c: number): number {
+  if (c < BOW_FOLD) return bowEase(c / BOW_FOLD);
+  if (c < BOW_FOLD + BOW_HOLD) return 1;
+  if (c < BOW_FOLD + BOW_HOLD + BOW_RISE) {
+    return bowEase(1 - (c - BOW_FOLD - BOW_HOLD) / BOW_RISE);
+  }
+  return 0;
+}
+
 /** Poses this app added to the rig. Built on the ported ones where it makes sense. */
 export const EXTRA_ANIMATIONS: Record<string, Animation> = {
   // `carry` with the arms reaching in, so two carriers can actually hold the trophy between
@@ -155,6 +194,41 @@ export const EXTRA_ANIMATIONS: Record<string, Animation> = {
   // vertical and the hand stops travelling inward. y=0 is the shoulder line, so hand.y near 5
   // is upper chest and hand.y near 58 is the hip -- which is what made the second attempt read
   // as akimbo despite the hands genuinely touching.
+  /**
+   * A theatrical bow, for a bobit earned in the match the player has just finished.
+   *
+   * DERIVED FROM `spent`, not invented. `spent` is the rig's proven deep forward fold
+   * ("doubled over, hands braced on the thighs") and it already answers the two things that
+   * would otherwise be guesswork here:
+   *
+   *   1. NEGATIVE hunch is forward. See leremyRig's gait comment: "pitched FORWARD (negative
+   *      hunch = toward travel)". `read` uses +22 for "reclined back into the chair".
+   *   2. At a -44 fold, "arms straight down" is armRU 58 / armRF 26, because arm angles hang
+   *      from the ALREADY-CURLED torso (`ub = lean + hunch`). Do not re-derive this; spent
+   *      measured it.
+   *
+   * What differs from `spent`: the knees stay STRAIGHT (spent buckles them -- he is winded,
+   * not bowing), and the fold is animated on a cycle rather than held.
+   */
+  bow: {
+    label: "Bow", mood: "thank you, thank you",
+    frame(t: number) {
+      const p = clonePose(REST);
+      const c = ((t % BOW_CYCLE) + BOW_CYCLE) % BOW_CYCLE;
+      const k = bowDepth(c);
+      // A little breathing at the bottom so a held bow is not perfectly frozen.
+      const br = wave(t, 0.9) * k;
+
+      p.lean = 5 * k;
+      p.hunch -= 50 * k + br * 2;          // NEGATIVE is forward
+      p.headTilt -= 10 * k;                 // head follows the fold down
+      p.bob += 4 * k;
+      // Arms sweep down and slightly back as he folds, from spent's measured "straight down".
+      p.armRU += 58 * k; p.armRF += 26 * k;
+      p.armLU += 46 * k; p.armLF += 18 * k;
+      return p;
+    },
+  },
   clap: {
     label: "Clap", mood: "nice one",
     frame(t: number) {

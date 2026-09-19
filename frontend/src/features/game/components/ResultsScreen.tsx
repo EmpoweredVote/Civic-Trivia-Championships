@@ -15,8 +15,13 @@ import { LevelUpOverlay } from './LevelUpOverlay';
 import { ACCOUNTS_WEB_URL } from '../../../services/accountsApi';
 import { useGameTheme } from '../gameTheme';
 import { Header } from '../../../components/layout/Header';
+import { RecapCrowd } from '../../collection/RecapCrowd';
+import { useWindowSize } from '../../../hooks/useWindowSize';
 
 const GEM_SCORE_THRESHOLD = 600;
+
+/** Stable empty default, so a render without bowers does not rebuild the crowd's memo. */
+const NO_NEW_BOBITS: ReadonlySet<string> = new Set();
 
 interface ResultsScreenProps {
   result: GameResult;
@@ -28,6 +33,10 @@ interface ResultsScreenProps {
    * falls back to this game's question count (see `proficiencyTotal` below).
    */
   collectionQuestionCount?: number | null;
+  /** Collection just played, for the recap crowd to load its room. */
+  collectionSlug?: string | null;
+  /** Bobits earned this session. These bow; the rest are the audience. */
+  newBobitIds?: ReadonlySet<string>;
   onPlayAgain: () => void;
   onHome: () => void;
   flaggedQuestions?: Set<string>;
@@ -41,6 +50,8 @@ export function ResultsScreen({
   questions,
   collectionName,
   collectionQuestionCount,
+  collectionSlug = null,
+  newBobitIds,
   onPlayAgain,
   onHome,
   flaggedQuestions,
@@ -76,6 +87,9 @@ export function ResultsScreen({
   const { fireConfettiRain } = useConfettiStore();
   const reducedMotion        = useReducedMotion();
   const { G, darkMode }      = useGameTheme();
+  // Same breakpoint GameScreen uses to pick a band height. Do not invent a new one.
+  const { width: viewportWidth } = useWindowSize();
+  const isMobile = viewportWidth < 640;
 
   useEffect(() => {
     if (isPerfectGame) {
@@ -709,6 +723,16 @@ export function ResultsScreen({
           </div>
         </motion.div>
       </div>
+
+      {/* The room the player spent the match building, celebrating. Last in the reading order
+          so it closes the experience -- and it celebrates whatever the result was, which is
+          the entire point of the feature. */}
+      <RecapCrowd
+        slug={collectionSlug}
+        darkMode={darkMode}
+        isMobile={isMobile}
+        newBobitIds={newBobitIds ?? NO_NEW_BOBITS}
+      />
 
       <LearnMoreModal
         isOpen={learnMoreQuestion !== null}

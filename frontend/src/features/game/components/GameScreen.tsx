@@ -65,6 +65,8 @@ interface GameScreenProps {
   isXpLoading: boolean;
   isXpConnected: boolean;
   onArchiveQuestion?: (questionId: string) => void;
+  /** Reports each bobit earned this session, for the recap screen's bowers. */
+  onBobitEarned?: (questionId: string) => void;
 }
 
 export function GameScreen({
@@ -91,6 +93,7 @@ export function GameScreen({
   isXpLoading,
   isXpConnected,
   onArchiveQuestion,
+  onBobitEarned,
 }: GameScreenProps) {
 
   const [showTimeoutFlash, setShowTimeoutFlash] = useState(false);
@@ -893,6 +896,8 @@ export function GameScreen({
             // The empty strip beside the question column, measured here because this is
             // where that column lives. CollectionCrowd does not reach up for it.
             marginBox={marginBox}
+            // Reported up to Game.tsx, which hands the set to the recap screen.
+            onBobitEarned={onBobitEarned}
           />
         </div>
       </div>
