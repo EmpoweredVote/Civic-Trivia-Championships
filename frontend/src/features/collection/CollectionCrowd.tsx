@@ -7,13 +7,17 @@ import { useAuthStore } from '../../store/authStore';
 import { useConfettiStore } from '../../store/confettiStore';
 import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
 import { createPeakStore } from './bobitPeak';
-import { treeX, TREE_GROW_SEC } from './treePlacement';
-import { treeSurfaces } from '../../components/bobbits/props';
+import { treeX, TREE_GROW_SEC, treeScale } from './treePlacement';
+import type { MarginBox } from './treePlacement';
+import { treeSurfaces, marginTreeSurfaces, marginTreeX } from '../../components/bobbits/props';
+import { TreeMargin } from './TreeMargin';
 import { treeEarned } from './milestone';
 import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
-import { crowdFigures, overflowCount, aerialFigures, sceneGroundY } from './crowdFigures';
+import {
+  crowdFigures, overflowCount, aerialFigures, treeFigures, sceneGroundY,
+} from './crowdFigures';
 import {
   directorInit, directorStep, startScene, canStage, castIds,
 } from './sceneDirector';
@@ -59,6 +63,13 @@ interface CollectionCrowdProps {
    * 2026-09-14 addendum puts on the occlusion relaxation.
    */
   aerialAllowed?: boolean;
+  /**
+   * The empty strip beside the question column, measured by GameScreen.
+   *
+   * GameScreen owns that column, so GameScreen measures it -- this component does not reach
+   * up into its parent's layout. Null until the first measurement, and ignored on mobile.
+   */
+  marginBox?: MarginBox | null;
 }
 
 /**
@@ -116,7 +127,7 @@ function castFromRoom(
 
 export function CollectionCrowd({
   slug, darkMode, isMobile, lastAnswer, finished5of5, aerialAllowed = false,
-  questionCount = null,
+  questionCount = null, marginBox = null,
 }: CollectionCrowdProps) {
   const reducedMotion = useReducedMotion();
   // Resize-aware rather than a one-off window.innerHeight read: the overlay's height is a
@@ -182,6 +193,8 @@ export function CollectionCrowd({
    * perched bobit sitting in mid-air after a resize.
    */
   const surfacesRef = useRef<Surface[]>([]);
+  /** The tree canvas's figures, published from the frame loop for TreeMargin to paint. */
+  const treeFiguresRef = useRef<FieldFigure[]>([]);
   useEffect(() => { earnedRef.current = earned; }, [earned]);
   /**
    * Forces a repaint of the band when it is NOT animating.
@@ -204,6 +217,30 @@ export function CollectionCrowd({
 
   const band: CrowdBand = useMemo(() => bandFor(isMobile), [isMobile]);
   const height = band.height;
+
+  /**
+   * How big the margin tree is, or null for "no room -- use the in-band one".
+   *
+   * Mobile is null unconditionally: a phone band has no strip beside it to stand a tree in.
+   */
+  const marginScale = useMemo(
+    () => (isMobile ? null : treeScale(marginBox ?? null)),
+    [marginBox, isMobile],
+  );
+  /** True when the tree lives in the margin; false means the in-band fallback. */
+  const inMargin = earned && marginScale !== null && marginBox !== null;
+
+  /**
+   * Mirrored for the frame loop, in LAYOUT effects rather than passive ones.
+   *
+   * The loop runs on rAF and a passive effect can land after it, which would paint one frame of
+   * figures against the previous frame's geometry. That is the same fix the aerial gate needed
+   * after it was found leaving the sky open for a frame past the end of a reveal.
+   */
+  const marginBoxRef = useRef<MarginBox | null>(marginBox);
+  const marginScaleRef = useRef<number | null>(marginScale);
+  useLayoutEffect(() => { marginBoxRef.current = marginBox ?? null; }, [marginBox]);
+  useLayoutEffect(() => { marginScaleRef.current = marginScale; }, [marginScale]);
 
   /**
    * Tell the latch how many bobits the room holds, and recompute.
@@ -368,6 +405,16 @@ export function CollectionCrowd({
     // still has to exist for a resident, or the accessible path renders an empty band rather
     // than a still one, which is not the same thing and is not what the spec asks for.
     const measured = width || band.width;
+    /**
+     * ONE read of the tree's geometry per frame, feeding the surfaces, the perch assignment and
+     * all three figure lists.
+     *
+     * Read here rather than at each use for the same reason the aerial gate is: three readers
+     * that each fetch their own copy can disagree about a frame, and the partition between the
+     * canvases only holds while they agree.
+     */
+    const mScale = marginScaleRef.current;
+    const mBox = marginBoxRef.current;
     if (laidOutAtRef.current && measured !== laidOutAtRef.current) {
       agentsRef.current = rescaleTo(agentsRef.current, laidOutAtRef.current, measured);
       laidOutAtRef.current = measured;
@@ -385,9 +432,20 @@ export function CollectionCrowd({
 
       if (earnedRef.current) growRef.current = Math.min(TREE_GROW_SEC, growRef.current + dt);
 
-      surfacesRef.current = earnedRef.current && !isMobile
-        ? treeSurfaces(treeX(measured, band.scale), sceneGroundY(band), band.scale)
-        : [];
+      // In the coordinate system of whichever canvas holds them. The margin tree's branches are
+      // the TREE canvas's; the in-band fallback's one branch is the BAND's. An agent's perchId
+      // belongs to exactly one list, which is what `onTheTree` partitions on.
+      // NOTHING to sit on until the tree has finished growing. The branches are DRAWN at
+      // `grow` height while the Surfaces are computed at full height, so during the 3s sprout
+      // the two disagree -- and a bobit placed on a Surface hangs in the air above a branch
+      // that has not reached him yet. Seen in a screenshot of a real milestone: three figures
+      // floating beside a half-grown tree.
+      const grown = growRef.current >= TREE_GROW_SEC;
+      surfacesRef.current = !earnedRef.current || isMobile || !grown
+        ? []
+        : mScale !== null && mBox !== null
+          ? marginTreeSurfaces(marginTreeX(mBox.width, mScale), mBox.height, mScale)
+          : treeSurfaces(treeX(measured, band.scale), sceneGroundY(band), band.scale);
 
       // An agent the director owns is held exactly as a greeting one is: wanderAdvance must
       // not walk somebody a scene is choreographing, or the two fight over his position.
@@ -418,7 +476,13 @@ export function CollectionCrowd({
       // After the advance, so a bobit who has just been released from a scene or finished a
       // move is eligible this frame rather than next. A no-op while the branch is claimed.
       if (surfacesRef.current.length > 0) {
-        agentsRef.current = assignPerch(agentsRef.current, surfacesRef.current, opts);
+        // The floor the climb starts from, in the same coordinates as the Surfaces: the margin
+        // canvas's own height when the tree is there, the band's own ground line when it is not.
+        // NOT derivable from the band -- the two floors are ~868 and 90.
+        const floorY = mScale !== null && mBox !== null
+          ? mBox.height
+          : sceneGroundY(band);
+        agentsRef.current = assignPerch(agentsRef.current, surfacesRef.current, opts, floorY);
       }
     }
 
@@ -441,11 +505,21 @@ export function CollectionCrowd({
       setAerial({ figures: air, dx, dy });
     }
 
+    // The THIRD canvas, published from this SAME pass. Not a second read of the geometry: the
+    // three lists partition every agent between them, and a partition only holds if every side
+    // is answering the same question. An airborne bobit was once painted on two canvases for a
+    // whole flight because the band read a ref while the render read a prop.
+    const bandSurfaces = mScale !== null && mBox !== null ? [] : surfacesRef.current;
+    const treeCanvasSurfaces = mScale !== null && mBox !== null ? surfacesRef.current : [];
+    treeFiguresRef.current = treeFigures(
+      stateRef.current, agentsRef.current, band, darkMode, treeCanvasSurfaces, mScale,
+    );
+
     return crowdFigures(
       stateRef.current, agentsRef.current, band, darkMode, directorRef.current,
-      allowAir, surfacesRef.current,
+      allowAir, bandSurfaces, treeCanvasSurfaces,
     );
-  }, [band, darkMode, reducedMotion]);
+  }, [band, darkMode, reducedMotion, isMobile]);
 
   // Props and effects come straight off the director. Stable identities so BobitField's refs
   // are not rebuilt every render.
@@ -464,8 +538,10 @@ export function CollectionCrowd({
       id: p.id, kind: p.kind, x: p.x, groundY: p.groundY, scale: band.scale,
       flip: p.flip, angle: p.angle, color,
     }));
-    // Desktop only: a phone band has no horizontal room for a trunk beside a crowd.
-    if (earnedRef.current && !isMobile) {
+    // Desktop only, and only when there is no room for the MARGIN tree -- otherwise this is
+    // the fallback and TreeMargin is drawing the real thing. Two trees on one page is the
+    // failure mode to watch for here.
+    if (earnedRef.current && !isMobile && marginScaleRef.current === null) {
       out.push({
         id: 'room:tree',
         kind: 'tree',
@@ -480,6 +556,17 @@ export function CollectionCrowd({
   }, [band, darkMode, isMobile]);
 
   const effectsFor = useMemo(() => (): FieldEffect[] => directorRef.current.effects, []);
+  /**
+   * The tree canvas's figures, read from the ref the frame loop fills.
+   *
+   * Stable identity, and a REF read rather than state: BobitField calls the band's
+   * `figuresFor` first, which is what publishes this, so by the time the tree canvas paints
+   * it is reading the current frame rather than the previous one -- the same arrangement
+   * `propsFor` already uses for the director's props.
+   */
+  const treeFiguresForCanvas = useMemo(() => (): FieldFigure[] => treeFiguresRef.current, []);
+  /** The sprout's progress, read per frame for the same reason the figures are. */
+  const growForCanvas = useMemo(() => (): number => growRef.current / TREE_GROW_SEC, []);
 
   if (!slug) return null;
 
@@ -520,6 +607,20 @@ export function CollectionCrowd({
             interactive={false}
           />
         </div>
+      )}
+      {/* The tree, in the margin.
+          Mounted before the floor line and the band so it paints BEHIND both: the trunk rises
+          out of the same ground the crowd walks on, and a bobit at the foot of it passes in
+          front rather than behind. Its box can never overlap the question column -- see
+          TreeMargin, and the bound-1 test in marginTree.test.ts. */}
+      {inMargin && marginBox && (
+        <TreeMargin
+          box={marginBox}
+          scale={marginScale as number}
+          growFor={growForCanvas}
+          darkMode={darkMode}
+          figuresFor={treeFiguresForCanvas}
+        />
       )}
       {/* The floor.
           Behind the canvas, so figures and their shadows sit ON it. It is not decoration: with

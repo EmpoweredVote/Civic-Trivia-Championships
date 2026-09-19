@@ -3,8 +3,8 @@ import { figColor } from '../../components/bobbits/rigExtras';
 import { toneOf, hashId, slotOrder } from './crowdIdentity';
 import { agentPlacement, CROWD_CAP, HEADROOM_UNITS } from './crowdLayout';
 import type { CrowdBand } from './crowdLayout';
-import { agentAnim } from './crowdAgents';
-import type { AgentState } from './crowdAgents';
+import { agentAnim, climbProgress, CLIMB_MIN_SEC } from './crowdAgents';
+import type { AgentState, Agent } from './crowdAgents';
 import { celebrationPose, ripplePose, pairUp, reactionOffset } from './crowdReactions';
 import { isStunned, LOSS_RISE } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
@@ -111,6 +111,99 @@ export function aerialFigures(
     }));
 }
 
+/**
+ * Is this agent the TREE canvas's business this frame?
+ *
+ * THE partition predicate. `crowdFigures` and `treeFigures` both call it, so the two cannot
+ * disagree about who they are drawing -- which is exactly how an airborne bobit came to be
+ * painted on two canvases at once. One question, one answer, both readers.
+ *
+ * A perched agent whose Surface is NOT in the list is NOT the tree's: the tree has gone (a
+ * resize below MIN_TREE_MARGIN, a different collection), and he falls back to the floor.
+ */
+function onTheTree(a: Agent, surfaces: readonly Surface[]): boolean {
+  if (!a.perchId) return false;
+  if (!surfaces.some(sf => sf.id === a.perchId)) return false;
+  return a.activity === 'perch' || a.activity === 'climbing' || a.activity === 'descending';
+}
+
+/**
+ * The tree canvas's figures: everyone perched on it, climbing it or coming down it.
+ *
+ * Coordinates are the TREE CANVAS's, not the band's -- the Surfaces are already in them, since
+ * CollectionCrowd builds them from `marginTreeX(marginBox.width, scale)`. Figures are drawn at
+ * BAND scale on a tree-scale canvas, so a climber reads as a normal bobit in a big tree rather
+ * than as a giant. `FieldFigure.scale` is per figure, which is what makes that free.
+ */
+export function treeFigures(
+  state: CrowdState,
+  agents: AgentState,
+  band: CrowdBand,
+  darkMode: boolean,
+  surfaces: readonly Surface[],
+  treeScale: number | null,
+): FieldFigure[] {
+  if (surfaces.length === 0 || treeScale === null) return [];
+  void state;
+
+  const out: FieldFigure[] = [];
+  for (const id of Object.keys(agents)) {
+    const a = agents[id];
+    if (!onTheTree(a, surfaces)) continue;
+    const sf = surfaces.find(s => s.id === a.perchId) as Surface;
+
+    if (a.activity === 'perch') {
+      out.push({
+        id,
+        anim: 'sit',
+        color: figColor(toneOf(id), darkMode),
+        // He sits along the branch's middle rather than wherever he happened to stop.
+        x: (sf.left + sf.right) / 2,
+        groundY: sf.y,
+        scale: band.scale * heightFactor(id),
+        // Phase from the id, so neighbours never breathe in lockstep -- the same derivation
+        // crowdFigures uses, so a bobit's rhythm does not change when he leaves the band.
+        phase: (hashId(id) % 1000) / 250,
+        flip: a.dir === -1,
+        poofable: false,
+        greetable: true,
+        // A seated figure MUST carry a seated hoverAnim: bounds measure from the BASE anim
+        // while paint positions with the RESOLVED one.
+        hoverAnim: 'greetseat',
+      });
+      continue;
+    }
+
+    // Climbing or descending. Position comes from the climb's own recorded endpoints, NOT from
+    // the Surface -- reading the Surface here is what made the old transition a teleport. And
+    // not from `band` either: these are the TREE canvas's coordinates, where the floor is ~868
+    // rather than 90, so a band-derived fallback would start him 770px from his own feet.
+    const dur = a.climbDur ?? CLIMB_MIN_SEC;
+    const { up, out: along } = climbProgress(dur > 0 ? (a.climbT ?? 0) / dur : 1);
+    const fromY = a.climbFromY as number;
+    const toY = a.climbToY as number;
+    const fromX = a.climbFromX as number;
+    const toX = a.climbToX as number;
+
+    out.push({
+      id,
+      anim: 'climb',
+      color: figColor(toneOf(id), darkMode),
+      x: fromX + (toX - fromX) * along,
+      groundY: fromY + (toY - fromY) * up,
+      scale: band.scale * heightFactor(id),
+      phase: (hashId(id) % 1000) / 250,
+      // Facing the trunk he is clinging to, rather than climbing it back-first.
+      flip: (sf.rootX ?? (sf.left + sf.right) / 2) < fromX,
+      poofable: false,
+      // No greeting mid-climb, and NO hoverAnim: `climb` is standing, and a seated hover pose
+      // on a standing base is drawn ~104 units from where this put him.
+      greetable: false,
+    });
+  }
+  return out;
+}
+
 export function crowdFigures(
   state: CrowdState, agents: AgentState, band: CrowdBand, darkMode: boolean,
   director?: DirectorState,
@@ -129,6 +222,17 @@ export function crowdFigures(
    * belongs to a room this player has left -- and a bobit must not go with it.
    */
   surfaces: readonly Surface[] = [],
+  /**
+   * Surfaces belonging to the TREE CANVAS, not to the band.
+   *
+   * NOT drawn here -- `treeFigures` has them. They are passed in only so anybody sitting on
+   * one, or climbing to one, can be left out of the band entirely. Two stages, two lists, and
+   * an agent's `perchId` belongs to exactly one of them: the in-band fallback tree's branch
+   * arrives as `surfaces` and is drawn here, the margin tree's three arrive as this and are
+   * not. Conflating the two made the fallback tree's occupant disappear, because he was
+   * excluded from the band and handed to a canvas that is not mounted in that case.
+   */
+  treeSurfaces: readonly Surface[] = [],
 ): FieldFigure[] {
   // Actors the director owns, indexed by the agent playing them. A cast agent is drawn from
   // its ACTOR -- pose and position both -- so the director and wanderAdvance can never fight
@@ -207,9 +311,13 @@ export function crowdFigures(
   for (const id of ids) {
     if (onOverlay.has(id)) continue;
     const a = agents[id];
+    // The TREE canvas has this one, not the band: perched on it, climbing it, or coming down.
+    // One predicate, both readers -- see `onTheTree`.
+    if (onTheTree(a, treeSurfaces)) continue;
     const victim = state.loss?.id === id;
-    // Where he is sitting, if he is. `perchId` is claimed the moment he sets off walking, so
-    // only an agent who has actually ARRIVED (activity 'perch') is drawn off the floor.
+    // Sitting on a BAND surface -- the in-band fallback tree's single branch. `perchId` is
+    // claimed the moment he sets off walking, so only an agent who has actually ARRIVED
+    // (activity 'perch') is drawn off the floor.
     const perch = a.activity === 'perch' && a.perchId
       ? surfaces.find(sf => sf.id === a.perchId)
       : undefined;
@@ -277,8 +385,9 @@ export function crowdFigures(
       id,
       anim,
       color: figColor(toneOf(id), darkMode),
-      // Sitting on a branch: the Surface decides both, and he sits along its middle rather
-      // than at the x he happened to walk in from.
+      // The band's own branch decides both, and he sits along its middle rather than at the x
+      // he happened to walk in from. Anybody on the MARGIN tree left through `onTheTree` above
+      // and is positioned by `treeFigures` from his climb instead.
       x: perch ? (perch.left + perch.right) / 2 : a.x,
       groundY: perch ? perch.y : groundY,
       scale: place.scale * heightFactor(id),

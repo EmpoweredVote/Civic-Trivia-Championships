@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
-  crowdFigures, overflowCount, aerialFigures, heightFactor, HEIGHT_SPREAD, sceneGroundY,
+  crowdFigures, overflowCount, aerialFigures, treeFigures, heightFactor, HEIGHT_SPREAD,
+  sceneGroundY,
 } from '../crowdFigures';
 import { directorInit, startScene, directorStep } from '../sceneDirector';
 import { SWIRL } from '../scenes/arrival01Swirl';
 import { CANNON } from '../scenes/arrival02Cannon';
 import { POOL } from '../scenes/poolEntrances';
 import { crowdInit, crowdApply, crowdStep, ARRIVAL_DUR } from '../crowdReducer';
-import { initAgents } from '../crowdAgents';
+import { initAgents, assignPerch, agentsAdvance } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
 import type { AgentOpts } from '../crowdAgents';
 import type { Rand } from '../../../components/bobbits/wanderReducer';
@@ -428,5 +429,99 @@ describe('a perched bobit', () => {
     const [fig] = crowdFigures(state, agents, BAND, false, undefined, true, BRANCH);
     expect(fig.groundY).toBeGreaterThan(40);
     expect(fig.hoverAnim).toBeUndefined();
+  });
+});
+
+describe('the three-way partition', () => {
+  const SURFACES = [
+    { id: 'margin-tree:branch0', left: 80, right: 240, y: 650, rootX: 230 },
+    { id: 'margin-tree:branch1', left: 240, right: 370, y: 460, rootX: 250 },
+    { id: 'margin-tree:branch2', left: 120, right: 240, y: 270, rootX: 230 },
+  ];
+
+  /** The tree canvas's floor line: its own height, not the band's 90. */
+  const FLOOR = 868;
+
+  /** A room with one bobit sent up the tree and settled on the lowest branch. */
+  const roomWithAClimber = () => {
+    const ids = ['a', 'b', 'c'];
+    const state = crowdApply(crowdInit(), { type: 'seed', ids });
+    let agents = initAgents(ids, OPTS);
+    agents = assignPerch(agents, SURFACES, OPTS, FLOOR);
+    const climber = Object.keys(agents).find(id => agents[id].perchId) as string;
+    agents = agentsAdvance(agents, agents[climber].moveDur, OPTS);           // walk done
+    agents = agentsAdvance(agents, (agents[climber].climbDur as number) + 0.1, OPTS);
+    return { state, agents, climber };
+  };
+
+  /**
+   * The property, and the reason this is one pass: an airborne bobit was once drawn on BOTH
+   * canvases for the whole flight -- arcing over the card and standing on the band at the same
+   * time -- because the band read a ref in the frame loop while the render read a prop. A
+   * partition only holds if every side is answering the same question.
+   */
+  it('puts every agent on exactly one canvas', () => {
+    const { state, agents } = roomWithAClimber();
+    const director = directorInit();
+    const band = crowdFigures(state, agents, BAND, false, director, false, [], SURFACES);
+    const tree = treeFigures(state, agents, BAND, false, SURFACES, 0.868);
+    const air = aerialFigures(director, BAND, false, false);
+
+    const all = [...band, ...tree, ...air].map(f => f.id);
+    expect(new Set(all).size, 'no figure on two canvases').toBe(all.length);
+    expect(new Set(all)).toEqual(new Set(Object.keys(agents)));
+  });
+
+  it('draws the perched bobit on the TREE, not on the band', () => {
+    const { state, agents, climber } = roomWithAClimber();
+    const band = crowdFigures(state, agents, BAND, false, directorInit(), false, [], SURFACES);
+    const tree = treeFigures(state, agents, BAND, false, SURFACES, 0.868);
+    expect(band.map(f => f.id)).not.toContain(climber);
+    expect(tree.map(f => f.id)).toContain(climber);
+  });
+
+  it('seats him on the branch, with a seated hover pose', () => {
+    const { state, agents, climber } = roomWithAClimber();
+    const f = treeFigures(state, agents, BAND, false, SURFACES, 0.868)
+      .find(g => g.id === climber);
+    expect(f).toBeDefined();
+    expect(f?.anim).toBe('sit');
+    expect(f?.hoverAnim).toBe('greetseat');
+    expect(f?.groundY).toBeCloseTo(SURFACES[0].y, 5);
+  });
+
+  it('draws a CLIMBING bobit standing, off the floor, with no seated hover pose', () => {
+    const ids = ['a'];
+    const state = crowdApply(crowdInit(), { type: 'seed', ids });
+    let agents = assignPerch(initAgents(ids, OPTS), SURFACES, OPTS, FLOOR);
+    agents = agentsAdvance(agents, agents.a.moveDur, OPTS);
+    agents = agentsAdvance(agents, (agents.a.climbDur as number) * 0.5, OPTS);
+
+    const f = treeFigures(state, agents, BAND, false, SURFACES, 0.868)[0];
+    expect(f.anim).toBe('climb');
+    expect(f.hoverAnim).toBeUndefined();
+    // Off the floor and not yet at the branch: genuinely mid-climb. Smaller y is higher up, so
+    // he is strictly between the branch and the floor.
+    expect(f.groundY).toBeLessThan(FLOOR);
+    expect(f.groundY).toBeGreaterThan(SURFACES[0].y);
+  });
+
+  it('is empty when the room has no tree', () => {
+    const ids = ['a', 'b'];
+    const state = crowdApply(crowdInit(), { type: 'seed', ids });
+    const agents = initAgents(ids, OPTS);
+    expect(treeFigures(state, agents, BAND, false, [], null)).toHaveLength(0);
+    // And then everyone is on the band.
+    expect(crowdFigures(state, agents, BAND, false, directorInit(), false, []))
+      .toHaveLength(2);
+  });
+
+  it('drops a climber back to the band if his Surface disappears mid-climb', () => {
+    // A resize can take the tree's scale below MIN_TREE_MARGIN between two frames. He must
+    // land on the floor rather than be drawn against a branch that no longer exists.
+    const { state, agents, climber } = roomWithAClimber();
+    const band = crowdFigures(state, agents, BAND, false, directorInit(), false, []);
+    expect(band.map(f => f.id)).toContain(climber);
+    expect(treeFigures(state, agents, BAND, false, [], null)).toHaveLength(0);
   });
 });

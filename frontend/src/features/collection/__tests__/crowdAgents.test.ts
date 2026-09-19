@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   initAgents, agentsAdvance, castFor, homeSlot, syncCast, rotateCast, ROTATE_EVERY, makeRand,
   startMove, MOVE_MIN_SEC, rescaleTo, placeReleased, nearestAgent,
-  assignPerch, PERCH_DWELL_SEC,
+  assignPerch, PERCH_DWELL_SEC, agentAnim,
 } from '../crowdAgents';
 import type { AgentOpts, AgentState } from '../crowdAgents';
 import { bandFor, CROWD_CAP } from '../crowdLayout';
@@ -489,12 +489,17 @@ describe('assignPerch', () => {
     expect(after.a.targetX).toBeLessThanOrEqual(BRANCH[0].right);
   });
 
-  it('only reaches the branch when the walk finishes', () => {
+  it('only reaches the branch when the walk AND the climb finish', () => {
     let state = assignPerch(roomAt({ a: 200 }), BRANCH, OPTS());
     expect(state.a.activity).toBe('moving');
     // 640px at the room's own pace -- MOVE_UNITS_PER_SEC scaled by the band -- is about half a
     // minute. Deliberately not hurried: it is the same walk a station change uses.
     for (let i = 0; i < 4000 && state.a.activity === 'moving'; i++) {
+      state = agentsAdvance(state, 1 / 60, OPTS());
+    }
+    // The walk ends at the foot of the trunk, NOT in the tree. He climbs from here.
+    expect(state.a.activity).toBe('climbing');
+    for (let i = 0; i < 4000 && state.a.activity === 'climbing'; i++) {
       state = agentsAdvance(state, 1 / 60, OPTS());
     }
     expect(state.a.activity).toBe('perch');
@@ -531,13 +536,137 @@ describe('assignPerch', () => {
     for (let i = 0; i < 4000 && state.a.activity === 'moving'; i++) {
       state = agentsAdvance(state, 1 / 60, OPTS());
     }
+    for (let i = 0; i < 4000 && state.a.activity === 'climbing'; i++) {
+      state = agentsAdvance(state, 1 / 60, OPTS());
+    }
     expect(state.a.activity).toBe('perch');
     state = agentsAdvance(state, PERCH_DWELL_SEC + 0.1, OPTS());
+    // He goes DOWN by climbing, and keeps the branch until his feet are on the floor.
+    expect(state.a.activity).toBe('descending');
+    expect(state.a.perchId).toBe('tree:branch');
+    for (let i = 0; i < 4000 && state.a.activity === 'descending'; i++) {
+      state = agentsAdvance(state, 1 / 60, OPTS());
+    }
     expect(state.a.activity).toBe('wander');
     expect(state.a.perchId).toBeUndefined();
   });
 
   it('dwells long enough to be worth watching', () => {
     expect(PERCH_DWELL_SEC).toBeGreaterThan(10);
+  });
+});
+
+describe('assignPerch — the branch ROOT is where a climber arrives', () => {
+  it('walks the climber to the branch ROOT, not its middle', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    // A branch reaching left out of a trunk at x=900: middle is 820, root is 890.
+    const s1 = assignPerch(s0, [{ id: 'b0', left: 740, right: 900, y: 40, rootX: 890 }], opts);
+    expect(s1.a.activity).toBe('moving');
+    expect(s1.a.targetX).toBe(890);
+    expect(s1.a.perchId).toBe('b0');
+  });
+
+  it('falls back to the middle for a surface with no root, as the in-band tree has', () => {
+    const opts = OPTS();
+    const s0 = initAgents(['a'], opts);
+    const s1 = assignPerch(s0, [{ id: 'b0', left: 700, right: 900, y: 40 }], opts);
+    expect(s1.a.targetX).toBe(800);
+  });
+
+  it('fills three branches and never doubles one up', () => {
+    const opts = OPTS();
+    const surfaces = [
+      { id: 'b0', left: 740, right: 900, y: 300, rootX: 890 },
+      { id: 'b1', left: 900, right: 1040, y: 200, rootX: 910 },
+      { id: 'b2', left: 780, right: 900, y: 100, rootX: 890 },
+    ];
+    let s = initAgents(['a', 'b', 'c', 'd'], opts);
+    // One claim per call, by design -- the room does not send a delegation up the tree.
+    for (let i = 0; i < 4; i++) s = assignPerch(s, surfaces, opts);
+    const claimed = Object.keys(s)
+      .map(id => s[id].perchId)
+      .filter((p): p is string => Boolean(p));
+    expect(new Set(claimed).size).toBe(claimed.length);   // no branch claimed twice
+    expect(claimed).toHaveLength(3);                       // and no fourth climber
+  });
+});
+
+describe('the climb', () => {
+  /**
+   * Margin-canvas coordinates, because that is where a real climb happens: the floor is the
+   * canvas's own height and the branch is several hundred px above it. Using band coordinates
+   * here would make a 30px "climb" that clamps to CLIMB_MIN_SEC and proves nothing.
+   */
+  const FLOOR = 868;
+  const BRANCH = { id: 'b0', left: 80, right: 240, y: 650, rootX: 230 };
+
+  /** Walk him to the root and let the walk finish, which is where the climb begins. */
+  const atTheTrunk = (opts: AgentOpts) => {
+    let s = assignPerch(initAgents(['a'], opts), [BRANCH], opts, FLOOR);
+    s = agentsAdvance(s, s.a.moveDur, opts);
+    return s;
+  };
+
+  it('starts climbing when the walk to the trunk finishes, not perching', () => {
+    const s = atTheTrunk(OPTS());
+    expect(s.a.activity).toBe('climbing');
+    expect(s.a.perchId).toBe('b0');
+  });
+
+  it('records both endpoints and the duration at claim time', () => {
+    const s = assignPerch(initAgents(['a'], OPTS()), [BRANCH], OPTS(), FLOOR);
+    expect(s.a.climbFromY).toBe(FLOOR);
+    expect(s.a.climbToY).toBe(BRANCH.y);
+    expect(s.a.climbFromX).toBe(BRANCH.rootX);
+    expect(s.a.climbToX).toBe((BRANCH.left + BRANCH.right) / 2);
+    expect(s.a.climbDur).toBeGreaterThan(1);
+  });
+
+  it('plays the rig CLIMB pose, never a seated one, while off the ground', () => {
+    const opts = OPTS();
+    const s = atTheTrunk(opts);
+    expect(agentAnim(s.a)).toBe('climb');
+    const mid = agentsAdvance(s, (s.a.climbDur as number) * 0.5, opts);
+    expect(agentAnim(mid.a)).toBe('climb');
+    expect(agentAnim(mid.a)).not.toBe('sit');
+  });
+
+  it('sits down only once the climb completes', () => {
+    const opts = OPTS();
+    const s = atTheTrunk(opts);
+    const done = agentsAdvance(s, (s.a.climbDur as number) + 0.01, opts);
+    expect(done.a.activity).toBe('perch');
+    expect(agentAnim(done.a)).toBe('sit');
+    expect(done.a.perchT).toBe(0);
+  });
+
+  it('comes DOWN by climbing when the dwell expires, not by dropping', () => {
+    const opts = OPTS();
+    let s = atTheTrunk(opts);
+    s = agentsAdvance(s, (s.a.climbDur as number) + 0.01, opts);
+    expect(s.a.activity).toBe('perch');
+    s = agentsAdvance(s, PERCH_DWELL_SEC + 0.01, opts);
+    expect(s.a.activity).toBe('descending');
+    expect(agentAnim(s.a)).toBe('climb');
+    // The branch is not released until his feet are down, or two bobits claim one limb.
+    expect(s.a.perchId).toBe('b0');
+  });
+
+  it('releases the branch and rejoins the room at the bottom', () => {
+    const opts = OPTS();
+    let s = atTheTrunk(opts);
+    s = agentsAdvance(s, (s.a.climbDur as number) + 0.01, opts);
+    s = agentsAdvance(s, PERCH_DWELL_SEC + 0.01, opts);
+    s = agentsAdvance(s, (s.a.climbDur as number) + 0.01, opts);
+    expect(s.a.activity).toBe('wander');
+    expect(s.a.perchId).toBeUndefined();
+    expect(s.a.perchT).toBeUndefined();
+  });
+
+  it('is frozen by the abduction freeze like everyone else', () => {
+    const opts = OPTS();
+    const s = atTheTrunk(opts);
+    expect(agentsAdvance(s, 0.5, OPTS({ frozen: true }))).toBe(s);
   });
 });
