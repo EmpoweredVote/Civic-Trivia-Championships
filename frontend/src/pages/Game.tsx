@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGameState } from '../features/game/hooks/useGameState';
 import { GameScreen } from '../features/game/components/GameScreen';
@@ -47,9 +47,23 @@ export function Game() {
   // the results screen. Null while it loads and on failure; both consumers treat null as
   // "unknown" rather than guessing.
   const collectionQuestionCount = useCollectionQuestionCount(state.collectionSlug ?? null);
+  // A new session is a new cast. Keyed on sessionId rather than on phase, because replaying
+  // the same collection goes idle -> playing without unmounting anything.
+  useEffect(() => { setNewBobitIds(new Set()); }, [state.sessionId]);
 
   // Capture level before game starts for level-up detection on end screen
   const [priorLevel, setPriorLevel] = useState<number | null>(null);
+
+  /**
+   * Bobits earned in THIS session, for the recap to have bow.
+   *
+   * Reset whenever the session id changes. Without that, a second match's recap would still
+   * be bowing the first match's arrivals, which is both wrong and hard to notice.
+   */
+  const [newBobitIds, setNewBobitIds] = useState<ReadonlySet<string>>(new Set());
+  const handleBobitEarned = useCallback((questionId: string) => {
+    setNewBobitIds(prev => (prev.has(questionId) ? prev : new Set(prev).add(questionId)));
+  }, []);
 
   // Flag state management
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(new Set());
@@ -286,6 +300,8 @@ export function Game() {
         questions={state.questions}
         collectionName={state.collectionName}
         collectionQuestionCount={collectionQuestionCount}
+        collectionSlug={state.collectionSlug}
+        newBobitIds={newBobitIds}
         onPlayAgain={handlePlayAgain}
         onHome={handleHome}
         flaggedQuestions={flaggedQuestions}
@@ -331,6 +347,7 @@ export function Game() {
       isXpLoading={isXpLoading}
       isXpConnected={isXpConnected}
       onArchiveQuestion={handleArchiveQuestion}
+      onBobitEarned={handleBobitEarned}
     />
   );
 }
