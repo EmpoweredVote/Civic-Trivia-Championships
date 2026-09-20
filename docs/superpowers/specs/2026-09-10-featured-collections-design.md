@@ -6,6 +6,35 @@
 > on 2026-09-12, after the clustering fix in §3a; the cross-day threshold is still
 > untuned. Read §3 before relying on any deduplication claim in this document.
 > **Written:** 2026-09-10.
+>
+> **SHIPPED 2026-09-20** (ev-accounts #565 -> CTC #118). Four things went
+> differently from this design; read these before trusting §4 or §5:
+>
+> 1. **§4's deploy ordering is no longer load-bearing.** `featured` is OPTIONAL on
+>    `CollectionSummary` and every read goes through a strict `isFeatured() === true`,
+>    so a pre-deploy payload yields an empty shelf rather than a broken one. Backend
+>    still went first, but the frontend no longer *depends* on it. What IS load-bearing
+>    is that the hand-applied migration runs BEFORE the backend merge: the merged code
+>    SELECTs the column.
+> 2. **§4's admin toggle needed a new endpoint.** The design assumed one could be added
+>    to the admin page; in fact NO collection write path existed at all. Added as
+>    `PATCH /admin/collections/:id/featured`, deliberately narrow — `featured` is the
+>    only column it can write, so activation stays a separate deliberate act.
+> 3. **§5's `us-news` was never created.** Both intended US-domestic feeds are unusable
+>    (see the §2 correction). It has no row, by decision, not oversight.
+> 4. **§6's dynamic availability guard already existed** as `MIN_INTERNATIONAL_THRESHOLD
+>    = 8` in `routes/game.ts`, so no `HAVING` clause was added.
+>
+> **The shelf also promotes the hero card**, which this design did not cover:
+> `useCollections` now prefers a featured collection for the Dashboard's above-the-fold
+> card, ranked below last-played so a returning player keeps their city.
+>
+> **§6's premise is confirmed by measurement.** On 2026-09-20 War in Iran's 36 playable
+> questions were 25 curated evergreen and 11 pipeline-generated expiring within 3 days —
+> the spine is what keeps the collection viable. `world-news` needs none (the world lane
+> reaches ~32 in 3-4 nights), but the `climate` lane has drawn about 1 cluster every 6
+> nights from three world-desk feeds, so **§6's Climate Change spine is that collection's
+> only route to being playable**, not an enhancement.
 > **Input:** `2026-09-08-events-collections-brainstorm-prep.md` (audit + open questions).
 
 ## Goal
