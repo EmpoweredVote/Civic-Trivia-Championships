@@ -1,313 +1,253 @@
-# Bobit living room — shipped, and what to know
+# Bobits — shipped, and what to know
 
-> **SHIPPED TO PRODUCTION 2026-09-17.** This is no longer a handoff for work in flight. It is
-> the reference for a feature that is live: what it does, what is load-bearing about how it
-> does it, and what was left undone.
+> **Reference for a live feature, not a handoff for work in flight.** Three pieces are in
+> production: the living floor, the margin tree, and the recap crowd. This is what they do,
+> what is load-bearing about how they do it, and what was left undone.
 
-**Landed as** PR #113, merged to `master` as `af6233f` — a merge commit, not a squash, because
-this document and the review record cite individual SHAs from the branch. `civic-trivia-frontend`
-(`srv-d6a0o4jnv86c73f71seg`) auto-deployed it in 28s and went live; production was verified in a
-real browser, not just by a green build. The branch `feat/bobit-living-floor` is deleted.
+| What | PR | Merged as | State |
+|---|---|---|---|
+| The living room (floor, entrances, tree + perching) | #113 | `af6233f` | live |
+| The margin tree | #115 | `30f2e67` | live |
+| The recap crowd | #116 | `b62e86a` | live |
+| The 1280 scroll fix | #117 | — | **open, green, unmerged** |
 
-Built on **vitest 4.1.11** — `master` was merged in first (bringing vitest 3→4 for
-GHSA-82fw-gwwq-j7x9, `@empoweredvote/analytics` 0.3.0 and `ev-ui` 0.11.1), and the suite, the
-build, the smoke test and the entrance contact sheets were all re-run on it. Nothing needed
-changing.
+`civic-trivia-frontend` (`srv-d6a0o4jnv86c73f71seg`) auto-deploys from `master`, and there is
+no staging. **Merging to `master` is a production deploy.** The backend here is frozen and
+`civic-trivia-backend` is suspended; production gameplay runs through `ev-accounts`.
 
-**The frontend static site auto-deploys from `master`.** Any commit that touches this repo
-ships — including a docs-only one, which rebuilds the same frontend harmlessly. There is no
-staging environment. The backend here is still frozen and `civic-trivia-backend` still
-suspended; production gameplay runs through `ev-accounts`.
+Specs and plans for all of it are under `docs/superpowers/specs/` and `docs/superpowers/plans/`.
 
-## How it was built, in order
+---
 
-1. `docs/superpowers/specs/2026-09-12-bobit-living-room-design.md` — the design. **Read its
-   2026-09-14 addendum**, which corrects four things and records the occlusion decision.
-2. `docs/superpowers/plans/2026-09-12-bobit-living-floor.md` — plan 1. **Done.**
-3. `docs/superpowers/plans/2026-09-14-bobit-entrances.md` — plan 2. **Done, and now reviewed.**
-4. `docs/superpowers/plans/2026-09-15-bobit-tree-and-perching.md` — plan 3. **Done.**
-   Built against the spec's **2026-09-15 addendum**, which overrides the spec body on tree
-   height and on how the milestone is stored.
+## 1. What is live
 
-## What it does
+**The living floor.** Bobits wander on one ground line, greet on click, celebrate wins with a
+staggered cheer → clap → high-five, and shrug off costless misses. Heights vary ±10%. The
+director runs scenes-as-data: the swirl (arrival #1), the cannon (arrival #2) and four pool
+entrances. Every entrance arrives in a poof of smoke.
 
-**Plan 1 (the living floor): complete.** Bobits wander on one ground line, greet on click,
-celebrate wins with a staggered cheer → clap → high-five, and shrug off costless misses. They
-now vary in height by ±10%.
+**The margin tree.** At 25% of a collection's questions, a tree grows in the empty strip beside
+the question column — floor line to canopy, three branches, bobits climbing between them. On
+viewports too narrow for it, the original in-band tree is the fallback. A phone gets neither,
+and the milestone plays as a crowd celebration instead.
 
-**Plan 2 (the entrances): complete.** The director runs scenes-as-data. The swirl (arrival #1),
-the cannon (arrival #2) and four pool entrances all exist and fire. The cannon's flight passes
-in front of the question card on an overlay canvas.
+**The recap crowd.** The results screen shows the whole room celebrating, so a match lost on the
+final question still ends well. Bobits earned *in that session* bow, repeatedly; everyone else
+cheers, claps, high-fives and occasionally jumps.
 
-**Plan 3 (the tree, perching, the milestone): complete.** A collection earns a small tree at 25%
-of its questions, on a persisted high-water mark so it can never un-earn itself. `Surface` has
-its first consumer: a bobit with nothing to do walks to the trunk and sits on the branch, and
-greets from his seat. The room notices the tree arriving; a phone gets the same milestone as a
-crowd celebration instead, because a phone band has no room for a trunk.
+---
 
-**669 tests green on vitest 4.1.11, typecheck clean, production build clean, `npm run smoke`
-OK, CI green on both required checks, and the deployed site verified in a browser.**
+## 2. THE STANDING INSTRUCTION, AND WHAT IT NOW MEANS
 
-A full code review ran on 2026-09-15 over `713fa75..796e12f`. Verdict: **merge with fixes**. The
-occlusion relaxation was the highest-risk part of the work and **all four bounds hold**, two of
-them enforced by tests that will hold for future scenes. **Every finding from it is now fixed** —
-two Criticals, four Importants, and one Minor that turned out to be worse than reported.
-**The five Minors left open after that pass are now fixed too** — see "What the Minors turned
-out to be", below.
+Memory and the original spec say *"bobits must never cover the question card or any of the four
+answer options"* (Chris, 2026-09-05). That was relaxed **once**, on 2026-09-14, so the cannon
+shot could fly in front of the buttons. **It has not been widened since, and the margin tree
+deliberately did not widen it** — Chris was asked directly and declined.
 
-## The harness bug that hid all of this (FIXED 2026-09-15, `d323902`)
-
-Worth knowing about even though it is fixed, because it explains the state you inherited.
-
-`?mock=1&owned=N` used to render an **empty room on its first page load** and a correct one on
-every load after. `createLocalProgressStore` snapshotted localStorage in its constructor, and
-`localStore` in `CollectionCrowd.tsx` is a module singleton — so the snapshot was really taken
-whenever that module was first imported, and `main.tsx`'s static `import App` evaluates it
-before the module body runs the dev mock that seeds `&owned=`.
-
-An empty band reads as a feature that does not work, not as a harness that lies. That is why
-the swirl and the four pool entrances shipped unreviewed. The mirror now fills on first use.
-
-**The lesson generalises:** a module-level singleton that captures I/O at construction has, in
-effect, captured it at import time, and import order is not something callers can see or
-control. `bobit-shots.mjs` was immune only because it seeds through `addInitScript`, before any
-page script runs.
-
-## THE STANDING INSTRUCTION THAT CHANGED
-
-Memory and the original spec both say *"bobits must never cover the question card or any of the
-four answer options"* (Chris, 2026-09-05). **That was relaxed on 2026-09-14, narrowly.** Chris
-asked for the cannon shot to be able to fly in front of the buttons, and explicitly said NOT to
-change the shape of the landscape to do it.
-
-The relaxation is bounded to four rules, all verified in a browser, all re-verified in the
-2026-09-15 review, and all load-bearing:
+The relaxation is bounded to four rules, all load-bearing:
 
 1. **Transient only** — a figure passes through; nothing comes to rest over the card.
 2. **Reveal phase only** — never while the timer runs (`aerialAllowed={state.phase === 'revealing'}`).
 3. **`pointer-events: none`** and `interactive={false}` — it can never intercept a click.
 4. **Set pieces only** — pool entrances never set `layer: 'air'`.
 
-Bounds 1 and 4 are enforced by tests, not by convention: `scenes.test.ts` plays every scene to
-its last frame and asserts nobody ends airborne, hidden or off the floor, and separately asserts
-no pool beat sets `layer`. A future pool entrance that reaches for the sky fails CI.
+Bounds 1 and 4 are held by `scenes.test.ts`, not by convention.
 
-The crowd at rest still never occludes anything. **Do not widen this without asking.**
+**The margin tree holds bound 1 by GEOMETRY.** Its canvas is positioned `right: 0` with a width
+measured from the question column's right edge, so its left edge *is* that edge and nothing
+drawn inside it can reach the card. `marginTree.test.ts` asserts the tree's whole ink box and
+every branch edge stay inside the margin at every width. That is why this canvas may stay
+`interactive` while the aerial overlay must not — a bobit can still be greeted from his branch.
 
-## What changed from the spec while building
+**Do not widen this without asking.**
 
-- **Depth is gone.** One ground line, one size. Depth made a bobit changing station walk
-  diagonally up the screen, and the rig has no perspective gait, so it read as sliding.
-  `stageBounds`/`agentPlacement` remain as the seam if it is ever wanted back.
-- **Height varies instead**, ±10% via `heightFactor(id)` in `crowdFigures.ts`. This is depth's
-  distinguishing cue without depth's failure — nobody walks a diagonal, so nothing slides.
-- **Band is full-bleed, 96px desktop / 72px mobile** (was 190/100 in the spec). It turned out
-  to be enough for everything, including the two entrances that move vertically — see
-  "`pool-peek` and `pool-drop`" below.
-- **There is a floor line** under the crowd. Without it `jump` — a real 48-unit lift — read as
-  a wobble, because there was nothing to leave.
-- **`WANDER_CAST` is derived from width**, not fixed: `wanderCastFor(width, band)`, ~37 desktop,
-  ~8 phone. Measurement showed the cast never constrained performance at all.
-- **Set pieces do not wait for floor.** The spec had a 4s wait; the full-bleed band made it
-  unnecessary. `canStage` is checked once and the scene is skipped if busy.
-- **The tree has ONE branch, not the spec's 2-3.** 96px does not hold a second one. See the
-  spec's 2026-09-15 addendum.
-- **Nobody walks behind the tree.** The spec wanted depth ordering against it; props draw
-  BEHIND figures (`BobitField`, "Props first"), and depth is gone. A perched bobit drawing in
-  front of the trunk is what that order already gives, and is the part that matters.
-- **Scenes can be anchored.** `Scene.anchor: 'right'` was added for the milestone: `canStage`
-  packs from the left, so the set piece staged at the far end of the band and its cast
-  presented at an empty stretch of floor while the tree stood on the other side.
+---
 
-## How to run it
+## 3. The three canvases, and the partition
 
-The backend here is frozen and the live API serves CTC under different paths, so there is
-nothing to point a local frontend at. A dev-only mock lives in the app:
+| Canvas | Holds | Interactive | Mounted |
+|---|---|---|---|
+| Band (in flow, 96px / 72px mobile) | the crowd | yes | always |
+| Aerial overlay (fixed, full viewport) | set-piece flight only | **no** | only while something flies |
+| Tree margin (absolute, in the margin) | the tree, its climbers | yes | while the margin tree stands |
+
+**Every figure belongs to exactly one, and all three lists come from ONE pass per frame.** This
+is not a preference. An airborne bobit was once painted on *both* canvases for a whole flight —
+arcing over the card and standing on the band at the same time — because the band read a ref in
+the frame loop while the render read a prop. A partition only holds if every side is answering
+the same question. `onTheTree()` is the single predicate both `crowdFigures` and `treeFigures`
+ask.
+
+**`crowdFigures` takes TWO surface lists.** Band surfaces (the in-band fallback tree's one
+branch) are drawn by it; tree-canvas surfaces are passed in only so their occupants can be left
+out. With one list, the fallback tree's occupant was excluded from the band and handed to a
+canvas that is not mounted in that case — he vanished.
+
+---
+
+## 4. Gotchas, in rough order of how much they cost
+
+**Numeric verification is not visual verification.** Every defect in this work that mattered was
+found by screenshotting, with the unit tests green: a T-pose clap, hands-on-hips clap, heads
+clipped on mobile, the back row off-canvas, the crowd bunched in the left two thirds, props
+never wired to the canvas, `pool-stumble` with no poof, a tree shaped like a mushroom, an
+invisible branch, a sprout frozen half-grown, three bobits floating in mid-air, and the margin
+tree silently vanishing for the rest of a match. **Run the contact sheets.**
+
+**A value passed as a prop is frozen at the last render; the animation runs on rAF.** The tree's
+`grow` shipped as a number and the sprout stalled at whatever height React last rendered. Per-
+frame quantities must be passed as callbacks (`growFor`, `figuresFor`, `propsFor`), read inside
+the frame.
+
+**A `[]`-dep effect does not survive a component early-returning its subtree.** `GameScreen`
+early-returns the wager screen before its main shell, so the measured nodes are torn out and put
+back mid-match. A mount-time `ResizeObserver` kept watching the detached nodes — which report
+all zeros — and the margin tree silently demoted to its in-band fallback from the wager screen
+onward. Use **callback refs** that rebind on attach/detach, and never publish a zero-width rect.
+
+**Geometry drawn at one scale and positioned at another will disagree.** The tree's branches are
+drawn at `grow` height while their `Surface`s are computed at full height, so during the sprout
+figures hang in the air above branches that have not reached them. There are no branches to
+claim until the tree has finished growing.
+
+**Border box vs content box.** The band lives inside its container's `px-4 sm:px-6`, so measuring
+the margin to the container's *border*-box right edge overstates it by that padding — and since
+the canvas is positioned from its right edge, the surplus comes off the left and pushes it over
+the card. Bound 1 breached by arithmetic.
+
+**`armRU`/`armRF` are absolute from the body, 0° = straight DOWN, and `armRF` is NOT an elbow
+bend.** Reading it as one has produced a T-pose three times. Arm angles hang from the
+already-curled torso (`ub = lean + hunch`), which is why `spent` needs `armRU = 58` to hang
+*straight down* at a −44 fold.
+
+**Negative `hunch` is FORWARD.** `leremyRig.ts` says so outright in its gait comment; `read` uses
+`+22` for "reclined back into the chair". The wrong sign bends a figure backwards over an
+invisible chair and looks deliberate enough to survive a code read.
+
+**`Surface` positions a figure's SEAT, and a seated figure needs a seated `hoverAnim`.** Standing
+and seated pelvis offsets are 112 and 8 — 104 apart — and `figureBounds` measures from the BASE
+anim while paint positions with the RESOLVED one. Never hardcode 112; ask `pelvisOffset()`.
+**No scene may play a seated pose on a beat that leaves the ground.** Recorded four times.
+
+**Choose a pose by its frame function, never its name.** `fall` is a SEATED sprawl, not a body in
+the air. `peek` cranes forward and looks DOWN. Both shipped wrong once.
+
+**A branch's rect and its `Surface` must share an edge.** The in-band tree draws the rect from
+`-up - W`, putting its *bottom* on the Surface's `y`, so a sitter is sunk a branch-width into the
+wood — 3px there, 15px on the margin tree, which draws from `-up` instead.
+
+**One definition per piece of geometry.** The margin tree's draw and its `Surface`s were computed
+separately and immediately drifted by half a trunk width. `marginBranch(i)` is now the single
+source, read by the draw, the surfaces and the ink bounds.
+
+**`Scene.moveTo` is a fraction of the scene's own SLOT, not of the band** —
+`x = r.left + frac * (r.right - r.left)`. A test that recomputed it as band-global reported the
+milestone ceremony 362px adrift of a trunk it was standing under.
+
+**Assert consequences, not values.** Three of this feature's tests asserted the implementation's
+own arithmetic back at it and each sat on a real defect. Two more were *weak* rather than wrong:
+"holds still at the bottom of the bow" passes for a bow with no hold, because a smoothstep apex
+is naturally flat; "reserves the right quarter" passed while the scene played at the far end.
+
+**Nominal vs measured width.** `band.width` is a nominal 1000 for proportional placement. Using
+it where real pixels are needed has caused two separate bugs.
+
+**Playwright matches routes in REVERSE registration order.** A catch-all must be registered first.
+
+**A tool can be structurally unable to show the bug it was built to find.** `__bobitScene` passes
+a synthetic `replay-<ts>` id that never becomes a resident, so the newcomer renders as an orphan
+with no agent. Drive a real grant when it matters.
+
+**`npm test | grep …` masks the exit code**, so `&& git commit` does not gate on it. Two red
+tests were committed that way.
+
+---
+
+## 5. How to run it
+
+The backend here is frozen, so there is nothing to point a local frontend at. A dev-only mock
+lives in the app:
 
 ```
 cd frontend && npm run dev
 http://localhost:5173/?mock=1&collection=milwaukee-wi
 ```
 
-Options: `&owned=N` (default 30), `&bobitSeed=xyz`, `&scene=<id>` to replay an entrance on a
-14s loop. Scene ids: `swirl`, `cannon`, `pool-stumble`, `pool-trip`, `pool-peek`, `pool-drop`.
+Options: `&owned=N` (default 30), `&bobitSeed=xyz`, `&scene=<id>` to replay an entrance on a 14s
+loop. Scene ids: `swirl`, `cannon`, `pool-stumble`, `pool-trip`, `pool-peek`, `pool-drop`.
 
-- **To see the swirl:** `&owned=0`, answer A.
-- **To see the cannon:** `&owned=1`, answer A twice (the second is bobit #2).
-- **A is always the correct answer.** Q1/Q2 are bobits you own (a miss takes one and plays the
-  abduction); Q3–Q5 are new (a miss is the costless ripple).
+**A is always the correct answer.** Q1/Q2 are already-owned ids and grant nobody; Q3–Q5 are new.
+The mock's collection has `questionCount: 120`, so the 25% milestone is 30 residents.
 
-**Driving a REAL cannon.** `__bobitScene` replays mid-question, where `aerialAllowed` is false
-and the flight is suppressed onto the band — so the launch cannot be reviewed through the replay
-route at all. Do it the player's way: `&owned=1`, answer A, Next, answer A. The second grant is
-bobit #2, the reveal is up so the sky is open, and the shot happens for real. Take
-FULL-VIEWPORT screenshots, not the band canvas — the flight is on the fixed overlay.
+### The scripts
 
-`scripts/bobit-play.mjs` opens a headed browser with the same mocks — but it costs ~500MB and
-was killed four times on a loaded machine. **Prefer the in-app mock.**
+| Script | What it answers |
+|---|---|
+| `bobit-tree.mjs` | the margin tree at 1920/1440/1280/1024 × both themes, plus a climb strip |
+| `bobit-milestone.mjs` | drives a REAL 25% crossing — does it sprout, is anybody floating, are the admirers under the trunk |
+| `bobit-recap.mjs` | the recap crowd at four widths × both themes × rosters either side of the cap, **and the scroll measurement** |
+| `bobit-scenes.mjs` | contact sheets for the entrances |
+| `bobit-props.mjs` | every prop at the 0.2 scale the player sees it, both themes |
+| `bobit-shots.mjs` | pose sheet (including the bow cycle) + page sweep |
+| `bobit-bench.mjs` | frame cost vs cast size |
 
-Other scripts:
+**Run one viewport per process.** `bobit-recap.mjs` was OOM-killed three times sharing a single
+Chromium across rows; it takes `RECAP_WIDTHS` / `RECAP_OWNED` / `RECAP_THEMES` for exactly this.
+`bobit-play.mjs` costs ~500MB and has been killed four times — prefer the in-app mock.
 
-- `scripts/bobit-scenes.mjs` — **contact sheets for the entrances**, one PNG per scene per
-  theme into `.shots/`. Frames are labelled with the elapsed time the *page* saw, because the
-  naive schedule drifts half a second over eight frames and will label a `spent` frame as
-  `splayed`. `node scripts/bobit-scenes.mjs [sceneId…]`.
-  The cannon is excluded by default: its flight needs `aerialAllowed`, so replaying it
-  mid-question captures the air layer suppressed, which looks like a bug and is not one.
-- `scripts/bobit-props.mjs` — **prop sheet**: every prop at the 0.2 scale the player sees it,
-  beside a real bobit, and enlarged so the silhouette can be judged. Both themes, because the
-  field passes a LIGHT body colour in dark mode and a DARK one in light, and an accent that
-  contrasts in one can vanish in the other.
-- `scripts/bobit-shots.mjs` — pose sheet + page sweep.
-- `scripts/bobit-bench.mjs` — frame cost vs cast size.
+**Driving a REAL cannon:** `__bobitScene` replays mid-question, where `aerialAllowed` is false and
+the flight is suppressed onto the band. Do it the player's way — `&owned=1`, answer A, Next,
+answer A — and take FULL-VIEWPORT screenshots, because the flight is on the fixed overlay.
 
-## Left undone, in the order I would take them
+---
 
-These shipped unfinished by choice, not by oversight. Nothing here is a defect in what is live.
+## 6. Decisions a fresh session should not re-litigate
 
-1. **50% / 75% / 100% milestones.** Out of scope by the spec, and the seam is now real:
-   `milestone.ts` plus a scene file plus a prop. The tree is the worked example.
-2. **The high-water mark is local even for signed-in players.** `backend/` here is frozen and
-   ev-accounts is another repo, so a signed-in player who switches browsers re-earns the tree.
+- **Crowd density is ACCEPTED.** At 100 bobits they sit ~18.7px apart while a cheering figure is
+  ~20px wide. Chris, asked whether to stack them into rows: *"I know it will be dense, eventually
+  we'll build buildings as stuff for them to climb on."* **Do not revive `slotPosition` /
+  `rowsFor`** — they are dead code from the removed depth era and they do exactly the multi-row
+  layout that would spend the buildings idea's budget on a worse version of it. The left margin
+  is reserved for a later milestone.
+- **Depth is gone.** One ground line, one size; height varies instead. A bobit walking a diagonal
+  read as sliding, because the rig has no perspective gait.
+- **The tree is room-owned, not a Scene.** A permanent structure inside a transient scene leaves
+  when the scene does.
+- **The climb is not scripted.** `assignPerch` sends somebody up once a branch exists.
+- **Growing is for the moment the tree is earned, and only then.** Three passes to get right.
+- **The recap is a separate component, not a mode flag** on `CollectionCrowd`. It needs none of
+  the director, entrances, overlay, milestone latch or answer reactions.
+- **Who is new comes from the decision that already exists.** `CollectionCrowd` computes `!known`
+  to choose an entrance; `onBobitEarned` reuses it, so "walked in" and "bows at the recap" cannot
+  disagree. It is deliberately *not* gated on `reducedMotion` — only the entrance is a motion
+  effect.
+- **Nothing on the recap reads the match result.** The room celebrates whether you won or lost.
+  That is the entire point.
 
-## Decisions a fresh session should not re-litigate
+---
 
-- **The tree is room-owned, not a Scene.** A permanent structure inside a transient scene
-  leaves when the scene does, the way a cannon leaves with its shot.
-- **The climb is not scripted.** `assignPerch` sends somebody up once the branch exists;
-  scripting it in the milestone scene too would put two bobits on a one-bobit branch.
-- **Growing is for the moment the tree is earned, and only then.** Getting that right took
-  three passes — see `042af8e`. A tree that sprouts on every mount, or on the first evaluation
-  against a real denominator, is the failure mode.
-- **Whether the cannon should have a host at all** is still genuinely open. Casting a real
-  neighbour settled what a host IS, not whether the scene wants one.
+## 7. Left undone, and open questions
 
-## What the review fixes changed, worth knowing
+**Unfixed, known:**
 
-- An airborne bobit was drawn on **both** canvases for the whole flight — arcing over the card
-  and standing on the band at once. Found by screenshot, not by the suite; the existing test
-  passed no agents, so the band copy it guarded against could not be produced. The review had
-  this as a Minor one-frame race. It was every frame of every shot.
-- The closed-sky clamp pinned the FEET at y=2, which draws the whole body off the top. Its test
-  asserted the clamp's own range and passed throughout.
-- The cannon's host was a synthetic id — a bobit who appeared from nowhere and evaporated. It is
-  now the nearest real resident. **Still open for Chris:** whether the cannon should have a host
-  at all. The code no longer answers that by accident.
-- Reduced motion rendered an empty band, for two independent reasons (no agents were created,
-  and a static field painted once before the parent had seeded it).
-- The cannon prop read as a magnifying glass: a filled disc and a tapered tube in one flat
-  colour, with nothing under either. It now has a spoked wheel ring, a trail to the ground, a
-  flared muzzle and a swelled breech. Its detail colour was also hardcoded light, so in dark
-  mode — where the BODY is light — every detail was invisible; it is derived from the body now.
+- **390px recap overflows by 246px** — and overflowed by **232px before any bobit band existed**.
+  A pre-existing layout problem; deliberately not folded into #117, which targets 1280.
+- **At a 100-bobit roster the bowers are invisible.** Three in a wall of a hundred. The two-tier
+  idea pays off early in a collection and not late.
+- **The high-water mark is local even for signed-in players**, so a browser change re-earns the
+  tree. `backend/` here is frozen and ev-accounts is another repo.
+- **50% / 75% / 100% milestones.** Out of scope by the spec; the seam is real and the tree is the
+  worked example.
 
-## What the Minors turned out to be
+**Open, needing a judgement:**
 
-All five are fixed, each one test-first, each one its own commit.
-
-- **The aerial gate really could disagree with itself.** The band read `allowAirRef` in the
-  frame loop and the render read the `aerialAllowed` prop. `aerialFigures` now TAKES the gate,
-  the way `crowdFigures` already did: the two partition the airborne actors between them, and a
-  partition only holds if both are answering the same question. The component reads it once per
-  frame and feeds both; `flying` is derived from what that pass produced. The mirror is a layout
-  effect now, so the ref is current before the next rAF rather than after it — a passive effect
-  could leave the sky open for a frame past the end of the reveal, which is bound 2.
-- **Props belonged to the scene id, so two runs of one scene were one owner.** The first to
-  finish swept up the second's cannon. Each run carries a `key` now. Worth knowing: the first
-  version of that test started both runs in a single pass and passed happily against a counter
-  that reset on every step — the counter has to survive a step, so the test starts three runs
-  with a step between each.
-- **`SMOKE_DUR`/`SMOKE_LIFE` are one constant now**, in `rigExtras` beside the colour, imported
-  by both the director that removes an effect and the field that fades it.
-- **The ripple started at `slotOrder[0]`** — the alphabetically first id, a stranger at the far
-  end of the room. It starts at `residents[length - 1]` now, which is the newest bobit, which is
-  what the spec says.
-- **`cannonMuzzle` has a consumer.** A beat can say `from: 'muzzle'`; the displacement decays to
-  zero over the leg, which added to the interpolation the leg already does is exactly a straight
-  line from the barrel's mouth to the landing point, with the arc's lift on top. The muzzle
-  blast moves with him. **Verified by driving a real grant** (`&owned=1`, answer A twice) rather
-  than by the test, because the test asserts `cannonMuzzle`'s own arithmetic back at it — the
-  screenshot shows him emerging from the barrel, in the blast.
-
-## `pool-peek` and `pool-drop` (FIXED 2026-09-16)
-
-Both were listed as blocked on the band's height. **They were not.** The band was never the
-problem, and the fix changed no layout at all.
-
-What was actually wrong was the same mistake twice: a pose chosen by its NAME rather than its
-frame function, in a scene that never moved a figure vertically.
-
-- `fall` is the rig's **"Fell down"** — a SEATED sprawl on the ground, `seated: true`. It is not
-  a body in the air. `pool-drop` opened on it, standing still, so the drop played as a bobit
-  sitting on the floor for 0.7s and then raising dust.
-- `peek` is **"Peeking over"** — craning forward over a ledge, looking DOWN. It is the opposite
-  gesture to a head coming up, and `pool-peek` played it standing on the floor.
-
-The band has ~90px above the floor line on desktop and 66 on a phone — two body heights and
-one and a half. **Below the floor there is nothing, but the canvas CLIPS at its own bottom
-edge**, so a figure whose feet are under it shows only his head. That is the whole trick for
-peek, and it costs no layout.
-
-The mechanism is the vertical twin of the muzzle origin: `from: { dy, ease }`, decaying to
-nothing by the leg's end. Negative (above) is clamped to the canvas top, so one number means
-"from as high as there is" on either band; positive (below) is deliberately NOT clamped.
-`ease: 'gravity'` leaves from rest and accelerates — at constant speed a 90px descent reads as
-being lowered rather than falling.
-
-**A new rule guards the class:** no scene may play a seated pose on a beat that leaves the
-ground. The seated pelvis is 104 units off the standing one and `figureBounds` measures from
-the BASE anim, so such a figure is drawn nowhere near where the scene put him. That is the
-fourth time this trap has been recorded in this work.
-
-## Chris's open questions, one of them now answered
-
-- **"Does the flat overlap read badly now that depth is gone?"** — Partly, but that is the
-  smaller half. The real cost is **findability**: in a room of ~35 same-size, same-palette
-  figures on one line, an entrance that is not a poof or a flash does not register at all.
-  `pool-trip`'s stroll-in is indistinguishable from ambient walking. The two entrances that do
-  read (swirl, drop) read because of *smoke*, not pose. Height variation was added in response;
-  whether it is enough is worth a fresh look. Three-plus figure overlaps do go muddy, but that
-  is secondary.
-
-  **ANSWERED 2026-09-16 (Chris): smoke for every new person.** Every entrance now arrives in a
-  poof, and `scenes.test.ts` holds the rule for whatever gets added next by playing each scene
-  and looking for a live puff. `pool-trip` and `pool-peek` are the two that gained one.
-  `pool-trip` also arrives a little way INTO its span rather than at fraction 0: `canStage`
-  packs from the left, so a quiet room stages a scene at the band's edge and a puff at 0 is
-  centred on that edge with half of it off the screen. The contact sheet showed it; a second
-  test now forbids it.
-- **"Is the yield pause (0.45–1.1s) too polite?"** — still unanswered.
-
-## Gotchas this work hit, worth not rediscovering
-
-- **`armRU`/`armRF` are both absolute from the body, 0° = straight DOWN, and `armRF` is NOT an
-  elbow bend.** Reading it as one has produced a T-pose three times: `carryGrip`, `clap`, and
-  nearly `splayed` (where a T-pose is correct and deliberate).
-- **Numeric verification is not visual verification.** Every defect in this feature that mattered
-  was found by screenshotting, with the unit tests green: a T-pose clap, hands-on-hips clap,
-  heads clipped off on mobile, the back row positioned off-canvas, the crowd bunched in the left
-  two thirds, props never wired to the canvas, and `pool-stumble` arriving with no poof.
-- **A tool can be structurally unable to show the bug it was built to find.** The dev replay
-  route passes a synthetic `replay-<ts>` id that never becomes a resident, so the newcomer
-  renders as an *orphan* with no agent — which meant the release-to-agent teleport could not
-  appear there at all. Reviewing entrances through `__bobitScene` alone will keep missing that
-  whole class. Drive a real grant (`&owned=0`, answer A) when the handoff matters.
-- **Three of the new tests asserted the implementation's own arithmetic back at it**, and each
-  one sat directly on top of a real defect: the clamp test asserted the clamp's range instead of
-  whether anything was visible; every synthetic scene avoided `at: 0`; nothing asserted that an
-  agent's position survived his scene. Assert *consequences*, not *values*.
-- **Nominal vs measured width.** `band.width` is a nominal 1000 for proportional placement. Using
-  it where real pixels are needed has caused two separate bugs.
-- **Playwright matches routes in REVERSE registration order.** A catch-all must be registered
-  first or it swallows everything.
-- **`Surface` positions a figure's SEAT, and a seated figure needs a seated `hoverAnim`.** The
-  standing and seated pelvis offsets are 112 and 8 — 104 units apart — and `figureBounds`
-  measures from the BASE anim while paint positions with the RESOLVED one. This has now caught
-  three separate things in this work, most recently the prop sheet itself, which drew a
-  seated bobit straight through the top of the band. Never hardcode 112; ask `pelvisOffset()`.
-- **A test that asserts a span says nothing about where the scene lands.** The milestone's
-  "reserves the right quarter" test checked `span <= 0.25` and passed happily while the scene
-  played at the opposite end of the band. Stage the thing and assert the ground it took.
-- **A harness's sanity check must watch the quantity the variable actually drives.** The bench
-  compared total frame cost (dominated by paint, flat across cast sizes) and cried vsync at a
-  working harness. Separately, a column probe that sampled every 52px "proved" an empty band
-  when the figures are 3px-wide lines — it was measuring nothing.
+- **The descent's clock.** `climb` ratchets limbs *upward*; played unchanged coming down it may
+  read as climbing up while moving down. Never caught on camera — `PERCH_DWELL_SEC` is 26s and no
+  contact sheet spans it. **Unverified, not verified-fine.**
+- **The canopy is a smooth dome.** Consistent with the flat-silhouette house style, and the
+  furthest thing from the scribbled foliage Chris sketched. Cheap to roughen.
+- **Whether the cannon should have a host at all.** Casting a real neighbour settled what a host
+  IS, not whether the scene wants one.
+- **Whether the yield pause (0.45–1.1s) is too polite.**
+- **Whether the recap audience should ever fall quiet** and start again, rather than celebrating
+  continuously.
