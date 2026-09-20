@@ -53,6 +53,13 @@ At least 9 duplicate pairs and 3 outright contradictions in a 95-question pool. 
 - Saxony-Anhalt — `1591` dated the election Sept 6, `1608` dated it Sept 7; both asked the same 43.8% fact, so one was redundant and one carried a false date, and which is which could not be determined without external verification. Both archived; `1609` (39 seats) and `1610` (42 needed) carry the story dateless.
 - Miami crash — `1593`/`1594` said Sept 6, `1605` answered "September 7", same event. All three archived; `1606` (five killed) and `1607` (San Juan) keep the verifiable facts without asserting a date.
 
+**Recurrence confirmed (2026-09-10).** The prediction below held. Two nightly runs (09-09, 09-10) added 40 questions and reintroduced the class:
+
+- King Harald V age 89 — `1578` (09-06) vs `1661` (09-10); reign 35 years — `1579` (09-06) vs `1659` (09-10). **Self-resolved:** the 07:00Z expiry job on 09-10 expired both older copies before a second pass was needed.
+- Canada's retaliatory tariffs effective date, answer "September 8, 2026" — `1615` (09-08) vs `1635` (09-09). Both live, both unseen (`encounter_count` 0). **`1615` archived**, keeping the later copy per the 09-08 rule; pool 94 → 93 active.
+
+A full story-level read of all 71 pipeline questions found no other duplicate and no contradiction. Three same-answer pairs remain by coincidence across unrelated stories (`1611`/`1657` "2026", `1630`/`1635` "September 8, 2026", `1639`/`1665` "August 2026") — which is why an answer-equality join is not a usable detector on its own: it missed both King Harald pairs (`89` vs `89 years old`) and flagged three non-duplicates.
+
 The **cause is untouched**: the pipeline will reintroduce this class the next time it covers a developing story. Every one of these questions also expires within 1–4 days of generation, so the pool self-cleans — but a player inside that window can be shown two different correct answers to the same question, which is why waiting it out was not good enough.
 
 ### Finding 3 — framing, which is three separate problems
