@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '../../../services/api';
 import type { CollectionSummary } from '../types';
+import { isFeatured, sortFeaturedFirst } from '../featuredOrder';
 
 const STORAGE_KEY = 'lastCollectionId';
 
@@ -32,10 +33,18 @@ export function useCollections(): UseCollectionsReturn {
     apiRequest<{ collections: CollectionSummary[] }>('/api/game/collections')
       .then(({ collections }) => {
         setCollections(collections);
-        // Precedence: ?collection= slug > valid last-played > USA/Federal default > first.
+        // Precedence: ?collection= slug > valid last-played > featured > USA/Federal > first.
+        //
+        // The featured step is what puts the events collections above the fold for a first
+        // visit. It sits BELOW last-played on purpose: someone who has played their city
+        // should land back on their city, not be re-pitched the shelf every time.
+        // Falls through untouched when nothing is featured — which is the case until the
+        // API starts returning the flag at all.
         const fromParam = paramSlug ? collections.find(c => c.slug === paramSlug) : undefined;
         const validSaved = savedId && collections.find(c => c.id === savedId);
-        const defaultCollection = collections.find(c => c.tier === 'federal') ?? collections[0];
+        const topFeatured = sortFeaturedFirst(collections).find(isFeatured);
+        const defaultCollection =
+          topFeatured ?? collections.find(c => c.tier === 'federal') ?? collections[0];
 
         if (fromParam) {
           setSelectedId(fromParam.id);

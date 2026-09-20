@@ -16,6 +16,8 @@ essentials repo's `src/lib/buildingImages.js`.
 | `milwaukee-wi.jpg` | [Milwaukee Art Museum 7043](https://commons.wikimedia.org/wiki/File:Milwaukee_Art_Museum_7043.jpg) | Dori | [CC BY-SA 3.0 US](https://creativecommons.org/licenses/by-sa/3.0/us/deed.en) | Credit required. ShareAlike — used unmodified apart from downscaling; do not crop or composite without relicensing the result. |
 | `wisconsin.jpg` | [Wisconsin State Capitol Building 6](https://commons.wikimedia.org/wiki/File:Wisconsin_State_Capitol_Building_6.jpg) | Wikideas1 | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) | No obligation. |
 | `bend-or.jpg` | [Downtown Bend - view of Pilot Butte](https://commons.wikimedia.org/wiki/File:Downtown_Bend_-_view_of_Pilot_Butte.jpg) | UpdateNerd | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) | No obligation. |
+| `world-news.jpg` | [United Nations General Assembly 2024](https://commons.wikimedia.org/wiki/File:United_Nations_General_Assembly_2024.jpg) | Mojnsen | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Credit required. ShareAlike — **downscaled only, not cropped**; the hall is symmetrical so the centre crop needs no help. Do not crop or composite without relicensing the result. |
+| `climate-change.jpg` | [Mauna Loa Observatory in 2006](https://commons.wikimedia.org/wiki/File:Pl23_wea03453_-_Mauna_Loa_Observatory_in_2006.jpg) | Forrest M. Mims III, NOAA Photo Library | Public domain | No obligation. Cropped to recentre the observatory and trim empty sky — public domain, so the derivative carries no licence. |
 
 Banners predating this file have no recorded provenance.
 

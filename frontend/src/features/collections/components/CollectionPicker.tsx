@@ -3,6 +3,7 @@ import type { CollectionSummary } from '../types';
 import { CollectionCard } from './CollectionCard';
 import { useTheme } from '../../../hooks/useTheme';
 import { BobbitCivicFactSitter } from '../../../components/bobbits/BobbitCivicFactSitter';
+import { isFeatured, sortByTierThenName, sortFeaturedFirst } from '../featuredOrder';
 
 const TIER_SECTIONS: { tier: CollectionSummary['tier']; label: string }[] = [
   { tier: 'city', label: 'City' },
@@ -32,16 +33,6 @@ function filterCollections(collections: CollectionSummary[], query: string): Col
     (c.localeName?.toLowerCase().includes(q) ?? false) ||
     (c.localeCode?.toLowerCase().includes(q) ?? false)
   );
-}
-
-const TIER_ORDER: Record<string, number> = { city: 0, state: 1, federal: 2, international: 3 };
-
-function sortByTierThenName(collections: CollectionSummary[]): CollectionSummary[] {
-  return [...collections].sort((a, b) => {
-    const tierDiff = (TIER_ORDER[a.tier] ?? 99) - (TIER_ORDER[b.tier] ?? 99);
-    if (tierDiff !== 0) return tierDiff;
-    return a.name.localeCompare(b.name);
-  });
 }
 
 interface CollectionPickerProps {
@@ -139,9 +130,20 @@ export function CollectionPicker({
 
   const filtered = filterCollections(collections, query);
   const isPreview = variant === 'preview';
+  const isSearching = query.trim().length > 0;
+
+  // Promotion applies to BROWSING, not searching. While a query is active the user asked for
+  // specific matches, so featured order is dropped and — in the full variant — the shelf is
+  // collapsed entirely. `filterCollections` runs before grouping, so a shelf left up during a
+  // search would show each hit twice (once featured, once in its tier), which reads as a bug.
+  const featuredItems = isSearching ? [] : filtered.filter(isFeatured);
+  const hasShelf = featuredItems.length > 0;
+
   // Selection is shown via the card's own highlight/badge, never by moving it — the grid's
-  // order stays put (tier-then-name) whichever collection is selected.
-  const previewItems = isPreview ? sortByTierThenName(filtered).slice(0, previewLimit) : filtered;
+  // order stays put whichever collection is selected.
+  const previewItems = isPreview
+    ? (isSearching ? sortByTierThenName(filtered) : sortFeaturedFirst(filtered)).slice(0, previewLimit)
+    : filtered;
 
   return (
     <div>
@@ -249,11 +251,30 @@ export function CollectionPicker({
         (() => {
           const grouped = groupByTier(filtered);
           const visibleSections = TIER_SECTIONS.filter(({ tier }) => (grouped.get(tier)?.length ?? 0) > 0);
-          return visibleSections.map(({ tier, label }, idx) => {
+          const shelf = hasShelf ? (
+            <div key="featured">
+              <SectionDivider label="Featured" darkMode={darkMode} isFirst />
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4">
+                {sortByTierThenName(featuredItems).map(c => (
+                  <CollectionCard
+                    // A featured collection ALSO renders in its home tier section below, so a
+                    // bare id would collide with that copy. The shelf is a second view of the
+                    // same row, not a move.
+                    key={`featured-${c.id}`}
+                    collection={c}
+                    isSelected={selectedId === c.id}
+                    onSelect={onSelect}
+                    onPlay={onPlay}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null;
+          const sections = visibleSections.map(({ tier, label }, idx) => {
             const items = grouped.get(tier) ?? [];
             return (
               <div key={tier}>
-                <SectionDivider label={label} darkMode={darkMode} isFirst={idx === 0} />
+                <SectionDivider label={label} darkMode={darkMode} isFirst={idx === 0 && !hasShelf} />
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4">
                   {items.map(c => (
                     <CollectionCard
@@ -268,6 +289,7 @@ export function CollectionPicker({
               </div>
             );
           });
+          return shelf ? [shelf, ...sections] : sections;
         })()
       )}
     </div>

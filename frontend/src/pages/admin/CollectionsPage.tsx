@@ -9,6 +9,7 @@ interface CollectionHealth {
   name: string;
   slug: string;
   isActive: boolean;
+  featured: boolean;
   themeColor: string;
   stats: {
     activeCount: number;
@@ -27,6 +28,7 @@ export function CollectionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [featuredPendingId, setFeaturedPendingId] = useState<number | null>(null);
 
   useEffect(() => { fetchCollections(); }, []);
 
@@ -49,6 +51,36 @@ export function CollectionsPage() {
 
   const handleToggleExpand = (id: number) => setExpandedId(expandedId === id ? null : id);
   const activeCollectionsCount = collections.filter(c => c.isActive).length;
+
+  /**
+   * Promote or demote a collection on the editorial shelf.
+   *
+   * Applied optimistically and REVERTED on failure. A silent revert would be worse than no
+   * control at all — the operator would believe the shelf changed — so a failure also raises
+   * the page's error banner.
+   */
+  const handleToggleFeatured = async (id: number, next: boolean) => {
+    const previous = collections;
+    setFeaturedPendingId(id);
+    setCollections(cs => cs.map(c => (c.id === id ? { ...c, featured: next } : c)));
+    try {
+      const response = await fetch(`${API_URL}/api/admin/collections/${id}/featured`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ featured: next }),
+      });
+      if (!response.ok) throw new Error(`Failed to update featured flag (${response.status})`);
+      setError(null);
+    } catch (err) {
+      setCollections(previous);
+      setError(err instanceof Error ? err.message : 'Failed to update featured flag');
+    } finally {
+      setFeaturedPendingId(null);
+    }
+  };
 
   return (
     <div>
@@ -117,6 +149,8 @@ export function CollectionsPage() {
               collection={collection}
               expanded={expandedId === collection.id}
               onToggleExpand={() => handleToggleExpand(collection.id)}
+              onToggleFeatured={(next) => handleToggleFeatured(collection.id, next)}
+              featuredPending={featuredPendingId === collection.id}
             />
           ))}
         </div>

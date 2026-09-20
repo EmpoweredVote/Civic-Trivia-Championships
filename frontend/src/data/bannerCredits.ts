@@ -77,6 +77,28 @@ export const BANNER_CREDITS: BannerCredit[] = [
       'https://commons.wikimedia.org/wiki/File:Downtown_Bend_-_view_of_Pilot_Butte.jpg',
     attributionRequired: false,
   },
+  {
+    slug: 'world-news',
+    collection: 'World News',
+    title: 'United Nations General Assembly Hall, New York',
+    author: 'Mojnsen',
+    license: 'CC BY-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+    sourceUrl:
+      'https://commons.wikimedia.org/wiki/File:United_Nations_General_Assembly_2024.jpg',
+    attributionRequired: true,
+  },
+  {
+    slug: 'climate-change',
+    collection: 'Climate Change',
+    title: 'NOAA Mauna Loa Observatory, Hawaii — the Keeling Curve station',
+    author: 'Forrest M. Mims III (NOAA Photo Library)',
+    license: 'Public domain',
+    licenseUrl: 'https://www.noaa.gov/information-technology/copyright-usage',
+    sourceUrl:
+      'https://commons.wikimedia.org/wiki/File:Pl23_wea03453_-_Mauna_Loa_Observatory_in_2006.jpg',
+    attributionRequired: false,
+  },
 ];
 
 /** Credits the licence obliges us to display. */

@@ -9,6 +9,7 @@ interface CollectionHealth {
   name: string;
   slug: string;
   isActive: boolean;
+  featured: boolean;
   themeColor: string;
   stats: {
     activeCount: number;
@@ -24,11 +25,17 @@ interface CollectionCardProps {
   collection: CollectionHealth;
   expanded: boolean;
   onToggleExpand: () => void;
+  /** Promote/demote on the editorial shelf. Awaits the server so a failure can be surfaced. */
+  onToggleFeatured: (next: boolean) => Promise<void>;
+  /** A request is in flight for this card — the control is disabled meanwhile. */
+  featuredPending?: boolean;
 }
 
-export function CollectionCard({ collection, expanded, onToggleExpand }: CollectionCardProps) {
+export function CollectionCard({
+  collection, expanded, onToggleExpand, onToggleFeatured, featuredPending = false,
+}: CollectionCardProps) {
   const { C } = useTheme();
-  const { name, slug, isActive, themeColor, stats } = collection;
+  const { name, slug, isActive, featured, themeColor, stats } = collection;
   const { activeCount, archivedCount, difficulty, quality, telemetry } = stats;
 
   const getHealthStatus = () => {
@@ -82,6 +89,20 @@ export function CollectionCard({ collection, expanded, onToggleExpand }: Collect
               }}>
                 {isActive ? 'ACTIVE' : 'INACTIVE'}
               </span>
+              {featured && (
+                <span style={{
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontSize: '10px',
+                  letterSpacing: '0.1em',
+                  padding: '2px 8px',
+                  borderRadius: '2px',
+                  marginLeft: '6px',
+                  backgroundColor: 'rgba(255,87,64,0.12)',
+                  color: ADMIN_ACCENT,
+                }}>
+                  FEATURED
+                </span>
+              )}
             </div>
             {/* Health indicator */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -106,8 +127,11 @@ export function CollectionCard({ collection, expanded, onToggleExpand }: Collect
         </div>
       </div>
 
-      {/* View Questions link */}
-      <div style={{ padding: '10px 16px', borderTop: `1px solid ${C.ruleLight}` }}>
+      {/* View Questions link + shelf control */}
+      <div style={{
+        padding: '10px 16px', borderTop: `1px solid ${C.ruleLight}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+      }}>
         <Link
           to={`/admin/questions?collection=${slug}`}
           style={{
@@ -126,6 +150,30 @@ export function CollectionCard({ collection, expanded, onToggleExpand }: Collect
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
+
+        <button
+          type="button"
+          disabled={featuredPending}
+          onClick={(e) => { e.stopPropagation(); void onToggleFeatured(!featured); }}
+          title={featured
+            ? 'Remove this collection from the Featured shelf'
+            : 'Promote this collection onto the Featured shelf'}
+          style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: '12px',
+            letterSpacing: '0.1em',
+            padding: '4px 10px',
+            borderRadius: '2px',
+            border: `1px solid ${featured ? ADMIN_ACCENT : C.rule}`,
+            backgroundColor: featured ? 'rgba(255,87,64,0.12)' : 'transparent',
+            color: featured ? ADMIN_ACCENT : C.muted,
+            cursor: featuredPending ? 'wait' : 'pointer',
+            opacity: featuredPending ? 0.5 : 1,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {featuredPending ? 'SAVING…' : featured ? 'UNFEATURE' : 'FEATURE'}
+        </button>
       </div>
 
       {/* Expanded detail section */}
