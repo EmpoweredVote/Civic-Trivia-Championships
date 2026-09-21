@@ -74,6 +74,55 @@ Every locale config must include:
 - **No addresses or phones in answer options:** Quality rule enforced in both city and state generation prompts. The advisory quality rule in the rules engine catches stragglers.
 - **State collections:** State-only curation rule — no city or regional landmark questions in the final set. State capitol questions are encouraged but must be about the capitol as a civic institution, not as a tourist landmark.
 - **Minimum question count:** 70 for smaller cities, 80+ for larger cities and states. Checked by `audit-collection-readiness.ts` (net count >= 50 is the hard floor; target is higher).
+- **Difficulty mix: at least 25-33% easy.** Ruling by Chris, 2026-09-20. A medium-heavy
+  collection is a defect, not a neutral choice — see the rubric below for why.
+
+### Difficulty rubric
+
+Until 2026-09-20 nothing here defined easy, medium or hard. Generators filled the gap by
+inference, and the result was a bank that is **46% medium** but in which medium plays
+*identically to easy*: across every active collection, easy answers correctly 49.9% of the
+time and medium 50.0%. Only hard separates, at 38.4%. Meanwhile the default `easy-steps`
+game mode prefers the easy pool for four of a game's five slots, so **1,550 medium
+questions have never been served once**. Label drift is not cosmetic; it decides what
+players ever see.
+
+Classify by **what the player must bring**, not by how obscure the subject feels.
+
+**EASY** — someone who lives there, or has visited with any interest, would likely know it
+without study.
+- A widely recognised landmark, team, airport, or neighbourhood identity.
+- Orientation and geography: which borough, which county borders it, how many boroughs.
+- The answer remains obvious once read, even if not recalled cold.
+- **Distractor test — this is the one that decides it.** If the other three options are
+  each independently plausible to someone who knows the place, the question is NOT easy,
+  however famous its subject. `queny-024` ("Queens County was named for whom?") looks easy
+  until you see the options are four different queens.
+
+**MEDIUM** — a resident could reason to it, or knows it from some familiarity.
+- Institutional structure and process: term lengths, who appoints whom, advisory scope.
+- Non-iconic years and dates.
+- Second-order associations and comparative claims.
+
+**HARD** — needs specific study or professional familiarity.
+- A precise figure the player must recall exactly: percentages, acreage, seating capacity,
+  counts of districts.
+- Named holders of offices below the headline ones.
+- Multi-step or comparative reasoning across several facts.
+
+Two rules that fall out of this:
+- **A precise number with close distractors is hard, never easy** — regardless of how
+  ordinary the subject is.
+- **An officeholder's name is never easy.**
+
+Apply the rubric in both directions. Reclassifying medium to easy without also demoting
+mislabelled easies just moves the drift somewhere else.
+
+**Expected yield, measured.** The Queens NY pilot (2026-09-20) reviewed all 63 medium
+questions and promoted 8, while demoting 2 easies that failed the rubric — a **13%
+promotion rate**, net +6, taking the collection from 17 easy (13%) to 23 (18%). Relabelling
+alone therefore does NOT reach the 25-33% bar; it is worth doing, but new easy questions
+still have to be written. Budget for both.
 
 ---
 
