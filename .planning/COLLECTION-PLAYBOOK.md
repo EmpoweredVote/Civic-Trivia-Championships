@@ -124,6 +124,45 @@ promotion rate**, net +6, taking the collection from 17 easy (13%) to 23 (18%). 
 alone therefore does NOT reach the 25-33% bar; it is worth doing, but new easy questions
 still have to be written. Budget for both.
 
+### Backfilling easy questions — what it took
+
+The five thinnest collections were brought into the band the same day by writing new easy
+questions directly. This is the measured cost of the "budget for both" line above.
+
+| Collection | easy % before | after | questions added |
+|---|---|---|---|
+| Queens, NY | 13% (17) | **25.7%** (37) | 14 |
+| Louisiana | 14% (13) | **25.7%** (28) | 15 |
+| Oregon | 15% (12) | **25.8%** (24) | 12 |
+| Portland, OR | 18% (12) | **28.2%** (22) | 10 |
+| Fremont, CA | 21% (11) | **31.1%** (19) | 8 |
+
+**Size the batch with `(0.25 * total - easy) / 0.75`, not `0.25 * total - easy`.** Adding
+questions raises the denominator too. Queens needed 14, where the naive subtraction says 10.
+
+**Where the easy questions actually were.** Every one of these banks was saturated with
+government process and had almost no local identity. Portland carried 60+ questions on
+council restructuring and the City Auditor's office — including its room number and the
+meaning of the symbol in its logo — but nothing asking which river runs through the city,
+which mountain is visible from it, or which team plays there. Fremont's set was largely
+Alameda County election administration and did not ask which county Fremont is in.
+
+So the productive seams, in order:
+1. **Orientation and geography** — which county, which bordering states, which river, which
+   ocean, which island. Almost always missing, and easy by the rubric.
+2. **The single most recognisable landmark, employer or institution.**
+3. **State-scale natural features** for state collections (high point, mountain range,
+   climate, major river).
+
+**State collections stay state-scale.** The capital city is allowed, as the seat of state
+institutions. "Largest city" and city landmarks are not — Oregon already has Portland and
+Bend collections that would own them.
+
+**Check for near-duplicates by fact, not by phrasing.** A trigram scan over the new questions
+flagged 15 pairs above 0.45 similarity, and every one was a shared template with a different
+answer — "which state borders Louisiana to the west / north / east" is a legitimate
+three-question family, and "state tree" matched "state motto" at 0.667 on wording alone.
+
 ---
 
 ## 5. Near-Duplicate Detection Gap (Resolved in Phase 57)
