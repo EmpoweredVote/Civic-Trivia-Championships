@@ -252,3 +252,35 @@ Book now lists the meadowlark as the state **songbird** (voted 2017); it was the
 state bird from a 1927 schoolchildren's poll. The new source therefore supports the bird but
 not the exact word "official". Left as-is and recorded here rather than quietly re-sourced
 onto a page that does not say what the question says.
+
+## Full-bank re-sweep after the repair
+
+All 845 distinct source URLs in the live bank, re-swept:
+
+| Class | Count | Verdict |
+|---|---|---|
+| Reachable | 786 | fine |
+| **HTTP 404** | **0** | **all 55 hard-dead links are gone** |
+| HTTP 403 | 52 | bot-blocked, not dead — same class as before |
+| Connection failed | 5 | `olympics.com`, `kaufmanastoria.com`, `legislature.ca.gov` (×2), one `clkrep.lacity.org` PDF. These sites plainly exist; treat as a local TLS/IPv6 artifact, not as dead links |
+| HTTP 429 | 1 | Wikipedia rate limit, transient |
+| HTTP 500 | 1 | `senate.la.gov`, may be transient |
+
+**Zero 404s is the number that matters.** Everything else on that list was non-dead before
+the repair too.
+
+### A third way to get a false positive — read this before re-running
+
+The first two are in the method section above (429 storms, 403 bot-blocks). The third bit
+this sweep twice:
+
+**`psql` output redirected to a file on Windows carries CRLF.** Feeding that straight to
+`xargs` appends `\r` to every URL and curl returns `000` for all of them. Two full re-sweeps
+reported *845 of 845 dead* — including Wikipedia — before the cause was found. The tell is
+that the failure is total and uniform; a real outage is never 100%.
+
+    psql ... > urls.txt          # WRONG - every line ends \r
+    psql ... | tr -d '\r' > urls.txt   # right
+
+Between them, the three false-positive modes mean a raw sweep result should never be acted
+on. Verify, then verify the verifier.
