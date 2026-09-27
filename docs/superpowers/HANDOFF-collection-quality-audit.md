@@ -1,11 +1,11 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 4)
+# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 5)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
 - Worktree: `C:/ctc-quality-audit`, branch `feat/collection-quality-audit`
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **22 of 43 collections audited.** 507 archived across all sessions, 182 written.
+- **23 of 43 collections audited.** 567 archived across all sessions, 190 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
 
 ## Pull request status — updated after the merges
@@ -151,24 +151,24 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, 3,513 active questions
+- 43 active collections, 3,461 active questions
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
 - 2 collections below the 50-question floor: `war-in-iran` (32), `world-news` (44). Both
   pre-existing, both caused by pipeline yield rather than by any purge.
 
-**The floor being met is not the same as the bank being clean.** 21 collections have never been
+**The floor being met is not the same as the bank being clean.** 20 collections have never been
 read. Every one audited so far carried several defect classes, and the seven at 25.7–27.3%
 clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-queens-ny, pittsburgh-pa, plano-tx, washington-state, portland-or,
+pittsburgh-pa, plano-tx, washington-state, portland-or,
 washington-dc, los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
 
-(louisiana done — session 3; oregon-state done — session 4. Both below.)
+(louisiana — session 3; oregon-state — session 4; queens-ny — session 5. All below.)
 
 ## Per-collection method (unchanged, now well exercised)
 
@@ -861,3 +861,110 @@ GLOBAL VERIFICATION (measured):
    records this as fixed in June 2026 by moving to a non-rotating `ctc_app` role, so it
    looks like a regression. All DB work this session went through Supabase MCP instead.
 4. Next up: queens-ny.
+
+## Session 5 (2026-09-27) — queens-ny
+
+### queens-ny — complete
+143 -> 83 (60 archived) -> 91 (+8). Easy 25.9% -> 41.8%. bad_idx 0, all 4-option,
+spread 26/24/20/21, 0 unlinked.
+
+  Largest collection audited, and the largest purge: 60 of 143. Third collection in a row
+  to arrive just above the easy floor and clear it on labels alone — only THREE of the 60
+  archives were easies.
+
+  **REPEATED-SHAPE OFFICEHOLDER SETS AT THEIR LARGEST.** This is defect class 2 from the
+  ranking, and Queens carried the worst instance yet:
+    THIRTEEN NYC Council questions, one per Queens district, all of identical shape
+      ("Who represents District N?" / "X serves as member for which district?").
+      Kept queny-016 alone, because it also carries the Deputy Speaker title.
+    SIX State Senate questions of the same shape. Kept queny-108 alone.
+    Replaced with queny-202, a question about what a Council member actually DOES —
+      the substitution the playbook prescribes for this defect.
+  Phoenix had eight of these, St Louis seven, Alexandria six. Queens had nineteen.
+
+  INTERNAL CONTRADICTION, removed with the archive: queny-117 answered "Districts 22-37"
+    for the Assembly districts covering Queens — sixteen districts — while queny-116
+    answered fourteen. Both cannot be right. The district-NUMBER questions (queny-008,
+    queny-107, queny-117) were archived anyway as range-answer minutiae that rot with every
+    redistricting; the counts (queny-007, queny-106, queny-116) are kept.
+
+  MALFORMED PREMISE: queny-030 asked that if Queens were an independent city its 2.4
+    million people would rank it fourth largest in the US, "behind which three cities?",
+    answering "NYC, Los Angeles, Chicago". Queens is IN New York City, so the premise is
+    incoherent — and the answer is a compound ranking that drifts.
+
+  SELF-ANSWERING: queny-021 ("The Public Advocate serves all five boroughs and is elected
+    on what basis?" -> "Citywide"); queny-137 ("which borough has the most diversified
+    economy?" -> Queens, guessable from the collection alone — the ashnc-090 defect again).
+
+  MUTUAL LEAKAGE: queny-029 (states queny-002's "largest by land area"), queny-118 (states
+    queny-020's "51"), queny-025 (names Catherine of Braganza, queny-024's whole answer),
+    queny-084 (queny-083's text already gives "renamed in 1963"), queny-079 (queny-055's
+    text already gives the 1978 move), queny-089 (derivable from queny-149, which names the
+    two airports). De-leaked by rewording instead of archiving: queny-092, whose text
+    stated "one of three", which is queny-062's entire answer.
+
+  TRUE DUPLICATES: queny-095 = queny-009 (14 community boards); queny-118 = queny-007
+    (13 council districts).
+
+  CONCENTRATION, trimmed: Queens County Farm Museum 5 -> 1, Citi Field/Mets 7 -> 3,
+    US Open/USTA 6 -> 2, Queens Public Library 7 -> 4, Kaufman Astoria Studios 4 -> 2,
+    Community Boards 8 -> 6.
+
+  MINUTIAE archived (12): 51.7m fair visitors, the bridge's lead engineer, 1,255 acres,
+    a museum's 1972 original name, which mayor renamed Idlewild, an AirTrain journey time,
+    which subway lines serve one station, which census a claim rested on, a "200-299
+    languages" bracket answer, "47% foreign born as of 2024", a third founding-year
+    question, and an 1872 construction date.
+
+  SELF-INFLICTED, caught and fixed: queny-208 as first written shared queny-097's subject
+    (Jamaica as a transit hub), making it a near-duplicate rather than a family member.
+    Re-scoped to the county courthouse and civic centre before finishing.
+
+  Added queny-201..208 against measured holes: the collection had NO question about the
+    Mayor of New York City at all, nothing on the Flushing Remonstrance — the 1657 petition
+    for freedom of conscience signed in what is now Queens and a forerunner of the First
+    Amendment — and nothing on Louis Armstrong's house in Corona, the 7 train, the borough's
+    population, or the meaning of its own nickname. Mayor verified by search before writing:
+    Zohran Mamdani, 112th mayor, in office since 1 January 2026, expires 2030-01-01.
+
+  Post-pass sweeps: trigram >0.50 returns six pairs, all template FAMILIES ("in which Queens
+    neighborhood is X", the borders pair, the two district-count questions). Zero true
+    duplicates. Future-year options: 0. Five same-answer groups remain and all five are
+    families by the direction-of-variation test — a coincidental "14" (community boards vs
+    Assembly districts), two different four-year terms, three different Astoria facts
+    (Socrates Sculpture Park, the Greek community, the Steinway factory), two different
+    Brooklyn facts, and Jamaica as courthouse vs Jamaica as LIRR hub.
+  Source-drift: 8 of 91 flagged (8.8%).
+
+  FLAGGED, not fixed — and this one is a real cost, not a ceiling: the expiring ratio fell
+    from 14.7% (21 of 143) to 6.6% (6 of 91). Archiving nineteen repeated-shape officeholder
+    questions is what did it, and those nineteen were the bulk of the collection's expiring
+    content. The two rules genuinely pull against each other here: "max one question per
+    officeholder" and "15-30% expiring" cannot both be satisfied by a borough whose only
+    expiring content is a roster of district representatives. Recorded as a conflict for
+    Chris to rule on rather than resolved by quietly keeping duplicates.
+
+### SESSION 5 TOTALS AND GLOBAL STATE
+Collections audited this session: 1 (queens-ny). Running total 23 of 43.
+Archived: 60. Created: 8. Reworded in place: 2.
+
+GLOBAL VERIFICATION (measured):
+  43 active collections, 3,461 active questions
+  0 invalid answer indices, 0 unlinked
+  0 collections below the 25% easy floor
+  2 below the 50-question floor: war-in-iran (32), world-news (44), both pre-existing
+
+### Carry-forward
+1. **Three collections, three confirmations of the floor warning.** louisiana 25.7 -> 39.3
+   (0 easies among 28 archives), oregon-state 25.8 -> 37.1 (1 of 27), queens-ny
+   25.9 -> 41.8 (3 of 60). Remaining in the band: pittsburgh-pa, plano-tx,
+   washington-state, portland-or.
+2. **NEW RULE CONFLICT needing a ruling.** Purging a repeated-shape officeholder set
+   collapses the expiring ratio. Queens went 14.7% -> 6.6%. Either the 15% expiring floor
+   does not apply to collections whose officeholder content is a district roster, or the
+   one-per-officeholder rule needs an exception for bodies with many equal seats. Do not
+   resolve this by keeping duplicates.
+3. `checkLearnMoreLink` has still never been swept over the bank — see session 4.
+4. Local DB access is still broken (`EAUTHQUERY`); all work continues through Supabase MCP.
+5. Next up: pittsburgh-pa.
