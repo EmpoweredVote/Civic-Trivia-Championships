@@ -17,6 +17,7 @@
     "verify:answer-placement": "tsx src/scripts/verify-answer-placement.ts",
     "audit-questions": "tsx src/scripts/audit-questions.ts",
     "audit-address-phone": "tsx src/scripts/audit-address-phone.ts",
+    "audit-anachronism": "tsx src/scripts/audit-anachronism.ts",
     "archive-violations": "tsx src/scripts/archive-violations.ts",
     "verify:production": "tsx src/scripts/verify-production.ts",
     "scan-duplicates": "tsx src/scripts/scan-duplicates.ts",
