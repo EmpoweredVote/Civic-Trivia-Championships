@@ -177,6 +177,52 @@ three-question family, and "state tree" matched "state motto" at 0.667 on wordin
 
 **Cross-collection dedup:** Still requires a periodic manual run of `scan-duplicates.ts`. This is intentional — cross-collection dedup is a separate concern from within-collection quality.
 
+### The legacy backlog, and what cleaning it taught us (2026-09-26)
+
+The Phase 57 auto-dedup was never applied retroactively. A purge on 2026-09-26 found
+**77 same-answer clusters, 177 questions**, concentrated entirely in collections
+generated before Phase 57 — Cambridge 29, Massachusetts 12, Plano 11, California 9.
+Collections built after it (Madison, Milwaukee, Bend) had **zero**. Cambridge alone was
+carrying five paraphrases of "what share of votes elects one council member" and an
+exact-duplicate pair. 80 questions were archived.
+
+**Same answer + high similarity is NOT a duplicate.** This is the load-bearing lesson,
+and it cost a 2-in-3 false-positive rate on the first sample to learn. A question
+FAMILY can share an answer *as its subject*:
+
+- `nor-001/004/006/008/010/011` — "Which authority is responsible for [bin collections /
+  planning applications / council tax billing / environmental health / housing services /
+  leisure centres] in Norwich?" All six answer "Norwich City Council", and that IS the
+  point of the family: it teaches which tier of local government does what.
+- `mis-078` state **flower** and `mis-083` state **tree** are both "Magnolia" — the pair
+  §4 already warned about, caught here by a different method making the same mistake.
+- Three Bloomington councillors, three Philadelphia councillors, two Portland
+  councillors in one district — all "at-large" or "District 3", all legitimate.
+- State Senator term vs Governor term, both "4 years".
+
+**The discriminator is the DIRECTION OF VARIATION, not the similarity score:**
+
+> If what varies between two questions is the **subject**, they are a family — keep both.
+> If what varies is only the **phrasing** of one subject, they are duplicates — keep one.
+
+Two further traps found the same day:
+
+- **A family can contain a duplicate.** `nor-005` ("libraries") and `nor-020` ("public
+  libraries") sat inside a family cluster that was excluded wholesale. Excluding a
+  cluster is not the same as clearing it.
+- **Answer-key clustering misses duplicates whose answers are worded differently.**
+  `pla-049` and `pla-080` ask the same question about the same 1970 land reappraisal,
+  but one answer says "A land reappraisal that raised taxes" and the other "A 1970 land
+  reappraisal that raised taxes", so they landed in different clusters. Any future
+  automated pass has this blind spot; a human read of the near-miss band is the backstop.
+
+**Keep rule that worked:** higher `quality_score` (NULL last — it is NULL for 92% of the
+bank and decided almost nothing), then higher `encounter_count`, then lower
+`external_id`. Preferring encounters keeps the question players have actually seen, with
+its telemetry attached, and it incidentally picked the better question every time it
+was checked — including keeping `cal-085` over two variants that named the answer inside
+the question text.
+
 ---
 
 ## 6. Retrospective Template
