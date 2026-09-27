@@ -7,6 +7,11 @@
  * and does the thing a heuristic cannot: reads each cited source and asks whether it
  * still establishes the claim.
  *
+ * The reading itself lives in `services/sourceSupport.ts`, which imports no database.
+ * This file is only the orchestration: pick the questions, print the report, record the
+ * snapshot. The split was forced by discovering that importing this script to exercise
+ * one function opened a Postgres pool and hung.
+ *
  * Written after `lou-018`, which asked in what years Louisiana holds "its statewide
  * elections". Correct when written; Act 1 of Louisiana's 2024 First Extraordinary
  * Session moved congressional, state Supreme Court, PSC and BESE races to closed party
@@ -38,8 +43,17 @@
 import '../env.js';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { checkSourceDrift } from '../services/qualityRules/rules/source-drift.js';
 import type { QuestionInput } from '../services/qualityRules/types.js';
+import {
+  fetchSource,
+  judge,
+  claimOf,
+  type Verdict,
+  type Judgement,
+} from '../services/sourceSupport.js';
 
 /**
  * Haiku is the judge here deliberately. This is a high-volume, narrow classification --
@@ -48,14 +62,6 @@ import type { QuestionInput } from '../services/qualityRules/types.js';
  * a collection's sources are dense enough to need more.
  */
 const DEFAULT_MODEL = 'claude-haiku-4-5';
-
-/** Page text beyond this is very unlikely to contain the supporting sentence. */
-const MAX_SOURCE_CHARS = 40_000;
-
-/** Matches the excerpt length the news lane already stores in fact_snapshot. */
-const MAX_SNAPSHOT_CHARS = 400;
-
-type Verdict = 'supported' | 'not-established' | 'unreachable';
 
 interface QuestionRow {
   id: number;
@@ -67,12 +73,6 @@ interface QuestionRow {
   difficulty: string;
   source: { name: string; url: string };
   collectionName: string;
-}
-
-interface Judgement {
-  verdict: Verdict;
-  excerpt: string;
-  reasoning: string;
 }
 
 interface Args {
@@ -143,104 +143,6 @@ function toInput(row: QuestionRow): QuestionInput {
   };
 }
 
-/** The claim as the player meets it: the question plus the answer it rewards. */
-function claimOf(row: QuestionRow): string {
-  return `${row.text} -- the answer treated as correct is "${row.options[row.correctAnswer]}".`;
-}
-
-/**
- * Strip a fetched page to something worth sending. Deliberately crude: we are looking
- * for whether a sentence appears, not rendering the document.
- */
-function toPlainText(html: string): string {
-  return html
-    .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-async function fetchSource(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, {
-      redirect: 'follow',
-      signal: AbortSignal.timeout(15_000),
-      headers: { 'User-Agent': 'CivicTriviaChampionship-SourceAudit/1.0' },
-    });
-    if (!res.ok) return null;
-    return toPlainText(await res.text()).slice(0, MAX_SOURCE_CHARS);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Parse the judge's reply.
- *
- * Exported and pure so the parsing can be reasoned about on its own. It is deliberately
- * forgiving about surrounding prose and strict about the verdict vocabulary: an
- * unrecognised verdict becomes `not-established`, which routes the question to a human
- * rather than silently blessing it.
- */
-export function parseJudgement(raw: string): Judgement {
-  const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) {
-    return { verdict: 'not-established', excerpt: '', reasoning: 'unparseable judge reply' };
-  }
-
-  try {
-    const parsed = JSON.parse(match[0]) as Partial<Judgement>;
-    const verdict: Verdict = parsed.verdict === 'supported' ? 'supported' : 'not-established';
-    return {
-      verdict,
-      excerpt: (parsed.excerpt ?? '').slice(0, MAX_SNAPSHOT_CHARS),
-      reasoning: parsed.reasoning ?? '',
-    };
-  } catch {
-    return { verdict: 'not-established', excerpt: '', reasoning: 'invalid JSON in judge reply' };
-  }
-}
-
-const JUDGE_SYSTEM = [
-  'You check whether a cited source establishes a trivia question\'s answer.',
-  '',
-  'Answer only from the source text given. Do not use your own knowledge of the subject:',
-  'the whole point is to find claims the source no longer supports, and filling the gap',
-  'from memory defeats it.',
-  '',
-  'Reply with JSON only:',
-  '{"verdict":"supported"|"not-established","excerpt":"<the sentence that establishes it, verbatim, or empty>","reasoning":"<one sentence>"}',
-  '',
-  '"supported" requires a passage that establishes the WHOLE claim. If the source covers',
-  'part of it, or discusses the topic without stating this fact, that is "not-established".',
-].join('\n');
-
-async function judge(model: string, claim: string, sourceText: string): Promise<Judgement> {
-  const { client } = await import('./content-generation/anthropic-client.js');
-
-  const response = await client.messages.create({
-    model,
-    max_tokens: 1000,
-    system: JUDGE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `CLAIM:\n${claim}\n\nSOURCE TEXT:\n${sourceText}`,
-      },
-    ],
-  });
-
-  const text = response.content.map(b => (b.type === 'text' ? b.text : '')).join('');
-
-  return parseJudgement(text);
-}
-
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
@@ -267,7 +169,9 @@ async function main() {
     return;
   }
 
-  console.log(`Judging ${shortlist.length} with ${args.model}${args.write ? ' (writing snapshots)' : ''}.\n`);
+  console.log(
+    `Judging ${shortlist.length} with ${args.model}${args.write ? ' (writing snapshots)' : ''}.\n`
+  );
 
   const tally: Record<Verdict, number> = { supported: 0, 'not-established': 0, unreachable: 0 };
 
@@ -278,7 +182,7 @@ async function main() {
     if (sourceText === null) {
       result = { verdict: 'unreachable', excerpt: '', reasoning: 'source could not be fetched' };
     } else {
-      result = await judge(args.model, claimOf(r), sourceText);
+      result = await judge(args.model, claimOf(r.text, r.options[r.correctAnswer]), sourceText);
     }
 
     tally[result.verdict]++;
@@ -312,9 +216,19 @@ async function main() {
   console.log('two questions in this audit looked stale and were right.\n');
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch(err => {
-    console.error(err);
-    process.exit(1);
-  });
+/**
+ * Only run when invoked directly. Without this guard, importing anything from this file
+ * executes the whole audit and opens a database pool. Found by trying to test it.
+ */
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+
+if (invokedDirectly) {
+  main()
+    .then(() => process.exit(0))
+    .catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
+}
