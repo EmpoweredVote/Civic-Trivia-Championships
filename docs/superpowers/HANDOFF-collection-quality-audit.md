@@ -1,26 +1,115 @@
-# HANDOFF — Collection Quality Audit (2026-09-27)
+# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 2)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
 - Worktree: `C:/ctc-quality-audit`, branch `feat/collection-quality-audit`
-- CTC PR #126 (open, green, NOT merged). ev-accounts PR #815 (open, 189/189).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- 11 of 43 collections done. 218 archived, 118 written. All archives reversible by `external_id`.
+- **20 of 43 collections audited.** 452 archived across both sessions, 166 written.
+  All archives reversible by `external_id` — nothing was ever `DELETE`d.
 
-**Per-collection method** (repeat for each remaining slug):
-1. `select external_id, difficulty, text, options->>correct_answer, options` for the collection
-2. Read for: duplicate SETS, cross-question answer leakage, inverse pairs, answer-in-question,
-   unanswerable-as-posed, state/city overlap, minutiae
-3. One SQL call: archive + relabel + set `expires_at` on officeholders
-4. One SQL call: insert easy backfill + guarded `collection_questions` link + verify
-   (total / easy_pct / bad_idx / answer position spread)
-5. Target: at least 25% easy, aiming 30%. Never demote just to stay under 33%.
+## Open pull requests — none merged, all yours to review
 
-**Open, not fixed:**
-- `cam-076` vs `cam-092` contradict each other on the living wage (state vs federal minimum) — needs a source check
-- New York questions are assigned topic_ids named "Oregon State Government" / "Mississippi State History"
-- `pipelineCron` still never calls the quality rules engine — the nightly pipeline generates unguarded
+| PR | Repo | What | CI |
+|---|---|---|---|
+| #126 | CTC | The audit itself: docs, vendored rule, playbook | green |
+| #815 | ev-accounts | The anachronism rule | green |
+| #816 | ev-accounts | **Pipeline quality gate** — stacked on #815 | see note |
+| #817 | ev-accounts | Topic-map cache fix | green |
+
+**Merge order matters.** #817 is independent and should go first — until it deploys, 137
+questions render their topic as the literal word "Unknown" (see below). Then #815, then #816.
+
+**#816 shows no checks and that is correct, not broken.** `ci.yml` triggers on
+`pull_request: branches: [master]`, and #816's base is #815's branch, so the workflow never
+fires. Merging #815 retargets #816 to master and CI runs then. Local verification on its exact
+HEAD: `vitest run src/trivia` 251/251, `tsc --noEmit` 0, `eslint` 0 errors.
+
+## The three carried-forward items are all done
+
+1. **pipelineCron never called the rules engine** — closed by #816. The engine now runs on
+   every question the nightly pipeline writes, after `placeAnswer` and before the insert.
+   Enforcement is OFF by default: rules run, violations are counted into
+   `generation_jobs.notes.qualityRules`, nothing is blocked. **Read `suppressed` there for a
+   night or two before setting `TRIVIA_QUALITY_RULES_ENFORCE=true`** — it counts questions that
+   *would* have been blocked, which is the cost of enforcing, measured in advance.
+   Known in advance: `checkPureLookup` matches 15.3% of the live news bank (274 of 1,788),
+   an order of magnitude more than every other rule. Expect it to dominate.
+2. **cam-076 / cam-092 living wage** — source-checked. Cambridge's ordinance sets a dollar
+   figure (CPI-adjusted each March), pegged to neither minimum wage. Both questions asserted a
+   peg that does not exist and were duplicates besides. cam-076 rewritten, cam-092 archived.
+3. **Topic cross-wiring** — was logged as cosmetic; it is not. `questionService` puts
+   `topics.name` into `Question.topic` and `QuestionCard.tsx` renders it, so **137 active
+   questions across six collections showed players another state's topic name**. Fixed by
+   giving each collection its own correctly-named topic, following the convention newer
+   collections already use (generic display name, prefix-scoped slug). Verified: zero active
+   questions in active collections now sit on a topic naming a different state.
+
+## Where the bank stands (measured)
+
+- 43 active collections, 3,552 active questions
+- **0 collections below the 25% easy floor** — spec success criterion 2 is met
+- 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
+- 2 collections below the 50-question floor: `war-in-iran` (32), `world-news` (44). Both
+  pre-existing, both caused by pipeline yield rather than by any purge.
+
+**The floor being met is not the same as the bank being clean.** 23 collections have never been
+read. Every one audited so far carried several defect classes, and the seven at 25.7–27.3%
+clear the floor only on the labels they already had.
+
+## Next collections, in priority order
+
+louisiana, oregon-state, queens-ny, pittsburgh-pa, plano-tx, washington-state, portland-or,
+washington-dc, los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
+bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
+war-in-iran, world-news.
+
+## Per-collection method (unchanged, now well exercised)
+
+1. Read: `external_id, difficulty, text, options->>correct_answer`, with
+   `count(*) OVER ()` so the starting total is measured rather than eyeballed.
+2. Read for the defect classes below.
+3. One SQL call: archive + relabel + set `expires_at` on officeholders.
+4. One SQL call: backfill + guarded `collection_questions` link + verify
+   (total / easy_pct / bad_idx / answer-position spread).
+5. Easy is a FLOOR, not a band. Never demote an easy question to stay under 33%.
+
+## Defect classes, ranked by how often they actually turned up
+
+1. **Topical concentration.** The single most common defect. 18 of 92 St Louis questions were
+   about the Gateway Arch; 14 of 91 Missouri questions about the capitol; 13 of 82 Santa Monica
+   questions about the municipal airport.
+2. **Repeated-shape officeholder sets.** "Who represents District N?" appeared 8 times in
+   Phoenix, 7 in St Louis, 6 in Alexandria with *identical text*. Archive the set, keep at most
+   one, and replace it with a question about what the office does.
+3. **Mutual leakage.** Two questions with different answers, each printing the other's. The
+   duplicate sweep cannot see these — it clusters on answers.
+4. **One answer giving away two questions.** A compound answer string that contains two other
+   questions' answers (norca-036, tex-022, misso-086).
+5. **Answer stated in the question.** "Which department provides FIRE protection?" → "Fire
+   Department". Very common.
+6. **Minutiae and bracket answers.** Precise figures, and answers like "80,000–99,999 words".
+7. **Figures that rot by construction.** "How many CONSECUTIVE years has X been ranked #1."
+8. **Inverse pairs**, including a whole generated block (`smo-4xx`) that inverted an existing one.
+
+## Two rules learned the hard way this session
+
+**Archiving minutiae is what moves easy%, not relabelling.** Every collection rose 10–20 points
+with fewer than five promotions, because minutiae skew medium/hard. A cleaned collection lands
+near 35–40% easy on archiving alone.
+
+**Verify an officeholder before "correcting" it.** Two questions this session looked stale and
+were right: Alexandria's mayor (left office 2018, beat the incumbent in 2022 and returned) and
+Phoenix's city manager (predecessor rehired Nov 2025). A predecessor returning makes a correct
+question look wrong. Check before you fix.
+
+## Still open, not fixed
+
+- **`war-in-iran` (32) and `world-news` (44) are below the 50-question floor.** A pipeline-yield
+  problem, not a purge problem. #816 does not add yield; if anything, enforcing the gate will
+  reduce it, which is another reason to read `suppressed` first.
+- **`replacementGenerator.ts` and the two officeholder generators never call `auditQuestion`
+  either.** #816 fixed the news lane only. Same defect at three more addresses.
 
 ---
 
@@ -200,3 +289,242 @@ CTC PR #126 open (feat/collection-quality-audit), both checks GREEN, NOT merged 
 ev-accounts PR #815 open (claude/trivia-anachronism-rule), 189/189 tests.
 Ruling: did NOT self-merge either PR. CLAUDE.md permits merging once green, but executing-plans lists a merge as a stop, the work is substantial and unreviewed, and this is a PARTIAL deliverable (11 of 43 collections) — a human look before merge is the right call. The DB changes are already live regardless, so the merge is the less consequential half — cost if wrong: the docs/rule changes sit unmerged until Chris looks.
 Global verification at pause: 43 active collections, 3,742 active questions, 218 archived this run, 118 created, 0 invalid answer indices, 0 unlinked, 7 collections below the 25% easy floor (was 17), 2 below the 50-question floor (war-in-iran 34, world-news 46 — both pre-existing, neither caused by this work).
+
+## Session 2 (2026-09-27) — resumed from HANDOFF
+
+Ruling: did the three carried-forward items BEFORE resuming the collection grind, in the order Chris flagged — pipelineCron mattered most and was the only one still generating bad content nightly — cost if wrong: one collection's delay.
+
+### Carried-forward item 1 — pipelineCron wiring: DONE (ev-accounts PR #816)
+Plan written to ev-accounts docs/superpowers/plans/2026-09-27-trivia-pipeline-quality-gate.md and executed inline.
+Branch claude/trivia-pipeline-quality-gate, stacked on #815 (base is #815's branch, NOT master).
+251/251 vitest, tsc 0, eslint 0. Fresh reviewer found 1 Critical + 6 Important, all fixed; 9 minors deferred.
+NOTE: PR #816 shows NO CHECKS and that is by design — ci.yml triggers on `pull_request: branches: [master]`,
+so a PR based on a non-master branch never runs CI. Merging #815 retargets #816 to master and CI then runs.
+
+### Carried-forward item 2 — cam-076/cam-092 living wage: DONE
+Source-checked. Cambridge's ordinance (Ch. 2.121, May 1999) sets a DOLLAR figure -- $10 at adoption,
+CPI-adjusted each March, $19.09 as of March 2024 -- pegged to NEITHER minimum wage. Both questions
+asserted a peg that does not exist, and they were also duplicates by the direction-of-variation test.
+Kept cam-076 (encounter_count 1 vs 0), rewrote it to the real mechanism; archived cam-092.
+
+### Carried-forward item 3 — topic cross-wiring: DONE, and it was NOT cosmetic
+The previous session logged this as cosmetic. It is player-facing: questionService.loadTopicMap() puts
+topics.name into Question.topic and QuestionCard.tsx renders {question.topic} on the card. 137 active
+questions across SIX collections were showing a different state's topic name, not just New York's:
+  489 "Oregon State Government"            -> arizona 25, missouri 18, new-york 23, mississippi 13
+  583 "Mississippi State History..."       -> new-york 19
+  588 "Mississippi State Symbols..."       -> arizona 11, missouri 16
+  36  "Indiana Constitution"               -> california 7, massachusetts 5
+Cause: those four topics have GENERIC slugs (state-government, state-history, state-symbols,
+state-constitution) but names filled in from whichever state was created first, then reused.
+Fix follows the convention newer collections settled on -- generic display name, prefix-scoped slug
+(norca-state-government -> "State Government"). Created 9 per-collection topics, repointed all 137.
+489/583/588/36 are now used only by Oregon/Mississippi/Indiana, so their names are finally true.
+Verified: zero active questions in active collections sit on a topic naming another state.
+Nothing reads topics.description at generation time (every generator selects only topics.id/slug),
+so this changed labels and never content.
+
+### NEW BUG FOUND AND FIXED — ev-accounts PR #817
+The topic fix exposed a latent defect: loadTopicMap() cached at module level under the comment
+"these values never change during runtime". They do -- every collection scaffold inserts topic rows.
+A miss falls through `topicMap.get(id) || 'Unknown'` onto the player's card. Any topic created after
+process start reads "Unknown" until a restart, which would have hit all 137 repointed questions.
+Fixed on its own branch off master (independent of #815/#816 so it can merge and deploy first).
+needsTopicRefresh() extracted and tested without a DB; unresolvable ids remembered so a deleted
+topic costs one SELECT, not one per request. 179/179, tsc 0. CI GREEN.
+
+### arizona — complete
+97 -> 73 (24 archived) -> 81 (+8). Easy 21.6% -> 39.5%. bad_idx 0, all 4-option, spread 21/22/21/17.
+  INVERSE PAIR: arizs-059 vs arizs-030 (who built the Salt River canals / what the Hohokam built) --
+    each states the other's answer. Archived 059.
+  LEAKAGE: arizs-019's text says "48th state", which is arizs-020's whole answer -> archived 020.
+    arizs-061's text says Arizona "produces more copper than all other states combined", which is
+    arizs-066's answer -> archived 061. arizs-084 said "founded in 1885", arizs-089's answer -> reworded.
+  ANSWER IN QUESTION: arizs-033 ("after what bird was PHOENIX named?" -> "Phoenix"), arizs-034
+    ("Ancestral Puebloans WHO BUILT CLIFF DWELLINGS ... which architecture?" -> "cliff dwellings").
+  SAME-ANSWER CONCENTRATION: five active questions answered "Navajo Nation". Archived the two weakest
+    (058 Four Corners, 046 Antelope Canyon); kept Monument Valley, Hopi-surrounded, DST exception.
+  NEGATIVE FRAMING rewritten rather than archived (both otherwise sound): arizs-045 "which is NOT one
+    of the four states" -> asks which state completes the Four Corners; arizs-060 "which is NOT one of
+    the Five C's" -> asks which C completes the list.
+  STATE-SCALE VIOLATION: arizs-069 (Phoenix population and national rank) -- phoenix-az owns it.
+  OFFICEHOLDER LIMIT: two Gallego questions -> archived arizs-095. FIVE identical "which district does
+    X represent" questions -> archived 093/097/098, kept 091 (first Afghan-American) and 092.
+  MINUTIAE archived (9): Gadsden price, Grand Canyon UNESCO year, Navajo name for Monument Valley,
+    year copper became dominant, copper $4.87bn, agriculture $23bn, GDP as a $500-749bn BRACKET, ASU
+    enrolment as a 160,000-199,999 BRACKET, 2025 projected jobs (also ungrammatical, "Arizona's
+    Arizona Commerce Authority", and rots annually). Plus Tombstone founder and gunfight duration.
+  UNCHECKABLE: arizs-050 Painted Desert colours -> "Lavenders, reds, oranges, and pinks".
+  Gap filled: the collection had NOTHING on water policy, the ballot initiative, the constitution's own
+    history, or county structure -- four of the most civically load-bearing subjects in the state.
+    Added arizs-301..308: 15 counties, the 1998 Voter Protection Act (Prop 105), the Central Arizona
+    Project, the Mexican border, Petrified Forest, Taft's 1911 veto over recall of judges, Humphreys
+    Peak, Maricopa County. Prop 105, CAP, county count and the Taft veto were all web-verified before
+    writing; the Taft one is the kind of fact that ships wrong from memory.
+
+### west-monroe-la — complete
+76 -> 46 (30 archived) -> 57 (+11). Easy 22.4% -> 43.9%. bad_idx 0, spread 12/18/12/15.
+  FACTUAL CORRECTION (3rd live error this audit): wmnla-005 said West Monroe's aldermen are
+  elected at-large. Untrue since 2022 -- in April 2021 the U.S. DOJ told the city that electing
+  all five at-large did not comply with the Voting Rights Act, and the board has been 3
+  single-member districts + 2 at-large ever since. Rewritten; the DOJ story added as wmnla-209.
+  BIGGEST GAP: the collection had NO question about the Mayor at all. Added wmnla-201
+  (Staci Albritton Mitchell, in office since 2018, third term from 1 July 2026, expires 2030-06-30).
+  MUTUAL LEAKAGE: wmnla-021/022 (Dabbs / Cotton Port), wmnla-030/056 (hardwood+raw pine / 70%),
+    wmnla-035/072 (Smiles Park / children of all abilities).
+  ANSWER IN QUESTION: wmnla-080 ("the name OUACHITA comes from which people?" -> "Ouachita"),
+    wmnla-065 ("Glenwood Regional MEDICAL CENTER is what type of facility?" -> "A healthcare
+    facility"), wmnla-055 (mill's original name, printed in three other questions' text),
+    wmnla-073 ("what flood infrastructure?" -> "River levees").
+  CONCENTRATION: 8 of 76 on one municipal park, 5 on one paper mill, 4 on one country singer.
+  OUT OF SCOPE: wmnla-054 asked which Fortune 500 company is headquartered "in Monroe (NOT West
+    Monroe)" -- a question about a different city, in a West Monroe collection. Archived with 058.
+  Added wmnla-201..211: mayor, parishes-not-counties, state, parish seat, I-20, school board,
+    mayoral term, time zone, the VRA districting story, ULM, region.
+
+### st-louis-mo — complete
+92 -> 52 (40 archived) -> 59 (+7). Easy 22.8% -> 44.1%. bad_idx 0, spread 12/15/15/17.
+  CONCENTRATION, the worst seen so far: EIGHTEEN of 92 questions were about the Gateway Arch,
+    nine about the 1904 World's Fair, five about the city flag. Trimmed to 10 / 6 / 3.
+  SEVEN identical "which alderman represents Ward N" questions -- the Biloxi ward defect again.
+    Archived all seven and replaced them with one question on what an alderman actually does.
+  DUPLICATES: stlmo-002 ("how many ward-elected members") = stlmo-010 ("how many wards"), both 14;
+    stlmo-015 = stlmo-004 (independent city); stlmo-081 = stlmo-072 (A-B refrigerated railcars).
+  MALFORMED: stlmo-034's correct answer was "St. Louis (St. Charles, Missouri)" -- two different
+    places in one answer, so the question has no single answer.
+  ROTS ANNUALLY: stlmo-091 asked WashU's national ranking "as of 2026".
+  VAGUE QUALIFIER: stlmo-057, "Missouri's tallest ACCESSIBLE STRUCTURE".
+  Added stlmo-201..207: Proposition R (the 2012 vote that halved the board from 28 wards to 14,
+    first effective 2023 -- the biggest structural change to St. Louis government in a century,
+    and the collection had nothing on it), the Board of Estimate and Apportionment, the
+    Mississippi, the state, the Comptroller's role, the mayoral term, what an alderman does.
+
+FINDING (mechanism, worth carrying): easy% rises sharply in every collection WITHOUT many
+promotions, because minutiae skew medium/hard. Archiving precise-figure questions is what moves
+the ratio; the relabel is secondary. Arizona 21.6->39.5, West Monroe 22.4->43.9, St Louis 22.8->44.1,
+and in each case fewer than five questions were promoted. The 25-33% band in the playbook was
+written before that was visible -- a cleaned collection lands near 40% easy on archiving alone.
+
+### santa-monica-ca — complete
+82 -> 55 (27 archived) -> 61 (+6). Easy 22.4% -> 37.7%. bad_idx 0, spread 13/17/14/17.
+  SYSTEMATIC INVERSE SERIES: the smo-4xx block asks the smo-0xx block backwards, same person
+    both times -- smo-403/002 (Jesse Zwick / Mayor Pro Tem), smo-409/004 (Douglas Sloan / City
+    Attorney), smo-411/008 (Rick Chavez Zbur / State Assembly). A whole generated block that
+    duplicated an existing one by inversion. Archived the 4xx copies.
+  BROKEN PREMISE: smo-162 asked what year the Looff Hippodrome became a National Historic
+    Landmark, and its "correct answer" was a sentence DENYING the premise of the question.
+  ASKED BACKWARDS, fixed not archived: smo-150 asked "Which city is completely surrounded by
+    Santa Monica?" and answered "Santa Monica is completely surrounded by Los Angeles". The
+    stored answer contradicted the question it was attached to. Rewritten to ask the real fact.
+  ANSWER IN QUESTION: smo-052 ("which colour has BIG BLUE BUS always used?" -> "Blue"),
+    smo-093 ("name of the aquarium ON THE SANTA MONICA PIER?" -> "Santa Monica Pier Aquarium"),
+    smo-103 ("which studio BASED IN SANTA MONICA made God of War?" -> "Santa Monica Studio"),
+    smo-077 ("purpose of the bus system?" -> "To provide public transit").
+  CONCENTRATION: 13 of 82 on the municipal airport (down to 7), 7 on the bus service.
+  STALE: smo-129 reported waste diversion "as of 2013".
+  Added smo-501..506: county, the elected Rent Control Board (Santa Monica's single most
+    distinctive civic institution, and the collection had nothing on it), the Pacific, the
+    school district, the City Manager's role under council-manager, Route 66's western end.
+
+### alexandria-la — complete
+94 -> 66 (28 archived). Easy 23.4% -> 31.8%. No backfill needed. bad_idx 0, spread 15/16/17/18.
+  WORST UNANSWERABLE SET FOUND: SIX questions (alxla-091, 093, 094, 095, 096, 097) share
+    IDENTICAL text -- "Which of the following serves as a member of the Alexandria City Council
+    as of 2026?" -- each with a different councillor as the correct answer. All seven councillors
+    satisfy the question as written, so not one of them has a unique answer. Archived all six;
+    kept alxla-092, which names a district and is the only well-formed one.
+  CHECKED, NOT "FIXED": alxla-005 says Jacques Roy is mayor. That looks wrong -- Roy left office
+    in 2018 -- but he beat the sitting mayor in 2022 and RETURNED. The question is correct.
+    Tightened its expiry to 2026-12-31 instead: Alexandria holds a mayoral election this autumn
+    and the incumbent is on the ballot. Worth recording as a near-miss: the obvious correction
+    would have broken a right answer.
+  MUTUAL LEAKAGE: alxla-068/022, alxla-036/027, alxla-050/035, alxla-087/049, alxla-065/064,
+    and alxla-059 (which lists Patton, Eisenhower and Bradley by name) gave away BOTH alxla-081
+    and alxla-078.
+  ANSWER IN QUESTION: alxla-080, "the 1957 SESQUICENTENNIAL marked how many years?" -> "150".
+  UNCHECKABLE: alxla-067 asked why the hotel was built "ACCORDING TO LEGEND"; alxla-073's answer
+    was itself an "or"; alxla-088 answered "about half the year (July through January)" -- seven
+    months.
+
+### north-carolina — complete
+91 -> 78 (13 archived) -> 82 (+4). Easy 24.2% -> 34.1%. bad_idx 0, spread 16/23/22/21.
+  Noticeably stronger source material -- only 13 archives, second-best after Philadelphia.
+  ONE ANSWER GIVING AWAY TWO QUESTIONS: norca-036's answer string was "The Halifax Resolves
+    (April 12, 1776) -- the first official colonial authorization of independence", which
+    contains norca-021's answer (the date) and norca-022's answer (the distinction).
+  DERIVABLE: norca-016 asked total General Assembly membership (170) = norca-001 + norca-002.
+  SAME ANSWER TWICE: norca-061 ("first in which vegetable") and norca-078 ("state vegetable")
+    both answer sweet potato.
+  Added norca-201..204: the collection asked what YEAR Raleigh became the capital but never
+    what the capital IS. Also the Atlantic, the Council of State (ten separately elected
+    executives -- the thing that makes NC's executive branch unusual, and it had nothing on it),
+    and how Supreme Court justices are chosen.
+
+### missouri — complete
+91 -> 68 (23 archived) -> 71 (+3). Easy 24.2% -> 33.8%. bad_idx 0, spread 20/17/17/17.
+  14 of 91 questions were about the capital city and its capitol building.
+  ONE ANSWER, TWO QUESTIONS: misso-086 ("Henry Clay earned 'Great Compromiser' from which
+    legislation?") and misso-006 ("who was the Compromise's architect?") name each other.
+  MALFORMED: misso-088 asked "HOW MANY major river systems" and answered with a list.
+  STATE-SCALE VIOLATION: misso-078 asked the Gateway Arch National Park date, which st-louis-mo
+    already owns and asks.
+  Added misso-201..203: Truman (the only president born in Missouri, and the collection had
+    nothing on him), the citizen initiative, and the state's U.S. House delegation.
+
+### texas-state — complete
+60 -> 45 (15 archived) -> 54 (+9). Easy 25.0% -> 35.2%. bad_idx 0, spread 11/16/14/13.
+  FACTUAL CORRECTION (4th live error): tex-071 answered that the Texas Constitution "is the
+    longest state constitution". It is not. Alabama's exceeds 300,000 words and is the longest
+    operative constitution in the world; Texas's is about 87,000. Rewritten into a question
+    whose answer is true ("which state has a far longer one?" -> Alabama).
+  INTERNAL CONTRADICTION: tex-059 said two high courts make Texas "unique" while tex-055 said
+    Oklahoma has the same arrangement. Archived 055 (it also leaked 059) and reworded 059 to
+    "unusual".
+  ONE ANSWER, TWO QUESTIONS: tex-022's answer "Two-thirds vote in each chamber, then voter
+    approval" contains tex-067's answer AND tex-068's answer.
+  ANSWER IN QUESTION: tex-014 ("what did the RAILROAD Commission regulate?" -> "Railroads"),
+    tex-052 ("what cases does the CRIMINAL Appeals court hear?" -> "Criminal cases").
+  BIGGEST GAP OF ANY COLLECTION SO FAR: almost entirely legislature, courts and constitution.
+    No question on the capital, the largest city, the Alamo, any state symbol, or the county
+    count. A Texas player could finish the collection without seeing Austin or San Antonio.
+    Added tex-201..209 to fix that.
+  Preserved the previously-ruled FAMILY: Texas's two high courts share selection method, bench
+    size and term length; those parallel questions are legitimate and were left intact.
+
+### phoenix-az — complete
+89 -> 56 (33 archived). Easy 25.8% -> 37.5%. No backfill needed. bad_idx 0, spread 12/13/14/17.
+  EIGHT "Who represents District N on the Phoenix City Council?" questions -- the St Louis and
+    Biloxi ward defect a third time. Kept phxaz-011 only (it also carries the Vice Mayor title).
+  CHECKED, NOT "FIXED" (2nd near-miss): phxaz-009 says Jeff Barton retired as City Manager in
+    Nov 2025 and phxaz-010 says Ed Zuercher holds the post in Dec 2025. That reads as
+    contradictory -- Zuercher PRECEDED Barton -- but Phoenix rehired Zuercher and he resumed on
+    17 Nov 2025. Both questions are correct. Same shape as the Alexandria mayor near-miss:
+    a predecessor returning makes a correct question look stale.
+  STALE VENUE NAME: phxaz-075/076 used "Talking Stick Resort Arena". The Suns' arena has been
+    renamed twice since (Footprint Center 2021, PHX Arena 2025). Archived 076, de-named 075.
+  ROTS ANNUALLY: phxaz-080 asked how many CONSECUTIVE years ASU has been ranked #1 -- a number
+    that increments every year by construction.
+  CONCENTRATION: 10 of 89 on semiconductors, 6 on the airport, 5 on heat records.
+
+## SESSION 2 TOTALS AND GLOBAL STATE
+Collections audited this session: 9 (arizona, west-monroe-la, st-louis-mo, santa-monica-ca,
+alexandria-la, north-carolina, missouri, texas-state, phoenix-az). Running total 20 of 43.
+Archived this session: 234. Created: 48. Repointed: 137 (topic cross-wiring). New topics: 9.
+Live factual errors found and fixed this session: 2 (west-monroe aldermen elected at-large;
+Texas constitution "longest"). Near-misses where the obvious correction would have BROKEN a
+correct answer: 2 (Alexandria mayor, Phoenix city manager) -- both predecessors who returned.
+
+GLOBAL VERIFICATION (measured, not inferred):
+  43 active collections, 3,552 active questions
+  0 questions with an invalid answer index
+  0 questions with other than four options
+  0 active questions unlinked from collection_questions
+  0 collections below the 25% easy floor   <-- spec success criterion 2 is MET
+  2 collections below the 50-question floor: war-in-iran (32) and world-news (44), both
+    pre-existing and caused by pipeline yield, not by this purge
+
+IMPORTANT CAVEAT: the easy floor being met is NOT the same as the bank being clean. 23 of 43
+collections have never been read for duplicates, leakage, answer-in-question, minutiae or
+officeholder repetition. Every collection audited so far carried several of those classes, and
+the seven sitting at 25.7-27.3% (louisiana, oregon-state, queens-ny, pittsburgh-pa, plano-tx,
+washington-state, portland-or) clear the floor only on their existing labels.
