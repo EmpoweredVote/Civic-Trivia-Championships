@@ -18,6 +18,7 @@ export const SCORE_WEIGHTS: Record<string, number> = {
   'vague-qualifiers': 30,
   'pure-lookup': 25,
   'broken-learn-more': 40,
+  'nested-options': 40,      // More than one option is true - a player can be right and marked wrong
 
   // Advisory violations (flagged but not blocking)
   'partisan-framing': 15,
@@ -27,6 +28,7 @@ export const SCORE_WEIGHTS: Record<string, number> = {
   'long-question': 5,
   'missing-citation': 8,
   'missing-options': 10,
+  'nested-option-scale': 8,  // Advisory - options nest but only one is true today
   'address-phone': 10,  // Advisory — modest penalty for phone/address in answer options
 };
 
