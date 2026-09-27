@@ -53,9 +53,16 @@ of counts across *states* when the partition included a null bucket we had not a
 Their fix (PR #818, `fix/stance-gate-rebucketing`) keys the baseline on row identity
 `<politician_id>:<topic_id>:<season_id>` instead of per-state counts, which is strictly
 stronger — the old model let a fix and a break in the same state net to zero and pass in
-silence. **Status as of 17:45 UTC: #818 is OPEN, and ev-accounts master CI is still failing
-(run 17:38 UTC, `failure`).** Their status line says "master goes green on merge"; that merge
-has not happened. Do not record this as closed until it does.
+silence.
+
+**CLOSED 2026-09-27 18:29 UTC.** #818 merged as `36fd9172`, and the master CI run on that
+merge commit came back **`success`** at 18:29:06 -- the first green master since #815 and #816
+landed. Their "master goes green on merge" held exactly. The three consecutive red master runs
+(16:45, 16:47, 17:38) were all this one re-bucketed row and none of them were ours.
+
+Recorded for the pattern, not the incident: a red master that two green PRs produced on merge,
+traced to a gate assumption rather than a bad row, fixed in the gate, with the baseline
+correctly left alone and `BALLOTPEDIA_ONLY` still at 179. No row was fixed and none forgiven.
 
 Still true that it blocks nothing here — the required check on CTC's side is `ci ok`, green
 throughout.
