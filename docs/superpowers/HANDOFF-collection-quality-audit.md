@@ -1,11 +1,11 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 3)
+# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 4)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
 - Worktree: `C:/ctc-quality-audit`, branch `feat/collection-quality-audit`
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **21 of 43 collections audited.** 480 archived across all sessions, 174 written.
+- **22 of 43 collections audited.** 507 archived across all sessions, 182 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
 
 ## Pull request status — updated after the merges
@@ -151,24 +151,24 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, 3,532 active questions
+- 43 active collections, 3,513 active questions
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
 - 2 collections below the 50-question floor: `war-in-iran` (32), `world-news` (44). Both
   pre-existing, both caused by pipeline yield rather than by any purge.
 
-**The floor being met is not the same as the bank being clean.** 22 collections have never been
+**The floor being met is not the same as the bank being clean.** 21 collections have never been
 read. Every one audited so far carried several defect classes, and the seven at 25.7–27.3%
 clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-oregon-state, queens-ny, pittsburgh-pa, plano-tx, washington-state, portland-or,
+queens-ny, pittsburgh-pa, plano-tx, washington-state, portland-or,
 washington-dc, los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
 
-(louisiana done — session 3, below.)
+(louisiana done — session 3; oregon-state done — session 4. Both below.)
 
 ## Per-collection method (unchanged, now well exercised)
 
@@ -752,3 +752,112 @@ GLOBAL VERIFICATION (measured, not inferred):
    check the project has. Worth a targeted sweep of questions about primaries, election
    timing and ballot access across all 43 collections.
 3. Next up: oregon-state.
+
+## Session 4 (2026-09-27) — oregon-state
+
+Merged first: CTC #127 (`3617427`, source-drift rule + audit script), CTC #126 (`e466a5d`,
+the audit itself), ev-accounts #819 (`c81b783`, the canonical rule). Neither CTC merge
+touched `frontend/`, so neither produced a Render deploy — checked by file list, not by
+commit title, per the `713fa75` warning in CLAUDE.md. ev-accounts master went green on
+#819, which also confirmed #818's stance-gate fix holds under a new merge.
+
+### oregon-state — complete
+89 -> 62 (27 archived) -> 70 (+8). Easy 25.8% -> 37.1%. bad_idx 0, all 4-option,
+spread 22/10/21/17, 0 unlinked.
+
+  **The most duplicate-riddled collection found so far**, and it clears the easy floor on
+  arrival. Chris's warning holds a second time: 25.8% on the labels it already had, and
+  only ONE of the 27 archives was an easy.
+
+  DUPLICATE CLUSTERS, by size:
+    State Capitol — TWELVE of 89 questions (13.5%), the worst concentration in the audit.
+      Archived seven: PWA financing, Vermont marble, "destroyed by fire twice" (same fact
+      as ore-096 and ore-123), the exact NRHP listing date, "33 stars painted inside the
+      dome", the replica Liberty Bell by the west entrance, and "two previous buildings"
+      (derivable from ore-096). Kept five: Art Deco, completed 1938, the Oregon Pioneer
+      statue, first state capitol to produce solar power, and the 1935 fire.
+    Bottle Bill — EIGHT. Four of them (ore-016/030/061/080) are the same claim that Oregon
+      was first in the nation with a container deposit; archived three. Also archived the
+      83%-litter-reduction figure and the 2007 deposit update.
+    State flag "different designs on each side" — FOUR. Archived two.
+    Secretary of State as successor — FOUR questions all answering "Secretary of State".
+      Archived the two that were straight restatements.
+    State motto — THREE. Archived two.
+    Initiative and referendum 1902 — THREE. Archived two.
+    Senate Bill 100 / Urban Growth Boundary — THREE. Archived two.
+
+  MALFORMED: ore-065 asked "Which Oregon LANDMARK is the only US state flag to feature
+    different designs on each side?" — a flag is not a landmark, and the question states
+    its own answer. Archived.
+
+  INTERNAL CONTRADICTION, fixed not archived: ore-015 said the Bottle Bill was "enacted in
+    1972" while ore-020, ore-030, ore-061 and ore-080 all said 1971. It was signed in 1971
+    and took effect in October 1972. Reworded to "signed into law in 1971".
+
+  INVERSE PAIR: ore-045 ("what year did Oregon first decriminalize cannabis" -> 1973) and
+    ore-090 ("what was Oregon first to decriminalize in 1973" -> cannabis). Each states the
+    other's answer. Kept ore-045.
+
+  MUTUAL LEAKAGE: ore-014's text states "in 1998", which is ore-034's entire answer, while
+    ore-034 asks the year ore-014 gives away. Kept ore-014.
+    ore-119's text stated "9", which is ore-011's entire answer — de-leaked by rewording.
+
+  TYPO in a live answer option: ore-115 offered "Valentine Day". Fixed to "Valentine's Day".
+
+  VERIFIED, NOT "CORRECTED": all six officeholders current — Kotek, Read, Rayfield,
+    Steiner, plus Senate President Rob Wagner and Speaker Julie Fahey, both confirmed by
+    search because legislative leadership turns over mid-term invisibly from the data.
+
+  Added ore-201..208 against measured holes: the collection asked the size of the House but
+    never the Senate, named the state tree but no other symbol, gave the north and south
+    borders but never the east, and had nothing on where Oregonians actually live.
+    Senate size (30), state flower, state bird, the Willamette Valley, Idaho to the east,
+    the legislature's real name, six U.S. House seats, and the Snake River through Hells
+    Canyon.
+
+  DELIBERATELY NOT ADDED: the state animal (beaver), which would have collided with
+    ore-054's "Beaver State" — the Mississippi flower/tree trap. And largest city, which
+    the state-scale rule reserves for the existing portland-or and bend-or collections.
+
+  Post-pass sweeps: trigram >0.45 returns 27 pairs, every one a template FAMILY (borders,
+    "official state X", "who is the current X", chamber sizes, Supreme Court size vs
+    selection). Zero true duplicates. Future-year options: 0. One same-answer pair remains
+    and is a family by the direction-of-variation test — ore-009 (succession) and ore-116
+    (election administration) both answer "Secretary of State", and what varies is the
+    subject.
+
+  FIRST USE OF THE NEW RULE ON A LIVE COLLECTION: source-drift flags 8 of 70 (11.4%,
+    against a 6.3% bank-wide rate) — six "how many" counts plus ore-016 and ore-022, both
+    "first in the nation" claims. All legitimately drift-prone. Not judged: the --judge
+    authorisation was for louisiana specifically.
+    Worth recording: ore-034, the single false positive documented in ev-accounts #819,
+    is gone from the bank — archived here on its own merits as a mutual-leakage duplicate.
+
+  FLAGGED, not fixed: expiring ratio 7 of 70 = 10.0%, under the playbook's 15% floor. The
+    playbook already records Oregon at 7.4% as a structural ceiling for state collections;
+    this is an improvement on that and still short. Accepted.
+
+### SESSION 4 TOTALS AND GLOBAL STATE
+Collections audited this session: 1 (oregon-state). Running total 22 of 43.
+Archived: 27. Created: 8. Reworded in place: 3.
+
+GLOBAL VERIFICATION (measured):
+  43 active collections, 3,513 active questions
+  0 invalid answer indices, 0 unlinked
+  0 collections below the 25% easy floor
+  2 below the 50-question floor: war-in-iran (32), world-news (44), both pre-existing
+
+### Carry-forward
+1. **Two collections in a row have confirmed the floor warning.** Louisiana 25.7% -> 39.3%
+   on 28 archives with zero easies among them; Oregon 25.8% -> 37.1% on 27 archives with
+   one. Remaining in that band: queens-ny, pittsburgh-pa, plano-tx, washington-state,
+   portland-or. Expect the same.
+2. **`checkLearnMoreLink` has almost certainly never been swept over the standing bank.**
+   `lou-108` was carrying a hard 404 (`https://www.nps.gov/atch/`) on a live question, and
+   the rule that exists to catch exactly that did not. A one-off sweep costs nothing but
+   time and would size the problem.
+3. **No local checkout can reach the database.** `EAUTHQUERY: user not found` from the main
+   checkout, not just worktrees. Every content script depends on that connection; memory
+   records this as fixed in June 2026 by moving to a non-rotating `ctc_app` role, so it
+   looks like a regression. All DB work this session went through Supabase MCP instead.
+4. Next up: queens-ny.
