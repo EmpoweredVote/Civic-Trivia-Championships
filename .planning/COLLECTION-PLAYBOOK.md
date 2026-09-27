@@ -46,8 +46,8 @@ Every collection follows this 7-step process:
 Apply to every collection:
 - **Expiring questions — target 15–30%, hard floor 10%:** Questions about current officeholders (mayor, city council, state legislature leadership, governor, commissioners) should have `expiresAt` set. Use a date 2–4 years in the future based on the official's term.
 - **Durable questions:** Questions about civic structure, history, geography, laws, and institutions should have `expiresAt: null`.
-- `audit-collection-readiness.ts` warns below 15%. As of the ruling below that warning is
-  advisory only; 10% is the bar that matters.
+- `audit-collection-readiness.ts` implements the three bands below: `DEFECT` under 10%,
+  a `NOTE` between 10% and 15%, silent at 15%+. All non-blocking.
 
 **RULING (Chris, 2026-09-27) — 15% is the target, 10% is the floor.** 15% was written as a
 floor and has never behaved as one. Measured across all 43 active collections on the day of
@@ -60,8 +60,12 @@ clears is not a floor.
 - **15–30% — what a healthy collection looks like.**
 
 This supersedes the exceptions granted case by case (DC 9.8%, `oregon-state` 10.0%,
-`louisiana` 10.1%); they now simply pass. `audit-collection-readiness.ts` still warns below
-15% and that warning is advisory — **the script's threshold has not been changed yet.**
+`louisiana` 10.1%); they now simply pass.
+
+The bands are enforced (advisory) by `audit-collection-readiness.ts`, verified against live
+data on 2026-09-27: `queens-ny` 6.6% → `DEFECT`, `pittsburgh-pa` 12.0% → `NOTE`,
+`madison-wi` 15.6% → silent. Nothing blocks, because the rule is "fix it **or** document why
+the jurisdiction cannot reach it" and a hard exit leaves no room to document.
 
 **Never buy the ratio with duplicates.** If a collection cannot reach 10% without repeating an
 officeholder or repeating a question shape, then it does not reach 10%. Document it. The

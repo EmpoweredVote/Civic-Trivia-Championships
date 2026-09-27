@@ -277,7 +277,7 @@ async function main(): Promise<void> {
     console.log(`    Expiring:    ${expiringCount} (within 90 days)`);
     console.log(`    With expiresAt:  ${expiringRatioCount} (any date, for ratio)`);
     const expiringRatio = totalCount > 0 ? (expiringRatioCount / totalCount) * 100 : 0;
-    console.log(`    Expiring ratio:  ${expiringRatio.toFixed(1)}% (target: 15–30%)`);
+    console.log(`    Expiring ratio:  ${expiringRatio.toFixed(1)}% (target 15–30%, floor 10%)`);
     console.log(`    Net:         ${netCount}  (total - expiring)`);
     console.log('');
     console.log(`  Threshold:     50 questions minimum`);
@@ -291,12 +291,23 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    // Expiring ratio warning (non-blocking)
-    if (totalCount > 0 && expiringRatio < 15) {
-      console.warn(`  WARNING: Expiring-question ratio is ${expiringRatio.toFixed(1)}% — below the 15% minimum target.`);
-      console.warn(`  Consider adding more current-officeholder questions (mayor, council members, etc.) with expiresAt set.`);
-      console.warn(`  Target range: 15–30% of questions should have expiresAt set.`);
+    // Expiring ratio (non-blocking). Ruled by Chris 2026-09-27: 15–30% is the target,
+    // 10% is the hard floor. 15% was written as a floor and never behaved as one — only
+    // 12 of 43 active collections met it on the day of the ruling, and four sat at 0.0%.
+    // Below 10% is a defect; 10–15% is acceptable and documented; 15–30% is healthy.
+    // Stays non-blocking because the rule is "fix it OR document why the jurisdiction
+    // cannot reach it", and a hard exit leaves no room to document.
+    if (totalCount > 0 && expiringRatio < 10) {
+      console.warn(`  DEFECT: Expiring-question ratio is ${expiringRatio.toFixed(1)}% — below the 10% hard floor.`);
+      console.warn(`  Add current-officeholder questions (mayor, council members, etc.) with expiresAt set,`);
+      console.warn(`  or document why this jurisdiction cannot reach 10%.`);
+      console.warn(`  Never reach the floor by repeating an officeholder or repeating a question shape —`);
+      console.warn(`  if it takes duplicates to get there, the collection does not get there.`);
       console.warn('');
+    } else if (totalCount > 0 && expiringRatio < 15) {
+      console.log(`  NOTE: Expiring-question ratio is ${expiringRatio.toFixed(1)}% — above the 10% floor,`);
+      console.log(`  below the 15–30% target. Acceptable; worth a line in the collection's notes.`);
+      console.log('');
     }
 
     // ─── Officeholder coverage check (non-blocking) ──────────────────────────
