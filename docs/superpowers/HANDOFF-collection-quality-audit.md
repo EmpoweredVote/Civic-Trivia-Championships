@@ -8,22 +8,51 @@
 - **20 of 43 collections audited.** 452 archived across both sessions, 166 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
 
-## Open pull requests — none merged, all yours to review
+## Pull request status — updated after the merges
 
-| PR | Repo | What | CI |
+| PR | Repo | What | Status |
 |---|---|---|---|
-| #126 | CTC | The audit itself: docs, vendored rule, playbook | green |
-| #815 | ev-accounts | The anachronism rule | green |
-| #816 | ev-accounts | **Pipeline quality gate** — stacked on #815 | see note |
-| #817 | ev-accounts | Topic-map cache fix | green |
+| #817 | ev-accounts | Topic-map cache fix | **MERGED + DEPLOYED** 2026-09-27 |
+| #815 | ev-accounts | The anachronism rule | **MERGED + DEPLOYED** 2026-09-27 |
+| #816 | ev-accounts | Pipeline quality gate | **MERGED + DEPLOYED** 2026-09-27 |
+| #126 | CTC | The audit itself: docs, vendored rule, playbook | **OPEN**, green, Chris to review |
 
-**Merge order matters.** #817 is independent and should go first — until it deploys, 137
-questions render their topic as the literal word "Unknown" (see below). Then #815, then #816.
+Deploy `dep-daskheqvcj2c73av11eg` on `ev-accounts-api` went live at 16:49 UTC from
+`b4e9338`, carrying all three. The restart rebuilt the topic cache, so the "Unknown"
+regression is cleared; #817 stops it recurring on the next collection scaffold.
 
-**#816 shows no checks and that is correct, not broken.** `ci.yml` triggers on
-`pull_request: branches: [master]`, and #816's base is #815's branch, so the workflow never
-fires. Merging #815 retargets #816 to master and CI runs then. Local verification on its exact
-HEAD: `vitest run src/trivia` 251/251, `tsc --noEmit` 0, `eslint` 0 errors.
+**Do not try to re-merge the ev-accounts PRs.** The only thing still open is CTC #126.
+
+One retarget gotcha, recorded in case it recurs: #816 was based on #815's branch, and
+`ci.yml` triggers on `pull_request: branches: [master]`, so it never ran CI. Retargeting
+to master fires `edited`, which is NOT a default trigger — CI still did not run. Closing
+and reopening the PR fires `reopened`, which IS, and produced a real green run without
+putting an empty commit in history.
+
+### Known-red, not ours
+
+ev-accounts master CI fails on the `stance sourcing` job — `BALLOTPEDIA_ONLY ks observed
+1 (NEW state)`. That job is SKIPPED on PRs and only runs on master pushes, which is why
+two green PRs turned master red on merge. It is live-DB drift from the Kansas slice work,
+not from anything here: every other counter matches its baseline exactly, and our diff is
+`src/trivia/**` plus docs. Handed to the ev-accounts-KY side with a written note; they are
+editing it and will respond. **Does not block anything in this workstream** — the required
+check is `ci ok`, which passes.
+
+### Follow-up with a clock on it
+
+The gate first exercises at **07:00 UTC** (Render cron job `ev-jobs-trivia-pipeline`, not
+the in-process node-cron — that is behind `TRIVIA_CRONS_ENABLED`). After that run, read:
+
+```sql
+SELECT collection_slug, created_at, notes->'qualityRules'
+FROM trivia.generation_jobs
+WHERE notes ? 'qualityRules'
+ORDER BY created_at DESC LIMIT 10;
+```
+
+`suppressed` is the number that decides whether to set `TRIVIA_QUALITY_RULES_ENFORCE=true`.
+Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news bank.
 
 ## The three carried-forward items are all done
 
