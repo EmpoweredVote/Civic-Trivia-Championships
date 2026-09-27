@@ -193,3 +193,94 @@ fine and sees the same 3,461 active questions.** CTC's own legacy Supabase keys 
 `SUPABASE_SECRET_KEY`, though the REST API does not expose the `trivia` schema.
 
 Raw data regenerable from this doc's method; per-question list above is complete.
+
+---
+
+# REPAIRED — same day
+
+All 57 dead URLs replaced; 81 active questions across 17 collections now carry a live source.
+Re-swept afterwards: **45 distinct replacement URLs, all HTTP 200.** Applied SQL is in
+`docs/superpowers/sql/2026-09-27-repair-dead-source-urls.sql`.
+
+`repair-broken-links.ts --apply` was **not** used, for the reasons in the hazard section above.
+Every replacement was chosen by reading the question's actual claim and finding a page that
+carries it, then verified by hand.
+
+## Two questions were wrong, not merely unsourced
+
+This is the real return on the sweep. A dead source URL turned out to be hiding a bad fact
+twice, and neither would have been caught by a link checker that only repoints URLs.
+
+- **`ica-001` — wrong answer, live in production.** "Who is the current Mayor of Indio?"
+  answered **Waymond Fermon**. Indio's mayor is **Elaine Holmes**; Fermon is Mayor Pro Tem.
+  Worse, the question rots by construction: Indio does not elect its mayor directly — the
+  Council picks one of its own members on a rotating basis at its first meeting each
+  December. Corrected, re-sourced, distractors changed to fellow council members (which is
+  the real choice set), and the explanation now states the rotation. `expires_at` was already
+  2026-12-01, which is right.
+- **`ashnc-006` — wrong date.** "Who was sworn in as Asheville's City Manager on January 12,
+  2026?" DK Wesley was sworn in on **8 January**; 12 January is when the appointment took
+  *effect*. Reworded to "became Asheville's City Manager in January 2026" so it no longer
+  asserts a date that is wrong, and re-sourced from the defunct WLOS article to the City of
+  Asheville's own announcement.
+
+## Where the replacements came from
+
+Preference order: a live page on the same authoritative domain, then a stable authoritative
+alternative. Wikipedia was used where the government page no longer states the claim in
+readable text — the same call `c72bc44` made for `lou-108` and `lou-203`.
+
+| Dead source | Replaced with | Questions |
+|---|---|---|
+| `interurbanrailwaymuseum.org/mission` | `planoconservancy.org/interurban-railway-museum/` — the museum's site now redirects to the Conservancy | 6 |
+| `unfccc.int/.../english_paris_agreement.pdf` | `unfccc.int/.../parisagreement_publication.pdf` — same document, moved | 5 |
+| `www.in.gov/...` (11 paths) | live `in.gov` section pages; constitution history to Wikipedia | 12 |
+| `www.sos.ca.gov/...` (7 paths) | `sos.ca.gov/elections/ballot-measures` — the initiative pages consolidated | 9 |
+| `www.norwich.gov.uk/...` (5 paths) | the council's current `/info/...` pages | 8 |
+| `www.queensbp.org/` | Wikipedia — note the office moved to `queensbp.nyc.gov`; only the `www.` host is dead | 3 |
+| `sos.oregon.gov/blue-book/Pages/facts*` | `explore-symbols.aspx`; geography and elections to Wikipedia | 5 |
+| LA city sites (6 paths) | live LA pages where they exist, Wikipedia otherwise | 8 |
+| `supremecourt.gov/opinions/06pdf/05-1120.pdf` | Wikipedia, *Massachusetts v. EPA* | 2 |
+| `www.unep.org/ozonaction/kigali-amendment` | Wikipedia, Kigali Amendment | 2 |
+| `www.bbc.co.uk/...` (2 articles) | Wikipedia | 3 |
+| remainder | one-by-one, see the SQL | 18 |
+
+## One claim flagged, not changed
+
+`ore-203` asks for Oregon's "official state bird" and answers *western meadowlark*. The Blue
+Book now lists the meadowlark as the state **songbird** (voted 2017); it was the unofficial
+state bird from a 1927 schoolchildren's poll. The new source therefore supports the bird but
+not the exact word "official". Left as-is and recorded here rather than quietly re-sourced
+onto a page that does not say what the question says.
+
+## Full-bank re-sweep after the repair
+
+All 845 distinct source URLs in the live bank, re-swept:
+
+| Class | Count | Verdict |
+|---|---|---|
+| Reachable | 786 | fine |
+| **HTTP 404** | **0** | **all 55 hard-dead links are gone** |
+| HTTP 403 | 52 | bot-blocked, not dead — same class as before |
+| Connection failed | 5 | `olympics.com`, `kaufmanastoria.com`, `legislature.ca.gov` (×2), one `clkrep.lacity.org` PDF. These sites plainly exist; treat as a local TLS/IPv6 artifact, not as dead links |
+| HTTP 429 | 1 | Wikipedia rate limit, transient |
+| HTTP 500 | 1 | `senate.la.gov`, may be transient |
+
+**Zero 404s is the number that matters.** Everything else on that list was non-dead before
+the repair too.
+
+### A third way to get a false positive — read this before re-running
+
+The first two are in the method section above (429 storms, 403 bot-blocks). The third bit
+this sweep twice:
+
+**`psql` output redirected to a file on Windows carries CRLF.** Feeding that straight to
+`xargs` appends `\r` to every URL and curl returns `000` for all of them. Two full re-sweeps
+reported *845 of 845 dead* — including Wikipedia — before the cause was found. The tell is
+that the failure is total and uniform; a real outage is never 100%.
+
+    psql ... > urls.txt          # WRONG - every line ends \r
+    psql ... | tr -d '\r' > urls.txt   # right
+
+Between them, the three false-positive modes mean a raw sweep result should never be acted
+on. Verify, then verify the verifier.
