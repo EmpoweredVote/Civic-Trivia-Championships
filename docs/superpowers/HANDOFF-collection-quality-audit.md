@@ -1,11 +1,11 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 2)
+# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 3)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
 - Worktree: `C:/ctc-quality-audit`, branch `feat/collection-quality-audit`
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **20 of 43 collections audited.** 452 archived across both sessions, 166 written.
+- **21 of 43 collections audited.** 480 archived across all sessions, 174 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
 
 ## Pull request status — updated after the merges
@@ -76,22 +76,24 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, 3,552 active questions
+- 43 active collections, 3,532 active questions
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
 - 2 collections below the 50-question floor: `war-in-iran` (32), `world-news` (44). Both
   pre-existing, both caused by pipeline yield rather than by any purge.
 
-**The floor being met is not the same as the bank being clean.** 23 collections have never been
+**The floor being met is not the same as the bank being clean.** 22 collections have never been
 read. Every one audited so far carried several defect classes, and the seven at 25.7–27.3%
 clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-louisiana, oregon-state, queens-ny, pittsburgh-pa, plano-tx, washington-state, portland-or,
+oregon-state, queens-ny, pittsburgh-pa, plano-tx, washington-state, portland-or,
 washington-dc, los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
+
+(louisiana done — session 3, below.)
 
 ## Per-collection method (unchanged, now well exercised)
 
@@ -557,3 +559,121 @@ collections have never been read for duplicates, leakage, answer-in-question, mi
 officeholder repetition. Every collection audited so far carried several of those classes, and
 the seven sitting at 25.7-27.3% (louisiana, oregon-state, queens-ny, pittsburgh-pa, plano-tx,
 washington-state, portland-or) clear the floor only on their existing labels.
+
+## Session 3 (2026-09-27) — louisiana
+
+Resumed from this file. Chris's framing was right and worth keeping as a rule: the
+collections sitting just above the floor clear it **on the labels they already had**, so
+they need the same archive-heavy pass as the thin ones, not a light touch. Louisiana
+proved it — 25.7% easy on arrival, and not one of the 28 questions archived was an easy.
+The ratio moved from 25.7% to 39.3% with **two** promotions.
+
+### louisiana — complete
+109 -> 81 (28 archived) -> 89 (+8). Easy 25.7% -> 39.3%. bad_idx 0, all 4-option,
+spread 22/25/19/23, 0 unlinked, 0 same-answer duplicate groups.
+
+  ACCURACY DRIFT — A NEW CLASS, and the most important finding here. lou-018 asked in what
+  years Louisiana holds "its statewide elections", answer "odd years not coinciding with
+  federal elections". That was true when written and is **no longer true as written**: Act 1
+  of the 2024 First Extraordinary Session moved U.S. House, U.S. Senate, Louisiana Supreme
+  Court, Public Service Commission and BESE races to CLOSED PARTY PRIMARIES beginning May
+  2026. Those are statewide contests held in even years. State executive offices kept the
+  odd-year open primary, so the fact survives but the scope does not.
+  Rewritten to "In what years does Louisiana elect its governor and other state executive
+  officials?", with the Act 1 carve-out spelled out in the explanation.
+  **This is not the same defect as a stale officeholder.** No name changed, no date passed,
+  no expires_at would have caught it, and the anachronism rule cannot see it. A LAW CHANGED
+  UNDER A QUESTION THAT STILL READS AS CORRECT. Every collection with election-mechanics
+  questions carries this risk and nothing in the pipeline detects it.
+
+  MUTUAL LEAKAGE (each question printing the other's answer): lou-048/lou-022 (Cabildo <->
+    the 1803 transfer), lou-064/lou-054 (Port of South Louisiana <-> tonnage), lou-076/lou-018
+    (076's text stated 018's entire answer verbatim), lou-078 and lou-075 (both leak lou-065's
+    "civil law"), lou-062 (its text stated lou-053's "90%"), lou-081 (its text pointed at
+    lou-080's state bird), lou-013 and lou-077 (both printed lou-008's "64 parishes"),
+    lou-079 (printed lou-070's "1974").
+    Kept the cleaner member of each pair; de-leaked lou-013, lou-062, lou-079 and lou-081 by
+    rewording rather than archiving, since all four are otherwise sound and three are easies.
+  LEAKED THE HEADLINE ANSWER: lou-014 ("who was governor immediately before Jeff Landry")
+    and lou-016 ("what office did Jeff Landry hold before") both print lou-001's answer —
+    the Governor, the collection's one easy officeholder question. Both archived. lou-014
+    also had no expires_at despite depending entirely on who is governor now.
+  TRUE DUPLICATES: lou-074 = lou-013 (police jury, phrasing-only variation);
+    lou-036 = lou-019 (statehood, year vs full date).
+  CONCENTRATION: 10 of 109 on the State Capitol BUILDING (height, storey count, dedication
+    year, the weight of a relief map and the provenance of a floor), 5 on Mardi Gras dates
+    and krewes, 5 on Huey Long. Trimmed to 5 / 2 / 4. The Capitol block is the same defect
+    as Missouri's capitol and St Louis's Arch, a third time.
+  STATE-SCALE VIOLATION: lou-044 asked for the oldest cathedral in continuous use in the US,
+    answer "St. Louis Cathedral in New Orleans" — a New Orleans landmark. There is no
+    new-orleans collection yet, which is exactly when the rule binds: the universal test is
+    "could a FUTURE city collection own this?"
+  SHAPE FIXES, rewritten rather than archived (all three were good content in a broken frame):
+    lou-029 asked TWO things ("Who was Huey Long, and what was his famous nickname?") and
+      every option was a compound sentence. Now asks the nickname alone -> "The Kingfish".
+    lou-084 asked what the Catahoula is "notable for", and option 4 ("named for its spotted
+      coat resembling a leopard") is INDEPENDENTLY TRUE — the question had no single answer.
+      Reframed as the state-symbol question it always was. Distractors are now the state dogs
+      of Texas, North Carolina and Wisconsin: plausible in form, instantly ruled out by a
+      resident, which is what the distractor rule asks for. Promoted to easy on that basis.
+    lou-086 named the fact in the question ("Driskill Mountain, the highest point in
+      Louisiana") and then asked for the number. Now asks which point is the highest.
+    lou-059 carried "(~$2 billion/year)" inside the answer OPTION, a figure that rots where
+      nothing can see it. Option text reduced to "Poultry".
+  MINUTIAE / ROTTING FIGURES archived (9): 828,000 sq mi, 54 National Historic Landmarks,
+    "over 850 million pounds" of seafood, energy at "about 25%" of GDP, 14 constitutional
+    articles, the 1912 parish total, the lowest point's 8 feet, 51,843 sq mi (whose text
+    also stated the 31st-largest rank it should have been asking), and lou-058's bracket
+    answer "Top 3" for natural-gas rank, which also overlapped lou-063.
+  VERIFIED, NOT "CORRECTED": all eight officeholders check out current — Landry, Nungesser,
+    Murrill, Nancy Landry, Cameron Henry, DeVillier, Fleming, Temple, every one with
+    expires_at already set to 2028-01-10 (terms run Jan 2024 - Jan 2028). Leadership
+    confirmed by search rather than assumed, since a mid-term Speaker or Senate President
+    change is invisible from the data.
+  Added lou-201..208, against measured holes: the open/"jungle" primary and its majority
+    rule (the single most distinctive thing about Louisiana elections, and the collection
+    had NOTHING on primaries at all), the governor's four-year term (it had term lengths for
+    legislators and Supreme Court justices but not for the governor), the six U.S. House
+    seats, Central Time, Deepwater Horizon settlements funding coastal restoration (coastal
+    land loss is the state's defining policy problem and was entirely absent), LSU as
+    flagship, BESE as the elected schools board, and "laissez les bons temps rouler".
+  DELIBERATELY NOT ADDED: the state flag's pelican, which would have collided with lou-080
+    and lou-081 — the Mississippi flower/tree trap. And "largest city", which the state-scale
+    rule reserves for a future new-orleans collection.
+  Post-pass trigram sweep at >0.35 over all 89: 130 pairs, every one a legitimate FAMILY
+    (the three borders questions, the eight "official state X" symbols, the eight
+    "who serves as X as of 2024" officeholders, the two chamber-size questions). Zero true
+    duplicates. The "What is Louisiana's official state ___?" template alone accounts for
+    the whole top of the ranking, which is the playbook's false-positive class exactly.
+  Anachronism prefilter (any option containing a year > 2026): 0 candidates.
+  FLAGGED, not fixed: expiring ratio is 9 of 89 = 10.1%, under the playbook's 15% floor.
+    All eight statewide officeholders are already expiring; getting to 15% would mean
+    inventing officeholder questions that breach the 1-per-officeholder rule or reach below
+    the headline offices. This is the structural ceiling the playbook already documents for
+    state collections (Oregon 7.4%, DC 9.7%). Documented and accepted.
+
+### SESSION 3 TOTALS AND GLOBAL STATE
+Collections audited this session: 1 (louisiana). Running total 21 of 43.
+Archived this session: 28. Created: 8. Rewritten in place: 9.
+Live accuracy errors found and fixed this session: 1 (lou-018, and it is a new class —
+a law change, not a stale fact).
+
+GLOBAL VERIFICATION (measured, not inferred):
+  43 active collections, 3,532 active questions
+  0 questions with an invalid answer index
+  0 active questions unlinked from collection_questions
+  0 collections below the 25% easy floor
+  2 collections below the 50-question floor: war-in-iran (32), world-news (44) —
+    both pre-existing, neither touched by this work
+
+### Carry-forward for the next session
+1. **Chris's floor warning is now measured.** Louisiana sat at 25.7% and still yielded 28
+   archives with ZERO easies among them. Do not treat a collection above the floor as
+   cleaner than one below it — the floor measures labels, not content. Expect the same for
+   oregon-state, queens-ny, pittsburgh-pa, plano-tx, washington-state and portland-or, all
+   of which sit in the 25.7-27.3% band for the same reason.
+2. **Check election-mechanics questions against current law, not just against the clock.**
+   lou-018 is the template: correct fact, obsolete scope, invisible to every automated
+   check the project has. Worth a targeted sweep of questions about primaries, election
+   timing and ballot access across all 43 collections.
+3. Next up: oregon-state.

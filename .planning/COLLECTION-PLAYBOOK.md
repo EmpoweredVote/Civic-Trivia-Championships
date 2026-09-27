@@ -210,6 +210,36 @@ three-question family, and "state tree" matched "state motto" at 0.667 on wordin
 
 ---
 
+### Accuracy drift: when the law changes under a correct question (added 2026-09-27)
+
+A question can be factually correct on the day it is written, never mention a date, never
+name an officeholder, carry no `expires_at` — and still become wrong, because the law it
+describes changed.
+
+Found in Louisiana. `lou-018` asked in what years the state holds "its statewide elections"
+and answered "odd years not coinciding with federal elections". Act 1 of the 2024 First
+Extraordinary Session moved U.S. House, U.S. Senate, Louisiana Supreme Court, Public Service
+Commission and BESE races to closed party primaries from May 2026 — statewide contests, held
+in even years. State executive offices kept the odd-year open primary, so the underlying fact
+survived and only the **scope** of the wording went stale.
+
+Why this matters more than it looks:
+
+- **No automated check can see it.** `expires_at` guards officeholders. The anachronism rule
+  guards future years in options. The duplicate sweep clusters on answers. None of them
+  inspects whether a described rule is still in force.
+- **It reads as correct.** A stale officeholder question looks stale — a name you can check.
+  This one looks right to a reviewer who is not tracking that state's legislature.
+
+**Rule:** when auditing a collection, treat questions about *election mechanics* — primary
+type, election timing, ballot access, runoff rules, redistricting, term limits — as a
+category needing a live source check, the same way officeholder questions do. Do not assume a
+question without a date is durable. Prefer wording that names the offices it applies to
+("the governor and other state executive officials") over a bare "statewide", because a
+scoped sentence fails loudly when the scope changes instead of quietly going half-true.
+
+---
+
 ## 5. Near-Duplicate Detection Gap (Resolved in Phase 57)
 
 **Historical context (v1.9, Phases 47–52):** After each collection was generated, a separate manual pass was required using `scan-duplicates.ts` to find semantic near-duplicates. This was error-prone and easy to forget.
