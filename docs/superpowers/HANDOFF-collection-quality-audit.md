@@ -1023,3 +1023,73 @@ GLOBAL VERIFICATION (measured):
    this session's sweep and measurements were run, and it is far cheaper than MCP for bulk
    reads. The `ctc_app` role itself still needs restoring.
 5. Next up: pittsburgh-pa (12.0% expiring — passes the new floor).
+
+---
+
+## SESSION 6 — queens-ny content pass (2026-09-27)
+
+Not an audit pass. Chris asked for easy Queens questions "that feel like trivia for NYC most
+New Yorkers would know", and the collection was simultaneously the one live breach of the new
+10% expiring floor. Both in one pass, because they pull against each other: easy durable
+questions grow the denominator and push the ratio *down*. Adding six easies alone would have
+taken Queens from 6.6% to 6.2%.
+
+**Result: 91 → 99 active, expiring 6.6% → 11.1%, easy 41.8% → 43.4%.** Readiness audit now
+prints `NOTE` rather than `DEFECT`.
+
+### Added — five durable easy (the NYC-trivia ask)
+
+| ID | Question | Answer |
+|---|---|---|
+| queny-209 | Punk band formed in Forest Hills, 1974 | The Ramones |
+| queny-210 | Run-DMC's Queens neighborhood | Hollis |
+| queny-211 | Band at the landmark 1965 Shea Stadium concert | The Beatles |
+| queny-212 | Expressway from the Queens-Midtown Tunnel onto Long Island | The Long Island Expressway |
+| queny-213 | Bridge renamed for Robert F. Kennedy, links Queens/Manhattan/Bronx | The Robert F. Kennedy Bridge |
+
+`queny-212` was **not** the question first written. It began as "which Grand Slam is played in
+Flushing Meadows" and was caught before commit by the leakage check: `queny-055`'s own text
+reads "Before the US Open tennis tournament moved to Flushing Meadows in 1978…", which states
+the answer outright. It would also have pushed US Open content back to three after the audit
+trimmed it 6 → 2. Rewritten in place to the Long Island Expressway; top similarity fell from
+0.383 to 0.276. **Write the leakage check into the process for new questions, not just audits
+— a new question can collide with an old one's text just as easily.**
+
+### Added — three expiring, all verified by search before writing
+
+| ID | Office | Holder | expires_at |
+|---|---|---|---|
+| queny-214 | NYC Public Advocate | Jumaane Williams (re-elected Nov 2025) | 2029-12-31 |
+| queny-215 | NYC Comptroller | Mark D. Levine (since 1 Jan 2026) | 2029-12-31 |
+| queny-216 | NYC Council Speaker | Julie Menin (elected 7 Jan 2026) | 2029-12-31 |
+
+Three different framings on purpose — "who serves as", "the office does X, who holds it",
+"the Council elected whom" — rather than three of one shape. That is the rule the Queens audit
+tripped over; it applies to writing as much as to purging.
+
+**Queens' US House members were considered and rejected.** AOC, Meng and Meeks are the most
+recognisable names available, but House terms end 3 Jan 2027 and the general election is
+3 November 2026 — five weeks out. Three questions that need re-verification within the quarter,
+all landing in the "expiring within 90 days" bucket, is not worth the ratio points.
+
+### Two defects fixed in passing
+
+- **`queny-059` had four nested options** — "More than 50 / 80 / 138 / 200", answer "More than
+  138". If 138 is right then 50 and 80 are also right: **three correct answers on a live easy
+  question.** Rewritten to non-overlapping brackets (About 40 / 90 / 140 / 300). This is a new
+  defect class — *nested numeric options* — and no existing rule catches it. Worth a rule.
+- **`queny-071`** (share of residents speaking a language other than English, a volatile ACS
+  figure) carried no `expires_at`. Set to 2027-06-30.
+
+### Verification (measured, not eyeballed)
+
+    total 99, expiring 11 (11.1%), easy 43.4%
+    bad answer indices 0, options != 4: 0, unlinked 0, duplicate links 0
+    answer position spread 27 / 26 / 23 / 23
+    trigram vs rest of collection, max 0.383 -> 0.276 after the queny-212 rewrite
+    no new question's answer string appears in any other question's text
+    JetBlue HQ re-verified (queny-132 still correct — Long Island City, confirmed 2026)
+
+Officeholder-coverage warnings for State Senate districts 13/14/15 remain, and are expected:
+those are the repeated-shape questions the audit archived. Do not answer them by restoring the
+set.
