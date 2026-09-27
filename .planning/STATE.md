@@ -32,11 +32,12 @@ Progress: [██████████] v1.0–v2.4 complete (Phases 1–74);
 - `civic-trivia-backend` Render service (`srv-d69ubnk9c44c738h8fh0`): **suspended**, auto-deploy **off**.
 - Database: Supabase shared project (kxsdzaojfaibhuzmclfq) — `trivia` schema
 - Redis: Upstash (stirred-pika-7510) — free tier, 500k commands/month
-- Collections: **42 total, 41 active** — 25 city, 14 state, 1 federal, 1 international (War in Iran).
-  **Climate Agreements is `is_active = false`** despite Phase 79-02 being marked complete; it holds 91
-  active questions but is not playable. Unresolved — see Pending Todos.
-- Questions: 3,825 active of 8,389 total; 3,734 active questions sit in active collections.
-  All active questions are linked in `collection_questions` (0 unlinked).
+- Collections: **44 total, 43 active** — verified 2026-09-27. `world-news` and `climate-change` are
+  both active (created inactive 2026-09-20, since enabled).
+  **Climate Agreements** is `is_active = false` and holds **0 active questions** (1,648 rows
+  linked, none active). The earlier note claiming 91 active questions was wrong.
+- Questions: **3,742 active** in active collections (verified 2026-09-27, after the collection
+  quality audit archived 218 duplicates/defects and added 118 new easy questions). 0 unlinked.
 
 ## Accumulated Context
 
