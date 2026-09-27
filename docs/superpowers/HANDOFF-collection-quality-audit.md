@@ -1005,7 +1005,9 @@ GLOBAL VERIFICATION (measured):
    The case-by-case exceptions (DC 9.8%, oregon-state 10.0%, louisiana 10.1%) now just pass.
    Queens stands at 6.6% and **is still below the new floor** — it needs roughly four added
    expiring questions, written to varied shapes, not restored duplicates.
-   Not yet done: `audit-collection-readiness.ts` still warns at 15%.
+   `audit-collection-readiness.ts` now implements the bands (`DEFECT` <10%, `NOTE` 10–15%,
+   silent 15%+, all non-blocking), verified live: queens-ny 6.6% DEFECT, pittsburgh-pa
+   12.0% NOTE, madison-wi 15.6% silent.
 3. ~~`checkLearnMoreLink` has still never been swept over the bank.~~ **SWEPT 2026-09-27.**
    Full results in `docs/superpowers/link-sweep-2026-09-27.md`. 854 distinct URLs; **57 dead,
    affecting 81 active questions across 17 collections**, concentrated in collections not yet
