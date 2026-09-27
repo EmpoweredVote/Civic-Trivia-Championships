@@ -35,9 +35,77 @@ ev-accounts master CI fails on the `stance sourcing` job — `BALLOTPEDIA_ONLY k
 1 (NEW state)`. That job is SKIPPED on PRs and only runs on master pushes, which is why
 two green PRs turned master red on merge. It is live-DB drift from the Kansas slice work,
 not from anything here: every other counter matches its baseline exactly, and our diff is
-`src/trivia/**` plus docs. Handed to the ev-accounts-KY side with a written note; they are
-editing it and will respond. **Does not block anything in this workstream** — the required
-check is `ci ok`, which passes.
+`src/trivia/**` plus docs. Handed to the ev-accounts-KY side with a written note.
+
+**RESOLVED AS DIAGNOSED, NOT YET LANDED (updated 2026-09-27, session 3).** They replied
+(`~/Desktop/ev-accounts-stance-sourcing-REPLY.md`). Confirmed theirs. Cause was **not a new
+row**: `Patrick Schmidt — Social Security`, `updated_at 2026-08-26`, was reused rather than
+created by their KS-2 occupancy migration `CC_0157`. Seating him gave `seat.state` a value
+where it had been NULL, so an existing row moved buckets. `BALLOTPEDIA_ONLY` total never
+changed — it was 179 before and after.
+
+**Our note got the mechanism wrong and the correction belongs on the record.** We inferred
+"Kansas went 0 → 1 while some other state dropped by one." It was not another state; it was
+the stateless `-` bucket, 7 → 6. Their regenerated baseline showed those two numbers were the
+only ones that moved in the entire file. The lesson is ours: we reasoned about a conservation
+of counts across *states* when the partition included a null bucket we had not accounted for.
+
+Their fix (PR #818, `fix/stance-gate-rebucketing`) keys the baseline on row identity
+`<politician_id>:<topic_id>:<season_id>` instead of per-state counts, which is strictly
+stronger — the old model let a fix and a break in the same state net to zero and pass in
+silence. **Status as of 17:45 UTC: #818 is OPEN, and ev-accounts master CI is still failing
+(run 17:38 UTC, `failure`).** Their status line says "master goes green on merge"; that merge
+has not happened. Do not record this as closed until it does.
+
+Still true that it blocks nothing here — the required check on CTC's side is `ci ok`, green
+throughout.
+
+### The three findings they handed us, and what we said back
+
+Replied in `~/Desktop/ev-accounts-stance-sourcing-REPLY-2.md` (written, not sent anywhere —
+same Desktop-file channel the outbound note used).
+
+1. **~152 rows cannot be fixed by the route the gate recommends.** 159 of 179 rows sit in
+   closed Season 1, only 7 superseded; an `UPDATE` raises `CLOSED_SEASON_IMMUTABLE`, and the
+   gate has no season filter so the closed row keeps counting. **This is Chris's policy call,
+   not ours, and we did not decide it.** What we offered: a closed-season row is *discharged*
+   when an open-season row exists for the same `(politician_id, topic_id)` **and is not itself
+   in the failing bucket** — the guard matters, or the backlog clears itself by being
+   restated. That makes the gate and the trigger stop contradicting each other without editing
+   history. Caveat we stated plainly: it makes the metric achievable, not small.
+2. **`#Campaign_themes` does not mean the candidate wrote it.** 231 rows rest on that
+   carve-out. A URL fragment is a *location*, not a provenance, so no tuning of the regex
+   recovers authorship — it was never in the string. Fix has to be a provenance value recorded
+   at ingest and read back, not re-derived from the URL.
+3. **The answers↔context join has no `season_id` condition**, so cross-season pairs fan out —
+   670 and 179 against 580 and 165 distinct.
+
+**The ordering constraint we handed back, which they had not connected:** finding 1's "159"
+came out of finding 3's fanned query, and a cross-season pair is exactly the shape a
+superseded row takes. So fix 3, regenerate, *then* recount 1 — otherwise a policy argument
+about closed seasons rests on a figure that moves when four words are added to a `JOIN`. And
+regenerate the baseline in the same commit as the join fix, or an identity-keyed gate reads
+the mass correction as a mass disappearance and fires on a fix.
+
+### CTC's own version of finding 2 — worth carrying
+
+Their finding 2 made us check ours, and ours is worse. CTC has **no provenance validation at
+all**. Two source checks exist and neither asks whether a source supports its claim:
+
+- `checkLearnMoreLink` (`structural.ts`) fetches `source.url` and asserts reachability —
+  404/500 blocking, timeout advisory. That is liveness.
+- `checkStructure` check 3 asserts the *explanation prose* contains "According to", "Source:",
+  a URL, or the source's own name. That is a string match on our own sentence.
+
+A live URL that does not support the claim passes both, permanently. `lou-018` is the worked
+example: live source, correct when written, no date, no officeholder, no `expires_at`, and
+made wrong by Act 1 of the 2024 special session. Caught by a human reading it. See the
+accuracy-drift section in `.planning/COLLECTION-PLAYBOOK.md`.
+
+Their framing generalises and is worth keeping: all three of their findings, and the original
+bug, are **a key derived from something that does not determine it** — state from occupancy,
+provenance from a URL fragment, pair identity from an unseasoned join. Ours is the same shape:
+support inferred from HTTP 200.
 
 ### Follow-up with a clock on it
 

@@ -238,6 +238,24 @@ question without a date is durable. Prefer wording that names the offices it app
 ("the governor and other state executive officials") over a bare "statewide", because a
 scoped sentence fails loudly when the scope changes instead of quietly going half-true.
 
+**We have no check that would catch this, and it is worth knowing exactly how little we have.**
+The rules engine has two source checks and neither asks whether a source supports its claim.
+`checkLearnMoreLink` fetches `source.url` and asserts it is reachable — 404 and 500 block, a
+timeout is advisory. That is liveness. `checkStructure`'s third check asserts that the
+*explanation prose* contains "According to", "Source:", a URL, or the source's own name. That
+is a string match on a sentence we wrote ourselves. A live URL that does not establish the
+claim passes both, cleanly and indefinitely.
+
+So the citation is checked for **existence**, never for **holding**. `lou-018` had a live
+source and a correct-looking sentence for two years after the statute beneath it was
+partitioned. Until something reads sources against claims, the only detector for this class is
+a person reading the question and going to look — which means it has to be part of the
+per-collection audit rather than something the pipeline will ever hand us.
+
+*(Noted 2026-09-27 alongside the same error class turning up in ev-accounts' stance-sourcing
+gate, which accepted a Ballotpedia URL fragment as evidence of authorship. Both check that a
+citation exists rather than that it holds.)*
+
 ---
 
 ## 5. Near-Duplicate Detection Gap (Resolved in Phase 57)
