@@ -990,11 +990,36 @@ GLOBAL VERIFICATION (measured):
    (0 easies among 28 archives), oregon-state 25.8 -> 37.1 (1 of 27), queens-ny
    25.9 -> 41.8 (3 of 60). Remaining in the band: pittsburgh-pa, plano-tx,
    washington-state, portland-or.
-2. **NEW RULE CONFLICT needing a ruling.** Purging a repeated-shape officeholder set
-   collapses the expiring ratio. Queens went 14.7% -> 6.6%. Either the 15% expiring floor
-   does not apply to collections whose officeholder content is a district roster, or the
-   one-per-officeholder rule needs an exception for bodies with many equal seats. Do not
-   resolve this by keeping duplicates.
-3. `checkLearnMoreLink` has still never been swept over the bank — see session 4.
-4. Local DB access is still broken (`EAUTHQUERY`); all work continues through Supabase MCP.
-5. Next up: pittsburgh-pa.
+2. ~~**NEW RULE CONFLICT needing a ruling.**~~ **RULED 2026-09-27 — and the conflict was
+   misdiagnosed here.** It was never one-per-officeholder versus the floor: all 17 archived
+   Queens expiring questions cover 17 *distinct* officeholders, one each, with no inverse
+   pair, so the person rule never fired. What bound was the repeated-shape rule (defect
+   class 2). The reason the two got confused is that **neither rule was in the playbook** —
+   one lived in Chris's standing notes, the other only here — while the 15–30% target that
+   they broke *was*. Both are now written into COLLECTION-PLAYBOOK.md under "Officeholder
+   coverage — two rules that are easy to confuse".
+
+   **Chris's ruling: 15% is the target, 10% is the hard floor.** Measured at the time:
+   of 43 active collections only 12 met 15%, 10 sat in the 15–30% band, and four were at
+   0.0%. Below 10% is a defect; 10–15% is acceptable and documented; 15–30% is healthy.
+   The case-by-case exceptions (DC 9.8%, oregon-state 10.0%, louisiana 10.1%) now just pass.
+   Queens stands at 6.6% and **is still below the new floor** — it needs roughly four added
+   expiring questions, written to varied shapes, not restored duplicates.
+   Not yet done: `audit-collection-readiness.ts` still warns at 15%.
+3. ~~`checkLearnMoreLink` has still never been swept over the bank.~~ **SWEPT 2026-09-27.**
+   Full results in `docs/superpowers/link-sweep-2026-09-27.md`. 854 distinct URLs; **57 dead,
+   affecting 81 active questions across 17 collections**, concentrated in collections not yet
+   audited (los-angeles-ca 13, indiana-state 12, climate-change 9, california-state 9,
+   norwich-uk 8). Two cautions in that doc matter more than the list: a single concurrent
+   pass reports ~60% false positives (Wikipedia 429s), and **50 HTTP 403s are bot-blocked
+   government sites, not dead links**. Also flagged there: `repair-broken-links.ts --apply`
+   would overwrite curated URLs with AI guesses — or null them — on that same flaky verdict.
+   Do not run it as written.
+4. **Local DB access — root cause found, workaround available.** `ctc_app` is rejected at
+   `aws-0-us-west-1.pooler.supabase.com` with `FATAL: (EAUTHQUERY) user not found in the
+   database`, for `psql` and the app client alike; CTC's legacy Supabase API keys are
+   separately dead (disabled 2026-09-09). **`EV-Accounts/backend/.env` → `DATABASE_URL`
+   (role `ev_api`) connects fine and sees the same 3,461 active questions** — that is how
+   this session's sweep and measurements were run, and it is far cheaper than MCP for bulk
+   reads. The `ctc_app` role itself still needs restoring.
+5. Next up: pittsburgh-pa (12.0% expiring — passes the new floor).

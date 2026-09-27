@@ -44,9 +44,54 @@ Every collection follows this 7-step process:
 ### Mixed-Durability Pattern (established Phase 52 — Texas State)
 
 Apply to every collection:
-- **Expiring questions (target 15–30%):** Questions about current officeholders (mayor, city council, state legislature leadership, governor, commissioners) should have `expiresAt` set. Use a date 2–4 years in the future based on the official's term.
+- **Expiring questions — target 15–30%, hard floor 10%:** Questions about current officeholders (mayor, city council, state legislature leadership, governor, commissioners) should have `expiresAt` set. Use a date 2–4 years in the future based on the official's term.
 - **Durable questions:** Questions about civic structure, history, geography, laws, and institutions should have `expiresAt: null`.
-- The 15% floor is now enforced as a warning by `audit-collection-readiness.ts`.
+- `audit-collection-readiness.ts` warns below 15%. As of the ruling below that warning is
+  advisory only; 10% is the bar that matters.
+
+**RULING (Chris, 2026-09-27) — 15% is the target, 10% is the floor.** 15% was written as a
+floor and has never behaved as one. Measured across all 43 active collections on the day of
+the ruling: only 12 met 15%, only 10 sat inside the 15–30% band, and four were at exactly
+0.0% (`norwich-uk`, `federal`, `los-angeles-ca`, `fremont-ca`). A bar that 28% of the bank
+clears is not a floor.
+
+- **Below 10% — a defect. Fix it or document why the jurisdiction cannot reach it.**
+- **10–15% — acceptable. Note it and move on.**
+- **15–30% — what a healthy collection looks like.**
+
+This supersedes the exceptions granted case by case (DC 9.8%, `oregon-state` 10.0%,
+`louisiana` 10.1%); they now simply pass. `audit-collection-readiness.ts` still warns below
+15% and that warning is advisory — **the script's threshold has not been changed yet.**
+
+**Never buy the ratio with duplicates.** If a collection cannot reach 10% without repeating an
+officeholder or repeating a question shape, then it does not reach 10%. Document it. The
+ratio is a symptom of good officeholder coverage, never a target to hit on its own.
+
+### Officeholder coverage — two rules that are easy to confuse
+
+Both were being enforced before 2026-09-27 without being written here. One lived only in
+Chris's standing notes, the other only in the audit handoff, and the Queens audit reported a
+conflict between the wrong pair as a result. They are separate rules with separate tests.
+
+- **One question per officeholder, per collection — counted by PERSON.** Two questions about
+  the same human being are a duplicate, including the inverse pair ("who represents Ward 1?"
+  / "which ward does X represent?"). This is what caught the Biloxi `bxl-421/422/423` block.
+  It does **not** fire on a district roster: one question each about twelve different council
+  members is twelve officeholders, not twelve questions about one.
+
+  *(This supersedes the "budget 2 questions per ward member (forward + reverse)" advice in the
+  Biloxi retrospective below. That advice was written to reach the expiring ratio and is what
+  produced the inverse pairs the audit later archived. Do not follow it.)*
+
+- **Repeated-shape officeholder sets — counted by TEMPLATE.** "Who represents District N?"
+  appearing eight times with only the number changing is monotonous whether or not the people
+  differ. Keep at most one or two exemplars of a shape, and replace the rest with questions
+  about what the office *does* — term length, what the body votes on, who appoints whom.
+  Promoted here from defect class 2 of the audit handoff.
+
+**Which one bound in Queens:** the shape rule, not the person rule. All 17 archived expiring
+questions covered 17 distinct officeholders, one each, with no inverse pairs — the person rule
+was never engaged. Check which test actually fires before reporting a conflict between them.
 
 ### Voice Guidance
 
@@ -479,6 +524,12 @@ Copy this template and fill it in at the end of each collection phase. Append to
 ### Carry-forward rules (new conventions for future collections)
 
 - **Plan for 3 targeted passes when using an 8-official council.** With a 7-ward council (8 officials total including mayor), one targeted pass at 2q/official only reaches ~8–9% expiring ratio against a 130-170 question pool. Budget 2 questions per ward member (forward + reverse) and 4+ questions for the mayor from the start. Write this 2q/official pattern directly into the officeholder script for Mississippi State and future collections with large councils.
+
+  > **SUPERSEDED 2026-09-27 — do not follow the forward+reverse part.** Two questions about
+  > the same ward member is an inverse pair and breaches the one-per-officeholder rule; the
+  > `bxl-421/422/423` block written on this advice was archived by the audit. It was written
+  > to chase a 15% expiring floor that no longer exists (the floor is now 10%). See
+  > "Officeholder coverage — two rules that are easy to confuse" above.
 - **Casino/gambling question cap generalizes to Mississippi State.** Mississippi State has significant gambling and casino history (Mississippi Gaming Control Act, Gulf Coast casino corridor). Apply a similar cap (8–10 questions max on gaming topic) in the locale config for Phase 62 to prevent topic overflow.
 - **Scaffold Bug 2 is confirmed persistent.** Every city collection from Phase 57 onward (Portland, Oregon, DC, Biloxi) has triggered this bug. Budget 10–15 minutes post-scaffold for the revert + manual-registration + localeName + description-apostrophe-check workflow. The checklist: (1) revert generate-locale-questions.ts, (2) manually add import + configKey, (3) verify localeName is short-form (not expanded), (4) verify description uses double-quote string if tagline contains an apostrophe.
 - **3-source Wikipedia failure is normal for city collections.** Multiple Wikipedia pages failing to extract via w/api.php (typically 2–4 of 12 sources) is expected. As long as the primary city article and 2–3 major topic articles load successfully, generation quality is unaffected. Do not delay generation to investigate failed sources — the main article is a reliable fallback.
