@@ -94,6 +94,15 @@ without study.
 - A widely recognised landmark, team, airport, or neighbourhood identity.
 - Orientation and geography: which borough, which county borders it, how many boroughs.
 - The answer remains obvious once read, even if not recalled cold.
+- **The headline executive by name** — the Mayor, the Governor, the President, the Vice
+  President. Nobody below them.
+- **Term lengths** — how long a mayor, governor or council member serves.
+- **The founding, incorporation or chartering year** of the city or state.
+- **The elementary-civics test** — the kind of fact an elementary school history or
+  civics book would state plainly. **Gated on the question being well sourced:** this
+  bullet is the widest of the five, and the sourcing requirement is what stops it
+  becoming a licence for half-remembered folklore. Every active question in the bank
+  has a source today, so the gate costs nothing to enforce.
 - **Distractor test — this is the one that decides it.** If the other three options are
   each independently plausible to someone who knows the place, the question is NOT easy,
   however famous its subject. `queny-024` ("Queens County was named for whom?") looks easy
@@ -113,10 +122,46 @@ without study.
 Two rules that fall out of this:
 - **A precise number with close distractors is hard, never easy** — regardless of how
   ordinary the subject is.
-- **An officeholder's name is never easy.**
+- **An officeholder's name is not easy — except the single headline executive.**
+  The Mayor of a city, the Governor of a state, and the President and Vice President
+  are EASY: a resident is expected to know who runs the place. Every other named
+  officeholder — council members, commissioners, clerks, auditors, Speakers Pro Tem,
+  deputies — is not, and the HARD bullet above ("named holders of offices below the
+  headline ones") is where most of them belong.
+  *(Amended 2026-09-26 by Chris. The blanket version of this rule was too broad: it
+  ruled out the one officeholder question a resident can actually answer.)*
 
 Apply the rubric in both directions. Reclassifying medium to easy without also demoting
 mislabelled easies just moves the drift somewhere else.
+
+### The distractor rule for easy questions (added 2026-09-26)
+
+**Difficulty is carried by the option set, not by the subject.** Measured across every
+active collection on 2026-09-26: questions labelled easy are answered correctly
+**50.0%** of the time — statistically identical to medium's 50.0%, and only 25 points
+above blind guessing on four options. Hard sits at 38.5%, so the labels that separate
+are hard-vs-everything, not easy-vs-medium.
+
+Relabelling alone will therefore not make easy questions easy. The option sets have to
+change too.
+
+> **An easy question's three distractors must be ones a resident rules out instantly.**
+
+- GOOD — "Who is the Mayor of Cambridge?" against three names who plainly do not hold
+  the office.
+- BAD — the same question against three sitting Cambridge city councillors. The subject
+  is easy; the question is not.
+
+When an otherwise-easy question fails **only** on its distractors, rewrite the option
+set rather than demoting the question. Never move the correct value to achieve this —
+change the distractors around it, and keep §6a's bracket variation in view while you do.
+Note that a rewrite moves the correct value's **index** even though the value itself is
+unchanged; `correct_answer` must be rewritten in the same operation as `options`.
+
+**Evidence that a percentage target alone does not work:** both generation prompts have
+asked for "Easy: 40% of questions" since they were written, and the collections they
+produced came out at 16–26% easy. The prompt stated a quota without defining the term.
+That is why the rubric above leads with what easy *is*.
 
 **Expected yield, measured.** The Queens NY pilot (2026-09-20) reviewed all 63 medium
 questions and promoted 8, while demoting 2 easies that failed the rubric — a **13%

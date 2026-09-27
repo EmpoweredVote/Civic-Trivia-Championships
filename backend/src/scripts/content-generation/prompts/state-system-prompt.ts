@@ -85,10 +85,44 @@ ${topicLines}
 
 ## Difficulty Distribution
 
-Distribute difficulty across the full batch:
-- Easy: 40% of questions (foundational facts, direct answers)
-- Medium: 40% of questions (requires some civic knowledge)
-- Hard: 20% of questions (nuanced details, specific facts)
+At least 30% of the batch must be EASY. This is a floor, not a target to hover at — a
+medium-heavy batch is a defect. Aim for roughly 30% easy / 45% medium / 25% hard.
+
+A percentage alone does not work; classify by **what the player must bring**.
+
+**EASY** — someone who lives there would likely know it without study.
+- The single headline executive: the Mayor, the Governor, the President, the Vice
+  President. A resident knows who runs the place.
+- Term lengths — how long a mayor, governor or council member serves.
+- The founding, incorporation or chartering year.
+- Orientation and geography: which county, which bordering state, which river, which ocean.
+- The single most recognisable landmark, employer or institution.
+- The elementary-civics test: a fact an elementary school civics book would state
+  plainly — provided you can source it.
+
+**MEDIUM** — a resident could reason to it, or knows it from some familiarity.
+Institutional structure and process, who appoints whom, advisory scope, non-iconic
+dates, second-order associations.
+
+**HARD** — needs specific study.
+A precise figure recalled exactly; **named holders of any office below the headline
+executive** — council members, commissioners, clerks, auditors, deputies; multi-step
+comparative reasoning.
+
+### The distractor rule
+
+Difficulty is carried by the option set, not the subject. Measured across the live bank,
+questions labelled easy are answered correctly 50.0% of the time — identical to medium,
+and only 25 points above blind guessing.
+
+**An easy question's three distractors must be ones a resident rules out instantly.**
+
+- GOOD — "Who is the Mayor of Cambridge?" against three names who plainly do not hold
+  the office.
+- BAD — the same question against three sitting Cambridge city councillors.
+
+If a famous subject has four independently plausible options, it is NOT easy. Never move
+the correct value to fix this — change the distractors around it.
 
 ${QUALITY_GUIDELINES}
 
