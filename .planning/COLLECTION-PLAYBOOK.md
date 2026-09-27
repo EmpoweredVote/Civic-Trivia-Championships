@@ -94,6 +94,15 @@ without study.
 - A widely recognised landmark, team, airport, or neighbourhood identity.
 - Orientation and geography: which borough, which county borders it, how many boroughs.
 - The answer remains obvious once read, even if not recalled cold.
+- **The headline executive by name** — the Mayor, the Governor, the President, the Vice
+  President. Nobody below them.
+- **Term lengths** — how long a mayor, governor or council member serves.
+- **The founding, incorporation or chartering year** of the city or state.
+- **The elementary-civics test** — the kind of fact an elementary school history or
+  civics book would state plainly. **Gated on the question being well sourced:** this
+  bullet is the widest of the five, and the sourcing requirement is what stops it
+  becoming a licence for half-remembered folklore. Every active question in the bank
+  has a source today, so the gate costs nothing to enforce.
 - **Distractor test — this is the one that decides it.** If the other three options are
   each independently plausible to someone who knows the place, the question is NOT easy,
   however famous its subject. `queny-024` ("Queens County was named for whom?") looks easy
@@ -113,10 +122,46 @@ without study.
 Two rules that fall out of this:
 - **A precise number with close distractors is hard, never easy** — regardless of how
   ordinary the subject is.
-- **An officeholder's name is never easy.**
+- **An officeholder's name is not easy — except the single headline executive.**
+  The Mayor of a city, the Governor of a state, and the President and Vice President
+  are EASY: a resident is expected to know who runs the place. Every other named
+  officeholder — council members, commissioners, clerks, auditors, Speakers Pro Tem,
+  deputies — is not, and the HARD bullet above ("named holders of offices below the
+  headline ones") is where most of them belong.
+  *(Amended 2026-09-26 by Chris. The blanket version of this rule was too broad: it
+  ruled out the one officeholder question a resident can actually answer.)*
 
 Apply the rubric in both directions. Reclassifying medium to easy without also demoting
 mislabelled easies just moves the drift somewhere else.
+
+### The distractor rule for easy questions (added 2026-09-26)
+
+**Difficulty is carried by the option set, not by the subject.** Measured across every
+active collection on 2026-09-26: questions labelled easy are answered correctly
+**50.0%** of the time — statistically identical to medium's 50.0%, and only 25 points
+above blind guessing on four options. Hard sits at 38.5%, so the labels that separate
+are hard-vs-everything, not easy-vs-medium.
+
+Relabelling alone will therefore not make easy questions easy. The option sets have to
+change too.
+
+> **An easy question's three distractors must be ones a resident rules out instantly.**
+
+- GOOD — "Who is the Mayor of Cambridge?" against three names who plainly do not hold
+  the office.
+- BAD — the same question against three sitting Cambridge city councillors. The subject
+  is easy; the question is not.
+
+When an otherwise-easy question fails **only** on its distractors, rewrite the option
+set rather than demoting the question. Never move the correct value to achieve this —
+change the distractors around it, and keep §6a's bracket variation in view while you do.
+Note that a rewrite moves the correct value's **index** even though the value itself is
+unchanged; `correct_answer` must be rewritten in the same operation as `options`.
+
+**Evidence that a percentage target alone does not work:** both generation prompts have
+asked for "Easy: 40% of questions" since they were written, and the collections they
+produced came out at 16–26% easy. The prompt stated a quota without defining the term.
+That is why the rubric above leads with what easy *is*.
 
 **Expected yield, measured.** The Queens NY pilot (2026-09-20) reviewed all 63 medium
 questions and promoted 8, while demoting 2 easies that failed the rubric — a **13%
@@ -165,6 +210,54 @@ three-question family, and "state tree" matched "state motto" at 0.667 on wordin
 
 ---
 
+### Accuracy drift: when the law changes under a correct question (added 2026-09-27)
+
+A question can be factually correct on the day it is written, never mention a date, never
+name an officeholder, carry no `expires_at` — and still become wrong, because the law it
+describes changed.
+
+Found in Louisiana. `lou-018` asked in what years the state holds "its statewide elections"
+and answered "odd years not coinciding with federal elections". Act 1 of the 2024 First
+Extraordinary Session moved U.S. House, U.S. Senate, Louisiana Supreme Court, Public Service
+Commission and BESE races to closed party primaries from May 2026 — statewide contests, held
+in even years. State executive offices kept the odd-year open primary, so the underlying fact
+survived and only the **scope** of the wording went stale.
+
+Why this matters more than it looks:
+
+- **No automated check can see it.** `expires_at` guards officeholders. The anachronism rule
+  guards future years in options. The duplicate sweep clusters on answers. None of them
+  inspects whether a described rule is still in force.
+- **It reads as correct.** A stale officeholder question looks stale — a name you can check.
+  This one looks right to a reviewer who is not tracking that state's legislature.
+
+**Rule:** when auditing a collection, treat questions about *election mechanics* — primary
+type, election timing, ballot access, runoff rules, redistricting, term limits — as a
+category needing a live source check, the same way officeholder questions do. Do not assume a
+question without a date is durable. Prefer wording that names the offices it applies to
+("the governor and other state executive officials") over a bare "statewide", because a
+scoped sentence fails loudly when the scope changes instead of quietly going half-true.
+
+**We have no check that would catch this, and it is worth knowing exactly how little we have.**
+The rules engine has two source checks and neither asks whether a source supports its claim.
+`checkLearnMoreLink` fetches `source.url` and asserts it is reachable — 404 and 500 block, a
+timeout is advisory. That is liveness. `checkStructure`'s third check asserts that the
+*explanation prose* contains "According to", "Source:", a URL, or the source's own name. That
+is a string match on a sentence we wrote ourselves. A live URL that does not establish the
+claim passes both, cleanly and indefinitely.
+
+So the citation is checked for **existence**, never for **holding**. `lou-018` had a live
+source and a correct-looking sentence for two years after the statute beneath it was
+partitioned. Until something reads sources against claims, the only detector for this class is
+a person reading the question and going to look — which means it has to be part of the
+per-collection audit rather than something the pipeline will ever hand us.
+
+*(Noted 2026-09-27 alongside the same error class turning up in ev-accounts' stance-sourcing
+gate, which accepted a Ballotpedia URL fragment as evidence of authorship. Both check that a
+citation exists rather than that it holds.)*
+
+---
+
 ## 5. Near-Duplicate Detection Gap (Resolved in Phase 57)
 
 **Historical context (v1.9, Phases 47–52):** After each collection was generated, a separate manual pass was required using `scan-duplicates.ts` to find semantic near-duplicates. This was error-prone and easy to forget.
@@ -176,6 +269,52 @@ three-question family, and "state tree" matched "state motto" at 0.667 on wordin
 - Logs every archive action with externalId, score, cluster ID, and kept question ID
 
 **Cross-collection dedup:** Still requires a periodic manual run of `scan-duplicates.ts`. This is intentional — cross-collection dedup is a separate concern from within-collection quality.
+
+### The legacy backlog, and what cleaning it taught us (2026-09-26)
+
+The Phase 57 auto-dedup was never applied retroactively. A purge on 2026-09-26 found
+**77 same-answer clusters, 177 questions**, concentrated entirely in collections
+generated before Phase 57 — Cambridge 29, Massachusetts 12, Plano 11, California 9.
+Collections built after it (Madison, Milwaukee, Bend) had **zero**. Cambridge alone was
+carrying five paraphrases of "what share of votes elects one council member" and an
+exact-duplicate pair. 80 questions were archived.
+
+**Same answer + high similarity is NOT a duplicate.** This is the load-bearing lesson,
+and it cost a 2-in-3 false-positive rate on the first sample to learn. A question
+FAMILY can share an answer *as its subject*:
+
+- `nor-001/004/006/008/010/011` — "Which authority is responsible for [bin collections /
+  planning applications / council tax billing / environmental health / housing services /
+  leisure centres] in Norwich?" All six answer "Norwich City Council", and that IS the
+  point of the family: it teaches which tier of local government does what.
+- `mis-078` state **flower** and `mis-083` state **tree** are both "Magnolia" — the pair
+  §4 already warned about, caught here by a different method making the same mistake.
+- Three Bloomington councillors, three Philadelphia councillors, two Portland
+  councillors in one district — all "at-large" or "District 3", all legitimate.
+- State Senator term vs Governor term, both "4 years".
+
+**The discriminator is the DIRECTION OF VARIATION, not the similarity score:**
+
+> If what varies between two questions is the **subject**, they are a family — keep both.
+> If what varies is only the **phrasing** of one subject, they are duplicates — keep one.
+
+Two further traps found the same day:
+
+- **A family can contain a duplicate.** `nor-005` ("libraries") and `nor-020` ("public
+  libraries") sat inside a family cluster that was excluded wholesale. Excluding a
+  cluster is not the same as clearing it.
+- **Answer-key clustering misses duplicates whose answers are worded differently.**
+  `pla-049` and `pla-080` ask the same question about the same 1970 land reappraisal,
+  but one answer says "A land reappraisal that raised taxes" and the other "A 1970 land
+  reappraisal that raised taxes", so they landed in different clusters. Any future
+  automated pass has this blind spot; a human read of the near-miss band is the backstop.
+
+**Keep rule that worked:** higher `quality_score` (NULL last — it is NULL for 92% of the
+bank and decided almost nothing), then higher `encounter_count`, then lower
+`external_id`. Preferring encounters keeps the question players have actually seen, with
+its telemetry attached, and it incidentally picked the better question every time it
+was checked — including keeping `cal-085` over two variants that named the answer inside
+the question text.
 
 ---
 
