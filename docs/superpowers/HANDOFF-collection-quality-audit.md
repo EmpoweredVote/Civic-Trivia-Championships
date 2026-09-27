@@ -2,32 +2,62 @@
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
-- Worktree: `C:/ctc-quality-audit`, branch `feat/collection-quality-audit`
+- **Branch from `master`.** `feat/collection-quality-audit` is MERGED — do not resume on it.
+  Each collection now gets its own short-lived `docs/<slug>-audit` branch off master.
+- Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
 - **23 of 43 collections audited.** 567 archived across all sessions, 190 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
+- **Do the DB work through the Supabase MCP server, project `kxsdzaojfaibhuzmclfq`.**
+  No local checkout can authenticate right now — `EAUTHQUERY: user not found`, from the
+  MAIN checkout as well as from worktrees, so it is not a worktree problem. Every content
+  script in the repo depends on that connection. Memory records this as fixed in June 2026
+  by moving to a dedicated non-rotating `ctc_app` role, so it reads as a regression and is
+  worth its own investigation. Sessions 3-5 did all their SQL through MCP instead.
+- Render MCP needs a workspace id and refuses to pick one; deploy verification therefore
+  has to be done by Chris or with a workspace supplied. CTC merges that touch nothing under
+  `frontend/` produce no deploy at all, so most ledger PRs need no verification.
 
-## Pull request status — updated after the merges
+## Pull request status — current as of session 5
 
-| PR | Repo | What | Status |
+Everything opened by this workstream is **MERGED**. Nothing is awaiting review.
+
+| PR | Repo | What | Merge |
 |---|---|---|---|
-| #817 | ev-accounts | Topic-map cache fix | **MERGED + DEPLOYED** 2026-09-27 |
-| #815 | ev-accounts | The anachronism rule | **MERGED + DEPLOYED** 2026-09-27 |
-| #816 | ev-accounts | Pipeline quality gate | **MERGED + DEPLOYED** 2026-09-27 |
-| #126 | CTC | The audit itself: docs, vendored rule, playbook | **OPEN**, green, Chris to review |
+| #815 / #816 / #817 | ev-accounts | anachronism rule, pipeline quality gate, topic-map cache fix | merged + deployed |
+| #818 | ev-accounts | stance-gate rebucketing (not ours; see below) | `36fd9172` |
+| #819 | ev-accounts | **source-drift rule** — the canonical copy, guards the nightly pipeline | `c81b783` |
+| #126 | CTC | the audit itself: docs, vendored anachronism rule, playbook | `e466a5d` |
+| #127 | CTC | source-drift vendored copy + `audit-source-support.ts` | `3617427` |
+| #128 | CTC | oregon-state ledger | `4f72936` |
+| #129 | CTC | queens-ny ledger | `2ec8d01` |
 
-Deploy `dep-daskheqvcj2c73av11eg` on `ev-accounts-api` went live at 16:49 UTC from
-`b4e9338`, carrying all three. The restart rebuilt the topic cache, so the "Unknown"
-regression is cleared; #817 stops it recurring on the next collection scaffold.
+**Do not re-merge any of these.** Open a fresh `docs/<slug>-audit` branch off master instead.
 
-**Do not try to re-merge the ev-accounts PRs.** The only thing still open is CTC #126.
+### Two CI gotchas, recorded because both look like something worse
 
-One retarget gotcha, recorded in case it recurs: #816 was based on #815's branch, and
-`ci.yml` triggers on `pull_request: branches: [master]`, so it never ran CI. Retargeting
-to master fires `edited`, which is NOT a default trigger — CI still did not run. Closing
-and reopening the PR fires `reopened`, which IS, and produced a real green run without
-putting an empty commit in history.
+1. `ci.yml` in BOTH repos triggers on `pull_request: branches: [master]`. A PR based on
+   another PR's branch **never runs CI**, and the required checks then never report. Retargeting
+   fires `edited`, which is not a default trigger; closing and reopening fires `reopened`,
+   which is. Never stack PRs here.
+2. Immediately after a force-push, `gh pr checks` can report `BLOCKED` with *"no checks
+   reported on the branch"* — identical in appearance to the renamed-job failure CLAUDE.md
+   warns about. It is usually just a polling race. Tell them apart with
+   `gh run list --branch <branch>`, which shows whether the run exists.
+
+### New tooling available to this workstream (shipped session 3-4)
+
+- **`checkSourceDrift`** — advisory rule, now in `ALL_SYNC_RULES` in BOTH repos. Free, no
+  network, no model. Flags claims resting on a rule, ranking or count an outside body can
+  change. 6.3% of the bank bank-wide; expect 8-12% inside a single collection.
+- **`backend/src/scripts/audit-source-support.ts`** — stage two, on demand, never scheduled.
+  `--slug <collection>` is a DRY RUN that spends nothing. `--judge` opts into network and
+  model spend (~1 call per flagged question, `claude-haiku-4-5`); `--write` records the
+  supporting excerpt into `fact_snapshot`. It never archives.
+  **Chris's `--judge` authorisation so far has been per-collection. Ask before spending.**
+  Exercised end to end against louisiana only: 9 flagged, 9 supported after it caught two
+  real sourcing defects.
 
 ### Known-red, not ours
 
