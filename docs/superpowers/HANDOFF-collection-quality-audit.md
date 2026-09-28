@@ -1,8 +1,8 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 10)
+# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 11)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
-## START HERE — measured 2026-09-28, end of session 10
+## START HERE — measured 2026-09-28, end of session 11
 
 Every number in this block was re-derived from the database, not carried forward. **Re-derive
 them again rather than trusting them**; three of this document's standing claims have been
@@ -11,23 +11,23 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,295** |
+| Active questions | **3,296** |
 | **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
-| Under the 10% expiring floor | **5**, all *already audited* (see the retroactive-floor section) |
+| Under the 10% expiring floor | **4**, all *already audited* (see the retroactive-floor section) |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
-| **Under 11% HARD** (new, session 10) | `queens-ny` **10.1%**, `world-news` 10.6% |
-| **Re-verify after 3 Nov 2026** | `texas-state` — its whole executive is on that ballot |
+| **Under 11% HARD** | `queens-ny` **10.1%**, `world-news` 10.6% |
+| **Re-verify after 3 Nov 2026** | `texas-state` — its whole executive is on that ballot; `west-monroe-la` — `wmnla-093` |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
 
-1. **`west-monroe-la` should be next.** Worst remaining expiring breach at 5.3%, thin at 57
-   questions, and 14.0% hard — one re-visit addresses all three, which is the reasoning that
-   picked `phoenix-az`, `missouri` and `texas-state`.
-2. **Five already-audited collections breach the 10% expiring floor**: `west-monroe-la` 5.3%,
+1. **`alexandria-la` should be next** — worst remaining expiring breach at 6.1%, and the
+   other Louisiana city collection, so this session's officeholder research (parish offices,
+   the 2026 Louisiana ballot, the split congressional map) largely carries over.
+2. **Four already-audited collections breach the 10% expiring floor**:
    `alexandria-la` 6.1%, `new-york-state` 6.7%, `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%.
    These are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
-   different job from an audit".
+   different job from an audit". `west-monroe-la` cleared in session 11.
 3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
    `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
    which is a pipeline-yield problem an audit cannot fix.
@@ -3876,3 +3876,220 @@ The rule is not "don't write them". It is:
    the Texas comptroller are the same call.
 4. **Say so in the locale config.** `texas-state.ts` now carries a dated re-verify warning and
    deliberately omits the two offices with no stable holder.
+
+---
+
+# Session 11 (2026-09-28) — west-monroe-la
+
+### west-monroe-la — RE-VISIT complete (session 11)
+
+57 → 50 (7 archived) → 58 (+8). **Expiring 5.3% → 12.1%. Hard 14.0% → 20.7%.**
+Easy 43.9% → 39.7%, medium 39.7%. bad_idx 0, bad option counts 0, unsourced 0, drafts 0.
+Answer positions 14 / 15 / 14 / 15. Real leakage hits 21 → **0**; duplicate answers 1 → **0**.
+Archived total for the collection is now 40, all reversible by `external_id`.
+
+**A WRONG FACT IN PRODUCTION — `wmnla-082`.** It asked "Which Louisiana congressional district
+includes West Monroe?" and keyed *the 5th*, with *the 4th* sitting in the option list. Under the
+map Louisiana adopted in 2024 the 4th District took in roughly half of Ouachita Parish and
+**West Monroe is split between the 4th and the 5th** — so the listed distractor was equally
+correct. This is the missing-true-answer class wearing a different hat: the true answer was
+"both", and "both" was not an option. Rewritten to ask which two districts divide the city.
+Confirmed against both districts' pages, which each list "West Monroe (part; also 4th/5th)",
+and against contemporaneous reporting on the map.
+
+**THE DENSITY METRIC LIED — see the new section below.** `per_url` was **2.9**, comfortably
+inside the cambridge-ma guidance, while **35 of 57 questions (61%) came from one Wikipedia
+article**.
+
+**SESSION 2'S OWN BACKFILL CITED HOMEPAGES.** Nine of the eleven questions session 2 added
+(`wmnla-202`…`wmnla-211`) cite a bare domain root — `census.gov`, `sos.la.gov`, `dotd.la.gov`,
+`transportation.gov`, `oppj.org`, `opsb.net`, `ulsystem.edu`, `louisianatravel.com`,
+`cityofwestmonroe.com`. See the new section; not repaired this session, and it is the largest
+open item on this collection.
+
+**FOUR OFFICEHOLDER NEAR-MISSES, ALL CAUGHT BY SEARCHING FIRST.** See the new section. In
+short: the sheriff I was about to write about retired in 2024; the city judge retires in
+thirteen weeks; the clerk and assessor returned contradictory election results and were
+dropped; and LA-5's seat is open because its member is running for the Senate.
+
+**`wmnla-093` IS ON A CLOCK.** Stewart Cathey Jr. (Senate District 33) launched a campaign for
+the open 5th congressional district on 8 July 2026. If he wins on 3 Nov 2026 he leaves the
+state Senate in January. His Senate term runs to 2028, so the old `2028-01-01` expiry would
+have kept a wrong answer live for a year. **Pulled forward to `2027-01-04`** — an early expiry
+makes a question invisible, a late one makes it wrong.
+
+Archived (7): `wmnla-032` (name-count question, derivative of 019/021 and its explanation
+listed all three answers), `wmnla-037` + `wmnla-049` + `wmnla-050` (Kiroli Park amenity
+furniture — garden type, bridge types, trail type; `050` had no defensible single answer since
+the park has walking trails too and only the word "only" saved the distractor), `wmnla-040`
+(a *Southern Living* marketing blurb), `wmnla-059` ("dominant employment sectors **today**",
+drift-prone and sourced to a Wikipedia summary), `wmnla-084` (Bill Russell's 11 championships —
+printed verbatim in `wmnla-083`'s explanation, and national sports trivia rather than civics).
+Kiroli Park goes from 6 questions to 3.
+
+Rewritten (3): `wmnla-082` (above), `wmnla-023` (its stem printed `wmnla-021`'s answer,
+"Cotton Port"; reworded, and the answer option too), `wmnla-016` (its answer was "Monroe",
+which duplicated `wmnla-204`'s answer and is printed in about fifty other stems — reframed onto
+the civic fact it existed to teach, that the two cities run entirely separate governments).
+
+Explanation scrubs (17): `001`, `002`, `004`, `005`, `018`, `025`, `028`, `039`, `047`, `048`,
+`053`, `064`, `081`, `083`, `203`, `211` — each was handing another question its answer.
+
+Citation repair (1): `wmnla-093` cited `ballotpedia.org`, which renders **no text at all** to
+any automated reader — the session-9 hazard again. Repointed at `senate.la.gov/smembers?ID=33`.
+
+Added (8) — four expiring, four durable, every fact searched and double-sourced before writing:
+
+| id | d | expires | subject |
+|---|---|---|---|
+| `wmnla-212` | hard | 2030-06-30 | the two at-large aldermen (Coates, Westerburg) |
+| `wmnla-213` | hard | 2030-06-30 | District 1 alderman Morgan Buxton |
+| `wmnla-214` | medium | 2028-06-30 | Sheriff Marc Mashaw |
+| `wmnla-215` | hard | 2028-01-08 | Rep. Pat Moore, House District 17 |
+| `wmnla-216` | hard | — | City Court's jurisdiction: the city **and Ward 5** |
+| `wmnla-217` | medium | — | City Court hears misdemeanours |
+| `wmnla-218` | easy | — | Arkansas borders the parish to the north |
+| `wmnla-219` | medium | — | felonies go to the 4th Judicial District Court |
+
+The aldermen were sworn in on 1 July 2026 for four-year terms — the most durable expiring
+material this jurisdiction has, and the reason the collection now reaches 2030.
+
+**Why it stopped at 12.1% and not 15% — read this before "fixing" it.** West Monroe is a city
+of 13,103. Its entire honest officeholder inventory is: one mayor, five aldermen, one city
+judge, one state representative and a shared second one, one state senator, and a handful of
+parish-wide officials. Of those, the city judge retires in December 2026, the clerk and
+assessor could not be verified, both congressional seats touching the city are in flux, and
+going past two alderman questions would rebuild the Biloxi ward roll-call. **12.1% is the
+honest ceiling here without repeating an officeholder or a question shape**, which the
+2026-09-27 ruling explicitly forbids buying the ratio with. It clears the 10% floor with
+margin and sits in the documented 10–15% NOTE band. Do not push it higher by adding a third,
+fourth and fifth alderman.
+
+### Still open on this collection
+
+- **Nine bare-homepage citations** (`wmnla-202`…`wmnla-211`, excluding `201` and `209`).
+  Each needs a deep link that actually carries its fact. Not done here because inventing a
+  plausible-looking URL is worse than leaving a visibly bad one.
+- **28 questions still cite the one Wikipedia article.** Down from 35, still 48% of the
+  collection. Reducing it further means researching subjects rather than trimming.
+- `wmnla-210` asks about a university located in Monroe, and `wmnla-068` about a refuge inside
+  Monroe's city limits. Session 2 archived `wmnla-054` for being about Monroe. The three
+  should be judged by one rule, not three.
+
+---
+
+## `per_url` is a mean, and the mean hides the defect (session 11, west-monroe-la)
+
+cambridge-ma gave this workstream **questions per distinct source URL**, with about five as the
+line. `west-monroe-la` scored **2.9** — healthy — and was the most one-sourced collection yet
+measured:
+
+| | |
+|---|---|
+| Questions | 57 |
+| Distinct URLs | 20 |
+| `per_url` (mean) | **2.9** ✅ |
+| **Questions on the single most-used URL** | **35 (61%)** ❌ |
+
+The long tail did it. Nineteen URLs carried one or two questions each — and nine of those
+nineteen were *homepages* added by a later backfill. Every URL added to the denominator pulled
+the mean down while the concentration at the top never moved.
+
+**Use the maximum, not the mean:**
+
+    SELECT max(n) AS max_on_one_url, count(*) AS distinct_urls, sum(n) AS questions
+    FROM (SELECT count(*) n FROM trivia.questions q
+          JOIN trivia.collection_questions cq ON cq.question_id=q.id
+          WHERE cq.collection_id=<id> AND q.status='active'
+          GROUP BY q.source->>'url') z;
+
+Read it as a share of the collection. Above roughly a third from one page, the collection was
+generated by squeezing that page, whatever the mean says.
+
+## Mining one page produces mutually-leaking PAIRS (session 11)
+
+The concrete harm of the density above is not repetition, it is that **two questions built from
+one sentence each contain the other's answer**. Four pairs, each from a single sentence:
+
+| pair | one sentence | each gives away |
+|---|---|---|
+| `004` / `018` | "...received its first charter in 1889, establishing a Mayor and Board of Trustees" | the year / the body |
+| `028` / `053` | "...discovered in 1916 and became one of the largest gas fields in the southeastern US" | the year / the region |
+| `047` / `048` | "...opened in 2002 and serves as a venue for equestrian and agricultural events" | the events / the year |
+| `083` / `084` | "...winning 11 championships with the Boston Celtics" | the man / the number |
+
+None of these needed a judgement call — they fall straight out of the leakage sweep once it
+also checks **numeric** answers. Short numeric answers ("2002", "11", "1889") are exactly what
+a minimum-length filter throws away, so run the numeric pass separately from the text pass.
+
+Related, and worth carrying: the text pass must **exclude the collection's own place names**
+before you read the count. Unfiltered, this collection reported 170 hits, of which 148 were the
+words "Monroe" and "Louisiana" appearing in their own city's questions. Filtered to real hits:
+21 before, **0 after**.
+
+## A homepage is not a citation, and the link sweep cannot see it (session 11)
+
+Session 2 fixed this collection's biggest gap — it had no question about the Mayor at all — by
+adding eleven questions. **Nine of them cite a bare domain root.**
+
+    wmnla-202  https://www.sos.la.gov/            wmnla-207  https://www.cityofwestmonroe.com/
+    wmnla-203  https://www.census.gov/            wmnla-208  https://www.transportation.gov/
+    wmnla-204  https://www.oppj.org/              wmnla-210  https://www.ulsystem.edu/
+    wmnla-205  https://www.dotd.la.gov/           wmnla-211  https://www.louisianatravel.com/
+    wmnla-206  https://www.opsb.net/
+
+Nothing can verify "West Monroe is in Louisiana" against `https://www.census.gov/`. And because
+every one of them returns **200**, the dead-link sweep passes them, `checkLearnMoreLink` passes
+them, and `audit-source-support.ts` has a page to fetch. This is a **sixth** way a citation can
+be live and worthless, and it is the only one that is *generated by the repair process itself*
+rather than by the pipeline.
+
+**The rule: a citation must be a page that carries the claim.** When writing a backfill by hand,
+fetch the page first and keep the URL you actually read. A homepage is acceptable only when the
+homepage genuinely carries the fact — `wmnla-219` cites `4jdc.com/` because that page itself
+states the court's original jurisdiction over Ouachita and Morehouse parishes.
+
+**Detection is one line, and it should be added to the readiness gate:**
+
+    SELECT external_id, source->>'url' FROM ... WHERE source->>'url' ~ '^https?://[^/]+/?$';
+
+## The verify-before-writing rule paid for itself FOUR times in one collection (session 11)
+
+Every one of these looked like a safe question until the search:
+
+1. **Ouachita Parish Sheriff.** Jay Russell is all over the sources — and he announced his
+   retirement in July 2023 and left on 30 June 2024. Marc Mashaw has been sheriff since 1 July
+   2024. A question keyed to Russell would have been wrong for two years.
+2. **West Monroe City Court judge.** Jim Norris has held the seat since 1997 and is on the
+   city's own page today — and announced in May 2026 that he retires at the end of this term,
+   **about thirteen weeks from now**. Written as an officeholder question it would have gone
+   stale before anyone re-visited. The *structural* fact survived instead: the court's
+   jurisdiction, and what it hears.
+3. **Clerk of Court and Assessor.** Both are confirmed in office, and the 2023 election results
+   came back naming *different people* for both offices. Unresolvable in the time available, so
+   **both questions were dropped rather than guessed** — which is the direct reason the
+   collection lands at 12.1% and not 15%.
+4. **Louisiana's 5th congressional district.** Julia Letlow is the sitting member and is running
+   for the U.S. Senate, so the seat is open on 3 Nov 2026. Any "who represents you in Congress"
+   question here would have had a thirteen-week life.
+
+The texas-state rule said to search the office plus the election year. This collection adds:
+**search the office plus the word "retire" as well** — two of these four were retirements
+announced in the sources, not primary losses, and an election-year search finds neither.
+
+## A data point for the open U.S.-senators ruling (session 11)
+
+The standing question is which tier owns "who are your U.S. senators". `west-monroe-la` cannot
+be the collection that settles it, and is a reason to be cautious: on 3 Nov 2026 Louisiana has
+**a Senate seat on the ballot, an open 5th district, and a city split across two congressional
+districts**. Whatever the ruling, federal-officeholder questions do not belong in this
+collection this year.
+
+## The six-year seat is the prize, and it is often not where you look (session 11)
+
+`texas-state` said to prefer long, staggered clocks. West Monroe's longest-lived officeholder
+content turned out not to be judicial at all but **municipal**: the mayor and all five aldermen
+were sworn in on 1 July 2026 for four-year terms, giving a clean run to 2030 — longer than the
+state legislators (Jan 2028), the sheriff (June 2028), or the city judge (retiring this
+December). Check when the local slate was *last* sworn in before assuming the state tier is the
+more durable one.
