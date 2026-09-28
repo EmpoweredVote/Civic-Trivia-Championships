@@ -7,7 +7,7 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **27 of 43 collections audited.** 690 archived across all sessions, 215 written.
+- **28 of 43 collections audited.** 752 archived across all sessions, 224 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 7 cleared the bank-wide `nested-options` blocker and then audited
   **pittsburgh-pa** (collection 24) with a **citation pass** added to the method.
@@ -243,7 +243,7 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-washington-dc, los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
+los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
 
@@ -293,13 +293,21 @@ war-in-iran, world-news.
 6. **Minutiae and bracket answers.** Precise figures, and answers like "80,000–99,999 words".
 7. **Figures that rot by construction.** "How many CONSECUTIVE years has X been ranked #1."
 8. **Inverse pairs**, including a whole generated block (`smo-4xx`) that inverted an existing one.
-9. **Website furniture** (added session 7, portland-or). Facts scraped off the department page
+9. **More than one true option, without any numbers** (added session 7, washington-dc). The
+   `nested-options` rule catches this when the options are numeric bounds. It cannot see it
+   when they are names. `wdc-414` asked which of four people is an at-large D.C. council
+   member and offered Phil Mendelson as a wrong answer — while `wdc-407`, in the same
+   collection, asserted that Mendelson's chair seat *is* at-large. Two true options, and the
+   collection contradicted itself. The shape to distrust is "which of the following is one of
+   the N members of X": if X has four at-large seats and the option list names two of them,
+   the question is broken. Repair by replacing the extra true options, not by archiving.
+10. **Website furniture** (added session 7, portland-or). Facts scraped off the department page
    that was used as the citation: a room number, opening hours, the colours in an office logo.
    `por-139` asked the room number of the Auditor's office; `por-161` asked its opening hours;
    three separate questions asked about its logo. These are facts about a web page, not about
    civic life, and they are the tell-tale of a collection generated FROM a site's navigation
    rather than about the city.
-10. **Compound answers** (added session 7, washington-state). An answer that bundles two facts:
+11. **Compound answers** (added session 7, washington-state). An answer that bundles two facts:
    "4-year terms, no term limits", "A stratovolcano in the Cascade Volcanic Arc", "42 steps,
    commemorating Washington as the 42nd state". Distinct from class 4 — nothing is leaked,
    the answer is just two questions wearing one coat, and it cannot be marked partly right.
@@ -1525,3 +1533,37 @@ spread 14/12/15/9.
     Courthouse Square and the Oregon Zoo — all cited to pages that contain the claim.
   NOTE por-143 and por-288 were repaired earlier the same session by the nested-options pass;
     both survive here.
+
+### washington-dc — complete
+153 -> 91 (62 archived) -> 100 (+9). Easy 29.4% -> 32.0%. Expiring **9.8% -> 15.0%**.
+bad_idx 0, bad_optcount 0, unlinked 0, duplicate answers -> 0, spread 27/23/29/21.
+**The largest collection audited and the largest archive: 62 questions, 41% of it.**
+  A CORRECTNESS DEFECT THE NESTED-OPTIONS RULE CANNOT SEE (new class #9): `wdc-414` asked
+  which of four names is an at-large council member and scored Phil Mendelson wrong, while
+  `wdc-407` in the same collection stated that the chair's seat is at-large. Kenyan McDuffie,
+  a third option, had been at-large until he resigned in 2026 to run for mayor. Repaired by
+  replacing the extra true options rather than archiving, so the expiring question survived.
+  `wdc-413` and `wdc-414` were also near-identical text with different answers — the
+  "pick one of the four at-large members" shape makes that near-inevitable.
+  WORST CLASS-4 INSTANCE YET: `wdc-415`'s answer read "13 members: 1 Chair, 4 at-large
+  members, and 8 ward members" — which is the answer to `wdc-001`, `wdc-002` AND `wdc-016`.
+  One answer giving away three questions.
+  DUPLICATE ANSWERS AT SCALE: three questions answered "the Wilson Building" (019, 308, 331),
+  three "District of Columbia Court of Appeals" (004, 062, 069), three "Superior Court of the
+  District of Columbia" (061, 242, 250), plus pairs on 1862, 2015, 1790 and "District of
+  Columbia". `wdc-231`'s answer listed the Superior Court's case types, which is the answer
+  to four other questions.
+  OFFICEHOLDER LIMIT BREACHED THREE TIMES OVER: Bowser x4 (401-404), Mendelson x3 (405-407),
+  Norton x3 (410-412). Kept one each.
+  REPEATED SHAPE: eight "which neighborhood is in Ward N?" questions (259-266), kept one.
+  Five separate "what percentage of voters..." questions, all archived as minutiae.
+  VERIFICATION CAUGHT A STALE FACT BEFORE IT WAS WRITTEN IN: the obvious backfill was
+  "who is D.C.'s police chief?" — Pamela Smith. She resigned in December 2025 and Jeffery
+  Carroll took over on 1 January 2026. The question was written about the succession instead.
+  Checking officeholders before writing them is as necessary as checking them before fixing.
+  EXPIRING WAS BELOW THE HARD FLOOR at 9.8% before the audit and would have fallen to 6.6%
+  after it, because every expiring question was in the `wdc-4xx` officeholder block that the
+  one-per-person rule thinned. Backfilled nine, deliberately across nine DIFFERENT offices
+  — CFO, police chief, schools chancellor, the mayoral primary, an at-large return, an
+  at-large resignation, the election date, the minor-party nomination, and Ward 8 — rather
+  than a roll-call, which is the defect that was just archived out of it.
