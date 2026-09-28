@@ -7,13 +7,15 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **31 of 43 collections audited.** 874 archived across all sessions, 282 written.
+- **32 of 43 collections audited.** 893 archived across all sessions, 314 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 8 audited **los-angeles-ca** (collection 3), the largest archive proportionally
   yet (48 of 73, 66%) and the first collection found carrying **another tier's content**;
-  **california-state** (collection 5), to settle what should happen to that content; and
+  **california-state** (collection 5), to settle what should happen to that content;
   **tucson-az** (collection 256), where the readiness gate turned out to have a third
-  check nobody had recorded — **officeholder coverage** (see below).
+  check nobody had recorded — **officeholder coverage** (see below); and **federal**
+  (collection 1), the first audit driven by a **subject-mix** complaint rather than by
+  defects, on Chris's direction.
 - **DB access — SUPERSEDED as of session 6. Use `psql`, not MCP.**
 
       set -a; . /c/EV-Accounts/backend/.env; set +a
@@ -232,7 +234,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,261 active questions** (re-measured after all three session 8 audits;
+- 43 active collections, **3,274 active questions** (re-measured after all four session 8 audits;
   identical under all three counting bases — all `status='active'`, those linked to any
   collection, and those in *active* collections)
 
@@ -253,7 +255,7 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-federal, fremont-ca, madison-wi, climate-change,
+fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
 
@@ -371,6 +373,43 @@ collection that landed on exactly 50 may not have passed.
   5/7/9/11). The script says this explicitly and it is worth repeating: **rotating answer
   POSITIONS does not fix bracketing and masks it** — they are two different checks and the
   script prints both.
+
+## A defect class the audit method could not see: SUBJECT MIX (session 8, federal)
+
+Every rule in this playbook asks whether a question is *wrong*, *duplicated*, *leaked*, *stale*
+or *unsupported*. None asks whether the collection is **about the right things**. `federal`
+passed the structural checks comfortably and was still, in Chris's words, "Judicial Review
+Federal" rather than US Civics. He was right, and nothing in the method would have caught it.
+
+**Measure it before agreeing or disagreeing.** Classify each question as judicial (a named
+case, a named constitutional clause, or court doctrine) versus foundational, and cross-tabulate
+against difficulty. On `federal` that turned an impression into this:
+
+| tier | judicial | foundational |
+|---|---|---|
+| easy (35) | 2 | 33 |
+| medium (36) | 14 | 22 |
+| hard (42) | **32** | 10 |
+
+The easy tier was *fine* — three branches, Bill of Rights, term lengths, veto override. The
+hard tier was a constitutional-law exam: Slaughterhouse, the Lemon test, substantive due
+process, writs of certiorari. **A collection can be defect-free and still be about the wrong
+thing, and the split may be invisible until you cut it by difficulty.**
+
+Why it was felt even though easy was sound: with only 35 easy questions and the default
+`easy-steps` selector wanting easy for four of five slots, the easy pool drains and repeat
+players fall straight into the hard tier. **A thin easy tier turns a hard-tier skew into the
+whole experience.** Worth checking wherever a collection has a distinctive hard tier.
+
+The remedy Chris chose was to trim rather than purge: 19 archived — the obscure clauses and
+law-school cases — keeping every landmark a citizen would reasonably know (Marbury, Plessy,
+Brown, Miranda, Gideon, Heller, Obergefell, Citizens United, US v. Nixon, Bush v. Gore, Engel,
+NYT v. US, Youngstown, NFIB v. Sebelius). Then 32 written, mostly foundational. Judicial share
+42% → 26%; easy foundational 33 → 48.
+
+**The archived judicial questions are a candidate collection, not waste.** Chris's call was
+"just archive, decide later". If a landmark-cases collection is ever wanted, these 19 revive by
+`external_id` and are already written and sourced.
 
 ## The readiness gate's THIRD check: officeholder coverage (session 8, tucson-az)
 
@@ -2043,3 +2082,73 @@ All 24 distinct citations return 200 **and none redirects**.
     script objected. Written up in its own section above; it is the first real conflict
     between two of this audit's own rules, and it resolves cleanly.
   THE ANACHRONISM RULE CAUGHT A QUESTION THIS SESSION WROTE, correctly. Also written up above.
+
+### federal — complete (session 8, 2026-09-28)
+113 -> 94 (19 archived) -> 126 (+32 written, 12 repaired in place). Easy 31.0% -> **39.7%**.
+Expiring **0.0% -> 11.1%**. Readiness READY (net 126 - nothing expires inside 90 days);
+bad_idx 0, bad_optcount 0, unlinked 0, no_source 0, duplicate answers 0, identical option
+pools 0, spread 30/33/30/33, numeric answers at an extreme 45.2%. All 53 distinct citations
+return 200 **and none redirects**.
+
+  **THE FIRST AUDIT DRIVEN BY SUBJECT MIX RATHER THAN DEFECTS.** Chris raised it mid-session:
+  the collection read as "Judicial Review Federal" rather than US Civics. The structural
+  checks had nothing to say about that - see the new section above for the measurement and
+  the general lesson. Judicial share 42% -> 26%; easy foundational questions 33 -> 48.
+  ARCHIVED 19, all judicial, all reversible, and chosen as *obscure* rather than *wrong*:
+    five doctrines (incorporation, certiorari, the exclusionary rule, substantive due process,
+    original vs appellate jurisdiction), seven named clauses (Article I Section 10,
+    Origination, Guarantee, Recess Appointments, Speech or Debate, Compact, Advice and
+    Consent), six law-school cases (Gibbons, Slaughterhouse, Wickard, Schenck, Furman, and
+    the Lemon test), and one question that could not be answered.
+  THE UNANSWERABLE ONE: `q119` asked which case "established strict scrutiny for racial
+    classifications" and answered Loving v. Virginia - while offering **Korematsu**, which is
+    where the Court first called racial classifications "immediately suspect" and subject to
+    "the most rigid scrutiny". Loving applied the standard; Korematsu articulated it. Two
+    defensible options and no way for the question to adjudicate between them, so it was
+    archived rather than repaired. Same call as `la-071`.
+  ONE ANSWER HAD GONE STALE IN THE CASE LAW: `q084` described the Lemon test in the present
+    tense as the Establishment Clause standard. The Court **abandoned it in Kennedy v.
+    Bremerton School District (2022)**, calling it "abstract" and "ahistorical". Archived
+    with the rest of the obscure material rather than repaired.
+  THREE QUESTIONS SHARED ONE ROTATING OPTION POOL - interpret / enforce / make / repeal, on
+    the judicial branch, Congress and the executive branch. Seeing any two gave away the
+    third by elimination. Each now has a pool of its own. A second pair, `q060` and `q092`,
+    shared an identical four-case criminal-procedure pool; `q092` was re-pooled.
+  ZERO EXPIRING IN 113 QUESTIONS, in a collection about the federal government, during a
+    midterm year. Not one question about any current officeholder: no president, no vice
+    president, no Speaker, no chief justice, no party control, no election dates.
+    Fourteen written, verified against live sources rather than recalled - this was the
+    highest-stakes verification of the session and every name was checked.
+  THE EXPIRING RATIO LANDED AT 11.1%, and that is the honest number rather than a shortfall
+    to pad. The readiness script itself prints a NOTE rather than a warning: above the 10%
+    floor, below the 15-30% target, "acceptable; worth a line in the collection's notes."
+    **A federal civics collection is inherently durable** - the Constitution does not expire -
+    and reaching 15% would have meant ~19 officeholder questions, which is the roll-call
+    defect this audit archives out of other collections. Documented rather than gamed.
+  FOUR CITATIONS WERE DEAD BEHIND A 200. `senate.gov` now redirects four of its own
+    `/about/` paths to `senate.gov/pagelayout/general/one_item_and_teasers/file_not_found.htm`
+    - its in-house 404 page, served with a 200. A status-code sweep calls all four healthy;
+    only comparing the effective URL against the requested one catches them. Two more
+    (`ourdocuments.gov`, a `census.gov` archive page) redirected to generic index pages that
+    do not carry the claim. All six re-cited. **Sweep for redirects, not just status codes.**
+  LEAKAGE: 75 raw hits, of which **62 were a single structural false positive**. In a federal
+    civics collection the answers "The President", "The Constitution", "The Senate", "The Vice
+    President" and "Two-thirds" are the common nouns of the subject - they cannot be kept out
+    of other questions' explanations. Five hits were real and were fixed, including two the
+    session introduced: `q133`'s explanation gave away the length of a presidential term and
+    `q130`'s named the current Congress. One new question was reframed outright because its
+    answer string ("President of the United States") collided with three others; it now asks
+    for the *principle* - civilian control of the military - which is a better question.
+    **This is the highest false-positive rate the check has produced, and the cause is
+    predictable: the more generic a collection's subject, the noisier the sweep.**
+  BACKFILL (+32). Fourteen expiring: president, vice president, the House's presiding officer,
+    Senate majority and minority leaders, the House Democratic leader, the president pro
+    tempore, the chief justice, the newest justice, party control of Congress, the 2026
+    midterm date, how many Senate seats are contested, the next presidential election, and
+    which numbered Congress is sitting. Eighteen durable ones fill the foundational gaps the
+    collection simply never had: the Cabinet and how many executive departments there are,
+    civilian control of the military, naturalisation, what happens to a bill after both
+    chambers pass it, the two major parties, the first president, the Declaration and its
+    year, the Preamble, federalism, why House seats differ by state, the Senate age
+    requirement, which chamber tries impeachments, the presidential term, the Civil War, the
+    rule of law, and what the State Department does.
