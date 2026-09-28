@@ -1,4 +1,4 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 8)
+# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 9)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
@@ -7,8 +7,12 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **34 of 43 collections audited.** 944 archived across all sessions, 339 written.
+- **35 of 43 collections audited.** 958 archived across all sessions, 350 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
+  Session 9 audited **climate-change** (collection 394) — structurally the cleanest
+  collection yet and the one with the worst *citations*: two separate wrong-article
+  defects, a source host no automated check can read, and explanations carrying figures
+  that appear in no source at all. See the new sections below.
   Session 8 audited **los-angeles-ca** (collection 3), the largest archive proportionally
   yet (48 of 73, 66%) and the first collection found carrying **another tier's content**;
   **california-state** (collection 5), to settle what should happen to that content;
@@ -243,11 +247,16 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
   2026-09-28 are theirs (washington-dc 62, portland-or 35, pittsburgh-pa 34, plano-tx 29,
   washington-state 25, biloxi-ms 1); the other 48 are session 8's. **Re-measure this number,
   never derive it from the previous value** — nightly yield and automatic expiry both move it.
-- **0 `nested-options` violations bank-wide, at either severity** (session 7)
+- **0 `nested-options` violations bank-wide, at either severity** — re-confirmed session 9
+  (3,270 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
+  a clean report is not the same as a clean bank.
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
 - 2 collections below the 50-question floor: `war-in-iran` (32), `world-news` (44). Both
   pre-existing, both caused by pipeline yield rather than by any purge.
+- **2 collections below the 10% expiring hard floor: `indiana-state` (6.7%) and
+  `norwich-uk` (0.0%)** (measured session 9). Both are unaudited and neither is near the
+  front of the priority list, which is ordered by easy% and cannot see this.
 
 **The floor being met is not the same as the bank being clean.** 20 collections have never been
 read. Every one audited so far carried several defect classes, and the seven at 25.7–27.3%
@@ -255,9 +264,13 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-climate-change,
 bend-or, wisconsin, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
+
+**Two of the eight breach a floor *today*, and neither is at the front of this list:**
+`indiana-state` is at **6.7% expiring** and `norwich-uk` at **0.0%**, both under the 10%
+hard floor. The list is ordered by easy% ascending, which does not see that. Worth taking
+them early rather than in list order.
 
 **The los-angeles-ca question is CLOSED: revive none of the 18.** That was the open item on
 `california-state`, and auditing it answered the question rather than leaving it to judgement.
@@ -293,6 +306,23 @@ the destination for counterparts before assuming the questions are worth moving.
    Verify titles exist in one call via the MediaWiki API
    (`/w/api.php?action=query&titles=A|B|C&redirects=1&format=json&formatversion=2`) rather
    than fetching each article.
+   **Check the explanation against the source too, not just the answer** (Chris, 2026-09-28,
+   climate-change). Two questions there had answers supported verbatim and explanations full
+   of figures present in no source at all, one of them contradicting another live question.
+   A supported answer is not a supported question, and the explanation is what the player
+   reads after answering.
+
+   **Confirm the cited page is READABLE before trusting or judging it.** Five distinct ways a
+   200 can be worthless are now recorded below — soft 404, text-free JS app, moved site, 403
+   bot-block, and the Incapsula challenge page that returns 200. `curl` it and grep for the
+   question's own figure; that single step catches all five.
+
+0b. **Measure the expiry DISTRIBUTION, not just the expiring ratio** (session 9). A healthy
+   looking ratio can be one night's pipeline burst that all lapses in the same week, leaving
+   the collection at 0% and on the net-count floor days later:
+
+       SELECT count(*), min(expires_at)::date, max(expires_at)::date FROM ... ;
+
 1. Read: `external_id, difficulty, text, options->>correct_answer`, with
    `count(*) OVER ()` so the starting total is measured rather than eyeballed.
 2. Read for the defect classes below.
@@ -351,6 +381,11 @@ the destination for counterparts before assuming the questions are worth moving.
    **On its own this is a readability problem, not a correctness one.** Archive it only when
    it carries a second defect as well; otherwise leave it or split it. Over-archiving on this
    class alone would have cost washington-state six sound questions.
+12. **The orphaned definite reference** (added session 9, climate-change). "What is the
+   approximate distance of **the autonomous vessel's** journey?" — written as one of a set
+   from a single article, served alone in a five-question game, so the antecedent never
+   arrives. The tell is a leading definite article on a noun the collection never introduced.
+   Full write-up and a grep for it below.
 
 ## The readiness gate has two checks the ledger never recorded (session 8)
 
@@ -598,6 +633,156 @@ printed by six). Archiving was right for the first two. For the third it was not
 question also taught a fact nothing else did — so instead the county-seat fact moved into the
 **question text** and the question now asks something not given away (which Arizona county is
 larger). That is the better move whenever the leaked question carries content worth keeping.
+
+## A FIFTH way a citation can be live and worthless: the 200-status bot wall (session 9)
+
+The four modes recorded above are the soft 404, the text-free JS app, the moved site, and the
+403 bot-block. `climate-change` produced a fifth that is worse than all of them, because every
+existing check reads it as healthy:
+
+    $ curl -sSL -A "<a real browser UA>" https://unfccc.int/process-and-meetings/the-paris-agreement
+    status=200  bytes=841
+    <html ...><META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+    ... <iframe id="main-iframe" src="/_Incapsula_Resource?SWUDNSAI=31&xinfo=...
+
+**`unfccc.int` serves an Imperva/Incapsula challenge page with HTTP 200.** Not a 403, so the
+documented bot-block signal never fires. Not a soft 404, so there is no "content is not here"
+string to grep. Not a JS shell with a copyright line — 841 bytes of security interstitial.
+A status-code sweep calls it healthy; a "does it have text" heuristic sees valid HTML.
+
+**It is the most-cited host in that collection: 21 of its questions.** Bank-wide the damage is
+contained — all 21 are in `climate-change` and no other collection cites the host at all —
+but the lesson generalises:
+
+- **A human player following the link is probably fine.** Incapsula passes real browsers with
+  JS. The wall is for automated clients, which is exactly what makes it invisible.
+- **The real hazard is the tooling.** `audit-source-support.ts --judge` fetches the cited page
+  and asks a model whether it supports the claim. Against unfccc.int it would hand the model
+  an 841-byte challenge page and get a confident verdict about nothing, at one paid call per
+  question. **Check that a host is readable before spending `--judge` on it.**
+- The 21 claims themselves are not in doubt — they are the curated treaty block (Paris adopted
+  2015, in force 2016, NDCs, COP meets annually) and are correct. Nothing was archived for
+  this. It was left alone and recorded.
+- **Backfill written this session deliberately avoids unfccc.int** and cites only hosts that
+  were fetched and grepped first.
+
+## Two wrong-article citations, both returning 200 (session 9)
+
+Both were found by the citation pass and neither is visible to any rule, because in both cases
+the *link* is perfectly healthy.
+
+1. **The citation that points at a page which merely LINKS the real source.** Four questions
+   (`climc-0055/0056/0061/0062`) cited a Carbon Brief **factcheck of Reform UK's climate
+   claims** for detailed NHS surgery-cancellation statistics. The article is live, 84KB of
+   text, and contains **zero** occurrences of "1,110", "167" or "orthopaedic". Its only NHS
+   mention is a related-articles sidebar link to a *different* Carbon Brief piece — which does
+   contain every figure, verbatim: *"59 trusts and health boards responded with details of
+   1,110 heat-related cancellations across the 17-day period covering 22-28 May and 18-27
+   June"*, and *"This includes 167 orthopaedic surgeries"*.
+   **The generator read the navigation, not the article.** The facts were right, so the repair
+   is to re-point `source.url`, not to archive. Distinct from "website furniture" (class 10):
+   there the scraped fact was about the page; here the fact is real and the correct source
+   exists one link away.
+2. **The citation that points at an unrelated article.** `climc-0067`/`climc-0068` cited
+   `bbc.co.uk/news/articles/cqm2mgk6mlddo` for Chinese hybrid-car sales in the EU. That page
+   is **"Greek PM Mitsotakis urges Burnham to return Elgin Marbles"** — the Parthenon Marbles.
+   Returns 200. Contains no occurrence of "hybrid", "Chinese", "electric" or "tariff" in the
+   raw HTML, let alone the claimed figures. Both questions were archived: the facts cannot be
+   checked against anything, and they were deep minutiae besides.
+
+**The check that finds both is the same one:** fetch the cited page and grep it for the
+question's own figure. Neither a status sweep nor `checkSourceDrift` can see either.
+
+## Nothing checks whether an EXPLANATION is supported (session 9)
+
+The leakage sweep reads explanations, and the citation pass reads question text and answers.
+Nothing reads an explanation against its source — and `climate-change` shows why that matters.
+
+`climc-0053`'s answer ("more than 5,000 missing") is supported verbatim by the Guardian:
+*"More than 1,300 people were killed and more than 5,000 people remain missing"*. Its
+**explanation** read:
+
+> ...more than 5,000 people missing across the two countries — **5,745 in Nepal as of
+> September 21 and 519 in Tibet as of September 16** — in addition to about **1,500 confirmed
+> deaths**.
+
+"5,745" and "1,500" appear nowhere in the cited article, and "about 1,500 confirmed deaths"
+contradicts both the source ("more than 1,300") and `climc-0052`'s own question text ("killed
+over 1,300 people") in the same collection. `climc-0059` had the identical shape: answer
+supported verbatim by DW (*"floods and landslides killed more than 1,400 people"*), explanation
+asserting "at least 1,451 people... with 9,287 injured and 5,745 still missing", none of which
+is in the article.
+
+**The pattern is invented precision in the explanation, attached to a correct answer.** It is
+the most dangerous form the citation pass has turned up, because the question passes every
+check and the explanation is what the player reads *after* answering. Both were rewritten to
+what the sources actually say. **When a question's answer checks out, read its explanation
+against the same source before moving on** — a supported answer is not a supported question.
+
+## `nested-options` is blind to spelled-out numerals (session 9)
+
+`climc-0076` offered `Six months | Five years | Three years | Less than two years` with
+"Less than two years" correct. "Six months" strictly implies "Less than two years": the two can
+never both be wrong, and had the true duration been six months both would have been right. That
+is the textbook violation, and the rule reports **0 blocking, 0 advisory** on it.
+
+The mechanism, read from the rule rather than guessed: `parseOption` starts with
+
+    const numbers = text.match(ALL_NUMBERS);   // /\d[\d,]*(?:\.\d+)?/g
+    if (!numbers || numbers.length !== 1) return base;   // kind: 'none'
+
+`ALL_NUMBERS` is **digits only**. Every option here spells its number as a word, so the match
+is null and the function returns `kind: 'none'` — bailing out *before* `DOWN_LEADING` ("less
+than") is ever tested. The rule cannot see a bound it would otherwise catch instantly.
+
+**Live incidence is exactly one.** A bank-wide scan for options that carry a bound phrase, no
+digit and a number word returns `climc-0076` and nothing else, so this is a latent gap rather
+than a backlog. It was repaired by hand here. Whether to teach the rule number words is a
+judgement call for whoever owns it — the fix is a word-to-digit pass in `parseOption`, and the
+argument against is that it widens a rule whose whole design history is about avoiding false
+positives.
+
+*(Method note for anyone writing that scan: PostgreSQL's `\b` is **backspace**, not a word
+boundary — use `\y`. A `\b` in the alternation silently matches nothing and the scan returns a
+reassuring zero.)*
+
+## New defect class 12: the orphaned definite reference (session 9)
+
+`climc-0072` asked *"What is the approximate distance of **the autonomous vessel's** journey
+around Antarctica?"* — no antecedent, no year, no organisation. `climc-0071` opened *"**The
+university** cited which of the following..."*. Both are unanswerable as written.
+
+They read fine in the generator's output because they were written as a **set**, from one
+article, in sequence. They are **served individually**, one of five questions in a game, so the
+antecedent never arrives. The tell is a leading definite article on a noun the collection has
+not introduced: "the autonomous vessel", "the university", "the agency".
+
+Cheap to grep for, and worth doing on any collection with pipeline-generated blocks:
+
+    SELECT external_id, left(text,90) FROM ... WHERE text ~* '\m(the|this|that) (university|
+      company|agency|vessel|organisation|organization|report|study|project|city|department)\M';
+
+## The expiring ratio is a burst metric on a news collection, and it lies (session 9)
+
+`climate-change` measured **37.5% expiring** — comfortably inside the healthy 15–30% band,
+in fact above it. That number was worthless. **All 30 expiring questions expired between
+2026-10-02 and 2026-10-08**, four to ten days out. The whole expiring tier was a single
+night's pipeline burst with a uniform ~2-week TTL.
+
+So on 8 October the collection would have gone to **0.0% expiring** — a hard-floor DEFECT —
+without anything changing, and to exactly **50 net questions**, sitting precisely on the
+readiness threshold with no margin. The ratio was not measuring collection health; it was
+measuring **how recently the pipeline last ran.**
+
+- **Always look at the expiry *distribution*, not just the ratio.** One query:
+  `SELECT count(*), min(expires_at)::date, max(expires_at)::date ... GROUP BY 1`. A ratio
+  drawn from a single burst with a one-week spread is a different object from the same ratio
+  spread over ninety days.
+- **This is a property of the Events-Focused collections generally**, not of this one. Any
+  collection whose expiring tier comes from `pipelineCron` will show the same shape.
+- The remedy applied here was **durable** backfill, not more news: 11 durable questions
+  written, taking net from 50 to 59. Adding expiring content would have re-armed the same
+  cliff a fortnight later.
 
 ## Still open, not fixed
 
@@ -2282,3 +2467,79 @@ spread 21/21/19/21 (best single guess 25.6%, the closest to ideal in the ledger)
   THE CITY ROSTER PAGE HAS MOVED: `cityofmadison.com/clerk/about/city-roster`, cited by ten
     officeholder questions, now redirects to the departments guide. Caught by the
     redirect check rather than the status check - the fourth moved-site instance this session.
+
+---
+
+## Session 9 (2026-09-28) — climate-change
+
+### climate-change — complete
+80 -> 66 (14 archived) -> 77 (+11). Easy 32.5% -> 35.1%. Expiring 37.5% -> 23.4%.
+Net 50 -> **59** (the number that mattered; see below). Verdict READY.
+bad_idx 0, bad_optcount 0, unlinked 0, duplicate answers 0 -> 0, leakage 15 -> 0,
+spread 16/23/25/16 -> 20/20/19/18 (best single guess 31.3% -> 26.0%).
+Distractor bracketing 15.2% -> 28.0% at an extreme (best guess 51.5% -> 40.0%).
+
+  **STRUCTURALLY THE CLEANEST COLLECTION YET, AND THE WORST CITED.** It opened with zero
+  duplicate answers *even under normalisation*, zero bad indices, zero bad option counts,
+  zero drafts and zero dead links across 42 distinct URLs. Every single defect was in
+  support, not structure — which is exactly the case the citation pass was added for, and
+  the first collection where the structural checks would have passed it clean.
+
+  **IT IS TWO COLLECTIONS IN ONE FILE.** `climc-0001`–`0050` is a curated, genuinely good
+  block on treaty governance and atmospheric science. `climc-0051`–`0080` is one night of
+  pipeline news. Every archive but two came from the second block; every citation defect
+  came from the second block. Worth checking for this split by external_id range before
+  reading a news-fed collection question by question.
+
+  THE NET COUNT WAS THE REAL FINDING. Raw 80 looked comfortable; net was **exactly 50**,
+  sitting on the readiness threshold, and all 30 expiring questions lapse 2–10 Oct 2026.
+  On 8 October it would have been 50 durable questions at 0.0% expiring — under the hard
+  floor — with nothing having changed. Fixed with durable backfill, not more news.
+  See "The expiring ratio is a burst metric" above.
+
+  CITATIONS — three separate defects, all returning HTTP 200 (all written up above):
+    - 4 questions cited a Carbon Brief *factcheck* whose only NHS mention is a sidebar link
+      to the real article. All four figures verified verbatim in the real one. Three of the
+      four were archived as minutiae; `climc-0055` survived and was **re-pointed**.
+    - `climc-0067`/`0068` cited a BBC article about the **Elgin Marbles**. Archived.
+    - `unfccc.int` — 21 questions — serves an Incapsula bot wall with a 200. Left alone;
+      the claims are sound and the host is fine for a human. Do not `--judge` it.
+  EXPLANATIONS INVENTED PRECISION ON TOP OF CORRECT ANSWERS: `climc-0053` and `climc-0059`
+    both had answers supported verbatim and explanations citing figures ("5,745", "1,500
+    confirmed deaths", "1,451", "9,287 injured") present in neither source, one of which
+    contradicted another question in the same collection. Rewritten to the sources.
+  A NESTED-OPTIONS VIOLATION THE RULE CANNOT SEE: `climc-0076`, because its numbers are
+    spelled as words. Repaired by hand; rule gap written up above; live incidence 1.
+  ORPHANED DEFINITE REFERENCES (new class 12): `climc-0072` ("the autonomous vessel"),
+    `climc-0071` ("The university"). Written as a set, served alone. Both archived.
+  THE FORCED-ANSWER RULE FIRED TWICE, AND THE SECOND TIME IT WAS MINE:
+    - `climc-0035` ("The Kyoto Protocol") was printed by six other questions. It teaches
+      nothing they do not already imply, so it followed the `cas-021`/`cal-085` precedent and
+      was archived rather than having six questions contorted around it.
+    - Then the **backfill I wrote** introduced `climc-0082`, whose answer "Carbon dioxide" is
+      printed by three questions and two explanations. Same defect, freshly authored.
+      Caught only by re-running the leakage sweep over my own new questions, archived, and
+      replaced with `climc-0091` (sea level / thermal expansion). **The handoff's rule to run
+      leakage on what you WRITE is not a formality — it caught a defect I had just finished
+      writing the archive justification for.**
+  TOPIC LABEL IS SHARED, NOT WRONG: all 77 questions render "World News" (topic 749, shared
+    with `war-in-iran` and `world-news`). Generic-but-true rather than the fremont-ca case of
+    a lake labelled "Elections & Voting", so recorded as a NOTE and not changed — a fix would
+    move `war-in-iran` too and is a separate call.
+
+  Archived (14): 0052, 0054 (glacier minutiae); 0056, 0061, 0062 (NHS minutiae, 4 questions
+    on one story); 0063 (Norfolk Broads minutiae); 0067, 0068 (Elgin Marbles citation);
+    0070, 0071 (leak 0069 / orphan); 0072 (orphan); 0080 (permit-count minutiae);
+    0035 (forced answer); 0082 (forced answer, written this session).
+  Written (11): 0081, 0083–0090 durable foundational climate governance and science —
+    greenhouse effect, net zero, common but differentiated responsibilities, mitigation vs
+    adaptation, global stocktake, ocean acidification, the $100bn Cancún pledge, carbon
+    sinks, AR6's 1.1C; plus 0091 (sea level). **Every fact grepped verbatim out of a page
+    that was fetched first**, and no new question cites `unfccc.int`.
+
+  STILL WARNING AFTER THE PASS, AND HONEST ABOUT IT: distractor bracketing is 28.0% against
+    a healthy ~50%, so "sort the numbers and pick the 3rd" still scores 40.0%. Improved from
+    15.2%/51.5% by rebuilding `climc-0013` and `climc-0014` so the answer is the smallest
+    option offered, and by placing both numeric backfills at an extreme. `climc-0005` was
+    deliberately left mid-bracket — its 180 ppm distractor is the glacial-minimum figure and
+    teaches something. Getting to ~50% would need roughly eight more option sets rebuilt.
