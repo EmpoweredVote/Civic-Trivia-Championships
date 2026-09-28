@@ -245,13 +245,23 @@ readable text — the same call `c72bc44` made for `lou-108` and `lou-203`.
 | `www.bbc.co.uk/...` (2 articles) | Wikipedia | 3 |
 | remainder | one-by-one, see the SQL | 18 |
 
-## One claim flagged, not changed
+## One claim flagged, then withdrawn
 
-`ore-203` asks for Oregon's "official state bird" and answers *western meadowlark*. The Blue
-Book now lists the meadowlark as the state **songbird** (voted 2017); it was the unofficial
-state bird from a 1927 schoolchildren's poll. The new source therefore supports the bird but
-not the exact word "official". Left as-is and recorded here rather than quietly re-sourced
-onto a page that does not say what the question says.
+`ore-203` asks for Oregon's "official state bird" and answers *western meadowlark*. This was
+originally flagged here on the grounds that the Blue Book lists the meadowlark as the state
+**songbird**, so the new source would not support the question's wording.
+
+**That flag was wrong, and is withdrawn.** It came from a search-result summary rather than
+from the source. The Blue Book page actually attached to the question says, in its own words:
+
+> ...the Western Meadowlark, Oregon's state bird...
+
+Question and source agree. Nothing to change.
+
+Worth keeping as a method note, because it is the same error class the sweep itself is about:
+**a search summary is not a source.** The 403s, the 429s and the CRLF all produce false
+positives about *links*; this one produced a false positive about a *claim*, and the fix was
+the same — go and read the page.
 
 ## Full-bank re-sweep after the repair
 
