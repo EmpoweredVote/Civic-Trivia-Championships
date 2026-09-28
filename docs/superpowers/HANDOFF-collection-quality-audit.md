@@ -11,44 +11,45 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,286** |
+| Active questions | **3,295** |
 | **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
-| Under the 10% expiring floor | **6**, all *already audited* (see the retroactive-floor section) |
+| Under the 10% expiring floor | **5**, all *already audited* (see the retroactive-floor section) |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
 | **Under 11% HARD** (new, session 10) | `queens-ny` **10.1%**, `world-news` 10.6% |
+| **Re-verify after 3 Nov 2026** | `texas-state` — its whole executive is on that ballot |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
 
-1. **`texas-state` should be next.** It breaches the expiring floor at 5.6%, is the thinnest
-   of the six at 54 questions, and sits at 13.0% hard — so one re-visit addresses all three.
-   That is the reasoning that picked `phoenix-az` and `missouri`.
-2. **Six already-audited collections breach the 10% expiring floor**: `west-monroe-la` 5.3%,
-   `texas-state` 5.6%, `alexandria-la` 6.1%, `new-york-state` 6.7%, `biloxi-ms` 8.5%,
-   `santa-monica-ca` 9.8%. These are **re-visits, not re-audits** — the cheaper job described
-   under "A re-visit is a different job from an audit".
+1. **`west-monroe-la` should be next.** Worst remaining expiring breach at 5.3%, thin at 57
+   questions, and 14.0% hard — one re-visit addresses all three, which is the reasoning that
+   picked `phoenix-az`, `missouri` and `texas-state`.
+2. **Five already-audited collections breach the 10% expiring floor**: `west-monroe-la` 5.3%,
+   `alexandria-la` 6.1%, `new-york-state` 6.7%, `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%.
+   These are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
+   different job from an audit".
 3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
    `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
    which is a pipeline-yield problem an audit cannot fix.
-4. **Four more collections are close to the question floor**: `norwich-uk` 52,
-   `texas-state` 54, `los-angeles-ca` 55, `portland-or` 55. None is breaching and none is
-   urgent — but they are where the next `plano-tx` comes from, so re-derive rather than
-   waiting for one to cross.
+4. **Three more collections are close to the question floor**: `norwich-uk` 52,
+   `los-angeles-ca` 55, `portland-or` 55. None is breaching and none is urgent — but they are
+   where the next `plano-tx` comes from, so re-derive rather than waiting for one to cross.
 
-**`plano-tx`, `st-louis-mo`, `phoenix-az` and `missouri` are DONE** (session 10). plano-tx
-50 → 59, the only collection with zero floor headroom; st-louis-mo 5.1% → 15.2%; phoenix-az
-5.4% → 16.7% expiring and 3.6% → 19.7% hard; missouri 9.9% → 16.0% and 8.5% → 21.3% hard. In
-all four, the number that put the collection on the queue was the least interesting thing wrong
-with it — phoenix-az was carrying a **wrong fact in production**. See the entries, and the
-thirteen new sections they produced.
+**Five collections are DONE in session 10**: `plano-tx` 50 → 59 (the only one with zero floor
+headroom), `st-louis-mo` 5.1% → 15.2%, `phoenix-az` 5.4% → 16.7% expiring and 3.6% → 19.7%
+hard, `missouri` 9.9% → 16.0% and 8.5% → 21.3% hard, `texas-state` 5.6% → 15.9% and 13.0% →
+20.6% hard. In all five the number that put the collection on the queue was the least
+interesting thing wrong with it — `phoenix-az` was carrying a **wrong fact in production**, and
+`texas-state` turned out to be five weeks from losing most of its officeholder tier. See the
+entries and the sixteen new sections they produced.
 
 **One thing needs your ruling, not a fix:** which tier owns "who are your U.S. senators". Two
 city collections now carry it while their state collections do not — see the section at the
 end.
 
-**What session 10 did:** the `plano-tx` content pass plus the `st-louis-mo`, `phoenix-az` and
-`missouri` re-visits. Across the four: **10 archived, 40 written, ~115 repaired, two new topics, and
-leakage 107 hits → 2.** It found that a hand-written SQL backfill inherits the collection's
+**What session 10 did:** the `plano-tx` content pass plus the `st-louis-mo`, `phoenix-az`,
+`missouri` and `texas-state` re-visits. Across the five: **10 archived, 49 written, ~140 repaired, two new topics, and
+leakage 138 hits → 12** (ten of the twelve are one collection's forced institution names). It found that a hand-written SQL backfill inherits the collection's
 first topic label; that every `www.plano.gov` citation is a JavaScript app carrying none of
 the facts cited to it; that the officeholder check prints *nothing at all* when a config
 defines no officeholders, which reads exactly like a pass; that the session 1–2 archiving
@@ -306,7 +307,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,286 active questions** (re-measured session 10, after the
+- 43 active collections, **3,295 active questions** (re-measured session 10, after the
   `plano-tx` pass; counted as questions with `status='active'` linked to an *active*
   collection). The 3,273 this line carried was session 8's figure.
 
@@ -316,7 +317,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
   washington-state 25, biloxi-ms 1); the other 48 are session 8's. **Re-measure this number,
   never derive it from the previous value** — nightly yield and automatic expiry both move it.
 - **0 `nested-options` violations bank-wide, at either severity** — re-confirmed session 10
-  (3,286 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
+  (3,295 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
   a clean report is not the same as a clean bank.
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
@@ -356,14 +357,14 @@ is still under it today:
 | ~~st-louis-mo~~ | ~~59~~ | ~~5.1%~~ **CLEARED session 10 → 15.2%** |
 | ~~phoenix-az~~ | ~~56~~ | ~~5.4%~~ **CLEARED session 10 → 16.7%** |
 | ~~missouri~~ | ~~71~~ | ~~9.9%~~ **CLEARED session 10 → 16.0%** |
+| ~~texas-state~~ | ~~54~~ | ~~5.6%~~ **CLEARED session 10 → 15.9%** |
 | west-monroe-la | 57 | **5.3%** |
-| texas-state | 54 | **5.6%** |
 | alexandria-la | 66 | **6.1%** |
 | new-york-state | 90 | **6.7%** |
 | biloxi-ms | 118 | **8.5%** |
 | santa-monica-ca | 61 | **9.8%** |
 
-**`cambridge-ma` and `indio-ca` were cleared in session 9; `st-louis-mo`, `phoenix-az` and `missouri` in session 10; six remain — re-derived from the database, not counted off this table.** Its entry is below,
+**`cambridge-ma` and `indio-ca` were cleared in session 9; `st-louis-mo`, `phoenix-az`, `missouri` and `texas-state` in session 10; five remain — re-derived from the database, not counted off this table.** Its entry is below,
 and it is the model for the rest: a re-visit is cheaper than an audit, because the structural
 work was already done — what is missing is expiring content and the defect classes that did
 not exist yet.
@@ -3493,7 +3494,7 @@ Measured across all 43 active collections, thinnest first:
 | `queens-ny` | 99 | 10 | 10.1% |
 | `world-news` | 47 | 5 | 10.6% |
 | `portland-or` | 55 | 7 | 12.7% |
-| `texas-state` | 54 | 7 | 13.0% |
+| ~~`texas-state`~~ | ~~54~~ | ~~7~~ | ~~13.0%~~ **CLEARED session 10 → 20.6%** |
 | `west-monroe-la` | 57 | 8 | 14.0% |
 
 `phoenix-az`, `st-louis-mo`, `missouri`, `west-monroe-la` and `texas-state` are **all session-2
@@ -3788,3 +3789,90 @@ the two city questions to their state collections — would drop `st-louis-mo` f
 collections own senators, and the two city questions move; (b) city collections may carry
 federal representation, and `missouri`/`texas-state` stay without; (c) both may, and the
 duplicate is accepted as tier-appropriate context.
+
+### texas-state — RE-VISIT complete (session 10)
+
+54 -> 63 (**0 archived**, 9 written, ~25 repaired). **Expiring 5.6% -> 15.9%.**
+**Hard tier 13.0% -> 20.6%.** Easy 35.2% -> 33.3%. **Leakage 31 hits -> 10**, all of them the
+noise class (below — this is the first collection this session that did not reach ≤2, and the
+reason is worth reading). Position 11/16/14/13 -> **16/16/16/15** (best single guess 29.6% ->
+25.4%). Bracketing 4/4/4/5, best single guess **29.4% — the floor for 17 magnitude questions**.
+Officeholder coverage: **none existed; 7 of 7 now**. bad_optcount 0, unsourced 0, drafts 0.
+
+  **THE FINDING THAT SHAPED THE WHOLE PASS: this collection is 36 days from losing most of its
+  officeholder tier, and the incumbents are already gone.** Checking before writing turned up,
+  in one afternoon:
+  - the **Comptroller resigned on 31 July 2026**;
+  - the **Attorney General is not seeking re-election** (running for the U.S. Senate);
+  - the **Agriculture Commissioner lost his own primary** in March 2026;
+  - the **Railroad Commission chair lost his runoff** in May 2026;
+  - the **Chief Justice**'s term runs out in December 2026 — 94 days, so a question about him
+    would fall inside the readiness gate's 90-day discount within a week.
+
+  Texas fills every statewide executive office in midterm years, so the whole executive branch
+  turns over at one moment. **The obvious backfill — seven "who holds office X" questions —
+  would have been seven questions wrong by January.** Written instead: the two offices on
+  **six-year staggered** clocks (Railroad Commission chair, Presiding Judge of the Court of
+  Criminal Appeals), the two incumbents actually seeking re-election, and one question about
+  which numbered legislature is sitting. Expiry now falls on **four dates** (2027-01-12,
+  2027-01-19, 2029, 2031) instead of all three on 2027-01-19.
+
+  **NO ARCHIVES, deliberately.** At 54 questions this was the thinnest collection in the bank
+  and everything the sweep flagged was repairable in place. Two questions that looked like
+  archive candidates were not: `tex-021`/`tex-039` are the same event from two sides, fixed by
+  taking the site name out of `tex-039`'s *text*; and `tex-053`/`tex-058` share an answer by the
+  **previous session's explicit ruling** (Texas's two high courts genuinely share selection
+  method, bench size and term length) — the ledger said so, and re-archiving them would have
+  undone a deliberate decision.
+
+  WRITTEN (9): the state motto and where the name Texas comes from; the **constitutional ban on
+  a personal income tax** (a major Texas civic fact the collection did not mention); when Texas
+  elects its statewide executives and why they all move together; how the Railroad Commission is
+  elected; and five expiring.
+
+  **`tex-010` is the fifth instance of the "one answer, many questions" remedy.** "The Governor"
+  was printed by six questions — unavoidably, in a state-government collection. Rather than
+  contort six explanations, the special-session fact moved into `tex-010`'s *text* and it now
+  asks what a special session may take up (only what the Governor names), which nothing else
+  gives away. Same move as `cal-085`, `cas-021`, `tucaz-010`, `pla-159` and `stlmo-203`.
+
+## Ten leaks left, and why that is the right answer (session 10, texas-state)
+
+Every other collection this session finished at 0–2 leakage hits. `texas-state` finished at
+**10**, and driving it lower would have made the collection worse. The residue:
+
+- **8 hits on `Texas Court of Criminal Appeals`** (`tex-061`'s answer). Four questions name that
+  court in their text because each asks something *about* it — how many judges, how they are
+  selected, their term length, who presides. **None of them says what the court does**, which is
+  what `tex-061` asks. The string matches; the fact is not handed over.
+- **1 hit on `Elected in partisan elections`** — `tex-053` and `tex-058` share that answer by a
+  previous session's explicit ruling.
+- **1 hit on `San Antonio`** — `tex-206`'s explanation gives the Alamo's original name, *Mission
+  San Antonio de Valero*. Unavoidable.
+
+**The substance test, not the string count, decides.** The handoff's own rule says an office or
+body name the subject matter forces is noise, and a specific answer the player could not
+otherwise deduce is the finding. A collection about one state's institutions will name those
+institutions constantly. **Reporting "leakage: 0" here would have required archiving four sound
+questions or writing four evasive ones.** Record the number, say which hits are noise and why,
+and stop.
+
+## Check the ELECTION CALENDAR before writing an officeholder block (session 10, texas-state)
+
+`plano-tx`, `st-louis-mo`, `phoenix-az` and `missouri` all took officeholder backfills without
+anyone asking when the next election was. `texas-state` is the case that shows why you should:
+**five weeks before a general election, half the roster's incumbents had already lost primaries
+or resigned**, and every one of them was still in office and still the correct answer today.
+
+The rule is not "don't write them". It is:
+
+1. **Search for the office plus the next election year before writing**, not just the holder's
+   name. "Who is the Texas Agriculture Commissioner" returns Sid Miller and looks clean; "Texas
+   Agriculture Commissioner 2026" returns the primary he lost.
+2. **Prefer offices on long, staggered clocks.** Six-year judicial and commission seats give
+   durable expiring content; four-year executive seats that all move together give a burst that
+   goes stale in one night.
+3. **Skip an office whose holder resigned or is mid-litigation** — the `st-louis-mo` sheriff and
+   the Texas comptroller are the same call.
+4. **Say so in the locale config.** `texas-state.ts` now carries a dated re-verify warning and
+   deliberately omits the two offices with no stable holder.
