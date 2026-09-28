@@ -11,32 +11,37 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,265** |
+| Active questions | **3,272** |
 | **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
-| Under the 10% expiring floor | **9**, all *already audited* (see the retroactive-floor section) |
+| Under the 10% expiring floor | **8**, all *already audited* (see the retroactive-floor section) |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
+| **Under 11% HARD** (new, session 10) | `phoenix-az` **3.6%**, `missouri` 8.5%, `queens-ny` 10.1%, `world-news` 10.6% |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
 
-1. **Nine already-audited collections breach the 10% expiring floor**: `st-louis-mo` 5.1%,
-   `west-monroe-la` 5.3%, `phoenix-az` 5.4%, `texas-state` 5.6%, `alexandria-la` 6.1%,
-   `new-york-state` 6.7%, `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%, `missouri` 9.9%. These
-   are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
-   different job from an audit". `texas-state` is also the thinnest of them at 54 questions.
-2. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
+1. **Eight already-audited collections breach the 10% expiring floor**: `west-monroe-la` 5.3%,
+   `phoenix-az` 5.4%, `texas-state` 5.6%, `alexandria-la` 6.1%, `new-york-state` 6.7%,
+   `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%, `missouri` 9.9%. These are **re-visits, not
+   re-audits** — the cheaper job described under "A re-visit is a different job from an audit".
+2. **`phoenix-az` should be next, and not only for the expiring floor.** It has **two hard
+   questions in the whole collection** (3.6%), and Q5 — the wager question — is drawn from the
+   hard tier. It breaches the expiring floor as well, so one re-visit fixes both. See the new
+   hard-tier section.
+3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
    `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
    which is a pipeline-yield problem an audit cannot fix.
-3. **Four more collections are close to the question floor**: `norwich-uk` 52,
-   `texas-state` 54, `los-angeles-ca` 55, `portland-or` 55. None is breaching, and none is
-   urgent — but they are where the next `plano-tx` comes from, so re-derive this rather than
+4. **Four more collections are close to the question floor**: `norwich-uk` 52,
+   `texas-state` 54, `los-angeles-ca` 55, `portland-or` 55. None is breaching and none is
+   urgent — but they are where the next `plano-tx` comes from, so re-derive rather than
    waiting for one to cross.
 
-**`plano-tx` is DONE** (session 10): 50 → 59, and it was the only collection in the bank with
-zero floor headroom. Doing it also showed that the count was the least interesting thing wrong
-with it — see the entry, and the four new sections it produced.
+**`plano-tx` and `st-louis-mo` are DONE** (session 10). plano-tx 50 → 59, the only collection
+with zero floor headroom. st-louis-mo 5.1% → 15.2% expiring, the worst remaining breach. In
+both, the number that put the collection on the queue was the least interesting thing wrong
+with it — see the entries, and the seven new sections they produced.
 
-**What session 10 did:** the `plano-tx` content pass — 3 archived, 12 written, 25 repaired,
+**What session 10 did:** the `plano-tx` content pass and the `st-louis-mo` re-visit — 3 archived, 12 written, 25 repaired,
 one new topic. Leakage 27 hits → 2. It found that a hand-written SQL backfill inherits the
 collection's first topic label, that every `www.plano.gov` citation is a JavaScript app with
 none of the cited facts in its text, and that the readiness gate's officeholder check prints
@@ -294,7 +299,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,265 active questions** (re-measured session 10, after the
+- 43 active collections, **3,272 active questions** (re-measured session 10, after the
   `plano-tx` pass; counted as questions with `status='active'` linked to an *active*
   collection). The 3,273 this line carried was session 8's figure.
 
@@ -304,7 +309,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
   washington-state 25, biloxi-ms 1); the other 48 are session 8's. **Re-measure this number,
   never derive it from the previous value** — nightly yield and automatic expiry both move it.
 - **0 `nested-options` violations bank-wide, at either severity** — re-confirmed session 10
-  (3,265 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
+  (3,272 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
   a clean report is not the same as a clean bank.
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
@@ -341,7 +346,7 @@ is still under it today:
 |---|---|---|
 | ~~cambridge-ma~~ | ~~86~~ | ~~1.2%~~ **CLEARED session 9 → 16.4%** |
 | ~~indio-ca~~ | ~~68~~ | ~~2.9%~~ **CLEARED session 9 → 17.3%** |
-| st-louis-mo | 59 | **5.1%** |
+| ~~st-louis-mo~~ | ~~59~~ | ~~5.1%~~ **CLEARED session 10 → 15.2%** |
 | west-monroe-la | 57 | **5.3%** |
 | phoenix-az | 56 | **5.4%** |
 | texas-state | 54 | **5.6%** |
@@ -351,7 +356,7 @@ is still under it today:
 | santa-monica-ca | 61 | **9.8%** |
 | missouri | 71 | **9.9%** |
 
-**`cambridge-ma` (1.2% → 16.4%) and `indio-ca` (2.9% → 17.3%) were cleared in session 9; nine remain — re-derived from the database 2026-09-28, not counted off this table.** Its entry is below,
+**`cambridge-ma` and `indio-ca` were cleared in session 9, `st-louis-mo` (5.1% → 15.2%) in session 10; eight remain — re-derived from the database, not counted off this table.** Its entry is below,
 and it is the model for the rest: a re-visit is cheaper than an audit, because the structural
 work was already done — what is missing is expiring content and the defect classes that did
 not exist yet.
@@ -3398,3 +3403,147 @@ approval. **The check is advisory and prints nothing when unconfigured. Look at 
 config before concluding a collection has officeholder coverage.** Not fixed here: session 9's
 `indio-ca` finding stands — populating a roster from a stale config can write a termed-out
 officeholder into the bank, so the roster needs verifying, not copying.
+
+### st-louis-mo — RE-VISIT complete (session 10)
+
+59 -> 66 (3 archived, 10 written, ~30 repaired). **Expiring 5.1% -> 15.2%** — the worst
+remaining breach of the retroactive floor, now inside the target band.
+Hard tier **8.5% -> 16.7%**. Easy 44.1% -> 39.4%.
+**Leakage 26 hits -> 0.** Normalised duplicate answers 2 -> 0. bad_idx 0, bad_optcount 0,
+unlinked 0, drafts 0, unsourced 0, nested-options 0.
+Position spread 12/15/15/17 -> **17/17/16/16** (best single guess 28.8% -> 25.8%).
+Bracketing best single guess **40.0% -> 26.7%** (at an extreme 60.0% -> 46.7%).
+
+  **THE FLOOR WAS THE REASON TO GO, AND THE LEAST OF IT — same as `plano-tx`.** Session 2
+  audited this collection well by the standards of session 2. Everything below is a check
+  that did not exist then.
+
+  **ALL THREE EXPIRING QUESTIONS EXPIRED ON THE SAME DAY.** `2029-04-15`, all three, because
+  they were written from the same April 2025 election. Session 9's burst warning is usually
+  about a news collection lapsing in a week; this is the slower version, and it is worse in
+  one way — on 15 April 2029 the collection would have gone from 5.1% to **0.0%** in a single
+  day, with nothing to notice it. The ten expiring questions now fall on **seven different
+  dates** between 2027 and 2029. **Check `GROUP BY expires_at`, not just the count.**
+
+  **EVERY EXPLANATION IN THE COLLECTION OPENED WITH "According to".** 50 of 59 with
+  "According to the Wikipedia article on X". It carried nothing the `source` field does not
+  hold — and here it was also the *leak vector*: `stlmo-005`'s attribution-led explanation
+  ended by handing over `stlmo-006`'s entire answer. Stripped all 56 in one statement; no
+  attribution in this collection contained an internal comma, so `^According to [^,]+, ` was
+  exact. **Check that assumption per collection before running it.**
+
+  **LEAKAGE, 26 HITS, AND THE PATTERN IS ALWAYS THE SAME:** a question whose explanation is
+  written from the same paragraph as its neighbour. `stlmo-030` handed over `stlmo-031`
+  outright; `stlmo-041` handed over `stlmo-054`; `stlmo-047` handed over `stlmo-048`;
+  `stlmo-049` and `stlmo-050` handed over each other. Four questions' TEXT printed
+  `stlmo-026`'s answer ("Forest Park") and three printed `stlmo-203`'s ("The Mississippi
+  River") — both fixed with the `tucaz-010` remedy rather than by archiving.
+
+  ARCHIVED (3), all reversible: `stlmo-016` ("4 years", identical to `stlmo-206`),
+  `stlmo-031` ("St. Louis Zoo", identical to `stlmo-061` *and* handed over by `stlmo-030`),
+  `stlmo-039` (flag minutiae whose answer duplicates `stlmo-035`'s in substance — "the
+  confluence of the Missouri and Mississippi Rivers" versus "the Missouri and Mississippi
+  Rivers", which the normalised check cannot see).
+
+  REWRITTEN INTO NEW CONTENT (3), rather than archived: `stlmo-026` now asks about the **1904
+  Summer Olympics**, which St. Louis hosted alongside the Fair and which the collection had
+  missed entirely; `stlmo-203` asks which state the Mississippi borders; `stlmo-020` asked for
+  a metro population "(2025)" — a figure that rots by construction, the same defect session 2
+  archived `stlmo-091` for — and now asks the 2020 census city figure, which the collection
+  also lacked.
+
+  WRITTEN (10): approval voting and the 2022 Proposition R (the collection had **nothing** on
+  how anyone in St. Louis votes, in a city that rebuilt its own election system by ballot
+  measure twice in a decade); MetroLink's owner; and seven expiring — Circuit Attorney, Police
+  Commissioner, Treasurer, the U.S. representative, the two senators, the schools
+  superintendent, and the next mayoral election year.
+
+  A LIVE CONTRADICTION, caught by reading two explanations against each other: `stlmo-060`
+  said Forest Park opened "the same year St. Louis officially separated from St. Louis
+  County" — 1876 — while `stlmo-005`'s answer is **1877**. Both are half right: the vote was
+  August 1876, the separation March 1877. `stlmo-060` now says "the same year city voters
+  approved separating".
+
+  **THE SHERIFF WAS DELIBERATELY NOT WRITTEN.** The elected sheriff was removed from office in
+  early 2026 and the interim holder is in active litigation over it. There is no stable fact
+  to ask for, and the locale config now says so in a comment so the next session does not
+  "fill the gap".
+## The archiving method gutted the HARD tier, and Q5 is drawn from it (session 10)
+
+**This is bank-wide, it has never been recorded, and it is a direct consequence of the
+session 1–2 method.** Session 2's own finding was that easy% rises sharply on archiving alone,
+because minutiae skew medium and hard. True — and the other half of that sentence was never
+written down: **the questions being archived were the hard tier.**
+
+Measured across all 43 active collections, thinnest first:
+
+| collection | active | hard | hard % |
+|---|---|---|---|
+| `phoenix-az` | 56 | **2** | 3.6% |
+| `st-louis-mo` | 59 | 5 | 8.5% |
+| `missouri` | 71 | 6 | 8.5% |
+| `queens-ny` | 99 | 10 | 10.1% |
+| `world-news` | 47 | 5 | 10.6% |
+| `portland-or` | 55 | 7 | 12.7% |
+| `texas-state` | 54 | 7 | 13.0% |
+| `west-monroe-la` | 57 | 8 | 14.0% |
+
+`phoenix-az`, `st-louis-mo`, `missouri`, `west-monroe-la` and `texas-state` are **all session-2
+collections**. The healthy end of the table (`cambridge-ma`, `santa-monica-ca`,
+`massachusetts-state`, `wisconsin`) sits at 16–18%.
+
+**Why it matters, and it is not cosmetic.** CLAUDE.md: *Q1–4 standard, Q5 the wager question,
+hard/final.* Every game ends on a hard question. `phoenix-az` has **two**. A repeat player
+there sees the same wager question every other game, and the wager is the one moment the score
+swings by up to ±300.
+
+Two remedies, both used here:
+1. **Write hard questions, not just expiring ones.** Three of the ten written for
+   `st-louis-mo` are hard.
+2. **Re-read the medium tier for questions that are hard by the collection's own standard.**
+   Four were promoted here (`stlmo-012` 79 neighbourhoods, `stlmo-072` Anheuser-Busch's
+   refrigerated railcars, `stlmo-074` the International Shoe Company building, `stlmo-077`
+   Powell Hall) — all recall of one specific name or figure, which is what hard means in these
+   collections. 8.5% → 16.7%.
+
+**This is a promotion, never a demotion.** The easy floor is a floor: nothing moves out of
+easy to make the numbers work. Worth running the query above at the start of every re-visit —
+it costs nothing and the priority list cannot see it.
+
+## Bracketing and answer position are the SAME check on an ascending set (session 10)
+
+The readiness script prints them separately and says explicitly that rotating positions does
+not fix bracketing. True for a set whose order carries no meaning. **For an ascending numeric
+set they are one number**: the answer's rank among the four sorted values *is* its A/B/C/D
+position, because the options are already in order.
+
+`st-louis-mo` had **6 of 15 numeric answers as the largest option** — "sort and take the
+biggest" scored 40%. Fixing that meant changing distractor *values* on four questions, which
+moved four answers off position D and broke a spread that was already exactly 17/17/16/16.
+
+The working method, and it takes both halves:
+
+1. Change the **values** on the numeric questions to move the answer's rank (e.g. `stlmo-012`'s
+   79 went from `35/50/79/100` to `79/100/125/150` — third of four to smallest).
+2. **Compensate the position damage on non-numeric sets**, by rotating option sets whose order
+   carries no meaning — here four of them, two architects/venues/officials lists and a list of
+   presidents.
+
+Result: bracketing 4/4/4/3 (best single guess 26.7%) **and** position 17/17/16/16 (25.8%).
+Doing only step 1 would have left the spread at 18/20/15/13. **Re-run the script after the
+rebalance, not after the first half of it.**
+
+## The expiry burst has a slow version too (session 10)
+
+Session 9 recorded the burst on a news collection: one night's pipeline output, all lapsing in
+the same week. `st-louis-mo` is the same defect on a four-year clock and it is easier to miss.
+All three of its expiring questions carried `expires_at = 2029-04-15`, because all three were
+written from the same April 2025 municipal election. Nothing is wrong today. On that one day in
+2029 the collection drops from 5.1% to **0.0%**.
+
+    SELECT expires_at::date, count(*) FROM ... GROUP BY 1 ORDER BY 1;
+
+**A collection whose expiring questions share a single date has one expiring question wearing
+several coats.** Spread the dates across offices with genuinely different clocks — a U.S. House
+term (2 years), a police appointment (indefinite), a school superintendent's contract, a
+citywide four-year office. `st-louis-mo` now lapses on seven dates between 2027 and 2029.
