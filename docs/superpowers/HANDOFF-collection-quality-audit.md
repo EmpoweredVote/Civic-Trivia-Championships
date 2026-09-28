@@ -323,8 +323,21 @@ question look wrong. Check before you fix.
 - **`war-in-iran` (32) and `world-news` (44) are below the 50-question floor.** A pipeline-yield
   problem, not a purge problem. #816 does not add yield; if anything, enforcing the gate will
   reduce it, which is another reason to read `suppressed` first.
-- **`replacementGenerator.ts` and the two officeholder generators never call `auditQuestion`
-  either.** #816 fixed the news lane only. Same defect at three more addresses.
+- ~~**`replacementGenerator.ts` and the two officeholder generators never call
+  `auditQuestion`.**~~ **DONE in session 7** (ev-accounts #827), and the claim was wrong on
+  one count: **`replacementGenerator.ts` already had the gate** — it audits and refuses on
+  `hasBlockingViolations`. It was two addresses, not three.
+
+  `CurrentTermQuestionGenerator` and `ElectionQuestionGenerator` were the real gaps. Both
+  already called `placeAnswer`, so only the audit was missing; it now runs between
+  `placeAnswer` and the insert, on the placed question. The gate lives in one shared
+  module (`services/generation/auditBeforeInsert.ts`) rather than two inline copies.
+
+  It reuses the **per-rule** flag rather than gating on `hasBlockingViolations`, and that
+  choice matters more here than in the pipeline: these produce officeholder questions, which
+  are exactly the shape `checkPureLookup` flags at 15.3%. A blanket gate would have refused
+  most of their output. Both write `status: 'draft'`, so nothing reaches a player until
+  activation — lower urgency, same defect.
 
 ---
 
