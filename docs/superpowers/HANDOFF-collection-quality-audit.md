@@ -7,11 +7,10 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **23 of 43 collections audited.** 567 archived across all sessions, 190 written.
+- **24 of 43 collections audited.** 601 archived across all sessions, 197 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
-  **Session 7 audited no collection.** It cleared the bank-wide `nested-options` blocker
-  instead, which this file named as the precondition for collection 24. That gate is open:
-  **pittsburgh-pa is unblocked.**
+  Session 7 cleared the bank-wide `nested-options` blocker and then audited
+  **pittsburgh-pa** (collection 24) with a **citation pass** added to the method.
 - **DB access — SUPERSEDED as of session 6. Use `psql`, not MCP.**
 
       set -a; . /c/EV-Accounts/backend/.env; set +a
@@ -244,15 +243,23 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-pittsburgh-pa, plano-tx, washington-state, portland-or,
+plano-tx, washington-state, portland-or,
 washington-dc, los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
 
 (louisiana — session 3; oregon-state — session 4; queens-ny — session 5. All below.)
 
-## Per-collection method (unchanged, now well exercised)
+## Per-collection method (citation pass added session 7)
 
+0. **Read the cited sources, not just the questions** (Chris, 2026-09-28). Group by
+   `source->>'url'` first: a collection that cites one generic article for 20 questions is
+   already telling you something. Check the article actually contains each claim. Session 7
+   found two live defects this way that no structural rule can see — and cleared one
+   question that looked mis-cited and was not, so the check earns its cost in both
+   directions. Verify titles exist in one call via the MediaWiki API
+   (`/w/api.php?action=query&titles=A|B|C&redirects=1&format=json&formatversion=2`) rather
+   than fetching each article.
 1. Read: `external_id, difficulty, text, options->>correct_answer`, with
    `count(*) OVER ()` so the starting total is measured rather than eyeballed.
 2. Read for the defect classes below.
@@ -1331,3 +1338,57 @@ Read the header block at the top of this file first; it is current. This is the 
 
 **Outstanding on someone else's desk:** the CTC database credential. Doc handed to Chris
 Andrews 2026-09-27, reply pending. `ev_api` is the approved interim.
+
+### pittsburgh-pa — complete
+92 -> 58 (34 archived) -> 65 (+7). Easy 26.1% -> 35.4%. Expiring 12.0% -> 15.4%.
+bad_idx 0, bad_optcount 0, unlinked 0, duplicate answers 8 -> 0, spread 16/20/18/11.
+  CITATION PASS (first collection to get one). 90 of 92 questions cited `en.wikipedia.org`,
+  21 of them the single generic `/wiki/Pittsburgh` article. All 14 distinct URLs resolve
+  (5 via redirect), so the link sweep was clean and the defects were all *support*, not
+  reachability:
+    - pitpa-068 asked population "according to the 2024 estimate" -> 307,668. The cited
+      article gives 2020: 302,971 and a 2025 estimate of 307,632. Neither year nor figure
+      was in the source. Rewritten to the 2025 figure, and the precise-number-among-round-
+      numbers giveaway removed (all four options are now "About N").
+    - pitpa-086 asked which neighborhood is divided into "Lower and Upper" sections ->
+      Lawrenceville. The source lists Lower, **Central** and Upper. The two-part premise was
+      also the only thing separating it from pitpa-090 (Squirrel Hill North/South).
+      Rewritten to three sections; 090 archived as a duplicate answer.
+    - pitpa-088 (transit agency -> Pittsburgh Regional Transit) was correct but cited to the
+      *Duquesne Incline* article. Re-cited.
+    - pitpa-067's answer "robotics **and artificial intelligence**" overstated a source that
+      says only "National Robotics Engineering Center". Archived.
+    - FALSE ALARM worth recording: pitpa-056 (city colors, cited to a *bridges* article)
+      looked like an obvious mis-citation and was not — the article says "to match the
+      city's official colors of black and gold." Check, do not assume, in both directions.
+  REPEATED-SHAPE, worst yet: SEVEN identical "Who represents District N?" questions
+    (012, 013, 017, 018, 092, 093, 094). Kept one (092), archived six, replaced with two
+    questions about what the office *does* (pitpa-100 term length, pitpa-101 staggering).
+  CONCENTRATION: 12 of 92 on the Point / Fort Duquesne site, 7 on the Cathedral of Learning,
+    5 each on Warhol and Phipps, 4 on the Duquesne Incline.
+  DUPLICATE ANSWERS / INVERSE PAIRS (8, now 0): 030+091 both "Paris of Appalachia";
+    021+032 both "French and Indian War"; 065+066 both "Andrew Carnegie"; 085+090 both
+    "Squirrel Hill"; 040/072 inverse (tallest building <-> company named on it);
+    033/059 inverse (river confluence).
+  LEAKAGE: 041 names U.S. Steel Tower (gives away 040), 038 names Mount Washington (036),
+    046 names Nationality Rooms (045), 073 names the G20 (025), 066 names Phipps' donor (042),
+    022 names Fort Duquesne (020).
+  DEGENERATE: pitpa-078 "Andy Warhol was born in which city?" -> Pittsburgh, inside the
+    Pittsburgh collection.
+  ROTS BY CONSTRUCTION: pitpa-071 "first **and only** greenhouse" to hold Platinum LEED.
+  EXPIRING FLOOR CONFLICT, and how it was resolved: the officeholder questions *are* the
+    expiring ones, so archiving six district questions dropped expiring to 8.6% — under the
+    10% hard floor. Backfilled five new expiring questions for offices the collection never
+    covered rather than keeping the defective set: pitpa-102 (Allegheny County Executive,
+    Sara Innamorato), 096 (US Rep PA-12, Summer Lee), 097 (police chief Jason Lando, sworn
+    in Feb 2026), 098 (DA Stephen Zappala, term to 2028-01-03), 099 (next mayoral election,
+    2029). Each is a distinct person, so the one-question-per-officeholder rule still holds.
+  VERIFIED BEFORE TRUSTING, per the session-6 rule: Corey O'Connor really did take office in
+    January 2026, and R. Daniel Lavelle really is still council president — pitpa-003 and
+    pitpa-005 were correct. Only 005's stale "as of 2024" framing was removed.
+  **NEW GOTCHA — the guarded insert can silently skip a question.** `ON CONFLICT
+    (external_id) DO NOTHING` also collides with **archived** rows. `pitpa-095` was an
+    archived question from a previous session, so the County Executive question vanished
+    with no error and the insert returned 6 ids for 7 rows. Take the high-water mark from
+    `max(external_id)` across **all statuses**, and count the returned ids against what you
+    sent. Re-inserted as pitpa-102.
