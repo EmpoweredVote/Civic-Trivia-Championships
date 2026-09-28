@@ -7,7 +7,7 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **24 of 43 collections audited.** 601 archived across all sessions, 197 written.
+- **25 of 43 collections audited.** 630 archived across all sessions, 207 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 7 cleared the bank-wide `nested-options` blocker and then audited
   **pittsburgh-pa** (collection 24) with a **citation pass** added to the method.
@@ -243,7 +243,7 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-plano-tx, washington-state, portland-or,
+washington-state, portland-or,
 washington-dc, los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
@@ -257,7 +257,16 @@ war-in-iran, world-news.
    already telling you something. Check the article actually contains each claim. Session 7
    found two live defects this way that no structural rule can see — and cleared one
    question that looked mis-cited and was not, so the check earns its cost in both
-   directions. Verify titles exist in one call via the MediaWiki API
+   directions.
+
+   **Ask the source for QUOTES, never for a summary.** On plano-tx a summarising fetch of
+   the cited article returned two population figures that are not in it (127,885 for 1990,
+   824 for 1890). Both contradicted live questions, and acting on them would have
+   "corrected" two questions that were right — the article says 128,713 and 1,200. A second
+   pass asking for verbatim sentences settled it. A summary is a paraphrase by something
+   that has not been told it is being used as evidence; only a quote is evidence.
+
+   Verify titles exist in one call via the MediaWiki API
    (`/w/api.php?action=query&titles=A|B|C&redirects=1&format=json&formatversion=2`) rather
    than fetching each article.
 1. Read: `external_id, difficulty, text, options->>correct_answer`, with
@@ -1392,3 +1401,46 @@ bad_idx 0, bad_optcount 0, unlinked 0, duplicate answers 8 -> 0, spread 16/20/18
     with no error and the insert returned 6 ids for 7 rows. Take the high-water mark from
     `max(external_id)` across **all statuses**, and count the returned ids against what you
     sent. Re-inserted as pitpa-102.
+
+### plano-tx — complete
+69 -> 40 (29 archived) -> 50 (+10). Easy 26.1% -> 38.0%. Expiring **1.4% -> 16.0%**.
+bad_idx 0, bad_optcount 0, unlinked 0, duplicate answers -> 0, spread 13/11/12/14.
+  CITATION PASS: **52 of 69 questions cited one URL** — the TSHA Handbook of Texas entry for
+  Plano, about 1,100 words. That looked like the wmnla-038 failure at scale and it was not:
+  every claim checked traced to the article, including the ones that sounded invented
+  ("Balloon Capital of Texas", the Shawnee Trail, the Farrel-Wilson Farmstead Museum, W. F.
+  Mister, "1,000 businesses"). Citations here are sound. The collection's problem is that one
+  short article was **mined into duplicates**.
+  METHOD CORRECTION, and the most useful thing this collection taught: the FIRST fetch
+  summarised the article and produced two population figures that are not in it — 127,885
+  for 1890->1990 and 824 for 1890. Both contradicted live questions. Acting on them would
+  have rewritten two CORRECT questions into wrong ones. Asking for verbatim quotes returned
+  "By 1890 the town had a population of 1,200" and "By 1990 it was a city of seventy-two
+  square miles with a population of 128,713". **Demand quotes; a summary is not evidence.**
+  DUPLICATE MINING (the dominant defect, 8 straight pairs): 070/142 both Frito-Lay;
+    074/144 both the same early-industry list; 037/103 both "Balloon Capital of Texas";
+    040/147 both the Farrel-Wilson museum; 013/113 near-identical text AND answer
+    (Plano Conservancy); 056/121 both "about 400 new residents per decade"; 026/104 both the
+    Houston and Texas Central; 052/107 inverse (year vs the number in the other's text).
+  POPULATION-TABLE CONCENTRATION: **14 of 69 questions** were entries from one census table
+    (1890, 1900, 1960, 1970, 1980 x4, 1990, 2000 x2, square miles, businesses, average per
+    decade x2). Kept three that carry the growth story; archived the rest.
+  INVERSE PAIRS: 047/053 ("outside of Texas" / "more than half" — the same sentence asked
+    both ways), 036/083 (who founded the store / what he founded).
+  REPEATED SHAPE: 050, 089, 100 were all "by 1890, how many X?" with the answer "Two".
+  BRACKET ANSWER: pla-019's 1980 population answered "50,000-99,999", and pla-052's text
+    gives the figure away anyway.
+  EXPIRING WAS 1.4% — the worst in the ledger, one question in sixty-nine, and archiving
+    could not fix it because the duplicates were all historical. Backfilled seven: city
+    manager (Mark Israelson), Collin County judge (Chris Hill), police chief (Ed Drain),
+    Plano ISD superintendent (Theresa Williams), county sheriff (Jim Skinner), Texas House
+    District 70 (Mihaela Plesa), and the next mayoral election (2029).
+  THE 50-QUESTION FLOOR DROVE THE BACKFILL SIZE. 29 archives left 40, below the floor, so the
+    backfill was sized to clear it rather than to a round number: +10 lands exactly on 50
+    with easy at 38% and expiring at 16%. Three non-expiring additions fill real gaps the
+    collection never had — which county Plano is in, which school district serves it, and
+    Toyota's 2017 North American headquarters.
+  VERIFIED BEFORE TRUSTING: pla-005 named John B. Muns "as of 2025" and he is still mayor —
+    re-elected May 2025, term to 2029. Only the stale framing was removed.
+  NOT REPEATED FROM pittsburgh-pa: the external-id high-water mark was checked across all
+    statuses first, and the insert returned 10 ids for 10 rows.
