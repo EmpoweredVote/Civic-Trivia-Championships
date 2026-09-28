@@ -94,3 +94,51 @@ budget, not a formality.
   ev-accounts runs on.)
 - Changing service settings needs Render's REST API — the Render MCP server
   exposes no `update_web_service` tool.
+
+## Question quality rules — the enforcement flag (2026-09-27)
+
+`TRIVIA_QUALITY_RULES_ENFORCE` is a **comma-separated list of rule names, not a
+boolean** (ev-accounts #825). It reads:
+
+| value | meaning |
+|---|---|
+| unset, `""`, `false`, `none` | nothing enforces |
+| `true`, `all` | every rule enforces — what the old boolean meant, still honoured |
+| `nested-options,other-rule` | exactly those rules enforce |
+
+**Currently set to `nested-options`** on the Render cron job
+`ev-jobs-trivia-pipeline` (`crn-dain8nuk1f9s738t6gs0`).
+
+It is a list rather than a switch because the rules do not share a false-positive
+rate, so they cannot share a setting. `checkPureLookup` matches **15.3% of the live
+news bank** — it flags "in what year was..." shapes, which is an ordinary news
+question — so enforcing everything would block a large share of each night's output.
+That is why enforcement sat off entirely from #816 until the flag was split, and why
+`pure-lookup` is deliberately still unenforced.
+
+- **The gate does not validate rule names.** It stays free of the rules registry so
+  it can be tested without a database, which means it cannot tell a typo from a rule
+  it has not heard of: `nseted-options` parses as a rule name, matches nothing and
+  blocks nothing. It fails quiet, so confirm what was actually parsed rather than
+  what you meant to set. Do not "fix" this by importing the registry.
+- **Confirm it from the database, not from the dashboard.** Each run writes what was
+  in effect into `trivia.generation_jobs.notes.qualityRules`: `enforced` (boolean,
+  any rule), `enforcedRules` (the names, `["*"]` for all), `blocked` (actually
+  refused) and `suppressed` (would have been refused had its rule been enforced, and
+  was written anyway). Read `suppressed` before adding a rule to the list — it is the
+  cost of adding it, measured in advance.
+- **No MCP tool reads Render environment variables**, only `update_environment_variables`
+  (which merges by default). The value cannot be confirmed from the API, so set it
+  explicitly and verify from the notes row above.
+- **An empty night proves nothing.** This pipeline legitimately yields 0–4 questions
+  on many nights, so `audited: 0` means the setting was never exercised — not that it
+  works.
+- **Rolling back needs no deploy.** Clear the flag or set it to `none`. Changing it
+  does trigger a redeploy of the cron job, but the running code re-reads the variable
+  per question rather than at import.
+
+The `nested-options` rule itself is **vendored in two places**: this repo's
+`backend/src/services/qualityRules/rules/` (guards the collection-creation scripts)
+and `ev-accounts/backend/src/trivia/services/qualityRules/rules/` (guards the nightly
+pipeline). **The tests for both live only beside the ev-accounts copy**, because this
+repo has no test runner — a change made here is untested until it is carried over.
