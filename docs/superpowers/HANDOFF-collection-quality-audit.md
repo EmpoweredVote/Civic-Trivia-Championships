@@ -1095,3 +1095,69 @@ all landing in the "expiring within 90 days" bucket, is not worth the ratio poin
 Officeholder-coverage warnings for State Senate districts 13/14/15 remain, and are expected:
 those are the repeated-shape questions the audit archived. Do not answer them by restoring the
 set.
+
+---
+
+## SESSION 6b — oregon-state content pass (2026-09-27)
+
+Chris suggested adding Oregon's state animal (the beaver) as an easy question. **It was not
+added, and that is the more useful finding.**
+
+### Why the beaver question was declined
+
+The beaver is already the answer twice over:
+
+- `ore-054` — "What is Oregon's state nickname?" → **The Beaver State**
+- `ore-117` — "What image appears on the reverse side of the Oregon state flag?" → **A beaver**
+
+A third question answering "beaver" would be a same-answer triple, and it is *derivable* from
+both of the existing two — anyone who knows the nickname can infer the state animal without
+knowing anything else. That is defect class 3 (mutual leakage), the same test that archived
+`queny-089` for being derivable from `queny-149`.
+
+Checking before writing cost one query. Writing it first would have added a defect to a
+collection that had just been audited clean.
+
+### What went in instead
+
+Searching for what oregon-state *lacked* turned up a real hole: **no question about
+agriculture at all** — nothing on hazelnuts, Christmas trees, salmon, or crops of any kind,
+in a state whose economy and self-image run through them.
+
+| ID | Question | Answer | Expiry |
+|---|---|---|---|
+| `ore-209` | Oregon grows ~99% of the US supply of which nut? | Hazelnuts | — |
+| `ore-210` | Oregon leads every state in which seasonal crop, ~a third of the market? | Christmas trees | — |
+| `ore-211` | Roughly how many people live in Oregon? | About 4.3 million | 2027-12-31 |
+
+**Both agriculture questions are phrased so the answer is the crop, not the state.** "Which
+state leads the nation in Christmas trees?" is guessable from the collection alone inside an
+Oregon collection — the `queny-137` defect. Flipping the question fixes it at no cost.
+
+### The floor forced the third question
+
+oregon-state sat at **exactly 10.0%** expiring (7 of 70). Two durable additions alone would
+have taken it to 7/72 = **9.7%**, i.e. Chris's suggestion would have pushed a passing
+collection into `DEFECT` on the floor he had just set. This is the same arithmetic as Queens
+and it is worth internalising: **in a collection near the floor, adding good durable
+questions is a regression unless expiring content goes in with them.**
+
+`ore-211` is deliberately **not** a seventh "Who is X as of 2026?". All six of this
+collection's officeholder questions already share that exact shape — Governor, Secretary of
+State, Attorney General, Treasurer, Senate President, House Speaker. Adding a seventh would
+compound the repeated-shape defect rather than repeat one honest instance of it. A volatile
+statistic carries the expiry instead, the way `queny-207` does for Queens.
+
+Oregon's US House members and Senators were considered and rejected for the same reason as
+Queens': Merkley is on the ballot on 3 November 2026, five weeks out.
+
+### Verification (measured)
+
+    70 -> 73 active; expiring 7 -> 8; ratio 10.0% -> 11.0%; easy 38.4%
+    bad answer indices 0, options != 4: 0
+    answer position spread 22 / 13 / 21 / 17  (position 1 was the thin one at 10)
+    no new answer string appears in any other question's text
+    no new same-answer group (the only one, ore-009/ore-116, is pre-existing)
+    top trigram against the rest of the collection: 0.317
+    readiness audit: NOTE, not DEFECT
+    nested-options audit over all 3,472 active questions: unchanged at 9 blocking / 3 advisory
