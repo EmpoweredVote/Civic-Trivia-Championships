@@ -234,7 +234,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3283 active questions** (re-measured after all four session 8 audits;
+- 43 active collections, **3,283 active questions** (re-measured after all four session 8 audits;
   identical under all three counting bases — all `status='active'`, those linked to any
   collection, and those in *active* collections)
 
