@@ -64,22 +64,46 @@ export const stLouisMoConfig: LocaleConfig = {
       slug: 'community-economy',
       name: 'Community & Economy',
       description:
-        'St. Louis metro population ~2.256 million (2025). City has 79 officially recognized neighborhoods. City flag: designed by Theodore Sizer (Yale professor), adopted 1964; red background with blue/white wavy lines representing the confluence of Missouri and Mississippi Rivers, plus a gold disk with blue fleur-de-lis (French heritage/Louisiana Purchase). Major employers: Anheuser-Busch, Boeing, Nestlé Purina, Edward Jones. 22 Fortune 1000/Forbes Global 2000 companies headquartered here. Healthcare is the largest employment sector (199,463 workers). Third most economically diverse U.S. metro area. Powell Hall (former movie palace) = home of St. Louis Symphony. Fox Theatre = premier live performance venue. Write questions about: flag design/symbolism/designer, major employers, economic diversity ranking, Symphony/arts venues, Forest Park free-admission institutions.',
+        'City population 301,578 at the 2020 census; metro area over 2 million across two states. Do NOT write questions pinned to a single-year population estimate — stlmo-020 and stlmo-091 both rotted that way. City has 79 officially recognized neighborhoods. City flag: designed by Theodore Sizer (Yale professor), adopted 1964; red background with blue/white wavy lines representing the confluence of Missouri and Mississippi Rivers, plus a gold disk with blue fleur-de-lis (French heritage/Louisiana Purchase). Major employers: Anheuser-Busch, Boeing, Nestlé Purina, Edward Jones. 22 Fortune 1000/Forbes Global 2000 companies headquartered here. Healthcare is the largest employment sector (199,463 workers). Third most economically diverse U.S. metro area. Powell Hall (former movie palace) = home of St. Louis Symphony. Fox Theatre = premier live performance venue. Write questions about: flag design/symbolism/designer, major employers, economic diversity ranking, Symphony/arts venues, Forest Park free-admission institutions.',
+    },
+    {
+      slug: 'beyond-city-hall',
+      name: 'Beyond City Hall',
+      description:
+        'The governments that serve St. Louis but are not the city. St. Louis Public Schools is an independent district with its own elected Board of Education. Federal representation: the City of St. Louis sits entirely inside Missouri\'s 1st congressional district; Missouri elects two U.S. senators like every state. Added 2026-09-28 — these questions were previously filed under City Government, which is the label the player sees above the question.',
+    },
+    {
+      slug: 'elections-voting',
+      name: 'Elections & Voting',
+      description:
+        'How St. Louis actually votes. Proposition D (November 3, 2020, 68% in favour) replaced partisan primaries with a nonpartisan blanket primary using approval voting — a voter may pick as many candidates as they approve of, unordered, and the top two advance to the general. A 2022 Proposition R created an independent ward-boundary commission and put the election method beyond the board\'s reach, so only a public vote can change it. City elections fall in odd-numbered years.',
     },
   ],
 
   topicDistribution: {
-    'city-government': 22,
-    'founding-history': 20,
-    'gateway-arch': 18,
-    'landmarks-culture': 25,
-    'community-economy': 15,
+    'city-government': 20,
+    'founding-history': 18,
+    'gateway-arch': 15,
+    'landmarks-culture': 22,
+    'community-economy': 12,
+    'beyond-city-hall': 7,
+    'elections-voting': 6,
   },
 
+  // NOTE (2026-09-28): the gate only checks the people listed here, and prints
+  // nothing for offices that are absent — silence is not coverage. All eight
+  // were verified on 2026-09-28. The St. Louis SHERIFF is deliberately absent:
+  // the elected sheriff was removed from office in early 2026 and the interim
+  // holder is in active litigation, so there is no stable fact to ask for.
   officeholders: [
     { name: 'Cara Spencer', role: 'Mayor (48th)', termEnd: '2029-04-15T00:00:00Z' },
     { name: 'Megan Green', role: 'Board of Aldermen President', termEnd: '2029-04-15T00:00:00Z' },
     { name: 'Donna Baringer', role: 'Comptroller', termEnd: '2029-04-15T00:00:00Z' },
+    { name: 'Gabe Gore', role: 'Circuit Attorney', termEnd: '2029-01-01T00:00:00Z' },
+    { name: 'Adam Layne', role: 'Treasurer', termEnd: '2029-01-01T00:00:00Z' },
+    { name: 'Robert Tracy', role: 'Police Commissioner', termEnd: '2028-01-01T00:00:00Z' },
+    { name: 'Wesley Bell', role: 'U.S. Representative, MO-1', termEnd: '2027-01-03T00:00:00Z' },
+    { name: 'Myra Berry', role: 'Superintendent, St. Louis Public Schools', termEnd: '2029-06-30T00:00:00Z' },
   ],
 
   sourceUrls: [
