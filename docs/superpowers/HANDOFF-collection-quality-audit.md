@@ -11,23 +11,27 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,296** |
+| Active questions | **3,294** |
 | **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
-| Under the 10% expiring floor | **4**, all *already audited* (see the retroactive-floor section) |
+| Under the 10% expiring floor | **3**, all *already audited* (see the retroactive-floor section) |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
 | **Under 11% HARD** | `queens-ny` **10.1%**, `world-news` 10.6% |
 | **Re-verify after 3 Nov 2026** | `texas-state` — its whole executive is on that ballot; `west-monroe-la` — `wmnla-093` |
+| **SCHEDULED WORK, Dec 2026** | `alexandria-la` — city officeholder backfill, deliberately deferred past its election |
+| **Expiring tier dies before Mar 2027** | `world-news` 22/22, `climate-change` 18/18, `massachusetts-state` 12/12, `new-york-state` 6/6, `wisconsin` 13/15, `asheville-nc` 10/11 |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
 
-1. **`alexandria-la` should be next** — worst remaining expiring breach at 6.1%, and the
-   other Louisiana city collection, so this session's officeholder research (parish offices,
-   the 2026 Louisiana ballot, the split congressional map) largely carries over.
-2. **Four already-audited collections breach the 10% expiring floor**:
-   `alexandria-la` 6.1%, `new-york-state` 6.7%, `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%.
+1. **Run the expiry-cliff query before picking anything** — see "The expiring tier is
+   FRONT-LOADED bank-wide". Several collections that pass the floor today fall through it in
+   early 2027 untouched, so the backlog below is not the whole job.
+2. **Three already-audited collections breach the 10% expiring floor**:
+   `new-york-state` 6.7%, `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%. `new-york-state` is the
+   pick — it is also one of the collections whose entire expiring tier (6 of 6) dies before
+   March 2027, so it needs rebuilding rather than topping up.
    These are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
-   different job from an audit". `west-monroe-la` cleared in session 11.
+   different job from an audit". `west-monroe-la` and `alexandria-la` cleared in session 11.
 3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
    `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
    which is a pipeline-yield problem an audit cannot fix.
@@ -4093,3 +4097,167 @@ were sworn in on 1 July 2026 for four-year terms, giving a clean run to 2030 —
 state legislators (Jan 2028), the sheriff (June 2028), or the city judge (retiring this
 December). Check when the local slate was *last* sworn in before assuming the state tier is the
 more durable one.
+
+### alexandria-la — RE-VISIT complete (session 11)
+
+66 → 60 (6 archived) → 64 (+4). **Expiring 6.1% → 10.9%. Hard 18.2% → 20.3%**, easy 29.7%.
+bad_idx 0, bad option counts 0, unsourced 0, drafts 0. Answer positions **16 / 16 / 16 / 16**.
+Real leakage hits 27 → **1**; duplicate answers 0 → 0. Vague attributions **22 → 8**.
+Archived total for the collection is now 37, all reversible by `external_id`.
+
+**A WRONG FACT IN PRODUCTION — `alxla-015`, and worse than west-monroe-la's.** It asked
+"Which federal congressional district includes the City of Alexandria?" and keyed **the 5th**.
+Under the 2024 map Alexandria is split between the **4th and the 6th** — the 5th does not reach
+the city at all, so the keyed answer was not even partly right. Both districts' rosters list
+`Alexandria (part; also 4th/6th)`. Rewritten to ask which two districts divide the city.
+
+**This was predicted, and that is the point.** The west-monroe-la write-up recorded that
+Louisiana's 2024 map split Ouachita Parish. The same act moved Rapides Parish out of the 5th.
+Checking the congressional question *first*, because the previous collection in the same state
+had one wrong, found it in a single search. **When a re-visit finds a redistricting-driven
+error, sweep the sibling collections in that state before doing anything else.**
+
+**THE CITY TIER IS FIVE WEEKS FROM TURNING OVER — see the new section below.** On 3 Nov 2026
+Alexandria elects its mayor, an at-large council seat, District 2, and the City Marshal. One of
+the three mayoral candidates, **Malcolm Larvadain, is a listed distractor in `alxla-005`.**
+This is why the four questions added here are all parish- and state-tier.
+
+**A THIRD OF THE COLLECTION CITED NOTHING.** 22 of 66 explanations opened "According to
+information about Alexandria's economy / venues / government" — an attribution that names no
+source. It correlates almost exactly with the two weakest citations in the collection: a
+third-party tourism site (19 questions across three of its pages) and the city's bare homepage.
+Cut to 8 by repointing the employer and venue questions at the regional chamber's roster, which
+independently corroborates all five employer claims. **The facts were fine; the sourcing was
+theatre.**
+
+Archived (6): `alxla-011` (City Clerk "primary function" — compound answer against three absurd
+distractors), `alxla-013` (council president — rotates annually, cited to a homepage that does
+not carry it, and contradicted by 2023 reporting naming a different president), `alxla-023`
+(Hearn Stage — printed verbatim in `022`'s explanation), `alxla-037` (its stem printed
+`085`'s answer), `alxla-038` (third question on one museum building, leaked by `032`),
+`alxla-086` ("geographic center" — restated in `066`'s explanation, duplicative of `089`).
+
+Rewritten (7): `alxla-015` (above); `alxla-007`, `alxla-048`, `alxla-074`, `alxla-090` (each
+stem printed another question's answer); `alxla-020` ("Who represents Alexandria in the state
+House" implied a single district — the city has two); `alxla-039` (the P&G plant is across the
+river in Pineville, so "in Alexandria" was wrong — softened to "the Alexandria area").
+
+Added (4), all expiring, all deliberately **off the city election cycle**:
+
+| id | d | expires | subject |
+|---|---|---|---|
+| `alxla-201` | medium | 2028-06-30 | Rapides Parish Sheriff Mark Wood |
+| `alxla-202` | hard | 2028-01-10 | State Sen. Jay Luneau, District 29 |
+| `alxla-203` | hard | 2029-01-03 | DA Phillip Terrell, 9th Judicial District |
+| `alxla-204` | medium | 2028-01-08 | Rep. Jason DeWitt, House District 25 |
+
+`alxla-005` (mayor) had its expiry **pulled in from 2026-12-31 to 2026-12-01**, the start of the
+new term.
+
+**A fifth officeholder near-miss**: Rapides Parish Clerk of Court Robin Hooter retired in
+November 2024 and handed off to her chief deputy. Dropped rather than guessed, as in
+west-monroe-la.
+
+### Still open on this collection
+
+- **Eight bare-homepage citations** and **8 remaining vague attributions**, all on city-service
+  questions (`021`, `028`, `029`, `030`, `034`) pointing at `cityofalexandriala.com` with no path.
+- **19 of 64 questions (30%) cite one third-party tourism site**, `alexandria-louisiana.com`,
+  across three pages. It is not a bad site, but it is not a primary source for anything.
+- **The city officeholder backfill is deferred to December 2026.** After the new term begins,
+  the mayor and seven council seats become writable for four years and this collection can
+  reach 15–20% easily. Doing it now would buy five weeks.
+
+---
+
+## Group citations by HOST, not just by URL (session 11, alexandria-la)
+
+west-monroe-la added "max questions on one URL" because the mean hid a 61% concentration.
+`alexandria-la` shows the next evasion: **spreading one source over several of its own pages.**
+
+| grouping | worst offender |
+|---|---|
+| per URL (mean) | 4.7 — looks fine |
+| max on one URL | 11 of 64 (17%) — looks fine |
+| **max on one HOST** | **19 of 64 (30%)** — `alexandria-louisiana.com`, across three pages |
+
+Run both:
+
+    SELECT max(n) FROM (SELECT count(*) n FROM ... GROUP BY source->>'url') z;                 -- per page
+    SELECT max(n) FROM (SELECT count(*) n FROM ...
+      GROUP BY substring(source->>'url' from 'https?://([^/]+)')) z;                            -- per host
+
+## "According to information about X" is an unsourced question wearing a citation (session 11)
+
+22 of alexandria-la's 66 explanations began with a phrase that names no source — "According to
+information about Alexandria's economy", "…about Alexandria's venues", "…from Alexandria city
+council coverage". Every one had a URL attached, so **every automated check passed**: not null,
+returns 200, has a path in most cases.
+
+It is a reliable smell rather than a proof. Of the 22 here: all five employer claims turned out
+to be **true** and corroborated by the regional chamber, so the fix was repointing, not
+archiving. But the two questions that were *actually wrong or unverifiable* — the council
+president, and the museum's register listing — were both in this set.
+
+**Detection:**
+
+    SELECT external_id FROM ... WHERE explanation ~ 'According to information';
+
+Treat a hit as "verify this claim against a named source", not as "archive this". Roughly one in
+ten was unsalvageable; the rest just needed a real citation.
+
+## The expiring tier is FRONT-LOADED bank-wide, and the floor work is chasing a moving target (session 11)
+
+alexandria-la's whole city tier expires in December 2026, which prompted the obvious question
+nobody had asked: **when does the rest of the bank's expiring tier die?**
+
+    SELECT c.slug,
+           count(*) FILTER (WHERE q.expires_at < '2027-03-01') AS dying,
+           count(*) FILTER (WHERE q.expires_at IS NOT NULL)    AS total_expiring
+    FROM trivia.collections c
+    JOIN trivia.collection_questions cq ON cq.collection_id=c.id
+    JOIN trivia.questions q ON q.id=cq.question_id AND q.status='active'
+    WHERE c.is_active GROUP BY c.slug
+    HAVING count(*) FILTER (WHERE q.expires_at < '2027-03-01') > 0
+    ORDER BY 2 DESC;
+
+Measured 2026-09-28 — collections losing their **entire** expiring tier before March 2027:
+
+| collection | dying / total expiring |
+|---|---|
+| `world-news` | **22 / 22** |
+| `climate-change` | **18 / 18** |
+| `massachusetts-state` | **12 / 12** |
+| `new-york-state` | **6 / 6** |
+| `wisconsin` | 13 / 15 |
+| `asheville-nc` | 10 / 11 |
+| `washington-dc` | 11 / 15 |
+| `california-state` | 9 / 12 |
+| `arizona` | 9 / 12 |
+| `federal` | 11 / 23 |
+
+For `world-news` and `climate-change` this is expected — the handoff already records that the
+ratio is a burst metric on a news collection. **For the locale collections it is not.** Several
+that pass the 10% floor today will fall through it automatically in early 2027 with nobody
+touching them.
+
+**What this changes:** the floor backlog is not a fixed list of four collections to grind
+through. Re-derive it, and check the *expiry dates* as well as the count — a collection at 16%
+whose whole tier dies in January is in worse shape than one at 11% running to 2030. Consider a
+scheduled sweep in Q1 2027 rather than treating the floor as done.
+
+## A re-visit is the wrong tool five weeks before a municipal election (session 11)
+
+texas-state said to check the election calendar before writing an officeholder block.
+alexandria-la is the case where the calendar says **do not write the block at all yet**.
+
+The city elects its mayor, an at-large councillor, a district councillor and the city marshal on
+3 Nov 2026, with terms starting in early December. Writing city-tier officeholder questions now
+buys five weeks; writing them in December buys four years. So the four questions added here are
+parish and state tier — a sheriff to 2028, a state senator to 2028, a district attorney to 2029,
+a state representative to 2028 — which is also why the collection lands at 10.9% and not 15%.
+
+**The rule: before a re-visit, ask what is on the next ballot in that jurisdiction.** If the
+city slate is up within a few months, fix the defects now and **schedule** the officeholder
+work for after the inauguration. Record the date. For alexandria-la that date is **December
+2026**, and the payoff is a jump to 15–20% for a collection that is otherwise structurally fine.
