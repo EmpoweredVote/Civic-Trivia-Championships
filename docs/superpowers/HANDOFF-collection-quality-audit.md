@@ -1,4 +1,4 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 6b)
+# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 7)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
@@ -9,6 +9,9 @@
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
 - **23 of 43 collections audited.** 567 archived across all sessions, 190 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
+  **Session 7 audited no collection.** It cleared the bank-wide `nested-options` blocker
+  instead, which this file named as the precondition for collection 24. That gate is open:
+  **pittsburgh-pa is unblocked.**
 - **DB access — SUPERSEDED as of session 6. Use `psql`, not MCP.**
 
       set -a; . /c/EV-Accounts/backend/.env; set +a
@@ -31,9 +34,16 @@
   `trivia.*` — a deliberate retirement, not a regression. Root cause and the ask are written
   up for Chris Andrews in `docs/ops/2026-09-27-ctc-database-access.md`; Chris sent it on
   2026-09-27 and the reply is outstanding. Until it lands, `ev_api` is the approved interim.
-- Render MCP needs a workspace id and refuses to pick one; deploy verification therefore
-  has to be done by Chris or with a workspace supplied. CTC merges that touch nothing under
-  `frontend/` produce no deploy at all, so most ledger PRs need no verification.
+- **Render MCP — the workspace id is `tea-d69tn76mcj7s738vmt10` (EmpoweredVote).** It is the
+  only workspace on the account, and it matches the `ownerId` on the services, so there is
+  nothing to choose between. Pass it as `workspaceId` on every Render call and deploy
+  verification no longer needs Chris. Session 7 used it to set an env var and confirm the
+  cron deploy went live.
+  **There is no MCP tool that READS environment variables** — only
+  `update_environment_variables`, which merges by default (`replace: false`). A variable's
+  value therefore cannot be confirmed from the API at all; set it explicitly and verify from
+  what the job itself writes. CTC merges that touch nothing under `frontend/` produce no
+  deploy at all, so most ledger PRs still need no verification.
 
 ## Pull request status — current as of session 6b
 
@@ -61,6 +71,16 @@ Session 6 added eight more, all merged to CTC master on 2026-09-27:
 | #127 | CTC | source-drift vendored copy + `audit-source-support.ts` | `3617427` |
 | #128 | CTC | oregon-state ledger | `4f72936` |
 | #129 | CTC | queens-ny ledger | `2ec8d01` |
+
+Session 7 added five, all merged 2026-09-27/28:
+
+| PR | Repo | What | Merge |
+|---|---|---|---|
+| #823 | ev-accounts | **`nested-options` mirrored** to the canonical backend, with the 30 tests CTC cannot host | `2ffff0d` |
+| #824 | ev-accounts | pin the three advisory repairs as fixtures (33 tests) | `a93e294` |
+| #825 | ev-accounts | **per-rule enforcement**, and `nested-options` turned on | `f7bb02e` |
+| #140 | CTC | vendor note points at where the tests actually are | `0558f32` |
+| #141 | CTC | CLAUDE.md: the enforcement flag is a rule list, not a boolean | `15e8c18` |
 
 **Do not re-merge any of these.** Open a fresh `docs/<slug>-audit` branch off master instead.
 
@@ -210,7 +230,9 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, 3,461 active questions
+- 43 active collections, 3,471 active questions (re-measured 2026-09-28; the nightly
+  pipeline adds a few a night, so this drifts upward on its own)
+- **0 `nested-options` violations bank-wide, at either severity** (session 7)
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
 - 2 collections below the 50-question floor: `war-in-iran` (32), `world-news` (44). Both
@@ -270,9 +292,10 @@ question look wrong. Check before you fix.
 
 ## Still open, not fixed
 
-- **NINE live questions mark a correct answer wrong.** The `nested-options` rule (#135) found
-  them; none are repaired. Each offers bounds that are true at the same time, so a player
-  picking a weaker-but-true option is scored wrong:
+- ~~**NINE live questions mark a correct answer wrong.**~~ **DONE in session 7.** Eight were
+  repaired with honest, mutually exclusive brackets; `bxl-175` was archived rather than
+  repaired. Three further *advisory* hits this list never named — `cam-025`, `nysts-055`,
+  `wdc-025` — were repaired at the same time. The original nine were:
 
       bxl-153   Over $200,000 / $400,000 / $600,000 / $800,000   answer $400,000
       bxl-175   Over 25 / 30 / 35 / 40                           answer Over 40
@@ -284,18 +307,55 @@ question look wrong. Check before you fix.
       wdc-068   $5,000 / $10,000 / $15,000 / $25,000 and below   answer $10,000
       wmnla-038 10+ / 25+ / 50+ / 100+                           answer 50+
 
+  Two of the eight had a **wrong answer, not merely a wrong option set**, which is the
+  finding worth carrying: `wmnla-038` claimed "more than 50 antique stores" citing a
+  Wikipedia article that never mentions Antique Alley (the sourced figure is over 40), and
+  `bxl-175` claimed "over 40 Mississippi libraries damaged beyond repair" citing an article
+  containing no mention of libraries at all. **A rule that fires on structure will surface
+  questions whose facts are also wrong — check the citation, not just the options.**
+
   Re-list any time with `npx tsx src/scripts/audit-nested-options.ts --blocking-only`.
-  The fix is an authored option set per question — each needs its real value researched so
-  the brackets are honest, which is why the rule's scanner deliberately does not mutate.
-  **This is bank-wide and user-facing; do it before auditing collection 24.**
-- **The `nested-options` rule is not yet mirrored into ev-accounts.** This repo's copy guards
-  the collection-creation scripts; the nightly pipeline is still unguarded. Same vendoring
-  arrangement as `anachronism` and `answerPlacement` — the tests live in the ev-accounts copy.
+- ~~**The `nested-options` rule is not yet mirrored into ev-accounts.**~~ **DONE in session 7**
+  (ev-accounts #823). The tests live only beside the ev-accounts copy, because this repo has
+  no test runner — a change made to CTC's copy is untested until it is carried over. #824
+  pinned all 11 repaired option sets as fixtures. #825 then made enforcement **per rule** and
+  switched `nested-options` on in production.
 - **`war-in-iran` (32) and `world-news` (44) are below the 50-question floor.** A pipeline-yield
   problem, not a purge problem. #816 does not add yield; if anything, enforcing the gate will
   reduce it, which is another reason to read `suppressed` first.
 - **`replacementGenerator.ts` and the two officeholder generators never call `auditQuestion`
   either.** #816 fixed the news lane only. Same defect at three more addresses.
+
+---
+
+## Session 7 — the nested-options slice (2026-09-28)
+
+No collection was audited. The whole session went to the bank-wide blocker above.
+
+**What shipped:** 11 live questions repaired, 1 archived, the rule mirrored to ev-accounts
+with its first tests, and per-rule enforcement built so it could actually be switched on.
+`TRIVIA_QUALITY_RULES_ENFORCE` is now a comma-separated rule list rather than a boolean, set
+to `nested-options` on the cron job — see the new section in CLAUDE.md.
+
+**Three things worth carrying into the next collection:**
+
+- **Sweeping the bank through MCP is cheap if the rule's precondition is pushed into SQL.**
+  The DB note above is right that MCP costs ~10k tokens per 300 rows — but a sweep does not
+  need the rows. Reimplementing the rule's classification as a `CASE` over
+  `jsonb_array_elements_text(options)` and returning only questions that meet the violation
+  precondition turned a 3,471-question sweep into a five-row result set. The real rule was
+  then run in TypeScript over just those candidates. Useful whenever `psql` is unavailable.
+- **`.env` reads can be blocked by a permission deny rule**, which makes the `psql` recipe
+  above unusable without warning — the failure reads as a grep error, not a permissions one.
+  The SQL-sweep trick above is the fallback.
+- **An empty night proves nothing.** The pipeline yields 0–4 questions on many nights, so
+  `audited: 0` in `generation_jobs.notes.qualityRules` looks identical to a working gate.
+  Do not read a quiet run as confirmation.
+
+**Still unverified:** whether the env var actually reached the running cron job. It cannot be
+read back from the Render API. The 07:00 UTC run on 2026-09-28 writes `enforcedRules` into
+`generation_jobs.notes.qualityRules`; that row is the confirmation, and a scheduled check is
+armed for 15:00 UTC that day.
 
 ---
 
