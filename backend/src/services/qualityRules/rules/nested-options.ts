@@ -23,11 +23,15 @@
  */
 
 /**
- * VENDORED, to be mirrored into
- * ev-accounts/backend/src/trivia/services/qualityRules/rules/nested-options.ts,
- * where the tests live (this repo has no test runner). That copy guards the nightly
- * pipeline; this one guards the collection-creation scripts this repo still owns.
- * Keep the two in step -- same arrangement as answerPlacement and anachronism.
+ * VENDORED. Mirrored 2026-09-27 into
+ * ev-accounts/backend/src/trivia/services/qualityRules/rules/nested-options.ts
+ * (ev-accounts PR #823). That copy guards the nightly pipeline; this one guards the
+ * collection-creation scripts this repo still owns.
+ *
+ * The tests for BOTH copies live beside the ev-accounts one, as nested-options.test.ts,
+ * because this repo has no test runner. A change made here is untested until it is
+ * carried over there -- so change that copy too, and run it. Same arrangement as
+ * answerPlacement and anachronism.
  */
 
 import { RuleResult, QuestionInput, Violation } from '../types.js';
