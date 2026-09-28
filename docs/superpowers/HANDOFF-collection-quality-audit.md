@@ -1,4 +1,4 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 5)
+# HANDOFF — Collection Quality Audit (updated 2026-09-27, session 6b)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
@@ -9,19 +9,48 @@
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
 - **23 of 43 collections audited.** 567 archived across all sessions, 190 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
-- **Do the DB work through the Supabase MCP server, project `kxsdzaojfaibhuzmclfq`.**
-  No local checkout can authenticate right now — `EAUTHQUERY: user not found`, from the
-  MAIN checkout as well as from worktrees, so it is not a worktree problem. Every content
-  script in the repo depends on that connection. Memory records this as fixed in June 2026
-  by moving to a dedicated non-rotating `ctc_app` role, so it reads as a regression and is
-  worth its own investigation. Sessions 3-5 did all their SQL through MCP instead.
+- **DB access — SUPERSEDED as of session 6. Use `psql`, not MCP.**
+
+      set -a; . /c/EV-Accounts/backend/.env; set +a
+      psql "$DATABASE_URL" -At -F' | ' -c "SELECT ..."
+
+  ev-accounts' `DATABASE_URL` (role `ev_api`) reaches the same `trivia` schema and works
+  today. Sessions 3–5 were told to route everything through the Supabase MCP server because
+  no local checkout could authenticate; that advice is now expensive and should not be
+  followed. **MCP costs roughly 10k tokens per 300 rows and cannot write to a file; `psql`
+  costs nothing and can.** Session 6 dumped all 854 source URLs to disk this way, which is
+  not practical through MCP. MCP is still fine for a handful of rows.
+
+  Two traps when using it:
+  - **`psql ... > file` on Windows writes CRLF.** Pipe through `tr -d '\r'` or every URL you
+    feed to `curl` ends in `\r` and returns `000`. This cost two full re-sweeps.
+  - Its scripts hang after "PostgreSQL connected" unless they `process.exit(0)`; the audit
+    scripts already do.
+
+  Why `ctc_app` fails: it was not deleted. `rolcanlogin = false` **and** zero grants on
+  `trivia.*` — a deliberate retirement, not a regression. Root cause and the ask are written
+  up for Chris Andrews in `docs/ops/2026-09-27-ctc-database-access.md`; Chris sent it on
+  2026-09-27 and the reply is outstanding. Until it lands, `ev_api` is the approved interim.
 - Render MCP needs a workspace id and refuses to pick one; deploy verification therefore
   has to be done by Chris or with a workspace supplied. CTC merges that touch nothing under
   `frontend/` produce no deploy at all, so most ledger PRs need no verification.
 
-## Pull request status — current as of session 5
+## Pull request status — current as of session 6b
 
 Everything opened by this workstream is **MERGED**. Nothing is awaiting review.
+
+Session 6 added eight more, all merged to CTC master on 2026-09-27:
+
+| PR | What | Merge |
+|---|---|---|
+| #131 | first `checkLearnMoreLink` sweep of the bank + the expiring-ratio ruling | `2094254` |
+| #132 | readiness audit learns the 10% floor (DEFECT / NOTE / silent) | `3dd506d` |
+| #133 | queens-ny content: 5 easy NYC questions, 3 verified officeholders | `11c9645` |
+| #134 | repair all 57 dead source URLs, and two wrong facts behind them | `d4eb3f6` |
+| #135 | **`nested-options` rule** — options that are true at the same time | `211776d` |
+| #136 | CTC database access handover doc for Chris Andrews | `dac07a7` |
+| #137 | withdraw the ore-203 flag (it was wrong) | `18d7b98` |
+| #138 | oregon-state content: agriculture, and why the beaver was declined | `ec6a4e9` |
 
 | PR | Repo | What | Merge |
 |---|---|---|---|
@@ -241,6 +270,27 @@ question look wrong. Check before you fix.
 
 ## Still open, not fixed
 
+- **NINE live questions mark a correct answer wrong.** The `nested-options` rule (#135) found
+  them; none are repaired. Each offers bounds that are true at the same time, so a player
+  picking a weaker-but-true option is scored wrong:
+
+      bxl-153   Over $200,000 / $400,000 / $600,000 / $800,000   answer $400,000
+      bxl-175   Over 25 / 30 / 35 / 40                           answer Over 40
+      climc-0053  More than 1,000 / 2,500 / 5,000 / 10,000       answer 5,000
+      climc-0059  More than 800 / 1,000 / 1,400 / 2,000 people   answer 1,400
+      por-143   Over 8 / 9 / 10 / 11 decades                     answer Over 11
+      por-288   Over 1,000 / 2,000 / 3,000 / 5,000 acres         answer Over 5,000
+      tucaz-054 Over $25m / $60m / $100m / $138m                 answer Over $138m
+      wdc-068   $5,000 / $10,000 / $15,000 / $25,000 and below   answer $10,000
+      wmnla-038 10+ / 25+ / 50+ / 100+                           answer 50+
+
+  Re-list any time with `npx tsx src/scripts/audit-nested-options.ts --blocking-only`.
+  The fix is an authored option set per question — each needs its real value researched so
+  the brackets are honest, which is why the rule's scanner deliberately does not mutate.
+  **This is bank-wide and user-facing; do it before auditing collection 24.**
+- **The `nested-options` rule is not yet mirrored into ev-accounts.** This repo's copy guards
+  the collection-creation scripts; the nightly pipeline is still unguarded. Same vendoring
+  arrangement as `anachronism` and `answerPlacement` — the tests live in the ev-accounts copy.
 - **`war-in-iran` (32) and `world-news` (44) are below the 50-question floor.** A pipeline-yield
   problem, not a purge problem. #816 does not add yield; if anything, enforcing the gate will
   reduce it, which is another reason to read `suppressed` first.
@@ -1161,3 +1211,50 @@ Queens': Merkley is on the ballot on 3 November 2026, five weeks out.
     top trigram against the rest of the collection: 0.317
     readiness audit: NOTE, not DEFECT
     nested-options audit over all 3,472 active questions: unchanged at 9 blocking / 3 advisory
+
+---
+
+## RESUME HERE — state at the end of session 6b (2026-09-27)
+
+Read the header block at the top of this file first; it is current. This is the short version.
+
+**Bank:** 43 active collections, **3,472 active questions**, 23 of 43 audited. Sessions 6 and
+6b were content and tooling passes, not audits, so the audit count did not move.
+
+**Do this next, in this order:**
+
+1. **Repair the nine `nested-options` questions** listed under "Still open, not fixed". Live
+   correctness bug, bank-wide, roughly an hour. Doing it first means pittsburgh-pa gets
+   audited against a clean bank rather than inheriting the defect.
+2. **Mirror the `nested-options` rule into ev-accounts** so the nightly pipeline stops
+   generating more of them. Without this, step 1 is a treadmill.
+3. **Then resume the audit at `pittsburgh-pa`** (12.0% expiring — passes the floor).
+
+**Rules that changed today, and will catch you out if you have the old ones in your head:**
+
+- Expiring ratio is **15–30% target, 10% hard floor** (Chris, 2026-09-27). Below 10% is a
+  defect; 10–15% is fine and documented. Enforced by `audit-collection-readiness.ts`.
+- **Near the floor, adding durable questions is a regression.** Both content passes this
+  session hit this. Queens would have fallen further under; oregon-state sat at exactly 10.0%
+  and two good easy questions would have pushed it to 9.7%. Add expiring content alongside
+  or do not add.
+- **One question per officeholder counts PEOPLE; the repeated-shape rule counts TEMPLATES.**
+  They are different tests and the Queens audit reported a conflict between the wrong pair.
+  Both are now written in COLLECTION-PLAYBOOK.md.
+- **Run the leakage check on questions you WRITE, not just ones you audit.** A new question
+  collides with an old one's text just as easily as the reverse — caught `queny-212` before
+  commit, and would have caught a third beaver answer in oregon-state.
+- **A search summary is not a source.** It produced a false `ore-203` flag that had to be
+  withdrawn in #137. Open the page.
+
+**Do not:**
+
+- Run `backend/src/scripts/repair-broken-links.ts --apply`. It overwrites curated source URLs
+  with AI guesses, or nulls them, on a flaky single-HEAD verdict. See #131.
+- Re-add the range-overlap branch to `nested-options`. Every range hit was a false positive;
+  the reasoning is in the rule's own comments.
+- Act on a raw link-sweep result. Three separate false-positive modes — 429 storms, 403 bot
+  protection, and CRLF — are documented in `docs/superpowers/link-sweep-2026-09-27.md`.
+
+**Outstanding on someone else's desk:** the CTC database credential. Doc handed to Chris
+Andrews 2026-09-27, reply pending. `ev_api` is the approved interim.
