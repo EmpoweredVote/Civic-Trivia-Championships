@@ -1,4 +1,4 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 7)
+# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 8)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
@@ -7,10 +7,10 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **28 of 43 collections audited.** 752 archived across all sessions, 224 written.
+- **29 of 43 collections audited.** 800 archived across all sessions, 254 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
-  Session 7 cleared the bank-wide `nested-options` blocker and then audited
-  **pittsburgh-pa** (collection 24) with a **citation pass** added to the method.
+  Session 8 audited **los-angeles-ca** (collection 3) — the largest archive proportionally
+  yet (48 of 73, 66%) and the first collection found carrying **another tier's content**.
 - **DB access — SUPERSEDED as of session 6. Use `psql`, not MCP.**
 
       set -a; . /c/EV-Accounts/backend/.env; set +a
@@ -229,8 +229,15 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, 3,471 active questions (re-measured 2026-09-28; the nightly
-  pipeline adds a few a night, so this drifts upward on its own)
+- 43 active collections, **3,313 active questions** (re-measured after session 8; identical
+  under all three counting bases — all `status='active'`, those linked to any collection,
+  and those in *active* collections)
+
+  The 3,471 figure this line carried before was stale, not wrong at the time: it was taken
+  before sessions 7/7b's own archives were applied. 186 of the 234 questions archived on
+  2026-09-28 are theirs (washington-dc 62, portland-or 35, pittsburgh-pa 34, plano-tx 29,
+  washington-state 25, biloxi-ms 1); the other 48 are session 8's. **Re-measure this number,
+  never derive it from the previous value** — nightly yield and automatic expiry both move it.
 - **0 `nested-options` violations bank-wide, at either severity** (session 7)
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
@@ -243,9 +250,14 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
+tucson-az, federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
+
+**Take `california-state` earlier than its slot if convenient.** Session 8 archived 18 sound
+California questions out of los-angeles-ca on scope grounds (see the ledger entry); they are
+recoverable by `external_id` and several would be at home there. Audit it before deciding
+whether to revive any, so unaudited content is not dumped into it.
 
 (louisiana — session 3; oregon-state — session 4; queens-ny — session 5. All below.)
 
@@ -307,6 +319,18 @@ war-in-iran, world-news.
    three separate questions asked about its logo. These are facts about a web page, not about
    civic life, and they are the tell-tale of a collection generated FROM a site's navigation
    rather than about the city.
+12. **Off-tier content** (added session 8, los-angeles-ca). A collection carrying another
+   tier's subject matter. **18 of 73 Los Angeles questions were about the state of
+   California** — the ballot-proposition system, the California student poll-worker
+   programme, the number of national parks, how many campsites the state park system has —
+   in a *city*-tier collection whose description is "Think you know the City of Angels?".
+   A state-tier `california-state` collection (id 5) already existed, and one of the
+   eighteen (`lac-042`) was an exact duplicate of a question already in it.
+   The tell is the `subcategory`/topic column: ten of them were literally labelled
+   `california-state` inside a city collection, so **this one is visible in SQL before you
+   read a single question** — group by topic and compare against the collection's tier.
+   Archive rather than move: the destination collection is usually unaudited, and moving
+   unread questions into it just relocates the work.
 11. **Compound answers** (added session 7, washington-state). An answer that bundles two facts:
    "4-year terms, no term limits", "A stratovolcano in the Cascade Volcanic Arc", "42 steps,
    commemorating Washington as the 42nd state". Distinct from class 4 — nothing is leaked,
@@ -314,6 +338,66 @@ war-in-iran, world-news.
    **On its own this is a readability problem, not a correctness one.** Archive it only when
    it carries a second defect as well; otherwise leave it or split it. Over-archiving on this
    class alone would have cost washington-state six sound questions.
+
+## The readiness gate has two checks the ledger never recorded (session 8)
+
+Both were found by actually running `audit-collection-readiness.ts --slug <slug>` at the end
+rather than trusting hand-computed metrics. Earlier sessions reported raw totals, so a
+collection that landed on exactly 50 may not have passed.
+
+- **The 50-question floor is applied to a NET count: total minus questions expiring within
+  90 days.** los-angeles-ca sat at 51 raw and was `NOT READY — BLOCKED` at net 48. Election
+  questions are precisely the ones that trip this, because a runoff dated six weeks out is
+  both the best expiring content available and a question the gate already discounts.
+  **Size the backfill against net, not total**, and re-run the script rather than doing the
+  arithmetic yourself. plano-tx and portland-or both finished at exactly 50 raw — worth
+  re-checking them.
+- **It also audits distractor bracketing on numeric questions**, which is a defect class
+  nothing else here catches. If the correct number is never the smallest or largest of the
+  four offered, "sort the options and take the middle" scores 50% with no knowledge. Session
+  8's first backfill scored **0.0% at an extreme**. The fix is to design some option sets so
+  the answer sits entirely above or below the others (for "9 members" offer 9/11/13/21, not
+  5/7/9/11). The script says this explicitly and it is worth repeating: **rotating answer
+  POSITIONS does not fix bracketing and masks it** — they are two different checks and the
+  script prints both.
+
+## Four ways a citation can be live and still be worthless (session 8)
+
+The link sweep answers one question — did the server return 200 — and the three documented
+false-positive modes (429 storms, 403 bot-blocks, CRLF) all make a *live* link look dead.
+los-angeles-ca produced two of the opposite kind, which are more dangerous because nothing
+flags them:
+
+- **The soft 404.** `bos.lacounty.gov/about-us/` returns **200** and the body reads "The
+  content you are looking for is not here." A status-code sweep calls it healthy.
+- **The 200 with no text in it.** `cao.lacity.gov` is a JavaScript application; curl and
+  WebFetch both receive a shell containing a copyright line and nothing else. Two budget
+  questions cited it. The claim cannot be checked there by any automated means, and could
+  not be checked by a player either.
+- **The moved site.** `ocp.lacounty.gov` returns 200 and says "This site has moved." Following
+  it found that LA County renamed the Office of Child Protection to the Office of Child,
+  Youth, and Family Well-Being by Board motion on 2026-03-17 — so `lac-043`, which asked
+  players to name that office, had been wrong for six months. **A redirect notice on a cited
+  page is a staleness signal about the question, not a broken link.**
+- **The bot-blocked page you cannot verify.** `codelibrary.amlegal.com` and `upi.com` both
+  return 403 to everything. That is a documented false positive for *liveness*, but it also
+  means you cannot read the page to confirm support. Prefer a source you can actually open.
+
+`la-057`/`la-086` is the worked example of why this matters: two questions citing the same
+text-free budget homepage gave **contradictory answers** to the same question — "largest
+source of revenue" was Utility users tax in one and Property tax in the other. Both passed
+every structural check the repo has, for years.
+
+## Election-night reporting is not the result (session 8)
+
+Extends "a search summary is not a source", and it caught a wrong explanation before commit.
+Writing up the 2002 San Fernando Valley secession vote, the Daily Bruin's election-night
+story (2002-11-05) reported that inside the Valley "51 percent voting against secession and
+49 percent voting in favor". The **certified** count was the other way: 135,737 yes (50.72%)
+to 132,831 no. The measure carried inside the Valley and lost citywide 66.97–33.03.
+
+A contemporaneous news report is a primary source for *what was known that night*, not for
+the outcome. For anything decided by a count, cite the canonical tally.
 
 ## Two rules learned the hard way this session
 
@@ -325,6 +409,22 @@ near 35–40% easy on archiving alone.
 were right: Alexandria's mayor (left office 2018, beat the incumbent in 2022 and returned) and
 Phoenix's city manager (predecessor rehired Nov 2025). A predecessor returning makes a correct
 question look wrong. Check before you fix.
+
+## Two blind spots in the checks themselves (session 8)
+
+**The duplicate-answer check clusters on exact strings, so a re-spelling defeats it.**
+los-angeles-ca reported **zero** duplicate answers while LACMA was the answer to three
+questions — as `LACMA`, `LACMA (Los Angeles County Museum of Art)` and `Los Angeles County
+Museum of Art (LACMA)` — and La Brea to two, as `La Brea Tar Pits & Museum` and `La Brea Tar
+Pits Museum`. Normalise before grouping:
+
+    lower(regexp_replace(options->>correct_answer,'[^a-z0-9]','','gi'))
+
+**Explanations leak too, and no check reads them.** The leakage queries here compare one
+question's *text and options* against another's answer. `la-105`'s explanation mentioned "the
+county's 88 cities", which is `la-125`'s whole answer, and explanations are shown to the
+player after they answer. Caught by eye, not by the sweep. When you write a backfill, read
+the explanations against each other as well as the questions.
 
 ## Still open, not fixed
 
@@ -1323,23 +1423,23 @@ Queens': Merkley is on the ballot on 3 November 2026, five weeks out.
 
 ---
 
-## RESUME HERE — state at the end of session 6b (2026-09-27)
+## HISTORICAL — state at the end of session 6b (2026-09-27)
 
-Read the header block at the top of this file first; it is current. This is the short version.
+> **Superseded. Do not follow the numbered list below** — all three items were completed in
+> session 7, and the bank figures are five sessions out of date. The current state is the
+> header block at the top of this file; the current next collection is the priority list.
+> Kept because the rules underneath it are still in force.
 
-**Bank:** 43 active collections, **3,472 active questions**, 23 of 43 audited. Sessions 6 and
-6b were content and tooling passes, not audits, so the audit count did not move.
+**Bank at the time:** 43 active collections, 3,472 active questions, 23 of 43 audited.
 
-**Do this next, in this order:**
+**What that session said to do next** (all now done — #1 and #2 in session 7, #3 in session 7):
 
-1. **Repair the nine `nested-options` questions** listed under "Still open, not fixed". Live
-   correctness bug, bank-wide, roughly an hour. Doing it first means pittsburgh-pa gets
-   audited against a clean bank rather than inheriting the defect.
-2. **Mirror the `nested-options` rule into ev-accounts** so the nightly pipeline stops
-   generating more of them. Without this, step 1 is a treadmill.
-3. **Then resume the audit at `pittsburgh-pa`** (12.0% expiring — passes the floor).
+1. ~~Repair the nine `nested-options` questions.~~ Done: 11 repaired, 1 archived.
+2. ~~Mirror the `nested-options` rule into ev-accounts.~~ Done: PRs #823/#824/#825.
+3. ~~Resume the audit at `pittsburgh-pa`.~~ Done, and four collections after it.
 
-**Rules that changed today, and will catch you out if you have the old ones in your head:**
+**Rules recorded that session, and still in force — they will catch you out if you have the
+older versions in your head:**
 
 - Expiring ratio is **15–30% target, 10% hard floor** (Chris, 2026-09-27). Below 10% is a
   defect; 10–15% is fine and documented. Enforced by `audit-collection-readiness.ts`.
@@ -1567,3 +1667,104 @@ bad_idx 0, bad_optcount 0, unlinked 0, duplicate answers -> 0, spread 27/23/29/2
   — CFO, police chief, schools chancellor, the mayoral primary, an at-large return, an
   at-large resignation, the election date, the minor-party nomination, and Ward 8 — rather
   than a roll-call, which is the defect that was just archived out of it.
+
+### los-angeles-ca — complete (session 8, 2026-09-28)
+73 -> 25 (48 archived, 66% of it) -> 55 (+30). Easy 30.1% -> 36.4%. Expiring **0.0% -> 18.2%**.
+Readiness verdict READY (net 52 against the 50 floor); bad_idx 0, bad_optcount 0, unlinked 0,
+no_source 0, duplicate answers 0, spread 15/13/12/15, numeric answers at an extreme 55.6%.
+All 43 distinct citations return 200.
+**The largest archive proportionally in the ledger, and the first collection where the
+dominant defect was scope rather than quality.**
+
+  ZERO EXPIRING QUESTIONS — worse than plano-tx's 1.4%, and the first collection at flat
+    zero. The four county-supervisor questions were officeholder questions with no
+    `expires_at` at all, and the collection had **no question about the mayor of Los
+    Angeles**, in any form. Backfilled nine, plus an expiry on the surviving supervisor
+    question, across ten different offices.
+  OFF-TIER CONTENT (new class #12): 18 of 73 questions were about California, not Los
+    Angeles — 4 on the ballot-proposition system, 7 on the state's student poll-worker
+    programme, 7 on state facts (GDP share, national parks, campsites, foreign-born share,
+    economy ranking, state parks, population). Ten were labelled `california-state` in their
+    own topic column. `lac-042` duplicated `cas-036`, already live in collection 5.
+    Archived, not moved — see the note in the priority list.
+  CITATION PASS, and it found more real defects than any previous collection:
+    - **`la-057` and `la-086` contradicted each other.** "Largest source of revenue" ->
+      Utility users tax; "largest source of general fund revenue" -> Property tax. Same
+      collection, same citation (`cao.lacity.gov/budget`, a JS page with no text in it).
+      Crosstown, quoting the city budget: "Property taxes are the single largest source of
+      city revenue, financing roughly one-fifth of city government." `la-057` archived,
+      `la-086` kept and re-cited. Two questions cannot both answer the same question; when
+      they do, one of them is live and wrong.
+    - `la-061` asserted LACMA is "free to the public" and `la-088` the same of the La Brea
+      Tar Pits Museum. **Both false** — LACMA is $30 ($25 for county residents), free only
+      to members, under-18 county residents, county residents weekdays after 3pm, and second
+      Tuesdays. Both were duplicates as well, so both archived.
+    - `la-071` asked the pueblo's original name and offered "El Pueblo de la Reina de Los
+      Ángeles". Its cited article says "El Pueblo de Nuestra Señora de los Angeles de
+      Porciuncula"; the `Los Angeles` article says "El Pueblo de Nuestra Señora la Reina de
+      los Ángeles". **No option was correct** and the name is genuinely contested. Archived
+      as unanswerable rather than "corrected" to one of two disputed forms.
+    - `la-082` claimed LA "adopted its **current** city charter" in 1925. The current charter
+      was adopted 1999-06-08 and took effect 2000-07-01. Wrong, and unsupported by its
+      citation, which says nothing about charters at all.
+    - `la-096` answered "the first **publicly funded** Olympic Village **in U.S. history**".
+      The cited article says only "LA introduced the first Olympic Village", and nothing
+      about funding. Same overstatement shape as `pitpa-067`.
+    - `lac-002` bracketed LA County's population as "10-14 million" against a distractor of
+      "7-9 million". The county's own About page says "nearly 10 million residents" — the
+      answer straddles the boundary and the bracket's top is 40% above reality. Replaced by
+      `la-117` with honest round options.
+    - `lac-043` named the "Office of Child Protection". Following its citation found
+      `ocp.lacounty.gov` reading "This site has moved": the office was renamed the Office of
+      Child, Youth, and Family Well-Being on 2026-03-17. Archived; `la-120` now asks about
+      the rename itself.
+  WEBSITE FURNITURE at scale: **18 of 73 questions cited the bare `bos.lacounty.gov`
+    homepage.** Eight were org-chart entries — "which office does X" — rotating the same
+    four office names through each other's option pools, so each gave the others away.
+    Kept one (`lac-005`, the Inspector General, genuine oversight of the Sheriff and
+    Probation), archived six. `lac-016` (an EV rebate amount) and `lac-063` ("what special
+    service does LADWP offer on Saturdays") are the LADWP version of the same thing.
+    The worst single citation count is now 6, and nothing cites a homepage.
+  1850-INCORPORATION CLUSTER: five questions, four of which printed "1850" in their own
+    text and so gave away the fifth (`la-055`, the easy one). Kept `la-055`, archived four.
+  INVERSE / DUPLICATE PAIRS: `la-067`/`la-072` (ballot propositions, and `la-085`'s text
+    prints `la-072`'s answer verbatim); `la-054`/`la-074` (two amphitheatres, each offered as
+    the other's distractor); `lac-007`/`lac-079` (how far back county records go / which
+    office keeps them — and `lac-079`'s text prints `lac-007`'s answer); `lac-121`/`lac-122`
+    (15 districts / 15 members, the same fact twice).
+  REPEATED SHAPE: four identical "Which Supervisor represents District N?" questions sharing
+    one four-name option pool, which determines the fifth district by elimination. Kept one.
+  DEGENERATE: `la-064` asked "Which agency operates the LADWP?" — naming the answer in the
+    question, then answering with a description of its governance rather than an agency.
+  VERIFIED BEFORE TRUSTING, per Chris's standing ask, and **all four supervisors were
+    current**: Solis (D1), Horvath (D3), Hahn (D4), Barger (D5), all confirmed against the
+    live Board page. Nothing needed correcting. Like `pitpa-056`, the check earns its cost in
+    both directions — three of the last four collections had a stale officeholder, this one
+    did not, and the difference was only visible by looking.
+  TWO STALE FACTS CAUGHT BEFORE THEY WERE WRITTEN IN, which is where the real risk was:
+    - The obvious LAUSD backfill is Alberto Carvalho. He **resigned effective 2026-06-21**
+      after an FBI search and months on paid leave; Andrés Chait is acting superintendent.
+      `la-106` asks about the succession instead.
+    - The obvious city-attorney backfill is Hydee Feldstein Soto. She is still in office, but
+      **finished third in the June 2026 primary (20.54%) and did not advance** — Marissa Roy
+      and John McKinney meet in the November runoff. "Who is the city attorney?" would have
+      been correct for another ten weeks and wrong thereafter. `la-103` asks what happened to
+      her instead.
+  BACKFILL (+30, nine expiring): mayor's runoff (Bass v. Raman), LAPD chief (McDonnell,
+    59th), council president (Harris-Dawson), controller re-elected outright (Mejia), the
+    city-attorney primary, the sheriff's runoff (Luna v. Villanueva), the district attorney
+    (Hochman, 44th), the LAUSD succession, and how many council seats were on the 2026
+    ballot — nine different offices, not a roll-call. Twenty-one durable questions fill gaps
+    the collection simply never had: mayoral term and veto override, council term limits, the
+    2000 charter and the neighbourhood councils it created, LAX/LAWA, Metro, Union Station,
+    the Owens Valley aqueduct, the 2028 Olympics, Measure G (both the expansion and the new
+    elected County Executive), the county's 88 cities and 42 contract cities, and the 2002
+    San Fernando Valley secession vote.
+  THE NET FLOOR FORCED A SECOND TOP-UP. The first backfill landed on 51 raw and the
+    readiness script returned `NOT READY — BLOCKED` at net 48, because three of the new
+    expiring questions fall inside 90 days. Four more durable questions took it to 55 /
+    net 52. See the new readiness-gate section above; this is in no earlier ledger entry.
+  NOT REPEATED FROM pittsburgh-pa: the external-id high-water mark was taken across **all**
+    statuses first (`la-` 98, `lac-` 123, with 80 archived `lac-` rows sitting in the range),
+    the insert guarded on collision in any status, and both inserts returned as many ids as
+    rows sent (26/26 and 4/4).
