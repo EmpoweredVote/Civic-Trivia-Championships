@@ -2,16 +2,49 @@
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
+## START HERE — measured 2026-09-28, end of session 9
+
+Every number in this block was re-derived from the database, not carried forward. **Re-derive
+them again rather than trusting them**; three of this document's standing claims have been
+wrong when checked, including one this session wrote and corrected the same day.
+
+| | |
+|---|---|
+| Active collections | **43** |
+| Active questions | **3,256** |
+| **Drafts, bank-wide** | **0** — cleared this session, see below |
+| Collections audited | **37 of 43** |
+| Under the 10% expiring floor | **9**, all *already audited* (see the retroactive-floor section) |
+| At or under the 50-question floor | `war-in-iran` 31, `world-news` 47, **`plano-tx` exactly 50** |
+
+**Do next, in this order — the priority list further down cannot see any of these:**
+
+1. **`plano-tx` is at exactly 50 active with no margin.** It has no drafts to remove, so it
+   needs questions written. It is the only collection in the bank with zero floor headroom.
+2. **Nine already-audited collections breach the 10% expiring floor**: `st-louis-mo` 5.1%,
+   `west-monroe-la` 5.3%, `phoenix-az` 5.4%, `texas-state` 5.6%, `alexandria-la` 6.1%,
+   `new-york-state` 6.7%, `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%, `missouri` 9.9%. These
+   are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
+   different job from an audit".
+3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
+   `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
+   which is a pipeline-yield problem an audit cannot fix.
+
+**What session 9 did:** audited `climate-change`, `indiana-state` and `norwich-uk`; re-visited
+`cambridge-ma` and `indio-ca` to clear the two worst expiring breaches; and cleared
+`portland-or`'s 25 drafts, which emptied the last drafts in the bank. It also found that the
+readiness gate counts drafts toward both the question floor and the expiring ratio, and that
+an officeholder-coverage warning can demand a question about someone who left office.
+
+---
+
+
 - **Branch from `master`.** `feat/collection-quality-audit` is MERGED — do not resume on it.
   Each collection now gets its own short-lived `docs/<slug>-audit` branch off master.
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **37 of 43 collections audited.** 998 archived across all sessions, 376 written.
-  All archives reversible by `external_id` — nothing was ever `DELETE`d.
-  **Every hard-floor breach among the UNAUDITED collections is cleared — but 11 ALREADY
-  AUDITED ones are still under it. See "The expiring floor was never applied retroactively"
-  below. An earlier draft of this line claimed the bank was clear; it is not.**
+- All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 9 also audited **norwich-uk** (collection 16), which was the last one at 0.0%
   expiring and turned out to be 40% website furniture — and produced a SECOND question
   whose correct answer was not among its options.
@@ -303,7 +336,7 @@ is still under it today:
 | santa-monica-ca | 61 | **9.8%** |
 | missouri | 71 | **9.9%** |
 
-**`cambridge-ma` (1.2% → 16.4%) and `indio-ca` (2.9% → 17.3%) were cleared in session 9; nine remain.** Its entry is below,
+**`cambridge-ma` (1.2% → 16.4%) and `indio-ca` (2.9% → 17.3%) were cleared in session 9; nine remain — re-derived from the database 2026-09-28, not counted off this table.** Its entry is below,
 and it is the model for the rest: a re-visit is cheaper than an audit, because the structural
 work was already done — what is missing is expiring content and the defect classes that did
 not exist yet.
