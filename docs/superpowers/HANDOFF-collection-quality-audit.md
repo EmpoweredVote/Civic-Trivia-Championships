@@ -7,7 +7,7 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **25 of 43 collections audited.** 630 archived across all sessions, 207 written.
+- **26 of 43 collections audited.** 655 archived across all sessions, 207 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 7 cleared the bank-wide `nested-options` blocker and then audited
   **pittsburgh-pa** (collection 24) with a **citation pass** added to the method.
@@ -243,7 +243,7 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-washington-state, portland-or,
+portland-or,
 washington-dc, los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
@@ -294,6 +294,13 @@ war-in-iran, world-news.
 6. **Minutiae and bracket answers.** Precise figures, and answers like "80,000–99,999 words".
 7. **Figures that rot by construction.** "How many CONSECUTIVE years has X been ranked #1."
 8. **Inverse pairs**, including a whole generated block (`smo-4xx`) that inverted an existing one.
+9. **Compound answers** (added session 7, washington-state). An answer that bundles two facts:
+   "4-year terms, no term limits", "A stratovolcano in the Cascade Volcanic Arc", "42 steps,
+   commemorating Washington as the 42nd state". Distinct from class 4 — nothing is leaked,
+   the answer is just two questions wearing one coat, and it cannot be marked partly right.
+   **On its own this is a readability problem, not a correctness one.** Archive it only when
+   it carries a second defect as well; otherwise leave it or split it. Over-archiving on this
+   class alone would have cost washington-state six sound questions.
 
 ## Two rules learned the hard way this session
 
@@ -1444,3 +1451,38 @@ bad_idx 0, bad_optcount 0, unlinked 0, duplicate answers -> 0, spread 13/11/12/1
     re-elected May 2025, term to 2029. Only the stale framing was removed.
   NOT REPEATED FROM pittsburgh-pa: the external-id high-water mark was checked across all
     statuses first, and the insert returned 10 ids for 10 rows.
+
+### washington-state — complete
+103 -> 78 (25 archived, **no backfill needed**). Easy 26.2% -> 30.8%. Expiring 15.5% -> 17.9%.
+bad_idx 0, bad_optcount 0, unlinked 0, duplicate answers -> 0, stale framing -> 0,
+spread 20/22/19/17.
+  **The first collection that needed nothing written.** It had never been audited (0 archived
+  before this) yet cleared the expiring floor on its own, because whoever built the
+  officeholder block sourced it to real news — Washington State Standard, Cascade PBS, a
+  senate caucus post — rather than to a generic encyclopedia article. That one decision is
+  the difference between this collection and plano-tx, which sat at 1.4% expiring.
+  CITATION PASS: 57 of 103 cited the generic `Washington_(state)` article, the same shape
+  that made plano-tx look alarming. **Zero citation defects found.** All fifteen officeholder
+  claims were verified current for 2026 — governor (Ferguson), lieutenant governor (Heck),
+  attorney general (Brown), secretary of state (Hobbs), treasurer, auditor, insurance
+  commissioner, public lands, superintendent, House speaker (Jinkins), Senate majority leader
+  (Pedersen), House majority leader (Fitzgibbon) and both U.S. senators. **Nothing needed
+  correcting.** Eleven carried "as of 2025" framing, which was stripped; the facts behind
+  them were all still true.
+  MUTUAL LEAKAGE, textbook case: washs-031 asks which volcanic event "killed 57 people" and
+    washs-041 asks how many died when Mount St. Helens erupted. Each question prints the
+    other's answer. Same with washs-018/033 (Washington Territory, 1853, from Oregon
+    Territory).
+  ONE ANSWER GIVING AWAY TWO QUESTIONS (class 4): washs-098's answer, "Patty Murray and
+    Maria Cantwell", contains both washs-102's and washs-103's answers verbatim.
+  ALSO: washs-034's text ("the 42nd state in 1889") leaks both washs-019 and washs-020, and
+    washs-053's answer prints "42nd state" again.
+  CONCENTRATION: Grand Coulee Dam 8, state capitol 7, Mount Rainier 6, Hanford 6, and
+    eleven state-symbol questions. The symbols were left alone — they are cheap, genuinely
+    easy, varied in subject, and a state-tier collection is where they belong.
+  NEW DEFECT CLASS RECORDED: compound answers (see #9 above). I drew the archive line at
+    "compound AND something else" rather than compound alone; six otherwise sound questions
+    were kept that an over-eager reading would have removed.
+  NO BACKFILL. 78 questions clears the 50 floor, easy sits at 30.8% inside the 25-33% band,
+    and expiring rose to 17.9% simply because the archived questions were historical. Adding
+    content here would have been motion, not improvement.
