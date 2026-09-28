@@ -1,34 +1,47 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 9)
+# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 10)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
-## START HERE — measured 2026-09-28, end of session 9
+## START HERE — measured 2026-09-28, end of session 10
 
 Every number in this block was re-derived from the database, not carried forward. **Re-derive
 them again rather than trusting them**; three of this document's standing claims have been
-wrong when checked, including one this session wrote and corrected the same day.
+wrong when checked, including one that was written and corrected the same day.
 
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,256** |
-| **Drafts, bank-wide** | **0** — cleared this session, see below |
+| Active questions | **3,265** |
+| **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
 | Under the 10% expiring floor | **9**, all *already audited* (see the retroactive-floor section) |
-| At or under the 50-question floor | `war-in-iran` 31, `world-news` 47, **`plano-tx` exactly 50** |
+| At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
 
-1. **`plano-tx` is at exactly 50 active with no margin.** It has no drafts to remove, so it
-   needs questions written. It is the only collection in the bank with zero floor headroom.
-2. **Nine already-audited collections breach the 10% expiring floor**: `st-louis-mo` 5.1%,
+1. **Nine already-audited collections breach the 10% expiring floor**: `st-louis-mo` 5.1%,
    `west-monroe-la` 5.3%, `phoenix-az` 5.4%, `texas-state` 5.6%, `alexandria-la` 6.1%,
    `new-york-state` 6.7%, `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%, `missouri` 9.9%. These
    are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
-   different job from an audit".
-3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
+   different job from an audit". `texas-state` is also the thinnest of them at 54 questions.
+2. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
    `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
    which is a pipeline-yield problem an audit cannot fix.
+3. **Four more collections are close to the question floor**: `norwich-uk` 52,
+   `texas-state` 54, `los-angeles-ca` 55, `portland-or` 55. None is breaching, and none is
+   urgent — but they are where the next `plano-tx` comes from, so re-derive this rather than
+   waiting for one to cross.
+
+**`plano-tx` is DONE** (session 10): 50 → 59, and it was the only collection in the bank with
+zero floor headroom. Doing it also showed that the count was the least interesting thing wrong
+with it — see the entry, and the four new sections it produced.
+
+**What session 10 did:** the `plano-tx` content pass — 3 archived, 12 written, 25 repaired,
+one new topic. Leakage 27 hits → 2. It found that a hand-written SQL backfill inherits the
+collection's first topic label, that every `www.plano.gov` citation is a JavaScript app with
+none of the cited facts in its text, and that the readiness gate's officeholder check prints
+*nothing at all* when a locale config defines no officeholders — which reads exactly like a
+pass.
 
 **What session 9 did:** audited `climate-change`, `indiana-state` and `norwich-uk`; re-visited
 `cambridge-ma` and `indio-ca` to clear the two worst expiring breaches; and cleared
@@ -281,25 +294,27 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,273 active questions** (re-measured after all six session 8 audits;
-  identical under all three counting bases — all `status='active'`, those linked to any
-  collection, and those in *active* collections)
+- 43 active collections, **3,265 active questions** (re-measured session 10, after the
+  `plano-tx` pass; counted as questions with `status='active'` linked to an *active*
+  collection). The 3,273 this line carried was session 8's figure.
 
   The 3,471 figure this line carried before was stale, not wrong at the time: it was taken
   before sessions 7/7b's own archives were applied. 186 of the 234 questions archived on
   2026-09-28 are theirs (washington-dc 62, portland-or 35, pittsburgh-pa 34, plano-tx 29,
   washington-state 25, biloxi-ms 1); the other 48 are session 8's. **Re-measure this number,
   never derive it from the previous value** — nightly yield and automatic expiry both move it.
-- **0 `nested-options` violations bank-wide, at either severity** — re-confirmed session 9
-  (3,270 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
+- **0 `nested-options` violations bank-wide, at either severity** — re-confirmed session 10
+  (3,265 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
   a clean report is not the same as a clean bank.
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
-- 2 collections below the 50-question floor: `war-in-iran` (32), `world-news` (44). Both
-  pre-existing, both caused by pipeline yield rather than by any purge.
-- **2 collections below the 10% expiring hard floor: `indiana-state` (6.7%) and
-  `norwich-uk` (0.0%)** (measured session 9). Both are unaudited and neither is near the
-  front of the priority list, which is ordered by easy% and cannot see this.
+- 2 collections below the 50-question floor: `war-in-iran` (31), `world-news` (47). Both
+  pre-existing, both caused by pipeline yield rather than by any purge. `plano-tx` was a
+  third, at exactly 50, and was cleared in session 10.
+- **9 collections below the 10% expiring hard floor**, all of them *already audited* — the
+  retroactive-floor backlog listed in START HERE and in its own section below. The two
+  session 9 found by running the readiness script over unaudited collections
+  (`indiana-state` 6.7%, `norwich-uk` 0.0%) were both cleared.
 
 **The floor being met is not the same as the bank being clean.** 20 collections have never been
 read. Every one audited so far carried several defect classes, and the seven at 25.7–27.3%
@@ -1254,7 +1269,7 @@ citation lives in `source.url`; repeating the body's name in prose only creates 
   no test runner — a change made to CTC's copy is untested until it is carried over. #824
   pinned all 11 repaired option sets as fixtures. #825 then made enforcement **per rule** and
   switched `nested-options` on in production.
-- **`war-in-iran` (32) and `world-news` (44) are below the 50-question floor.** A pipeline-yield
+- **`war-in-iran` (31) and `world-news` (47) are below the 50-question floor.** A pipeline-yield
   problem, not a purge problem. #816 does not add yield; if anything, enforcing the gate will
   reduce it, which is another reason to read `suppressed` first.
 - ~~**`replacementGenerator.ts` and the two officeholder generators never call
@@ -3240,3 +3255,146 @@ Bracketing 37.5% at an extreme, below the healthy ~50% and left as found.
   **Three of my own leaks were caught by re-running the sweep**, two from the backfill and one
   introduced by a repair to `por-001`. That check has now caught a self-inflicted defect in
   five consecutive collections.
+
+## Session 10 (2026-09-28) — plano-tx
+
+### plano-tx — CONTENT PASS complete (session 10)
+
+50 -> 59 (3 archived, 12 written). Easy 38.0% -> 33.9%. Expiring 16.0% -> 16.9%.
+bad_idx 0, bad_optcount 0, unlinked 0, drafts 0, unsourced 0, duplicate answers (normalised) 0,
+nested-options 0. Spread 13/11/12/14 -> **15/15/15/14** (best single guess 28.0% -> 25.4%).
+Bracketing at an extreme 55.6% -> **50.0%** (best single guess 44.4% -> 28.6%).
+Net count **50 -> 59**: it was the only collection in the bank with zero floor headroom.
+
+  **WHY IT WAS FIRST ON THE LIST, and what the list could not see.** It was queued because it
+  sat at exactly 50 net. That was true, and it was the least interesting thing wrong with it.
+  The re-visit checks — the ones invented after session 7b audited it — found **27 leakage
+  hits**, six governance questions cited to a page that contains none of their facts, and ten
+  questions carrying a topic label that lied to the player. Fixing the count alone would have
+  left all three.
+
+  CITATION PASS, and a new shape of worthless citation: **every `www.plano.gov` URL is a
+  JavaScript app.** `/1345/Mayor-and-City-Council` returns 200 and ~420 KB, and the fetched
+  text contains no "at-large", no "four-year", no "term limit", no "Place" — nothing the six
+  questions citing it claim. This is the text-free-JS-page class from session 8, but found at
+  **locale-config level**: `plano-tx.ts` listed nine plano.gov URLs and almost nothing else,
+  so the generator had nothing to quote and filled the gap with the phrase **"According to the
+  Plano, TX content guidelines"** — an internal artifact, in eight live explanations, standing
+  in for a source. The facts were all *correct*; they were simply not attributable to anything
+  a reader could open.
+  Repaired by re-citing the whole governance block to the Wikipedia **Plano City Council**
+  article, which carries "council-manager", "eight members", "four administrative districts",
+  "Places 1 through 4", "two consecutive terms" and "odd-numbered years" verbatim, and by
+  putting the readable sources **first** in the config's `sourceUrls` with a note saying why.
+  `pla-087` was worse than the rest: it cited the bare `https://www.plano.gov/` homepage. Now
+  cites a page that actually carries the 1992 date.
+
+  **LEAKAGE WAS THE DOMINANT DEFECT — 27 hits, more than half the collection touched.**
+  The city-government block was a closed triangle: `pla-008`'s TEXT printed both `pla-001`'s
+  answer ("Council-Manager") and `pla-002`'s ("The City Manager"); `pla-006`'s explanation
+  printed `pla-017`'s and `pla-020`'s; `pla-003`'s printed `pla-010`'s and `pla-006`'s;
+  `pla-005`'s and `pla-153`'s printed both term facts. The history block was the same shape
+  around one TSHA sentence: `pla-009` and `pla-052` printed each other's answers (17,872 and
+  1980), and **four separate explanations printed `pla-065`'s whole answer**.
+  Down to **2**, both the same forced pair (`pla-152` must print the words "Collin County
+  judge" to ask who holds that office; `pla-171` asks who *used* to). That is the noise class
+  the california-state rule describes — an office name the subject matter forces — not a
+  give-away.
+
+  **`Collin County` was printed by SIX questions.** The `tucaz-010` remedy applied cleanly:
+  `pla-159` ("Plano lies primarily within which Texas county?") kept its content but moved the
+  county into the *text* and now asks the part nothing else gives away — which other county the
+  city's western edge crosses into (**Denton**). Sixth time this pattern has appeared; first
+  time the rewrite was obvious rather than a judgement call.
+
+  ARCHIVED (3), all reversible by `external_id`:
+  `pla-002` (answer "The City Manager", printed by `pla-008`'s and `pla-151`'s text; the
+  concept survives in `pla-001`/`pla-008`/`pla-151`); `pla-093` (same TSHA sentence as
+  `pla-070`, mutual leakage, and a compound answer); `pla-099` (explanation a **verbatim copy**
+  of `pla-049`'s, supporting `pla-049`'s answer rather than its own).
+
+  WRITTEN (12), filling gaps the collection had never had — transit, parks, voting mechanics,
+  county government and federal representation, which between them had **zero** questions:
+  DART light rail; TX-3; the Places 1–4 residency rule; **Place 6 is the mayor**; the 1961
+  home-rule charter; Oak Point Park; the 30-day Texas registration deadline; the Collin County
+  elections administrator; the 2020 census count; the commissioners court's five seats; Keith
+  Self's eleven years as county judge (expiring); the two U.S. senators (expiring).
+  Only **2 expiring** were written, deliberately: the collection already had eight, six of them
+  the identical office→person shape, and the floor did not need more. Both new ones use shapes
+  the collection did not have (person→prior office, and a two-senator delegation).
+
+## A hand-written SQL backfill inherits the collection's FIRST topic (session 10)
+
+`plano-tx`'s ten session-7b backfill rows (`pla-151`–`pla-160`) all had **`subcategory` NULL
+and `topic_id` 16**, the collection's first topic — "City Government". The player therefore saw
+**City Government** printed above a question about the Collin County sheriff, the Collin County
+judge, a Texas House district, which county the city is in, and which school district serves
+it. Six of the ten were wrong.
+
+This is the fremont-ca defect, but with a cause worth naming: `placeAnswer()` is not the only
+thing a raw-SQL insert bypasses. **Whatever assigns the topic is bypassed too**, and the column
+is nullable, so nothing complains. The tell is trivial and should be part of every backfill's
+verification:
+
+    SELECT count(*) FILTER (WHERE subcategory IS NULL) FROM ... ;
+
+**A NULL `subcategory` is not a cosmetic gap — it means the topic label was never chosen.**
+
+## When a collection has no home for county content, the label lies (session 10)
+
+Fixing the labels above was blocked by a real gap: `plano-tx` defined five topics, all of them
+city-scoped, and there is no honest place to file a county sheriff or a U.S. senator. Filing
+them under "City Government" is how they got there in the first place.
+
+Added one topic, **"Beyond City Hall"** (`plano-beyond-city-hall`), for the governments that
+serve Plano but are not the city — Collin County, Plano ISD, and state and federal
+representation. It took ten questions immediately. Also reused the existing global topic 21
+**"Elections & Voting"** for the three voting-mechanics questions.
+
+The precedent already existed and was not being followed: `los-angeles-ca` has "LA County
+Government" (25) and `queens-ny` has "State & Federal Representation" (727). **Check whether a
+city collection has a county/state/federal topic before filing anything there, and add one
+rather than mislabelling.** Three more history questions (`pla-114`, `pla-118`, `pla-125`) were
+moved out of "Community & Demographics" at the same time.
+
+## The leakage sweep's word-order blind spot, now self-inflicted twice (session 10)
+
+`pla-010`'s answer is **"At-large (citywide)"**. Two questions written *this session* opened
+with "Every Plano council seat is elected citywide" — handing it over in the clear. The
+normalised key is `atlargecitywide`; the prose is "elected citywide"; the `ILIKE` matches
+neither, and the sweep returned clean both times.
+
+The fix that worked was to stop matching the answer and match the **concept**:
+
+    ... WHERE external_id <> 'pla-010'
+        AND (text ~* '(at.large|citywide|city.wide)' OR explanation ~* '(at.large|citywide|city.wide)')
+
+**After the string sweep comes back clean, grep for the two or three ideas the collection is
+actually about.** Six consecutive collections have now caught a self-inflicted leak on
+re-running the checks; this is the first where the string sweep could not see it and a concept
+grep had to.
+
+## A question worth writing can still have no correct answer (session 10)
+
+"Who represents Plano in the Texas Senate?" was on the list until it was checked. **Plano is
+split between Senate District 8 and Senate District 30** — both cover parts of Collin County —
+so the question has no single right answer, and either name offered alone would be wrong for
+some of the city. Dropped before writing.
+
+The collection's existing `pla-157` survives the same test only because it says "which covers
+**part** of Plano". **For any district-to-person question, confirm the district contains the
+whole jurisdiction before writing it, and say "part of" when it does not.** The
+missing-true-answer class (`ins-049`, `nor-xxx`) is the same failure caught one step later.
+
+## Silence from the officeholder check is not coverage (session 10)
+
+`audit-collection-readiness.ts --slug plano-tx` printed **no Officeholder Coverage section at
+all**, in both the before and after runs. That is not a pass: `plano-tx.ts` defines no
+`officeholders` array, so the third check has nothing to compare against and prints nothing.
+
+Four collections were audited in session 8 before anyone saw that check exist; this is the
+inverse — a collection where it will never fire, and where its absence reads exactly like
+approval. **The check is advisory and prints nothing when unconfigured. Look at the locale
+config before concluding a collection has officeholder coverage.** Not fixed here: session 9's
+`indio-ca` finding stands — populating a roster from a stale config can write a termed-out
+officeholder into the bank, so the roster needs verifying, not copying.
