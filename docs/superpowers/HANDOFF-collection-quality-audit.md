@@ -11,23 +11,22 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,272** |
+| Active questions | **3,282** |
 | **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
-| Under the 10% expiring floor | **8**, all *already audited* (see the retroactive-floor section) |
+| Under the 10% expiring floor | **7**, all *already audited* (see the retroactive-floor section) |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
-| **Under 11% HARD** (new, session 10) | `phoenix-az` **3.6%**, `missouri` 8.5%, `queens-ny` 10.1%, `world-news` 10.6% |
+| **Under 11% HARD** (new, session 10) | `missouri` **8.5%**, `queens-ny` 10.1%, `world-news` 10.6% |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
 
-1. **Eight already-audited collections breach the 10% expiring floor**: `west-monroe-la` 5.3%,
-   `phoenix-az` 5.4%, `texas-state` 5.6%, `alexandria-la` 6.1%, `new-york-state` 6.7%,
-   `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%, `missouri` 9.9%. These are **re-visits, not
-   re-audits** — the cheaper job described under "A re-visit is a different job from an audit".
-2. **`phoenix-az` should be next, and not only for the expiring floor.** It has **two hard
-   questions in the whole collection** (3.6%), and Q5 — the wager question — is drawn from the
-   hard tier. It breaches the expiring floor as well, so one re-visit fixes both. See the new
-   hard-tier section.
+1. **`missouri` should be next.** It is the only collection left that breaches BOTH — 9.9%
+   expiring and **8.5% hard**, now the thinnest hard tier in the bank. One re-visit fixes both,
+   which is how `phoenix-az` was chosen.
+2. **Seven already-audited collections breach the 10% expiring floor**: `west-monroe-la` 5.3%,
+   `texas-state` 5.6%, `alexandria-la` 6.1%, `new-york-state` 6.7%, `biloxi-ms` 8.5%,
+   `santa-monica-ca` 9.8%, `missouri` 9.9%. These are **re-visits, not re-audits** — the
+   cheaper job described under "A re-visit is a different job from an audit".
 3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
    `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
    which is a pipeline-yield problem an audit cannot fix.
@@ -36,17 +35,20 @@ wrong when checked, including one that was written and corrected the same day.
    urgent — but they are where the next `plano-tx` comes from, so re-derive rather than
    waiting for one to cross.
 
-**`plano-tx` and `st-louis-mo` are DONE** (session 10). plano-tx 50 → 59, the only collection
-with zero floor headroom. st-louis-mo 5.1% → 15.2% expiring, the worst remaining breach. In
-both, the number that put the collection on the queue was the least interesting thing wrong
-with it — see the entries, and the seven new sections they produced.
+**`plano-tx`, `st-louis-mo` and `phoenix-az` are DONE** (session 10). plano-tx 50 → 59, the
+only collection with zero floor headroom; st-louis-mo 5.1% → 15.2%; phoenix-az 5.4% → 16.7%
+expiring and 3.6% → 19.7% hard. In all three, the number that put the collection on the queue
+was the least interesting thing wrong with it — phoenix-az was carrying a **wrong fact in
+production**. See the entries, and the ten new sections they produced.
 
-**What session 10 did:** the `plano-tx` content pass and the `st-louis-mo` re-visit — 3 archived, 12 written, 25 repaired,
-one new topic. Leakage 27 hits → 2. It found that a hand-written SQL backfill inherits the
-collection's first topic label, that every `www.plano.gov` citation is a JavaScript app with
-none of the cited facts in its text, and that the readiness gate's officeholder check prints
-*nothing at all* when a locale config defines no officeholders — which reads exactly like a
-pass.
+**What session 10 did:** the `plano-tx` content pass plus the `st-louis-mo` and `phoenix-az`
+re-visits. Across the three: **7 archived, 33 written, ~80 repaired, two new topics, and
+leakage 71 hits → 2.** It found that a hand-written SQL backfill inherits the collection's
+first topic label; that every `www.plano.gov` citation is a JavaScript app carrying none of
+the facts cited to it; that the officeholder check prints *nothing at all* when a config
+defines no officeholders, which reads exactly like a pass; that the session 1–2 archiving
+method **gutted the hard tier bank-wide**; and — in `phoenix-az` — a **wrong fact live in
+production**, mirrored in the locale config that produced it.
 
 **What session 9 did:** audited `climate-change`, `indiana-state` and `norwich-uk`; re-visited
 `cambridge-ma` and `indio-ca` to clear the two worst expiring breaches; and cleared
@@ -299,7 +301,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,272 active questions** (re-measured session 10, after the
+- 43 active collections, **3,282 active questions** (re-measured session 10, after the
   `plano-tx` pass; counted as questions with `status='active'` linked to an *active*
   collection). The 3,273 this line carried was session 8's figure.
 
@@ -309,7 +311,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
   washington-state 25, biloxi-ms 1); the other 48 are session 8's. **Re-measure this number,
   never derive it from the previous value** — nightly yield and automatic expiry both move it.
 - **0 `nested-options` violations bank-wide, at either severity** — re-confirmed session 10
-  (3,272 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
+  (3,282 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
   a clean report is not the same as a clean bank.
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
@@ -347,8 +349,8 @@ is still under it today:
 | ~~cambridge-ma~~ | ~~86~~ | ~~1.2%~~ **CLEARED session 9 → 16.4%** |
 | ~~indio-ca~~ | ~~68~~ | ~~2.9%~~ **CLEARED session 9 → 17.3%** |
 | ~~st-louis-mo~~ | ~~59~~ | ~~5.1%~~ **CLEARED session 10 → 15.2%** |
+| ~~phoenix-az~~ | ~~56~~ | ~~5.4%~~ **CLEARED session 10 → 16.7%** |
 | west-monroe-la | 57 | **5.3%** |
-| phoenix-az | 56 | **5.4%** |
 | texas-state | 54 | **5.6%** |
 | alexandria-la | 66 | **6.1%** |
 | new-york-state | 90 | **6.7%** |
@@ -356,7 +358,7 @@ is still under it today:
 | santa-monica-ca | 61 | **9.8%** |
 | missouri | 71 | **9.9%** |
 
-**`cambridge-ma` and `indio-ca` were cleared in session 9, `st-louis-mo` (5.1% → 15.2%) in session 10; eight remain — re-derived from the database, not counted off this table.** Its entry is below,
+**`cambridge-ma` and `indio-ca` were cleared in session 9; `st-louis-mo` (5.1% → 15.2%) and `phoenix-az` (5.4% → 16.7%) in session 10; seven remain — re-derived from the database, not counted off this table.** Its entry is below,
 and it is the model for the rest: a re-visit is cheaper than an audit, because the structural
 work was already done — what is missing is expiring content and the defect classes that did
 not exist yet.
@@ -3479,9 +3481,9 @@ Measured across all 43 active collections, thinnest first:
 
 | collection | active | hard | hard % |
 |---|---|---|---|
-| `phoenix-az` | 56 | **2** | 3.6% |
-| `st-louis-mo` | 59 | 5 | 8.5% |
-| `missouri` | 71 | 6 | 8.5% |
+| ~~`phoenix-az`~~ | ~~56~~ | ~~**2**~~ | ~~3.6%~~ **CLEARED session 10 → 19.7%** |
+| ~~`st-louis-mo`~~ | ~~59~~ | ~~5~~ | ~~8.5%~~ **CLEARED session 10 → 16.7%** |
+| `missouri` | 71 | 6 | **8.5%** — now the thinnest |
 | `queens-ny` | 99 | 10 | 10.1% |
 | `world-news` | 47 | 5 | 10.6% |
 | `portland-or` | 55 | 7 | 12.7% |
@@ -3493,9 +3495,10 @@ collections**. The healthy end of the table (`cambridge-ma`, `santa-monica-ca`,
 `massachusetts-state`, `wisconsin`) sits at 16–18%.
 
 **Why it matters, and it is not cosmetic.** CLAUDE.md: *Q1–4 standard, Q5 the wager question,
-hard/final.* Every game ends on a hard question. `phoenix-az` has **two**. A repeat player
-there sees the same wager question every other game, and the wager is the one moment the score
-swings by up to ±300.
+hard/final.* Every game ends on a hard question. `phoenix-az` had **two in fifty-six**, so a
+repeat player there met the same wager question every other game — and the wager is the one
+moment the score swings by up to ±300. That is what made it the collection to do next, ahead
+of six worse expiring breaches.
 
 Two remedies, both used here:
 1. **Write hard questions, not just expiring ones.** Three of the ten written for
@@ -3547,3 +3550,113 @@ written from the same April 2025 municipal election. Nothing is wrong today. On 
 several coats.** Spread the dates across offices with genuinely different clocks — a U.S. House
 term (2 years), a police appointment (indefinite), a school superintendent's contract, a
 citywide four-year office. `st-louis-mo` now lapses on seven dates between 2027 and 2029.
+
+### phoenix-az — RE-VISIT complete (session 10)
+
+56 -> 66 (1 archived, 11 written, ~25 repaired). **Expiring 5.4% -> 16.7%.**
+**Hard tier 3.6% -> 19.7%** — it was the thinnest in the bank, two questions in fifty-six.
+Easy 37.5% -> 33.3%. **Leakage 18 hits -> 0.** Duplicate answers 0 throughout.
+Position 12/13/14/17 -> **17/17/17/15**. Bracketing **best single guess 37.5% -> 25.0%**,
+at an extreme 43.8% -> **50.0%** — a dead-level 4/4/4/4.
+Officeholder coverage **7 of 9 -> 9 of 9**. bad_optcount 0, unsourced 0, drafts 0,
+nested-options 0.
+
+  **A LIVE WRONG FACT, and the config had it too.** `phxaz-011` asserted that Debra Stark
+  "currently serves as Vice Mayor". Phoenix's Vice Mayor is **elected by the council from
+  among its own members and turns over roughly every year** — Ann O'Brien held it through
+  2025, and phoenix.gov's own newsroom carries *"Outgoing Vice Mayor Ann O'Brien Congratulates
+  Vice Mayor Hodge Washington"*. Stark's District 3 seat is correct; the title was the wrong
+  half.
+  **Wikipedia's council infobox still says "Vice Mayor Ann O'Brien since January 2024"**, so
+  the encyclopedia is stale exactly where it matters and the city's own site is not — the
+  session 9 rule, fourth confirmation.
+  The same stale title was baked into `phoenix-az.ts` as the role string
+  `District 3 Councilmember / Vice Mayor`. Removed, with a comment saying why.
+
+  **THE SESSION-2 REPAIR WAS APPLIED TO THE TEXT ONLY.** The ledger records that session 2
+  "de-named 075" after finding the stale "Talking Stick Resort Arena". It de-named the
+  *question text*; the **explanation still said Talking Stick Resort Arena** — a name the
+  building lost in 2021 and again in 2025. **When a repair removes a fact, grep the
+  explanation for it too**, and re-run whatever check found it.
+
+  **THE BOILERPLATE STRIP NEEDED TWO STEPS HERE.** All 56 explanations opened with "According
+  to", and 28 of them with *"According to Wikipedia's article on Phoenix, Arizona, "* — an
+  attribution containing its own comma. The single-pass `^According to [^,]+, ` that worked on
+  `st-louis-mo` would have left the word **"Arizona,"** stranded at the front of 28 sentences.
+  Long form first, generic second, then assert `explanation LIKE 'Arizona,%'` is zero.
+
+  ARCHIVED (1): `phxaz-039`, whose answer ("Papago Park") is printed by the TEXT of both
+  `phxaz-042` and `phxaz-043`, each of which needs it to ask its own question. `phxaz-040`
+  keeps the Desert Botanical Garden represented.
+
+  WRITTEN (11): how the Vice Mayor is actually chosen (the durable half of the fact
+  `phxaz-011` got wrong); Valley Metro Rail, and South Mountain Park with the 1924 Coolidge
+  sale — the collection had **nothing** on transit and nothing on the largest municipal park
+  in the United States; the police chief; and six councilmember questions across **five
+  different templates** (district->person, person->district, party->person, delegation,
+  office->person), one per person, which took coverage from 7 of 9 to 9 of 9.
+
+  REPAIRED IN PASSING: `phxaz-058` asked a population rank pinned to "(2024)" — the defect
+  session 2 archived `phxaz-080` for, surviving in a second question. `phxaz-010` carried the
+  stale framing "as of December 2025". `phxaz-003` said "third term" while `phxaz-008` says
+  the mayor is limited to two — not a contradiction (the 2019 win was a special election), now
+  said out loud. `phxaz-073`'s answer is a target dated 2030, so it now has an `expires_at`.
+
+  **A MISTAKE I MADE AND CAUGHT:** I set every new councilmember question to expire on one
+  date. **Phoenix's council seats are staggered** — odd-numbered districts run to April 2029,
+  even-numbered to April 2027 — so six of them were wrong, and it recreated the single-day
+  burst this session had just written up. Aligned to the config's own stagger; the eleven
+  expiring questions now fall on six dates.
+## Officeholder coverage and leakage pull against each other too (session 10)
+
+tucson-az showed that the coverage check and the repeated-shape rule conflict, and that the
+resolution is "one question per PERSON, on different TEMPLATES". `phoenix-az` produced a
+second, sharper version of the same tension — this time against the **leakage** rule.
+
+`phxaz-098` was written deliberately **not** to name Kevin Robinson. It asked which district
+the council's only independent represents, so the answer was "District 6" and his name sat only
+in the explanation. That is good leakage hygiene. The gate reported:
+
+    [WARNING] District 6 Councilmember, District 6 — Kevin Robinson: 0 question(s)
+
+**It is not a false positive — it is the check working as written.** `namesQuestion()` matches
+the officeholder against the question TEXT and the **correct answer** only, and deliberately
+does not count a name that appears merely as a wrong-answer distractor. It does not read the
+explanation at all. So a question *about* someone, written to avoid naming them, is invisible
+to it.
+
+The fix is to flip the question rather than to weaken either rule: `phxaz-098` now asks
+**which member** is the independent, so the answer is "Kevin Robinson" — coverage counted, and
+still no leak, because no other question in the collection has a councilmember's name as its
+answer. **When you write an officeholder question that avoids the name for leakage reasons,
+check the coverage output afterwards; one of the two rules has to give, and it should be the
+phrasing, not the coverage.**
+
+## A role string in the locale config can carry a rotating title (session 10)
+
+`phoenix-az.ts` listed Debra Stark with the role `District 3 Councilmember / Vice Mayor` and a
+`termEnd` of April 2029. Both halves of that string are real, but they **rot at different
+rates**: the council seat runs four years, the Vice Mayor title turns over roughly every year
+because the council re-elects it from among its members. `termEnd` was set from the slow half,
+so the fast half was stale for most of the entry's life — and a question was generated from it
+that was wrong in production.
+
+This is the `indio-ca` finding one level deeper. There the roster named someone who had left
+office; here the roster names the right person with a title they no longer hold.
+
+**Rule: a `role` string must contain only offices that expire on the entry's `termEnd`.** A
+rotating title — vice mayor, mayor pro tem, committee chair, council president — belongs in a
+question of its own with its own short `expires_at`, never bundled into a seat. `phxaz-097`
+now carries the Vice Mayor with a one-year clock, and the config says so in a comment.
+
+## Check the STAGGER before setting expires_at on a council (session 10)
+
+I set all six new `phoenix-az` councilmember questions to expire on one date. Phoenix staggers
+its council: **odd-numbered districts run to April 2029, even-numbered to April 2027.** Six of
+the eleven were therefore wrong, and it recreated the single-day burst this same session had
+just written up for `st-louis-mo`.
+
+The stagger was already recorded — in the locale config's own `termEnd` fields, which I had
+read minutes earlier for a different purpose. **Before writing a block of officeholder
+questions, read the `termEnd` column of the roster and copy it; do not pick one date for the
+block.** Same for any council elected in halves, which is most of them.

@@ -156,11 +156,20 @@ export const phoenixAzConfig: LocaleConfig = {
     'sports-education': 9,
   },
 
+  // DO NOT put the Vice Mayor title in this roster. Phoenix's council elects a
+  // Vice Mayor from among its own members and the title turns over roughly
+  // every year, while the council SEATS run four years — so a role string like
+  // "District 3 Councilmember / Vice Mayor" is stale long before its termEnd.
+  // That is exactly how phxaz-011 came to assert, in production, that Debra
+  // Stark was Vice Mayor: Ann O'Brien held it through 2025 and Kesha Hodge
+  // Washington holds it now. Roster verified 2026-09-28 against the council
+  // roll; the Vice Mayor of the day is tracked by phxaz-097 instead, which
+  // carries a one-year expires_at.
   officeholders: [
     { name: 'Kate Gallego', role: 'Mayor', termEnd: '2029-04-16T00:00:00Z' },
     { name: 'Ann O\'Brien', role: 'District 1 Councilmember', district: 'District 1', termEnd: '2029-04-16T00:00:00Z' },
     { name: 'Jim Waring', role: 'District 2 Councilmember', district: 'District 2', termEnd: '2027-04-19T00:00:00Z' },
-    { name: 'Debra Stark', role: 'District 3 Councilmember / Vice Mayor', district: 'District 3', termEnd: '2029-04-16T00:00:00Z' },
+    { name: 'Debra Stark', role: 'District 3 Councilmember', district: 'District 3', termEnd: '2029-04-16T00:00:00Z' },
     { name: 'Laura Pastor', role: 'District 4 Councilmember', district: 'District 4', termEnd: '2027-04-19T00:00:00Z' },
     { name: 'Betty Guardado', role: 'District 5 Councilmember', district: 'District 5', termEnd: '2029-04-16T00:00:00Z' },
     { name: 'Kevin Robinson', role: 'District 6 Councilmember', district: 'District 6', termEnd: '2027-04-19T00:00:00Z' },
