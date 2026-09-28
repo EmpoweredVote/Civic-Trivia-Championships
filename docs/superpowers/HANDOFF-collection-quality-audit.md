@@ -7,8 +7,12 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **36 of 43 collections audited.** 977 archived across all sessions, 357 written.
+- **37 of 43 collections audited.** 998 archived across all sessions, 376 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
+  **Every known hard-floor breach in the bank is now cleared.**
+  Session 9 also audited **norwich-uk** (collection 16), which was the last one at 0.0%
+  expiring and turned out to be 40% website furniture — and produced a SECOND question
+  whose correct answer was not among its options.
   Session 9 also audited **indiana-state** (collection 4) — taken out of list order because
   it was breaching the 10% expiring floor. It carried **a live error that could cost
   someone their vote**, and a citation problem of a new shape: a third of the collection
@@ -268,13 +272,15 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-bend-or, wisconsin, bloomington-in, milwaukee-wi, norwich-uk,
-war-in-iran, world-news.
+bend-or, wisconsin, bloomington-in, milwaukee-wi, war-in-iran, world-news.
 
-**`norwich-uk` is at 0.0% expiring — under the 10% hard floor, today.** It is the last
-known floor breach; `indiana-state` was the other and was cleared in session 9 (6.7% →
-16.7%). This list is ordered by easy% ascending, which cannot see a floor breach, so check
-`audit-collection-readiness.ts` before trusting the order.
+**No known hard-floor breach remains.** `indiana-state` (6.7% → 16.7%) and `norwich-uk`
+(0.0% → 15.4%) were both cleared in session 9. This list is ordered by easy% ascending,
+which cannot see a floor breach at all, so run `audit-collection-readiness.ts --slug <x>`
+over the remaining six before trusting the order — that is how both breaches were found.
+
+**`war-in-iran` (32) and `world-news` (47) are still under the 50-question floor**, which
+is a yield problem rather than a quality one and needs a different fix from an audit.
 
 **Also outstanding: `indio-ca` holds 19 drafts that have never been read.** It was audited
 in session 1, long before the fremont-ca lesson that drafts exist and can be broken. Noticed
@@ -904,6 +910,76 @@ Recorded because both are easy to repeat and neither was caught by reading.
   option sets whose order carries no meaning (never ascending-numeric sets — rotating those
   prints the numbers out of order; rotation preserves which value is largest, so bracketing
   is unaffected). Restored to 21/19/18/20.
+
+## The missing-true-answer class is not a one-off (session 9, norwich-uk)
+
+`ins-049` looked like a freak. It is not. `norwich-uk` produced a second instance in the very
+next audit:
+
+> **nor-015** — What is the official meeting place of Norwich City Council?
+> Norwich Cathedral / Norwich Castle / **The Guildhall** / The Forum
+
+Norwich City Council is based at **City Hall**. The Guildhall's Council Chamber *"ceased to be
+the local seat of government"* on **29 October 1938**, the day the King and Queen opened City
+Hall. The question has been wrong for 88 years, and — exactly as with `ins-049` — **the correct
+answer was not among the four options**.
+
+**Two instances in two consecutive audits makes this a class to hunt, not an anomaly.** Both
+share a shape: *the answer given is correct for a closely related thing*. `ins-049` gave the
+casting deadline for the requesting deadline; `nor-015` gave the historic seat for the current
+one. **Suspect any question whose answer would be right under a small change of wording** —
+former vs current, request vs cast, ceremonial vs executive, county vs district.
+
+In both cases the wrong answer was kept as a *distractor*, because a wrong answer that is
+right about something adjacent is the best distractor there is.
+
+## A collection can be 40% website furniture (session 9, norwich-uk)
+
+portland-or gave us class 10 with a handful of questions about a department page. `norwich-uk`
+shows the same failure at scale — 21 of 53 questions came from two scraped sources:
+
+- **14 from `cathedral.org.uk`.** Re-fetched during the audit, that site now returns **zero**
+  occurrences of "Shakespeare", "Art in the Close", "Holy Week", "Lent", "St John Passion" or
+  "Norman" — every one a claim a live question rested on. The block included a question whose
+  answer was stated in its own text (*"Shakespeare Festival"* → *"William Shakespeare"*), the
+  site's own marketing copy quoted as a question, an exhibition that ran Sept 2025–Spring 2026
+  and was never marked expiring, and **a question about the website's 3D virtual tour** — a
+  fact about a web page, not about Norwich.
+- **13 from `bbc.co.uk/news/england/norfolk`.** That is a **rolling news index**, and this is
+  its own hazard: it returns 200 with 397KB of text, so it defeats the status check *and* the
+  "does it have text" heuristic. But it had already rotated past Titchwell, Tavares, Canary
+  Call, Sheffield Wednesday and Carrow Road — every claim it was cited for. **A news index can
+  never support a specific claim, and it looks healthiest of all.** Grep the fetched page for
+  the question's own figure; a section front will fail that even when it looks perfect.
+
+19 of those 21 were archived. The collection fell to 34 — well under the floor — which is why
+the backfill here is 19 questions rather than a handful.
+
+## When the duplicate-answer count IS the collection (session 9, norwich-uk)
+
+`norwich-uk` reports **7 questions answering "Norwich City Council" and 7 answering "Norfolk
+County Council"**, and a raw leakage sweep returns **280+ hits**. Almost all of it is one fact:
+a two-tier council collection cannot discuss itself without naming both councils.
+
+This is the Task-4 family ruling in its purest form, and the numbers are not a defect. But two
+things still needed doing, and the distinction is worth keeping:
+
+- **The family is protected; the TEMPLATE is not.** Fourteen questions shared the shape *"Which
+  authority is responsible for X in Norwich?"*, and because only two of the four options were
+  ever real bodies, it was a binary guess wearing four options. Four were recast as the
+  scenario a resident actually meets — *"A Norwich resident wants to report a pothole. Which
+  council should they contact?"* — which is better civics and breaks the monotony without
+  losing a single fact. The tucson-az remedy, applied to subjects instead of people.
+- **Filter the protected answers out before reading the leakage report**, or the real findings
+  drown. Excluding those two strings took 280+ hits down to ~38, which is a list you can read.
+
+**A substring artifact to know about:** `nor-063`'s answer is *"Norwich City"*, which is a
+prefix of *"Norwich City Council"*. The leakage query pads the answer with spaces, but that
+only guards its outer edges — a multi-word answer that is a prefix of a longer phrase still
+matches inside it. That single question generated ~20 phantom leak pairs. It was **left alone**:
+the question is sound, and contorting content to satisfy a matcher is the mistake the
+california-state lesson warns about. Expect this wherever an answer is a prefix of the
+collection's most common phrase.
 
 ## Still open, not fixed
 
@@ -2720,3 +2796,68 @@ spread 22/23/23/22 -> 21/19/18/20, bracketing 41.2% -> **44.4%** at an extreme.
   **`ind-` AND `ins-` BOTH BELONG TO THIS COLLECTION** (ins 107, ind 31) **and `ind-` also
   matches `indio-ca`.** Every query here joined through `collection_questions`. The readiness
   script now prints the prefix span itself, which is the cheapest guard against the collision.
+
+### norwich-uk — complete
+53 -> 33 (21 archived, incl. 1 draft) -> 52 (+19). Easy 39.6% -> 32.7%.
+**Expiring 0.0% (DEFECT, the last in the bank) -> 15.4%.** Net 53 -> 52, verdict READY,
+no DEFECT and no WARNING. bad_idx 0, bad_optcount 0, unsourced 0, unlinked 0, drafts 1 -> 0.
+Spread 15/11/13/14 -> 14/13/12/13. **Bracketing 63.6% at an extreme — the best of any
+collection audited**, well above the healthy ~50%.
+
+  **THE LAST 0.0% COLLECTION, AND IT HAD NEVER HAD A SINGLE EXPIRING QUESTION.** With
+  `indiana-state` this closes every known hard-floor breach in the bank.
+
+  **A SECOND MISSING-TRUE-ANSWER DEFECT, ONE AUDIT AFTER THE FIRST.** `nor-015` asked where
+  Norwich City Council officially meets and answered "The Guildhall". The council is based at
+  **City Hall**; the Guildhall stopped being the seat of government on 29 October 1938. Wrong
+  for 88 years, and "City Hall" was not among the four options. Written up above as a class
+  to hunt rather than an anomaly.
+
+  **40% OF THE COLLECTION WAS SCRAPED WEBSITE FURNITURE:** 14 questions from
+  `cathedral.org.uk` (which now returns ZERO hits for "Shakespeare", "Art in the Close",
+  "Holy Week", "Lent", "St John Passion" and "Norman") and 13 from the BBC Norfolk
+  **rolling news index**, which had already rotated past every claim it was cited for while
+  still returning 200 and 397KB of text. Included a question whose answer sat in its own text
+  ("Shakespeare Festival" -> "William Shakespeare"), the cathedral's marketing copy as a
+  question, an exhibition that ended in Spring 2026, and a question about the site's
+  **3D virtual tour**.
+
+  THE COUNCIL FAMILY WAS PROTECTED, THE TEMPLATE WAS NOT. 7 questions answer "Norwich City
+  Council" and 7 "Norfolk County Council" — the Task-4 family ruling, and correct. But 14
+  shared one template with only two real bodies among four options. Four were recast as
+  resident scenarios ("report a pothole", "object to an extension", "noise from a business",
+  "a failed street light"), keeping every fact. Only the three genuine overlaps were archived:
+  `nor-080` (inverse of nor-009, and its options were four other questions' subjects),
+  `nor-087` (children's services subsumes nor-007) and `nor-090` (transport subsumes nor-002).
+
+  A RAW LEAKAGE SWEEP RETURNED 280+ HITS AND WAS UNREADABLE until the two protected answers
+  were filtered out, which left ~38. Of those, `nor-063`'s answer "Norwich City" is a PREFIX
+  of "Norwich City Council" and generated ~20 phantom pairs on its own; left alone
+  deliberately. Real fixes: `nor-063` printed both nor-035's and nor-044's answers,
+  `nor-035` printed nor-063's, and two of mine (`nor-129` printed nor-015's repaired answer,
+  `nor-126` printed nor-044's).
+
+  CITATIONS REBUILT: `cathedral.org.uk` 14 -> 0, `bbc.co.uk` 13 -> 0, `en.wikipedia.org`
+  1 -> 30. `norfolk.gov.uk` (8) is retained and 403s to every automated client — a documented
+  false positive for liveness, but it still cannot be read to confirm support.
+
+  `nor-044` ("which division does Norwich City CURRENTLY compete in") was correct but rotted
+  by construction and had no `expires_at`. Kept, dated to 2027-07-01, re-sourced.
+
+  Archived (21): nor-039, nor-041, nor-042, nor-046, nor-048, nor-052, nor-061, nor-062,
+    nor-066, nor-068, nor-069, nor-070, nor-075, nor-080, nor-087, nor-090, nor-097, nor-099,
+    nor-100, nor-101, plus DRAFT nor-003 (an exact duplicate of live nor-019).
+  Written (19): nor-120–nor-138 — 7 expiring (council control, Leader, both MPs, Chief
+    Executive, last election year, the club's head coach) and 12 durable (UNESCO City of
+    Literature 2012, the medieval churches record, Norwich Market, Julian of Norwich, The
+    Forum, Herbert de Losinga, the Broads Authority, the district-council tier, the 1938 move
+    from the Guildhall, first past the post, the 1974 reforms, and the cathedral cloisters).
+
+  **Easy fell 39.6% -> 32.7%** and that is a real cost, honestly reported: the archived
+  cathedral trivia was mostly easy, and the replacement civic content is mostly medium/hard.
+  Still clear of the 25% floor, but this collection is the closest to it of any audited, and
+  a future pass should add easy rather than more hard.
+
+  THE DRAFT MATTERED. `nor-003` was an exact duplicate of live `nor-019`, sitting in draft
+  ready to be activated. Second collection where reading drafts paid off. `indio-ca` still
+  holds 19 unread drafts.
