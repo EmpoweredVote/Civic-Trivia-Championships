@@ -7,10 +7,11 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **29 of 43 collections audited.** 800 archived across all sessions, 254 written.
+- **30 of 43 collections audited.** 835 archived across all sessions, 270 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
-  Session 8 audited **los-angeles-ca** (collection 3) — the largest archive proportionally
-  yet (48 of 73, 66%) and the first collection found carrying **another tier's content**.
+  Session 8 audited **los-angeles-ca** (collection 3), the largest archive proportionally
+  yet (48 of 73, 66%) and the first collection found carrying **another tier's content**,
+  then **california-state** (collection 5) to settle what should happen to that content.
 - **DB access — SUPERSEDED as of session 6. Use `psql`, not MCP.**
 
       set -a; . /c/EV-Accounts/backend/.env; set +a
@@ -229,9 +230,9 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,313 active questions** (re-measured after session 8; identical
-  under all three counting bases — all `status='active'`, those linked to any collection,
-  and those in *active* collections)
+- 43 active collections, **3,287 active questions** (re-measured after both session 8 audits;
+  identical under all three counting bases — all `status='active'`, those linked to any
+  collection, and those in *active* collections)
 
   The 3,471 figure this line carried before was stale, not wrong at the time: it was taken
   before sessions 7/7b's own archives were applied. 186 of the 234 questions archived on
@@ -251,13 +252,21 @@ clear the floor only on the labels they already had.
 ## Next collections, in priority order
 
 tucson-az, federal, fremont-ca, madison-wi, climate-change,
-bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
+bend-or, wisconsin, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
 
-**Take `california-state` earlier than its slot if convenient.** Session 8 archived 18 sound
-California questions out of los-angeles-ca on scope grounds (see the ledger entry); they are
-recoverable by `external_id` and several would be at home there. Audit it before deciding
-whether to revive any, so unaudited content is not dumped into it.
+**The los-angeles-ca question is CLOSED: revive none of the 18.** That was the open item on
+`california-state`, and auditing it answered the question rather than leaving it to judgement.
+11 of the 18 have an answer-for-answer counterpart in `california-state`, and **every one of
+those counterparts had already been archived there by an earlier pass** — except `cas-036`,
+which is live and which `lac-042` duplicated exactly. The remaining seven are the
+ballot-proposition set, which `california-state` already covers in eight surviving questions.
+So the LA questions were not misplaced-but-sound; they were copies of material this collection
+had already thrown out, kept alive only because nobody had read the city collection.
+
+Same root cause as the Climate Agreements finding: one source mined once per registered
+collection, then cleaned in only one of them. **When a scope archive turns up in future, check
+the destination for counterparts before assuming the questions are worth moving.**
 
 (louisiana — session 3; oregon-state — session 4; queens-ny — session 5. All below.)
 
@@ -425,6 +434,32 @@ question's *text and options* against another's answer. `la-105`'s explanation m
 county's 88 cities", which is `la-125`'s whole answer, and explanations are shown to the
 player after they answer. Caught by eye, not by the sweep. When you write a backfill, read
 the explanations against each other as well as the questions.
+
+**Run it as a query — and then use judgement on the result** (session 8, california-state).
+The explanation sweep is worth running:
+
+    WITH a AS (SELECT q.external_id, q.explanation ex, q.options->>q.correct_answer ans
+               FROM trivia.questions q JOIN trivia.collection_questions cq ON cq.question_id=q.id
+               WHERE cq.collection_id=<id> AND q.status='active')
+    SELECT x.external_id, y.external_id, y.ans FROM a x JOIN a y ON y.external_id<>x.external_id
+    WHERE length(y.ans)>14 AND x.ex ILIKE '%'||y.ans||'%';
+
+On `california-state` it returned 14 hits. **Seven were real and were fixed** — `cas-018`'s
+explanation enumerated all eight constitutional officers, handing over two freshly written
+answers outright; `cas-101`'s named the answer to `cas-066`; `cal-120`'s named the answer to
+`cal-090`. **Seven were the same false positive**: `cas-021`'s answer was "Secretary of State",
+a string that necessarily appears in any California elections explanation. That one was
+resolved by archiving `cas-021` as a near-duplicate of a better question, not by contorting
+seven explanations around it.
+
+The rule: an office or body name that the subject matter forces into every explanation is
+noise; a *specific* answer that a player could not otherwise deduce is the finding. Do not
+let the string matcher make the call.
+
+**And the same normalisation blind spot applies to the leakage check, not just the duplicate
+check.** `cal-138` and `cal-142` both name "the Supreme Court of California", which is
+`cal-087`'s answer written as "California Supreme Court". Word order alone defeated the
+`ILIKE`. Worth a normalised second pass when the collection is about one institution.
 
 ## Still open, not fixed
 
@@ -1768,3 +1803,83 @@ dominant defect was scope rather than quality.**
     statuses first (`la-` 98, `lac-` 123, with 80 archived `lac-` rows sitting in the range),
     the insert guarded on collision in any status, and both inserts returned as many ids as
     rows sent (26/26 and 4/4).
+
+### california-state — complete (session 8, 2026-09-28)
+82 -> 47 (35 archived) -> 62 (+16 written, 1 replaced in place). Easy 36.6% -> 38.7%.
+Expiring **1.2% -> 19.4%**. Readiness READY (net 59 against the 50 floor); bad_idx 0,
+bad_optcount 0, unlinked 0, no_source 0, duplicate answers 0, **text and explanation leakage
+both 0**, spread 15/17/16/14, numeric answers at an extreme 45.5%. All 52 distinct citations
+return 200. Worst citation concentration 20 -> 3.
+
+  AUDITED OUT OF ORDER, to close the open question left by los-angeles-ca. It answered it:
+  **revive none of the 18.** See the priority-list note above for the reasoning and the query.
+  ONE EXPIRING QUESTION IN EIGHTY-TWO, in a collection about a state government - and the
+    state was midway through electing every one of its eight constitutional officers.
+    `cal-093` asked "Who is the Governor of California **as of 2026-02-24**?" with the date
+    baked into the question text and **no `expires_at` at all**, for an officeholder who is
+    term-limited out in January 2027. Repaired in place: date removed, expiry set.
+  WEBSITE FURNITURE, two sites, eleven questions. `courts.ca.gov` supplied six questions that
+    are facts about a website's navigation rather than about California's courts -
+    "Collaborative Justice Courts", "Self-Help Guide", "Programs for Families & Children",
+    "Criminal Justice Programs", "Power of Democracy Civic Learning". Two of those also
+    restate the question in the answer (class 5). `sos.ca.gov` supplied five more: "VoteCal",
+    "Where's My Ballot?", "Safe At Home", "Office of Voting Systems Technology Assessment",
+    and the bill number behind the Voter's Choice Act. Kept `cas-029` (the Judicial Council)
+    and `cas-072` (what the Voter's Choice Act does), which are civics.
+  THE STUDENT-PROGRAMME CLUSTER, archived entire (5). Poll-worker GPA, High School Voter
+    Education Weeks, the Ballot Bowl, Student Voter Registration Week and the Student Mock
+    Election. **This is the same block that was archived out of los-angeles-ca the same day**,
+    and the LA copies were copies of these. The last survivor went too once it turned out the
+    Mock Election has no citable page on the SoS site.
+  DUPLICATE PAIRS, NINE, and the plain duplicate-answer check found ONE of them. Every other
+    pair differed by a word or two in the answer string:
+      cal-109 / cal-118  1849 constitution, married women's property rights - same fact, same
+                         answer, two spellings
+      cal-091 / cal-112  how judges first reach the bench
+      cal-097 / cas-009  bicameral legislature
+      cal-084 / cas-010  the 5% signature threshold
+      cal-088 / cas-053  recall - near-identical text, 0.884 similarity
+      cal-105 / cas-057  the initiative process
+      cas-026 / cas-060  cas-060's text printed "Chief Justice Patricia Guerrero", which is
+                         cas-026's whole answer
+      cas-047 / cas-097  cas-097's text printed cas-047's answer verbatim
+      cas-006 / cas-007  Senate and Assembly two-thirds thresholds, a mirrored pair whose
+                         "simple majority" distractors also leak both chamber sizes
+    Only `cas-004`/`cas-015` (both "4 years") surfaced in the string check. **The trigram
+    query is what found the rest** - run it, not just the equality check.
+  ONE ANSWER GIVING AWAY THREE QUESTIONS (class 4): `cas-012`'s answer, "Initiative,
+    referendum, and recall", contains the answers to `cal-105`, `cas-058` and `cal-088`.
+  FOUR QUESTIONS PRINTED ONE EASY ANSWER: `cal-095`, `cal-099` and `cal-119` all name "The
+    U.S. Constitution" in their own text, which is `cal-085`'s entire answer. Archived
+    `cal-085` rather than rewrite three questions around an unavoidable phrase.
+  MALFORMED, not merely weak (4): `cas-024` asked which officer oversees the DMV and answered
+    "Governor through appointed officials", which is not an officer; `cas-031` asked what
+    *type* of court system California has and answered "The largest in the nation", which is
+    not a type; `cas-022` answered "Approximately 200 departments", unverifiable as written;
+    `cal-100` asked what voting Yes on an initiative means and answered that it approves the
+    measure. `cal-125` was a fifth - "Which **branch** ... is the highest authority?" answered
+    "The People", which is not a branch - but the civic point is sound, so it was **repaired**
+    rather than archived, to ask where the constitution says political power rests.
+  NON-CIVIC STATE FACTS (2): California's share of U.S. GDP, and its number of national parks.
+    Both had live duplicates in los-angeles-ca, archived the same day.
+  VERIFIED BEFORE TRUSTING - everything the collection asserted about officeholders was
+    **correct**: Newsom, Kounalakis and Chief Justice Guerrero all confirmed current, and
+    `cas-018`'s count of eight constitutional officers is right. Nothing needed correcting.
+  ONE STALE FACT CAUGHT BEFORE IT WAS WRITTEN IN, again in the backfill rather than the bank:
+    the obvious Senate-leadership question names Mike McGuire. **Monique Limon succeeded him
+    as president pro tempore on 2025-11-17**, ten months ago. `cal-133` asks about the
+    succession.
+  BACKFILL (+16, nine expiring), sized against the net floor from the start this time. The
+    expiring nine deliberately vary their SHAPE as well as their subject, because a
+    "who is X?" roll-call is the defect this audit archived out of other collections: two ask
+    who holds an office, two ask which office a named person holds, one asks who advanced from
+    a primary, one asks what a nominee did before, one asks who succeeded whom and when.
+    Content: the Becerra-Hilton governor's race, Becerra's federal post, the
+    lieutenant-governor/treasurer job swap, the attorney general, the secretary of state, the
+    Assembly speaker, the Senate pro tem, the controller, and the open insurance seat.
+    Seven durable questions fill real gaps: the nonpartisan superintendent, how the top-two
+    primary works, the size and appointment-confirmation of the supreme court, the 1879
+    constitution, the two U.S. senators, and what the trial courts are called.
+  THE EXPLANATION-LEAK CHECK INVENTED IN THE los-angeles-ca AUDIT PAID FOR ITSELF HERE on its
+    first real run: 14 hits, seven real and fixed, seven a single systematic false positive.
+    Written up in full in the blind-spots section above, including how to tell them apart.
