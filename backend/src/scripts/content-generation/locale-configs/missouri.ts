@@ -87,6 +87,13 @@ export const missouriConfig: LocaleConfig = {
     { name: 'Vivek Malek', role: 'State Treasurer', termEnd: '2029-01-13T00:00:00Z' },
     { name: "Cindy O'Laughlin", role: 'Senate President Pro Tem', termEnd: '2027-01-12T00:00:00Z' },
     { name: 'Jon Patterson', role: 'House Speaker', termEnd: '2027-01-12T00:00:00Z' },
+    // Added 2026-09-28, both verified that day. Note the two DIFFERENT clocks:
+    // the State Auditor is the one statewide office Missouri fills in a midterm
+    // year, and the Chief Justice is chosen by the court from among its own
+    // judges on a rotating term. Neither belongs on the January-2029 date the
+    // rest of the executive roster shares — that is the phoenix-az lesson.
+    { name: 'Scott Fitzpatrick', role: 'State Auditor', termEnd: '2027-01-11T00:00:00Z' },
+    { name: 'W. Brent Powell', role: 'Chief Justice, Supreme Court of Missouri', termEnd: '2027-07-01T00:00:00Z' },
   ],
 
   sourceUrls: [
