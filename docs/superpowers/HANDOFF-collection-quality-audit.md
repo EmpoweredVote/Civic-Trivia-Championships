@@ -7,8 +7,12 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **35 of 43 collections audited.** 958 archived across all sessions, 350 written.
+- **36 of 43 collections audited.** 977 archived across all sessions, 357 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
+  Session 9 also audited **indiana-state** (collection 4) — taken out of list order because
+  it was breaching the 10% expiring floor. It carried **a live error that could cost
+  someone their vote**, and a citation problem of a new shape: a third of the collection
+  cites pages no automated check can read.
   Session 9 audited **climate-change** (collection 394) — structurally the cleanest
   collection yet and the one with the worst *citations*: two separate wrong-article
   defects, a source host no automated check can read, and explanations carrying figures
@@ -264,13 +268,17 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-bend-or, wisconsin, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
+bend-or, wisconsin, bloomington-in, milwaukee-wi, norwich-uk,
 war-in-iran, world-news.
 
-**Two of the eight breach a floor *today*, and neither is at the front of this list:**
-`indiana-state` is at **6.7% expiring** and `norwich-uk` at **0.0%**, both under the 10%
-hard floor. The list is ordered by easy% ascending, which does not see that. Worth taking
-them early rather than in list order.
+**`norwich-uk` is at 0.0% expiring — under the 10% hard floor, today.** It is the last
+known floor breach; `indiana-state` was the other and was cleared in session 9 (6.7% →
+16.7%). This list is ordered by easy% ascending, which cannot see a floor breach, so check
+`audit-collection-readiness.ts` before trusting the order.
+
+**Also outstanding: `indio-ca` holds 19 drafts that have never been read.** It was audited
+in session 1, long before the fremont-ca lesson that drafts exist and can be broken. Noticed
+in passing during the indiana-state pre-flight; not part of that audit.
 
 **The los-angeles-ca question is CLOSED: revive none of the 18.** That was the open item on
 `california-state`, and auditing it answered the question rather than leaving it to judgement.
@@ -783,6 +791,119 @@ measuring **how recently the pipeline last ran.**
 - The remedy applied here was **durable** backfill, not more news: 11 durable questions
   written, taking net from 50 to 59. Adding expiring content would have re-armed the same
   cliff a fortnight later.
+
+## A wrong answer whose right answer is not among the options (session 9, indiana-state)
+
+The worst single defect found in this workstream so far, because it is the kind a player acts
+on. `ins-049` asked:
+
+> What is the deadline for **requesting** an absentee ballot in Indiana?
+> 7 days before / **The day before the election by noon** / Two weeks before / 10 days before
+
+Ballotpedia, verbatim: *"A request to vote absentee must be received by the appropriate
+official by 11:59 p.m., **12 days before the election**"*, and separately *"In-person absentee
+voting begins 28 days before the election and **ends at noon on the day before Election Day**."*
+
+The question had **conflated two different deadlines**: the marked answer is the cutoff for
+*casting* an in-person absentee ballot, not for *requesting* a mail one. And the correct answer
+was **not among the four options at all** — the closest, "two weeks", is still wrong.
+
+**This is a distinct failure mode from anything recorded here.** Every rule in the playbook,
+and the duplicate/leakage/nested-options sweeps, ask questions *about the option set*. None can
+notice that the true answer is missing from it — only checking the claim against a source can.
+A voter trusting this would have missed the deadline by eleven days.
+
+Repaired rather than archived: the question is a good one. The old answer was kept as a
+distractor precisely because it is the correct answer to the neighbouring question.
+
+**Where to expect more of these: questions about deadlines, eligibility and thresholds, where
+two similar-sounding rules exist side by side.** Absentee request vs absentee casting,
+registration deadline vs registration-change deadline, filing deadline vs certification
+deadline. Check those against a source even when the option set looks clean.
+
+## Normalising punctuation is not enough — articles and suffixes defeat it too (session 9)
+
+The los-angeles-ca lesson added `lower(regexp_replace(ans,'[^a-z0-9]','','gi'))` to catch
+re-spelled duplicate answers. `indiana-state` shows two ways past it, and the collection
+reported only 3 duplicate-answer pairs while carrying more:
+
+- **A leading article.** `ind-106` answered "Indiana Supreme Court" and `ins-037` "**The**
+  Indiana Supreme Court" — `indianasupremecourt` vs `theindianasupremecourt`. Two easy
+  questions, effectively the same answer, invisible to the check. Same for `ins-007`
+  ("General Assembly") against `ins-056` ("**The Indiana** General Assembly").
+- **A qualifying suffix.** `ins-090` answered "Department of Natural Resources - Fish and
+  Wildlife Division" and `ins-095` "Department of Natural Resources". Different strings,
+  and a player who learns either has learned "DNR".
+
+Neither is fixed by more normalising — stripping articles would create false pairs elsewhere.
+**Read the duplicate-answer list as a floor, not a total**, and eyeball the answer column for
+shared stems when a collection is about one institution.
+
+## A collection can be cited almost entirely to pages nothing can read (session 9)
+
+`climate-change` had wrong citations. `indiana-state` has *vague* ones, and at scale:
+
+| host | questions | what it returns |
+|---|---|---|
+| `iga.in.gov` | 30 | **200 with 73 bytes** — a JS shell, no content |
+| `www.in.gov/` | 9 | **403** — bot-blocked, and it is the state homepage anyway |
+| (none) | 2 | no `source.url` at all |
+
+**41 of 90 questions rested on a citation that cannot be read** by curl, by `--judge`, or by a
+player who clicks expecting to find the claim. Nothing was wrong, exactly — the facts checked
+out where they could be verified elsewhere — but the citations support nothing.
+
+Note the difference from the unfccc.int case: that was one host behind a bot wall. This is a
+**collection-shaped** problem, where the generator cited a site's landing pages
+(`in.gov/courts/` ×14, `iga.in.gov/` ×13, `in.gov/` ×9) rather than a page making the claim.
+The pittsburgh-pa signal — group by `source->>'url'` first — catches it in one query, and the
+tell is a handful of URLs covering most of the collection.
+
+Backfill written here deliberately cites Wikipedia and Ballotpedia over `in.gov`, which is a
+trade of authority for verifiability. Worth revisiting if anyone finds readable deep links on
+the state site.
+
+## Clearing an expiring floor without building a second roll-call (session 9)
+
+`indiana-state` sat at **6.7% expiring, a hard-floor DEFECT**, and every one of its six
+expiring questions was the same template: *"Who is the current X of Indiana as of 2025?"* for
+six different officers. Two traps in that shape:
+
+1. **Thinning it makes the breach worse.** The repeated-shape rule says archive a roll-call;
+   the floor says do not shrink the expiring tier. washington-dc hit this too. Here the
+   one-question-per-**person** rule was already satisfied — six officers, one each — so
+   nothing needed archiving. Only the *templates* were wrong, and the fix was to vary them
+   and drop the "as of 2025" framing, which reads as stale the moment the year turns.
+2. **The obvious backfill is another roll-call.** The readiness script says so in its own
+   DEFECT text: *"Never reach the floor by repeating an officeholder or repeating a question
+   shape — if it takes duplicates to get there, the collection does not get there."*
+   The seven written here span seven offices across **five shapes**: office→person, a
+   person→prior-office question, a two-senator delegation question, a forward-looking election
+   year, and congressional apportionment. No person repeats from the existing six.
+
+Result: 6.7% → **16.7%**, inside the healthy band, with no repeated shape and no repeated
+person. **Prefer varying an officeholder block to archiving it whenever the collection is near
+the floor.**
+
+## Two mistakes I made in this collection, both caught by re-running the checks (session 9)
+
+Recorded because both are easy to repeat and neither was caught by reading.
+
+- **A forced-answer repair can install a worse forced answer.** `ind-111`'s answer
+  ("Lieutenant Governor") was printed by four questions, so the fact was moved into the text
+  and it was rewritten to ask which body the Lieutenant Governor presides over — answer "The
+  Indiana Senate". Which `ins-001`, `ins-002` and a question written minutes earlier all
+  print. **Strictly worse.** The third version asks *when* the Lieutenant Governor may vote
+  ("only to break a tie"), an answer nothing else in the collection can hand over.
+  **Re-run leakage after a leakage repair, not just after writing.**
+- **Hand-written SQL inserts anchor the answer to index 0.** The backfill put 5 of 7 answers
+  at A, and with archives falling on B and D the spread went 22/23/23/22 → **27/15/23/13**,
+  taking best-single-guess from 25.6% to 34.6% — worse than before the audit started.
+  This is exactly what `placeAnswer()` exists to prevent, and audits bypass it by writing SQL
+  directly. **Check the position spread after every insert batch**, and rebalance by rotating
+  option sets whose order carries no meaning (never ascending-numeric sets — rotating those
+  prints the numbers out of order; rotation preserves which value is largest, so bracketing
+  is unaffected). Restored to 21/19/18/20.
 
 ## Still open, not fixed
 
@@ -2543,3 +2664,59 @@ Distractor bracketing 15.2% -> 28.0% at an extreme (best guess 51.5% -> 40.0%).
     option offered, and by placing both numeric backfills at an extreme. `climc-0005` was
     deliberately left mid-bracket — its 180 ppm distractor is the glacial-minimum figure and
     teaches something. Getting to ~50% would need roughly eight more option sets rebuilt.
+
+### indiana-state — complete
+90 -> 71 (19 archived) -> 78 (+7). Easy 42.2% -> 43.6%. **Expiring 6.7% (DEFECT) -> 16.7%.**
+Net 90 -> 78, verdict READY, no DEFECT and no WARNING remaining.
+bad_idx 0, bad_optcount 0, unlinked 0, unsourced 1 -> 0, leakage **90 -> 5** (all forced/noise),
+spread 22/23/23/22 -> 21/19/18/20, bracketing 41.2% -> **44.4%** at an extreme.
+
+  **TAKEN OUT OF LIST ORDER** because it was one of two live 10%-expiring-floor breaches.
+  Chris's call. The other, `norwich-uk` (0.0%), is still open.
+
+  **THE FINDING THAT MATTERS: `ins-049` had a wrong answer whose correct answer was not
+  among its four options.** It asked the deadline to *request* an absentee ballot and
+  answered "the day before the election by noon" — the deadline for *casting* an in-person
+  absentee ballot. The real answer is 12 days before, which was not offered. Repaired, with
+  the old answer kept as a distractor because it is the right answer to a neighbouring
+  question. Full write-up above; no structural rule can find this class.
+
+  **A THIRD OF THE COLLECTION CITED PAGES NOTHING CAN READ.** `iga.in.gov` (30 questions)
+  returns 200 with 73 bytes of JS shell; `www.in.gov/` (9) returns 403; 2 had no source at
+  all. 41 of 90. Not wrong, just unsupported — the generator cited landing pages rather than
+  pages making the claim. New backfill cites Wikipedia/Ballotpedia instead, trading authority
+  for verifiability.
+
+  TOPICAL CONCENTRATION, WORST CLUSTER YET: **13 questions on the constitutional amendment
+  process**, of which THREE asked the identical "how many consecutive sessions" fact
+  (ind-086, ind-091, ins-011) and THREE the identical "citizens cannot propose" fact
+  (ind-100, ins-013, ins-056). Kept one per distinct fact: ins-011/012/013/058/067/072.
+
+  THE FORCED-ANSWER RULE FIRED THREE TIMES: `ins-007` ("General Assembly", printed by **25**
+  other questions) and `ins-025` ("Treasurer of State") were archived on the cas-021
+  precedent; `ind-111` ("Lieutenant Governor", printed by four) took the tucaz-010 remedy
+  because it taught something nothing else did — and the first attempt at that repair made it
+  worse, see above.
+
+  DUPLICATES THE NORMALISED CHECK MISSED: "Indiana Supreme Court" vs "**The** Indiana Supreme
+  Court" (ind-106/ins-037), and "Department of Natural Resources" vs the same plus a division
+  suffix (ins-090/ins-095). Leading articles and qualifying suffixes both defeat it.
+
+  MUTUALLY SUBSTITUTABLE PAIR: `ind-095` and `ind-103` both asked how Indiana funds K-12 and
+  gave different answers, each a plausible answer to the other. Kept ind-103.
+
+  OFFICEHOLDERS ALL VERIFIED CORRECT against two independent sources — Braun, Beckwith,
+  Morales, Rokita, Elliott, Nieshalla, with Holcomb and Crouch appearing nowhere. **Nothing
+  was a facts defect.** The problems were the "as of 2025" framing and six identical
+  templates, both fixed in place. Verifying before "correcting" again paid for itself.
+
+  Archived (19): ind-085, ind-086, ind-091, ind-095, ind-098, ind-100, ind-106, ind-113,
+    ins-007, ins-025, ins-044, ins-056, ins-063, ins-064, ins-069, ins-074, ins-090, ins-098,
+    ins-100.
+  Written (7): ins-112–ins-118 — Chief Justice, Senate President pro tempore, House Speaker,
+    the Governor's prior office, the two U.S. senators, congressional apportionment, and the
+    next gubernatorial election year. Seven offices, five shapes, no person repeated.
+
+  **`ind-` AND `ins-` BOTH BELONG TO THIS COLLECTION** (ins 107, ind 31) **and `ind-` also
+  matches `indio-ca`.** Every query here joined through `collection_questions`. The readiness
+  script now prints the prefix span itself, which is the cheapest guard against the collision.
