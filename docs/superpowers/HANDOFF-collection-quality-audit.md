@@ -7,7 +7,7 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **26 of 43 collections audited.** 655 archived across all sessions, 207 written.
+- **27 of 43 collections audited.** 690 archived across all sessions, 215 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 7 cleared the bank-wide `nested-options` blocker and then audited
   **pittsburgh-pa** (collection 24) with a **citation pass** added to the method.
@@ -243,7 +243,6 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-portland-or,
 washington-dc, los-angeles-ca, tucson-az, federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, california-state, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
@@ -294,7 +293,13 @@ war-in-iran, world-news.
 6. **Minutiae and bracket answers.** Precise figures, and answers like "80,000–99,999 words".
 7. **Figures that rot by construction.** "How many CONSECUTIVE years has X been ranked #1."
 8. **Inverse pairs**, including a whole generated block (`smo-4xx`) that inverted an existing one.
-9. **Compound answers** (added session 7, washington-state). An answer that bundles two facts:
+9. **Website furniture** (added session 7, portland-or). Facts scraped off the department page
+   that was used as the citation: a room number, opening hours, the colours in an office logo.
+   `por-139` asked the room number of the Auditor's office; `por-161` asked its opening hours;
+   three separate questions asked about its logo. These are facts about a web page, not about
+   civic life, and they are the tell-tale of a collection generated FROM a site's navigation
+   rather than about the city.
+10. **Compound answers** (added session 7, washington-state). An answer that bundles two facts:
    "4-year terms, no term limits", "A stratovolcano in the Cascade Volcanic Arc", "42 steps,
    commemorating Washington as the 42nd state". Distinct from class 4 — nothing is leaked,
    the answer is just two questions wearing one coat, and it cannot be marked partly right.
@@ -1486,3 +1491,37 @@ spread 20/22/19/17.
   NO BACKFILL. 78 questions clears the 50 floor, easy sits at 30.8% inside the 25-33% band,
     and expiring rose to 17.9% simply because the archived questions were historical. Adding
     content here would have been motion, not improvement.
+
+### portland-or — complete
+77 -> 42 (35 archived) -> 50 (+8). Easy 27.3% -> 44.0%. Expiring 18.2% -> 16.0%.
+bad_idx 0, bad_optcount 0, unlinked 0, duplicate answers -> 0, stale framing -> 0,
+spread 14/12/15/9.
+  **CITATION PASS — the worst practice seen so far, and NOT fully fixed. 70 of 77 questions
+  cited a homepage or a section index**: `portland.gov/` (39), `portland.gov/council` (16),
+  `portland.gov/auditor` (12), `portland.gov/parks` (3). These are navigation pages. Unlike
+  plano-tx, where one over-mined article genuinely contained every fact, a homepage cannot
+  support "when was Portland first called the City of Roses" or "where is City Hall".
+  **The archive removed most of them for other defects, but roughly twenty-five surviving
+  questions still carry a `portland.gov/` citation. Re-citing those to specific pages is
+  open work, not done here.** Only the eight `por-65x` questions and the new `por-66x` block
+  cite a page that actually contains the claim.
+  FOUR EXACT INVERSE PAIRS, all councilors: por-009/095 (Avalos <-> District 1),
+    por-017/096 (Ryan <-> District 2), por-022/097 (Morillo <-> District 3),
+    por-019/098 (Zimmerman <-> District 4). Eleven councilor-identity questions in total,
+    across two mirrored shapes, and the "alongside X and Y" phrasing of the second shape
+    leaked three more. Kept one (por-009), archived ten.
+  WEBSITE FURNITURE (new class #9): room number, opening hours, and three questions about
+    the Auditor's logo. por-018 and por-121 had the *same answer* word for word.
+  **DIFFICULTY LABELS WERE TRACKING OBSCURITY, NOT DIFFICULTY.** Hard fell from 29 to 5,
+    because 24 of the 35 archived questions were labelled hard — the councilor roll-call, the
+    logo trivia, the room number. Nothing that was genuinely demanding was removed. If a
+    collection looks hard-heavy, check whether it is difficult or merely obscure; the
+    remaining 5 hard questions are the honest count for this collection.
+  ALSO: por-311 leaked por-288's answer by printing "over 5,000 acres" in its own question
+    text — repaired in place rather than archived, since both questions are sound apart from
+    the leak. por-105 was an officeholder question with no expiry; it now has one.
+  BACKFILL (+8, three expiring): Multnomah County chair (Vega Pederson), police chief (Bob
+    Day), US representative for OR-3 (Dexter), plus PDX, the Timbers, Portland State, Pioneer
+    Courthouse Square and the Oregon Zoo — all cited to pages that contain the claim.
+  NOTE por-143 and por-288 were repaired earlier the same session by the nested-options pass;
+    both survive here.
