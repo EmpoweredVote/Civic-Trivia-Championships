@@ -51,17 +51,39 @@ export const planoTxConfig: LocaleConfig = {
       name: 'Community & Demographics',
       description: "Plano's demographic evolution — Asian American and South Asian community (largest Asian ethnic group: Asian Indian), Plano ISD civic role and academic reputation, demographic change as part of city's growth story. Represent the whole city.",
     },
+    {
+      slug: 'beyond-city-hall',
+      name: 'Beyond City Hall',
+      description: 'The governments that serve Plano but are not the city: Collin County (commissioners court, sheriff, county judge), Plano ISD and its elected board of trustees, and the state and federal offices that represent Plano (Texas House districts, Texas Senate, TX-3 in the U.S. House, the two U.S. senators). Added 2026-09-28 — county, school-district and state questions were previously filed under City Government, which is the label the player sees.',
+    },
+    {
+      slug: 'elections-voting',
+      name: 'Elections & Voting',
+      description: 'How a Plano resident actually votes: odd-year city elections, the 30-day Texas registration deadline, and the Collin County elections administrator who runs registration and conducts elections. Mechanics, not officeholders.',
+    },
   ],
 
   topicDistribution: {
-    'city-government': 30,
-    'civic-history': 25,
-    'growth-story': 20,
-    'economic-development': 15,
-    'community-identity': 10,
+    'city-government': 25,
+    'civic-history': 22,
+    'growth-story': 16,
+    'economic-development': 12,
+    'community-identity': 8,
+    'beyond-city-hall': 12,
+    'elections-voting': 5,
   },
 
+  // NOTE (2026-09-28 audit): every www.plano.gov URL below returns 200 with a
+  // large body and NO fetchable text — the site is a JavaScript app. Questions
+  // generated against them came back citing "the Plano, TX content guidelines"
+  // rather than a source, because there was nothing to quote. The readable
+  // sources are listed first; keep new governance questions on those.
   sourceUrls: [
+    'https://en.wikipedia.org/wiki/Plano_City_Council',
+    'https://library.municode.com/tx/plano/codes/code_of_ordinances?nodeId=PTIHORUCH_ART3THCO_S3.01NUSETE',
+    'https://www.collincountytx.gov/elections/voter-registration-information',
+    'https://www.collincountytx.gov/Government/Commissioners-Court',
+    'https://en.wikipedia.org/wiki/Oak_Point_Park_and_Nature_Preserve',
     'https://www.plano.gov/',
     'https://www.plano.gov/27/Government',
     'https://www.plano.gov/1345/Mayor-and-City-Council',
