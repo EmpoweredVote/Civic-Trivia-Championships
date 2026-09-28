@@ -9,7 +9,9 @@
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
 - **37 of 43 collections audited.** 998 archived across all sessions, 376 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
-  **Every known hard-floor breach in the bank is now cleared.**
+  **Every hard-floor breach among the UNAUDITED collections is cleared — but 11 ALREADY
+  AUDITED ones are still under it. See "The expiring floor was never applied retroactively"
+  below. An earlier draft of this line claimed the bank was clear; it is not.**
   Session 9 also audited **norwich-uk** (collection 16), which was the last one at 0.0%
   expiring and turned out to be 40% website furniture — and produced a SECOND question
   whose correct answer was not among its options.
@@ -274,10 +276,53 @@ clear the floor only on the labels they already had.
 
 bend-or, wisconsin, bloomington-in, milwaukee-wi, war-in-iran, world-news.
 
-**No known hard-floor breach remains.** `indiana-state` (6.7% → 16.7%) and `norwich-uk`
-(0.0% → 15.4%) were both cleared in session 9. This list is ordered by easy% ascending,
-which cannot see a floor breach at all, so run `audit-collection-readiness.ts --slug <x>`
-over the remaining six before trusting the order — that is how both breaches were found.
+**No breach remains among the collections still on this list.** `indiana-state` (6.7% →
+16.7%) and `norwich-uk` (0.0% → 15.4%) were both cleared in session 9. This list is ordered
+by easy% ascending, which cannot see a floor breach at all, so run
+`audit-collection-readiness.ts --slug <x>` over the remaining six before trusting the order —
+that is how both breaches were found.
+
+## The expiring floor was never applied retroactively (measured 2026-09-28)
+
+**This is the larger backlog, and it was missed because the queue only ever looked at
+unaudited collections.** Chris's 10% hard floor was ruled on 2026-09-27. Sessions 1 and 2
+audited eleven collections *before that date*, against no floor at all — and every one of them
+is still under it today:
+
+| collection | active | expiring % |
+|---|---|---|
+| cambridge-ma | 86 | **1.2%** |
+| indio-ca | 68 | **2.9%** |
+| st-louis-mo | 59 | **5.1%** |
+| west-monroe-la | 57 | **5.3%** |
+| phoenix-az | 56 | **5.4%** |
+| texas-state | 54 | **5.6%** |
+| alexandria-la | 66 | **6.1%** |
+| new-york-state | 90 | **6.7%** |
+| biloxi-ms | 118 | **8.5%** |
+| santa-monica-ca | 61 | **9.8%** |
+| missouri | 71 | **9.9%** |
+
+Eleven collections against the two that session 9 chased. **"Audited" does not mean "meets the
+current rules"** — it means "met the rules as they stood that day", and the rules have moved
+three times (the easy floor, the expiring floor, the officeholder-coverage check). None of the
+three was ever swept back over completed work.
+
+The fix is cheap to scope and needs no re-audit: each one needs expiring questions added
+across varied offices and shapes, which is the `norwich-uk` backfill pattern. `cambridge-ma`
+at 1.2% over 86 questions is the worst and the largest.
+
+**One query re-derives this list at any time** — run it before trusting any "we are clear"
+claim, including this document's:
+
+    SELECT c.slug, count(*) AS active,
+           round(100.0*count(*) FILTER (WHERE q.expires_at IS NOT NULL)/count(*),1) AS exp_pct
+    FROM trivia.collections c
+    JOIN trivia.collection_questions cq ON cq.collection_id=c.id
+    JOIN trivia.questions q ON q.id=cq.question_id AND q.status='active'
+    WHERE c.is_active GROUP BY c.slug
+    HAVING round(100.0*count(*) FILTER (WHERE q.expires_at IS NOT NULL)/count(*),1) < 10.0
+    ORDER BY 3;
 
 **`war-in-iran` (32) and `world-news` (47) are still under the 50-question floor**, which
 is a yield problem rather than a quality one and needs a different fix from an audit.
