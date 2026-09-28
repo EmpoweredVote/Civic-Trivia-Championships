@@ -7,7 +7,7 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **32 of 43 collections audited.** 893 archived across all sessions, 314 written.
+- **32 of 43 collections audited.** 893 archived across all sessions, 323 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 8 audited **los-angeles-ca** (collection 3), the largest archive proportionally
   yet (48 of 73, 66%) and the first collection found carrying **another tier's content**;
@@ -234,7 +234,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,274 active questions** (re-measured after all four session 8 audits;
+- 43 active collections, **3283 active questions** (re-measured after all four session 8 audits;
   identical under all three counting bases — all `status='active'`, those linked to any
   collection, and those in *active* collections)
 
@@ -2084,8 +2084,8 @@ All 24 distinct citations return 200 **and none redirects**.
   THE ANACHRONISM RULE CAUGHT A QUESTION THIS SESSION WROTE, correctly. Also written up above.
 
 ### federal — complete (session 8, 2026-09-28)
-113 -> 94 (19 archived) -> 126 (+32 written, 12 repaired in place). Easy 31.0% -> **39.7%**.
-Expiring **0.0% -> 11.1%**. Readiness READY (net 126 - nothing expires inside 90 days);
+113 -> 94 (19 archived) -> 135 (+41 written, 12 repaired in place). Easy 31.0% -> **37.0%**.
+Expiring **0.0% -> 17.0%**. Readiness READY (net 126 - nothing expires inside 90 days);
 bad_idx 0, bad_optcount 0, unlinked 0, no_source 0, duplicate answers 0, identical option
 pools 0, spread 30/33/30/33, numeric answers at an extreme 45.2%. All 53 distinct citations
 return 200 **and none redirects**.
@@ -2119,12 +2119,17 @@ return 200 **and none redirects**.
     president, no Speaker, no chief justice, no party control, no election dates.
     Fourteen written, verified against live sources rather than recalled - this was the
     highest-stakes verification of the session and every name was checked.
-  THE EXPIRING RATIO LANDED AT 11.1%, and that is the honest number rather than a shortfall
-    to pad. The readiness script itself prints a NOTE rather than a warning: above the 10%
-    floor, below the 15-30% target, "acceptable; worth a line in the collection's notes."
-    **A federal civics collection is inherently durable** - the Constitution does not expire -
-    and reaching 15% would have meant ~19 officeholder questions, which is the roll-call
-    defect this audit archives out of other collections. Documented rather than gamed.
+  THE EXPIRING RATIO FIRST LANDED AT 11.1%, and I left it there, reasoning that a federal
+    civics collection is inherently durable and that reaching 15% risked a roll-call.
+    **Chris overruled that, and was right:** the collection predates the expiring convention
+    entirely, so a low ratio here reflects when it was built, not what it is about. Nine more
+    were added to reach **17.0%**, and the roll-call worry turned out to be avoidable - four
+    Cabinet posts, a congressional leader, the Fed chair and two questions about the Court's
+    makeup, across five question shapes. **The lesson is about where a low ratio comes from:
+    a collection built before a rule existed will not meet it by accident, and "inherently
+    durable subject" is a weaker reason than it sounds.** Adding the nine surfaced three
+    officeholder changes from 2026 alone (see below), which is the answer to whether federal
+    content really is durable.
   FOUR CITATIONS WERE DEAD BEHIND A 200. `senate.gov` now redirects four of its own
     `/about/` paths to `senate.gov/pagelayout/general/one_item_and_teasers/file_not_found.htm`
     - its in-house 404 page, served with a 200. A status-code sweep calls all four healthy;
@@ -2141,11 +2146,19 @@ return 200 **and none redirects**.
     for the *principle* - civilian control of the military - which is a better question.
     **This is the highest false-positive rate the check has produced, and the cause is
     predictable: the more generic a collection's subject, the noisier the sweep.**
-  BACKFILL (+32). Fourteen expiring: president, vice president, the House's presiding officer,
-    Senate majority and minority leaders, the House Democratic leader, the president pro
+  THREE CABINET-LEVEL CHANGES INSIDE 2026, all of which a session working from memory would
+    have got wrong: the **attorney general** changed in August (Bondi -> Blanche), **Homeland
+    Security** changed during the year (Noem -> Mullin), and the **Federal Reserve chair**
+    changed in May (Powell -> Warsh). Three stale facts avoided in one batch of nine
+    questions. Federal officeholders turn over faster than the subject matter suggests.
+  BACKFILL (+41). Fourteen expiring in the first pass: president, vice president, the House's
+    presiding officer, Senate majority and minority leaders, the House Democratic leader, the president pro
     tempore, the chief justice, the newest justice, party control of Congress, the 2026
     midterm date, how many Senate seats are contested, the next presidential election, and
-    which numbered Congress is sitting. Eighteen durable ones fill the foundational gaps the
+    which numbered Congress is sitting - then nine more at Chris's direction: the secretaries
+    of state, treasury, justice and homeland security, the House majority leader, the Fed
+    chair, which chamber puts every seat on the 2026 ballot, how many women sit on the Court,
+    and which justice has served longest. Eighteen durable ones fill the foundational gaps the
     collection simply never had: the Cabinet and how many executive departments there are,
     civilian control of the military, naturalisation, what happens to a bill after both
     chambers pass it, the two major parties, the first president, the Declaration and its
