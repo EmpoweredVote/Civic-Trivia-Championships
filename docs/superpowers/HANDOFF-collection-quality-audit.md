@@ -7,11 +7,13 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **30 of 43 collections audited.** 835 archived across all sessions, 270 written.
+- **31 of 43 collections audited.** 874 archived across all sessions, 282 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 8 audited **los-angeles-ca** (collection 3), the largest archive proportionally
-  yet (48 of 73, 66%) and the first collection found carrying **another tier's content**,
-  then **california-state** (collection 5) to settle what should happen to that content.
+  yet (48 of 73, 66%) and the first collection found carrying **another tier's content**;
+  **california-state** (collection 5), to settle what should happen to that content; and
+  **tucson-az** (collection 256), where the readiness gate turned out to have a third
+  check nobody had recorded — **officeholder coverage** (see below).
 - **DB access — SUPERSEDED as of session 6. Use `psql`, not MCP.**
 
       set -a; . /c/EV-Accounts/backend/.env; set +a
@@ -230,7 +232,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,287 active questions** (re-measured after both session 8 audits;
+- 43 active collections, **3,261 active questions** (re-measured after all three session 8 audits;
   identical under all three counting bases — all `status='active'`, those linked to any
   collection, and those in *active* collections)
 
@@ -251,7 +253,7 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-tucson-az, federal, fremont-ca, madison-wi, climate-change,
+federal, fremont-ca, madison-wi, climate-change,
 bend-or, wisconsin, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
 
@@ -370,6 +372,51 @@ collection that landed on exactly 50 may not have passed.
   POSITIONS does not fix bracketing and masks it** — they are two different checks and the
   script prints both.
 
+## The readiness gate's THIRD check: officeholder coverage (session 8, tucson-az)
+
+Not in any earlier ledger entry, and it fires only on collections whose locale config defines
+officeholders — which is why four collections were audited before anything saw it.
+
+    Officeholder Coverage:
+      [WARNING] Ward 2 Council Member — Paul Cunningham: 0 question(s)
+
+**It contradicts the repeated-shape rule head-on, and the resolution is not to pick a side.**
+tucson-az had four near-identical "X represents which ward?" questions. Archiving three of them
+as a repeated-shape roll-call — the pittsburgh-pa remedy — left three sitting council members
+with no coverage at all, and the gate said so.
+
+The two rules are not actually in conflict once you read them precisely, and this is the case
+that proves it: **one-question-per-officeholder counts PEOPLE; repeated-shape counts
+TEMPLATES.** The fix is to keep one question per person and put them on *different* templates:
+
+- `tucaz-011` person → ward (Santa Cruz → Ward 1)
+- `tucaz-012` ward → person, the reverse (Ward 2 → Cunningham)
+- `tucaz-014` election outcome → person (who won a second term in 2025 → Dahl)
+- `tucaz-089` person → ward again, a second instance of the first shape
+- `tucaz-016` two new members → two wards
+
+Six members, eight officeholders, one question each, three distinct shapes, and the gate
+returns `All 8 officeholders have question coverage`. **Archiving a roll-call is right;
+archiving the people is not.** Re-run the readiness script after any officeholder archive —
+the warning is advisory and does not change the READY verdict, so it is easy to miss.
+
+## The anachronism rule punishes mixed tense, and it is right to (session 8)
+
+`audit-anachronism.ts` flagged a question this session had just written — the only bank-wide
+flag besides the long-standing `war-in-iran` one. It was not a false positive.
+
+The rule exempts forward-looking questions (Gate 2) **only when no past-tense marker sits
+beside the future one**, and its own comments explain why: "What year was the deadline set,
+before it will take effect?" is a past-tense question that happens to contain "will".
+
+The question written here was *"Tucson's mayor **was last elected** in 2023. In which year is
+the city's **next** mayoral election?"* — both markers, so no exemption, so its future-year
+options were flagged. Compare `pitpa-099`, which passes: *"In what year **is** Pittsburgh's
+next mayoral election **scheduled**?"*
+
+**House style for a next-election question: keep it purely forward-looking and put the
+history in the explanation.** Every collection wants one of these, so this will recur.
+
 ## Four ways a citation can be live and still be worthless (session 8)
 
 The link sweep answers one question — did the server return 200 — and the three documented
@@ -460,6 +507,42 @@ let the string matcher make the call.
 check.** `cal-138` and `cal-142` both name "the Supreme Court of California", which is
 `cal-087`'s answer written as "California Supreme Court". Word order alone defeated the
 `ILIKE`. Worth a normalised second pass when the collection is about one institution.
+
+**The query, improved (session 8, tucson-az).** Two changes, both of which earned their keep:
+drop the length threshold to 8, and match on word boundaries by blanking punctuation on both
+sides. A raw `ILIKE` at a low threshold produces junk — "A Mountain" matched
+"Catalin*a Mountain*s" — and the 14-character threshold had been hiding real leaks behind
+short answers like "A Mountain", "Pima County" and "6".
+
+    WITH a AS (
+      SELECT q.external_id,
+             ' '||regexp_replace(q.text,'[^[:alnum:]]',' ','g')||' ' t,
+             ' '||regexp_replace(coalesce(q.explanation,''),'[^[:alnum:]]',' ','g')||' ' e,
+             q.options->>q.correct_answer ans,
+             ' '||regexp_replace(q.options->>q.correct_answer,'[^[:alnum:]]',' ','g')||' ' k
+      FROM trivia.questions q
+      JOIN trivia.collection_questions cq ON cq.question_id=q.id
+      WHERE cq.collection_id=<id> AND q.status='active')
+    SELECT 'TEXT '||x.external_id||' -> '||y.external_id, y.ans
+      FROM a x JOIN a y ON y.external_id<>x.external_id
+      WHERE length(y.ans)>8 AND x.t ILIKE '%'||y.k||'%'
+    UNION ALL
+    SELECT 'EXPL '||x.external_id||' -> '||y.external_id, y.ans
+      FROM a x JOIN a y ON y.external_id<>x.external_id
+      WHERE length(y.ans)>8 AND x.e ILIKE '%'||y.k||'%';
+
+On tucson-az this went from 11 hits to 0 across three rounds, and it caught two leaks that
+the session had itself introduced while fixing others. **Re-run it after every rewrite** —
+fixing one explanation by moving a fact into another is the easiest mistake here, and it was
+made twice.
+
+**When the same answer is handed over by many questions, the answer to fix is the one
+question, not the many.** Three times now: `cal-085` ("The U.S. Constitution", printed by
+three), `cas-021` ("Secretary of State", printed by seven), `tucaz-010` ("Pima County",
+printed by six). Archiving was right for the first two. For the third it was not, because the
+question also taught a fact nothing else did — so instead the county-seat fact moved into the
+**question text** and the question now asks something not given away (which Arizona county is
+larger). That is the better move whenever the leaked question carries content worth keeping.
 
 ## Still open, not fixed
 
@@ -1883,3 +1966,80 @@ return 200. Worst citation concentration 20 -> 3.
   THE EXPLANATION-LEAK CHECK INVENTED IN THE los-angeles-ca AUDIT PAID FOR ITSELF HERE on its
     first real run: 14 hits, seven real and fixed, seven a single systematic false positive.
     Written up in full in the blind-spots section above, including how to tell them apart.
+
+### tucson-az — complete (session 8, 2026-09-28)
+95 -> 56 (39 archived, after 3 were restored) -> 69 (+12 written, 5 repaired in place).
+Easy 30.5% -> 30.4%. Expiring **8.4% -> 20.3%**. Readiness READY (net 69 - nothing expires
+inside 90 days); bad_idx 0, bad_optcount 0, unlinked 0, no_source 0, duplicate answers 0,
+**text and explanation leakage 0 at an 8-character word-boundary threshold**, spread
+19/17/16/17, numeric answers at an extreme 66.7%, **all 8 officeholders covered exactly once**.
+All 24 distinct citations return 200 **and none redirects**.
+
+  THE DOMINANT DEFECT WAS PRECISE-FIGURE MINUTIAE - 23 of the 39 archives. Not wrong, just
+    not civics: the elevation in feet, the distance to Phoenix, the exact date the letter "A"
+    was first painted on a hill, the streetcar's length and stop count and capital cost, the
+    Boneyard's acreage and its annual spare-parts revenue, the gem show's exhibit square
+    footage, the number of cyclists in a charity ride. A city collection can carry two or
+    three of these; this one was built out of them.
+  A LIVE QUESTION SCORED THE TRUE OPTION WRONG. `tucaz-093` asked Tucson's area and answered
+    "About 194 square miles". Its own cited article gives 241.33 total / 241.01 land - and
+    **"About 240 square miles" was offered as a wrong option**. Same shape as washington-dc's
+    `wdc-414`, arrived at from a different direction: not two true options, but the true
+    option marked false.
+  TWO MORE FIGURES INVENTED BY THE GENERATOR, both caught by reading the citation:
+    `tucaz-092` gave a population "as of 2024" of about 554,000; the article has 542,629
+    (2020 census) and 548,371 (2025 estimate), and no 2024 figure at all. `tucaz-028` put the
+    elevation at 2,410 feet against the article's 2,388. Neither number nor year was in the
+    source. Repaired and archived respectively.
+  A DEFUNCT COMPANY NAME, THREE YEARS STALE. `tucaz-077` and `tucaz-078` both answered
+    "Raytheon Missiles & Defense". That business unit **ceased to exist in July 2023**, folded
+    into RTX's Raytheon segment when Raytheon Technologies renamed itself RTX. They were also
+    duplicate answers. One repaired to "Raytheon", one archived.
+  AND ITS CITATION HAD MOVED. `suncorridorinc.com` now redirects to `thechambersoaz.com` -
+    Sun Corridor Inc. rebranded. **The new page lists company names and no employee counts at
+    all**, so `tucaz-077`'s "approximately 13,000 employees" and `tucaz-088`'s "approximately
+    1,800" were never supported by it. Both figures removed. Third instance this session of
+    the moved-site hazard, after `ocp.lacounty.gov` and `suncorridorinc.com` itself.
+  AN UNSUPPORTED "ONLY" CLAIM. `tucaz-047` said Saguaro National Park "is the only park that
+    wraps around a major city". The NPS page says it protects saguaros "to the east and west
+    of the modern city of Tucson" - it **flanks** Tucson in two districts and does not wrap
+    around it, and the page makes no uniqueness claim. Archived, and `tucaz-107` now asks the
+    accurate version.
+  CONCENTRATION: 12 of 95 questions on Mission San Xavier del Bac alone (trimmed to 6), 7 on
+    the University of Arizona, 6 on Saguaro, 5 on the Boneyard, 4 on one charity bike ride.
+  DEGENERATE (2): `tucaz-046` asked which city the University of Arizona's colleges are in and
+    answered **Tucson**, inside the Tucson collection - the `pitpa-078` defect exactly.
+    `tucaz-084` asked which sector a **Medical Center** employs in and answered "Healthcare".
+  MUTUAL LEAKAGE, the textbook pair: `tucaz-063` asks which **Jesuit** missionary founded San
+    Xavier (answer: Kino) while `tucaz-076` asks which order **Kino** belonged to (answer:
+    Jesuits). Each question prints the other's answer.
+  ELEVEN MORE LEAKS, ALL IN THE EXPLANATIONS, and the sweep only found them after the
+    threshold dropped to 8 characters with word boundaries. Three questions handed over
+    "Council-manager system"; two handed over "Odd-numbered years"; `tucaz-017` and
+    `tucaz-025` printed each other's answers; `tucaz-081` enumerated the five ranges and so
+    gave away `tucaz-082`. Two of the eleven were introduced **by this session**, while
+    fixing others - see the improved query above.
+  VERIFIED BEFORE TRUSTING, and this collection is the sharpest case yet: **every officeholder
+    claim was correct, and the source I would naturally have checked against was the one that
+    was wrong.** Wikipedia's Tucson infobox still lists Rocque Perez in Ward 5 and Karin
+    Uhlich in Ward 6. The actual members, seated in December 2025, are Selina Barajas and
+    Miranda Schubert - which is what the collection said. Two independent local outlets
+    confirmed it. **Trusting the encyclopedia over the collection would have turned two
+    correct questions into wrong ones.** The plano-tx lesson, in a new form: the convenient
+    source is not automatically the current one.
+  TWO STALE FACTS CAUGHT BEFORE THEY WERE WRITTEN IN: Tucson's police chief is no longer Chad
+    Kasmar (Monica Prieto took over 13 February 2026, after Kasmar retired to a Pima County
+    post), and Arizona's 7th district is no longer Raul Grijalva's - he died in office in
+    March 2025 and his daughter Adelita won the September 2025 special election.
+  BACKFILL (+12, seven expiring), aimed at the offices a city collection should cover and did
+    not: police chief, U.S. representative, county sheriff, county administrator, the
+    annually-rotating county board chair, the school superintendent, and the next mayoral
+    election. Five durable additions fill real gaps - Tucson as the first UNESCO City of
+    Gastronomy in the United States (2015), where its drinking water actually comes from
+    (recharged Colorado River water via the Central Arizona Project), what Sun Link is, where
+    Saguaro's two districts sit, and where the territorial capital went after Tucson.
+  THE OFFICEHOLDER-COVERAGE GATE CHANGED THE ARCHIVE. Three ward questions were archived as a
+    repeated-shape roll-call and then **restored on different templates** when the readiness
+    script objected. Written up in its own section above; it is the first real conflict
+    between two of this audit's own rules, and it resolves cleanly.
+  THE ANACHRONISM RULE CAUGHT A QUESTION THIS SESSION WROTE, correctly. Also written up above.
