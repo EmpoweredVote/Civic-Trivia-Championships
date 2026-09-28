@@ -11,22 +11,22 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,282** |
+| Active questions | **3,286** |
 | **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
-| Under the 10% expiring floor | **7**, all *already audited* (see the retroactive-floor section) |
+| Under the 10% expiring floor | **6**, all *already audited* (see the retroactive-floor section) |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
-| **Under 11% HARD** (new, session 10) | `missouri` **8.5%**, `queens-ny` 10.1%, `world-news` 10.6% |
+| **Under 11% HARD** (new, session 10) | `queens-ny` **10.1%**, `world-news` 10.6% |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
 
-1. **`missouri` should be next.** It is the only collection left that breaches BOTH — 9.9%
-   expiring and **8.5% hard**, now the thinnest hard tier in the bank. One re-visit fixes both,
-   which is how `phoenix-az` was chosen.
-2. **Seven already-audited collections breach the 10% expiring floor**: `west-monroe-la` 5.3%,
+1. **`texas-state` should be next.** It breaches the expiring floor at 5.6%, is the thinnest
+   of the six at 54 questions, and sits at 13.0% hard — so one re-visit addresses all three.
+   That is the reasoning that picked `phoenix-az` and `missouri`.
+2. **Six already-audited collections breach the 10% expiring floor**: `west-monroe-la` 5.3%,
    `texas-state` 5.6%, `alexandria-la` 6.1%, `new-york-state` 6.7%, `biloxi-ms` 8.5%,
-   `santa-monica-ca` 9.8%, `missouri` 9.9%. These are **re-visits, not re-audits** — the
-   cheaper job described under "A re-visit is a different job from an audit".
+   `santa-monica-ca` 9.8%. These are **re-visits, not re-audits** — the cheaper job described
+   under "A re-visit is a different job from an audit".
 3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
    `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
    which is a pipeline-yield problem an audit cannot fix.
@@ -35,15 +35,20 @@ wrong when checked, including one that was written and corrected the same day.
    urgent — but they are where the next `plano-tx` comes from, so re-derive rather than
    waiting for one to cross.
 
-**`plano-tx`, `st-louis-mo` and `phoenix-az` are DONE** (session 10). plano-tx 50 → 59, the
-only collection with zero floor headroom; st-louis-mo 5.1% → 15.2%; phoenix-az 5.4% → 16.7%
-expiring and 3.6% → 19.7% hard. In all three, the number that put the collection on the queue
-was the least interesting thing wrong with it — phoenix-az was carrying a **wrong fact in
-production**. See the entries, and the ten new sections they produced.
+**`plano-tx`, `st-louis-mo`, `phoenix-az` and `missouri` are DONE** (session 10). plano-tx
+50 → 59, the only collection with zero floor headroom; st-louis-mo 5.1% → 15.2%; phoenix-az
+5.4% → 16.7% expiring and 3.6% → 19.7% hard; missouri 9.9% → 16.0% and 8.5% → 21.3% hard. In
+all four, the number that put the collection on the queue was the least interesting thing wrong
+with it — phoenix-az was carrying a **wrong fact in production**. See the entries, and the
+thirteen new sections they produced.
 
-**What session 10 did:** the `plano-tx` content pass plus the `st-louis-mo` and `phoenix-az`
-re-visits. Across the three: **7 archived, 33 written, ~80 repaired, two new topics, and
-leakage 71 hits → 2.** It found that a hand-written SQL backfill inherits the collection's
+**One thing needs your ruling, not a fix:** which tier owns "who are your U.S. senators". Two
+city collections now carry it while their state collections do not — see the section at the
+end.
+
+**What session 10 did:** the `plano-tx` content pass plus the `st-louis-mo`, `phoenix-az` and
+`missouri` re-visits. Across the four: **10 archived, 40 written, ~115 repaired, two new topics, and
+leakage 107 hits → 2.** It found that a hand-written SQL backfill inherits the collection's
 first topic label; that every `www.plano.gov` citation is a JavaScript app carrying none of
 the facts cited to it; that the officeholder check prints *nothing at all* when a config
 defines no officeholders, which reads exactly like a pass; that the session 1–2 archiving
@@ -301,7 +306,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,282 active questions** (re-measured session 10, after the
+- 43 active collections, **3,286 active questions** (re-measured session 10, after the
   `plano-tx` pass; counted as questions with `status='active'` linked to an *active*
   collection). The 3,273 this line carried was session 8's figure.
 
@@ -311,7 +316,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
   washington-state 25, biloxi-ms 1); the other 48 are session 8's. **Re-measure this number,
   never derive it from the previous value** — nightly yield and automatic expiry both move it.
 - **0 `nested-options` violations bank-wide, at either severity** — re-confirmed session 10
-  (3,282 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
+  (3,286 scanned). Note the rule's blind spot to spelled-out numerals, written up below:
   a clean report is not the same as a clean bank.
 - **0 collections below the 25% easy floor** — spec success criterion 2 is met
 - 0 invalid answer indices, 0 questions with other than four options, 0 unlinked
@@ -350,15 +355,15 @@ is still under it today:
 | ~~indio-ca~~ | ~~68~~ | ~~2.9%~~ **CLEARED session 9 → 17.3%** |
 | ~~st-louis-mo~~ | ~~59~~ | ~~5.1%~~ **CLEARED session 10 → 15.2%** |
 | ~~phoenix-az~~ | ~~56~~ | ~~5.4%~~ **CLEARED session 10 → 16.7%** |
+| ~~missouri~~ | ~~71~~ | ~~9.9%~~ **CLEARED session 10 → 16.0%** |
 | west-monroe-la | 57 | **5.3%** |
 | texas-state | 54 | **5.6%** |
 | alexandria-la | 66 | **6.1%** |
 | new-york-state | 90 | **6.7%** |
 | biloxi-ms | 118 | **8.5%** |
 | santa-monica-ca | 61 | **9.8%** |
-| missouri | 71 | **9.9%** |
 
-**`cambridge-ma` and `indio-ca` were cleared in session 9; `st-louis-mo` (5.1% → 15.2%) and `phoenix-az` (5.4% → 16.7%) in session 10; seven remain — re-derived from the database, not counted off this table.** Its entry is below,
+**`cambridge-ma` and `indio-ca` were cleared in session 9; `st-louis-mo`, `phoenix-az` and `missouri` in session 10; six remain — re-derived from the database, not counted off this table.** Its entry is below,
 and it is the model for the rest: a re-visit is cheaper than an audit, because the structural
 work was already done — what is missing is expiring content and the defect classes that did
 not exist yet.
@@ -3483,7 +3488,8 @@ Measured across all 43 active collections, thinnest first:
 |---|---|---|---|
 | ~~`phoenix-az`~~ | ~~56~~ | ~~**2**~~ | ~~3.6%~~ **CLEARED session 10 → 19.7%** |
 | ~~`st-louis-mo`~~ | ~~59~~ | ~~5~~ | ~~8.5%~~ **CLEARED session 10 → 16.7%** |
-| `missouri` | 71 | 6 | **8.5%** — now the thinnest |
+| ~~`missouri`~~ | ~~71~~ | ~~6~~ | ~~8.5%~~ **CLEARED session 10 → 21.3%** |
+| `queens-ny` | 99 | 10 | **10.1%** — now the thinnest |
 | `queens-ny` | 99 | 10 | 10.1% |
 | `world-news` | 47 | 5 | 10.6% |
 | `portland-or` | 55 | 7 | 12.7% |
@@ -3660,3 +3666,125 @@ The stagger was already recorded — in the locale config's own `termEnd` fields
 read minutes earlier for a different purpose. **Before writing a block of officeholder
 questions, read the `termEnd` column of the roster and copy it; do not pick one date for the
 block.** Same for any council elected in halves, which is most of them.
+
+### missouri — RE-VISIT complete (session 10)
+
+71 -> 75 (3 archived, 7 written, ~35 repaired). **Expiring 9.9% -> 16.0%.**
+**Hard tier 8.5% -> 21.3%** — it was the thinnest left after phoenix-az and st-louis-mo.
+Easy 33.8% -> 32.0%. **Leakage 36 hits -> 2** (one forced pair, below).
+Position 20/17/17/17 -> **19/19/19/18** (best single guess 28.2% -> 25.3%).
+Bracketing 5/5/3/4, best single guess 29.4% — **the mathematical floor for 17 magnitude
+questions**, so it cannot be improved further. Officeholder coverage 7 of 7 -> **9 of 9**.
+bad_optcount 0, unsourced 0, drafts 0, nested-options 0.
+
+  **36 LEAKAGE HITS, THE MOST OF ANY COLLECTION THIS SESSION — and the boilerplate strip
+  fixed a third of them by itself.** Five of the six questions handing over `misso-029`
+  ("Missouri General Assembly") did it through the phrase *"According to the Wikipedia article
+  on the Missouri General Assembly, "*. Same for the three handing over `misso-009` ("Dred
+  Scott v. Sandford"). **The attribution was not merely noise here; it was the leak.** Worth
+  running the strip BEFORE reading the sweep on any collection where every explanation carries
+  one — the residue is the real work.
+
+  **THE STRIP NEEDED TWO STEPS AGAIN, and the prefix survey lied about why.** Two explanations
+  cite *"the Wikipedia article on Jefferson City, Missouri, "* — an internal comma, the phoenix
+  trap. But the survey query `^According to [^.]{0,75}?,\s` also returned *empty* for five
+  rows, which looked like five more exceptions. They were the **Dred Scott** rows: `[^.]`
+  excludes the periods in "Dred Scott v. Sandford", so the survey could not see a prefix the
+  strip handles perfectly well. **A prefix survey that excludes periods will under-report on
+  any collection citing a court case.** Survey with `[^,]`, not `[^.]`.
+
+  ARCHIVED (3), all reversible:
+  - `misso-003` — its ANSWER ("First state admitted entirely west of the Mississippi River")
+    **contains `misso-056`'s entire answer**, defect class 4. The fact moved into
+    `misso-056`'s explanation rather than being lost.
+  - `misso-058` — TEXT printed `misso-056`'s answer, ANSWER contained `misso-067`'s ("St.
+    Louis"), and it is the Missouri/Mississippi confluence, which **`st-louis-mo` already
+    owns** in `stlmo-035`. The same state-scale violation session 2 archived `misso-078` for.
+  - `misso-063` — the same sentence as `misso-062` asked twice, each explanation handing the
+    other's answer over in full.
+
+  WRITTEN (7): where the state's name comes from (the Missouria, *Wimihsoorita*, "one who has
+  dugout canoes" — a state collection with nothing on its own name); the **Hancock Amendment**,
+  which is why Missourians vote on local tax increases and which the collection had never
+  mentioned; the **1904–2004 bellwether** run; and four expiring — State Auditor, Chief
+  Justice, the governor's prior office, and the next gubernatorial year.
+
+  **THE TWO NEW EXPIRING OFFICES SIT ON DIFFERENT CLOCKS FROM EVERY OTHER ONE**, which is the
+  point of adding them. Five of the seven existing expiring questions lapse on 2029-01-13 and
+  two on 2027-01-12. The **State Auditor** is the one Missouri statewide office filled in a
+  *midterm* year (2027-01-11) and the **Chief Justice** is chosen by the court from among its
+  own judges on a rotating term (2027-07-01). Twelve expiring questions now fall on five dates.
+
+  **ONE LEAK LEFT, AND IT IS THE THIRD INSTANCE OF ONE PATTERN.** `misso-018` ("Who serves as
+  Missouri's Lieutenant Governor?") necessarily prints `misso-209`'s answer, which is
+  "Lieutenant Governor" — the office the current governor held before. See the section below.
+## The "who holds it" / "who used to hold it" collision (session 10)
+
+Twice in one session, the last surviving leak in a collection was the same shape — and both
+times it was the only hit left after everything else had gone to zero:
+
+| collection | the office question | the biography question |
+|---|---|---|
+| plano-tx | `pla-152` "Who is the **Collin County Judge**?" | `pla-171` Keith Self spent eleven years in which local office? → *Collin County judge* |
+| missouri | `misso-018` "Who serves as Missouri's **Lieutenant Governor**?" | `misso-209` the governor's prior office → *Lieutenant Governor* |
+
+**Both questions are good and neither can be reworded.** A "who holds office X" question must
+print X. A "which office did this person hold before" question must have X as its answer. The
+collision is structural, and it appears the moment a collection covers both the current holder
+of an office and a predecessor's career — which is exactly what a healthy expiring tier with
+varied shapes produces.
+
+**Rule: treat it as the noise class and leave it.** It is the same judgement the california-state
+entry records for "Secretary of State" — an office name the subject matter forces. The
+give-away is small: seeing that an office exists does not tell you who used to hold it. Do not
+contort either question, and do not archive one to make the sweep read zero.
+
+**But do check the direction.** The collision is harmless when the *office* is the shared
+string. It is NOT harmless when the shared string is a **person's name** — if a "who holds X"
+question's answer appears in another question's text, that is a real leak and the tucson-az
+remedy applies. Read the pair before waving it through.
+
+## Run the boilerplate strip BEFORE reading the leakage sweep (session 10, missouri)
+
+`missouri` reported 36 leakage hits, the most of any collection this session. **Roughly a third
+of them were the attribution phrase and nothing else**: five of the six questions handing over
+`misso-029` did it through *"According to the Wikipedia article on the Missouri General
+Assembly, "*, and all three handing over `misso-009` through *"...on Dred Scott v. Sandford, "*.
+
+Stripping first turns a 36-hit report into a 12-hit one, and the twelve are the actual defects.
+Reading the sweep first means triaging two dozen phantom findings by hand.
+
+**And survey the prefixes with `[^,]`, not `[^.]`.** The survey query used to plan the strip
+excluded periods, so it returned *empty* for the four Dred Scott rows and made them look like
+exceptions needing their own pass. They were not — the strip pattern handles them. A prefix
+survey that excludes periods will under-report on any collection citing a court case, a saint,
+or an abbreviated name.
+
+## Which tier owns "who are your U.S. senators"? — UNRESOLVED, needs a ruling (session 10)
+
+Writing `missouri` turned up an inconsistency this workstream created and should not settle on
+its own, because it affects at least four collections:
+
+| collection | tier | has a senators question |
+|---|---|---|
+| `pennsylvania` | state | yes (`penns-090`, Fetterman) |
+| `washington-state` | state | yes (`washs-102`, `washs-103`) |
+| `plano-tx` | **city** | yes (`pla-172`, Cornyn & Cruz) — and `texas-state` has none |
+| `st-louis-mo` | **city** | yes (`stlmo-217`, Hawley & Schmitt) — and `missouri` has none |
+
+The two city ones were written this session. The handbook's state-scale rule says a *state*
+collection must cut anything a city collection could own — which, read literally, pushes
+senators down to the cities. The `queens-ny` topic "State & Federal Representation" (727) says
+city collections may carry them. But `pennsylvania` and `washington-state` say the state
+collection owns them.
+
+**`missouri` was therefore left without one**, deliberately: adding it would have created a
+cross-collection duplicate with `stlmo-217`, which is the Climate Agreements root cause (one
+fact mined once per registered collection).
+
+**This needs a ruling from Chris, not a unilateral fix**, because the cheap resolution — move
+the two city questions to their state collections — would drop `st-louis-mo` from 15.2% to
+13.8% expiring, undoing part of a re-visit completed hours earlier. Options: (a) state
+collections own senators, and the two city questions move; (b) city collections may carry
+federal representation, and `missouri`/`texas-state` stay without; (c) both may, and the
+duplicate is accepted as tier-appropriate context.
