@@ -25,14 +25,14 @@ import type { LocaleConfig } from './bloomington-in.js';
  *   before activation
  *
  * CURRENT OFFICEHOLDERS (verify on indio.org before generation):
- * - Mayor: Waymond Fermon (rotating -- VERIFY current term end)
- * - Mayor Pro Tem: VERIFY on indio.org
+ * - Mayor: Elaine Holmes (rotates annually; Council selects at its first December meeting)
+ * - Mayor Pro Tem: Waymond Fermon (rotates on the same cycle)
  * - Council District 1: VERIFY on indio.org
  * - Council District 2: VERIFY on indio.org
  * - Council District 3: VERIFY on indio.org
  * - Council District 4: VERIFY on indio.org
  * - Council District 5: VERIFY on indio.org
- * - CA Assembly AD-36: Eduardo Garcia (term ends 2026-12-07)
+ * - CA Assembly AD-36: Jeff Gonzalez (R), since 2024 -- Eduardo Garcia was TERMED OUT
  * - CA Senate SD-28: Jeff Stone (VERIFY -- may have changed; check leginfo)
  *
  * VOICE GUIDANCE:
@@ -102,8 +102,15 @@ export const indioCaConfig: LocaleConfig = {
   },
 
   officeholders: [
-    { name: 'Waymond Fermon', role: 'Mayor (rotating -- verify current term)', termEnd: '2026-12-01T00:00:00Z' },
-    { name: 'Eduardo Garcia', role: 'California State Assembly Member', district: 'AD-36', termEnd: '2026-12-07T00:00:00Z' },
+    // Indio's mayoralty ROTATES: the Council picks the Mayor at its first December meeting
+    // each year, so both of these turn over annually. Verified 2026-09-28 against the
+    // Indio, California infobox, which lists Holmes as Mayor and Fermon as Mayor Pro Tem.
+    { name: 'Elaine Holmes', role: 'Mayor (rotates annually each December)', termEnd: '2026-12-01T00:00:00Z' },
+    { name: 'Waymond Fermon', role: 'Mayor Pro Tem (rotates annually each December)', termEnd: '2026-12-01T00:00:00Z' },
+    // Eduardo Garcia was TERMED OUT and has not held this seat since 2024. Leaving him here
+    // made audit-collection-readiness demand coverage of a former officeholder -- satisfying
+    // that warning would have written a stale fact into the bank.
+    { name: 'Jeff Gonzalez', role: 'California State Assembly Member', district: 'AD-36', termEnd: '2026-12-07T00:00:00Z' },
   ],
 
   // Wikipedia-first source URLs per carry-forward rule (Phase 58-02)
