@@ -86,6 +86,28 @@ export const texasStateConfig: LocaleConfig = {
     'public-policy': 5,
   },
 
+  // ⚠ RE-VERIFY THIS ROSTER AFTER 3 NOVEMBER 2026. Texas fills every statewide
+  // executive office in midterm years, so the whole executive branch is on that
+  // ballot at once and the January-2027 entries below will almost all change:
+  // as of 2026-09-28 the Attorney General is not seeking re-election (running
+  // for U.S. Senate), the Agriculture Commissioner and the Railroad Commission
+  // chair-elect both LOST their primaries this year, and the Comptroller
+  // resigned on 31 July 2026 — which is why no Comptroller or Agriculture
+  // entry appears here at all.
+  //
+  // The two 2031 entries are the stable ones: Railroad Commissioners and Court
+  // of Criminal Appeals judges run on six-year staggered terms, so they are the
+  // right offices to hang durable expiring content on. Verified 2026-09-28.
+  officeholders: [
+    { name: 'Greg Abbott', role: 'Governor', termEnd: '2027-01-19T00:00:00Z' },
+    { name: 'Dan Patrick', role: 'Lieutenant Governor', termEnd: '2027-01-19T00:00:00Z' },
+    { name: 'Ken Paxton', role: 'Attorney General', termEnd: '2027-01-19T00:00:00Z' },
+    { name: 'Dawn Buckingham', role: 'Land Commissioner', termEnd: '2027-01-19T00:00:00Z' },
+    { name: 'Dustin Burrows', role: 'Speaker of the Texas House', termEnd: '2027-01-12T00:00:00Z' },
+    { name: 'Christi Craddick', role: 'Chair, Railroad Commission of Texas', termEnd: '2031-01-01T00:00:00Z' },
+    { name: 'David J. Schenck', role: 'Presiding Judge, Court of Criminal Appeals', termEnd: '2031-01-01T00:00:00Z' },
+  ],
+
   sourceUrls: [
     // Legislature
     'https://capitol.texas.gov',
