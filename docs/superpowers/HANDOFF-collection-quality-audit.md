@@ -292,7 +292,7 @@ is still under it today:
 | collection | active | expiring % |
 |---|---|---|
 | ~~cambridge-ma~~ | ~~86~~ | ~~1.2%~~ **CLEARED session 9 → 16.4%** |
-| indio-ca | 68 | **2.9%** |
+| ~~indio-ca~~ | ~~68~~ | ~~2.9%~~ **CLEARED session 9 → 17.3%** |
 | st-louis-mo | 59 | **5.1%** |
 | west-monroe-la | 57 | **5.3%** |
 | phoenix-az | 56 | **5.4%** |
@@ -303,7 +303,7 @@ is still under it today:
 | santa-monica-ca | 61 | **9.8%** |
 | missouri | 71 | **9.9%** |
 
-**`cambridge-ma` was cleared in session 9 (1.2% → 16.4%); ten remain.** Its entry is below,
+**`cambridge-ma` (1.2% → 16.4%) and `indio-ca` (2.9% → 17.3%) were cleared in session 9; nine remain.** Its entry is below,
 and it is the model for the rest: a re-visit is cheaper than an audit, because the structural
 work was already done — what is missing is expiring content and the defect classes that did
 not exist yet.
@@ -1086,6 +1086,51 @@ That is three for three — Alexandria's mayor, Phoenix's city manager, now Camb
 **A returning predecessor is the single most reliable way to make a correct question look
 wrong.** Check the jurisdiction's own site before touching an officeholder, and prefer it to
 an encyclopedia, which lags exactly where it matters.
+
+## The officeholder roster is CONFIG, and it goes stale (session 9, indio-ca)
+
+The readiness gate's third check fired on `indio-ca`:
+
+    [WARNING] California State Assembly Member, AD-36 — Eduardo Garcia: 0 question(s)
+
+**Satisfying it would have written a stale fact into the bank.** Eduardo Garcia was termed out;
+Jeff Gonzalez has held AD-36 since 2024, which the collection's own `ica-014` already says.
+
+The roster is not derived from the question bank or from any live source — it is a hardcoded
+array in `backend/src/scripts/content-generation/locale-configs/<slug>.ts`. `indio-ca`'s held
+**two** wrong entries:
+
+    { name: 'Waymond Fermon', role: 'Mayor (rotating -- verify current term)', ... },
+    { name: 'Eduardo Garcia', role: 'California State Assembly Member', district: 'AD-36', ... },
+
+Fermon is **Mayor Pro Tem**; Elaine Holmes is Mayor. That is *the same error* the 2026-09-27
+link sweep found and repaired in `ica-001` — **the question was fixed and the config that
+produced it was not**, so the next generation run would have reintroduced it. Both entries are
+now corrected, with Mayor Pro Tem added as a third, and the warning clears honestly.
+
+Three things worth carrying:
+
+- **Treat an officeholder-coverage warning as a claim to verify, not an instruction to obey.**
+  It is the one readiness check whose input is hand-maintained, so it ages exactly like the
+  questions it is meant to police.
+- **Repairing a generated question without repairing its generator is half a fix.** Worth a
+  sweep of its own: every officeholder question this workstream has corrected may have a
+  locale config still carrying the old name.
+- **`backend/` is frozen as a service, but `src/scripts/content-generation/` is not** — these
+  configs are editable, and `npx tsc --noEmit` covers them.
+
+## Where a high questions-per-URL ratio is NOT a defect (session 9, indio-ca)
+
+`cambridge-ma` gave the ratio: 86 questions over 12 URLs, with 21 squeezed from three
+sentences. `indio-ca` scored **worse** — 68 questions over 7 URLs, 9.7 each, the highest in the
+bank — and its active set was **sound**. 49 questions cite one page, but that page is the
+`Indio, California` Wikipedia article, which genuinely carries dozens of distinct facts.
+
+**The ratio is a signal to go and look, not a finding.** What separates the two cases is the
+*source's* depth, not the number: three sentences supporting 21 questions is a defect; a long
+encyclopedia article supporting 49 is ordinary. Read the page before drawing a conclusion from
+the number — the metric earns its keep by telling you which collections to read, and nothing
+more.
 
 ## Still open, not fixed
 
@@ -3013,3 +3058,51 @@ Spread 25/17/21/23 -> 21/19/16/17. Bracketing **62.5% at an extreme**, above the
 
   Citations after: cambridgema.gov 53, en.wikipedia.org 10, crls.cpsd.us **21 -> 6**,
   mass.gov 3 (403 bot-blocked, documented), harvard.edu 1.
+
+### indio-ca — RE-VISIT complete (session 9)
+68 -> 62 (6 active archived) -> 75 (+13). Easy 30.9% -> 29.3%.
+**Expiring 2.9% -> 17.3%.** Net 75 -> 73, verdict READY, no DEFECT and no WARNING.
+**Drafts 19 -> 0.** bad_idx 0, bad_optcount 0, unsourced 0, unlinked 0, duplicate answers
+1 -> 0. Spread 18/16/19/15 -> 18/18/18/21. Bracketing 53.8% at an extreme.
+Leakage outside the forced place-name set: **0**.
+
+  **THE 19 DRAFTS WERE THE FIND.** Never read since 2026-03-20, and damaging on activation:
+  **13 of 19 duplicated a live question**; `ind-309` was incoherent ("Which LAW ENFORCEMENT
+  agency provides FIRE AND PARAMEDIC services to Indio?"); `ind-312` and `ind-314` placed
+  Ernie Ball and Coca-Cola in **Coachella** when the cited article says those companies
+  "choose Indio"; and **every one carried the `ind-` prefix, which belongs to indiana-state.**
+  Three carried genuinely new verifiable facts and were rewritten as `ica-` rows rather than
+  activated on trust. Third collection where reading drafts paid; `fremont-ca` and
+  `norwich-uk` were the others, and **no unaudited collection has been checked for them.**
+
+  **THE PREFIX COLLISION IS WORSE THAN RECORDED.** It is not only that `ind-%` matches Indiana
+  and Indio across collections - `indio-ca` was itself holding 19 `ind-` rows while
+  `indiana-state` holds 22 live ones. Join through `collection_questions`, always.
+
+  **THE OFFICEHOLDER CONFIG WAS STALE AND THE GATE BELIEVED IT** - written up above. The
+  locale config still named Waymond Fermon as Mayor, which is the exact error the link sweep
+  repaired in `ica-001` last week. The question was fixed; its generator was not.
+
+  **A HIGH QUESTIONS-PER-URL RATIO THAT WAS NOT A DEFECT** - 9.7, the worst in the bank, and
+  the active set was sound. See above: the ratio says where to look, not what you will find.
+
+  Archived (6 active + 19 drafts): `ica-036` and `ica-042` (two weather-record minutiae);
+    `ica-116` (its answer duplicated `ica-057`, and my first rewrite of it swapped the
+    duplicate for a fresh leak, so the superlative moved into `ica-057`'s explanation instead);
+    `ica-083`, `ica-130`, `ica-104` (each an answer contained in another question's answer or
+    text); plus all 19 drafts.
+  Written (13): `ica-206`-`ica-218` - Mayor Pro Tem, the congressional district and its
+    member, the Assembly seat's party, Governor, Lieutenant Governor, both U.S. senators, the
+    size and composition of the state's House delegation, the December mayoral rotation, and
+    three durable facts salvaged from the drafts (Dr. June Robertson McCarroll and the painted
+    centre line, Fred Kohler's first business licence, the Coachella Canal).
+
+  `ica-166` claimed Ernie Ball opened its Indio facility "in 2005"; **"2005" appears nowhere
+  on the cited article**, which lists the company with no date. The year was removed rather
+  than the question. `ica-100` (SunLine's zero-emission fleet "by 2035") was a dated pledge
+  carrying no `expires_at`; now dated.
+
+  **FORCED ANSWERS, LEFT ALONE DELIBERATELY:** "The Coachella Valley" (~25 questions),
+  "Riverside County" (~12) and "Empire Polo Club" (~8) are answers a collection about Indio
+  cannot avoid printing - the same shape as norwich-uk's two councils. 74 of the 89 leakage
+  hits are these three. Filter them out before reading the report, as with Norwich.
