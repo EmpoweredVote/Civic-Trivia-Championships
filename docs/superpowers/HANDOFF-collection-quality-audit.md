@@ -1132,6 +1132,65 @@ encyclopedia article supporting 49 is ordinary. Read the page before drawing a c
 the number — the metric earns its keep by telling you which collections to read, and nothing
 more.
 
+## The readiness gate counts DRAFTS toward the 50-question floor (session 9, portland-or)
+
+Found while clearing portland-or's drafts, and it changes how to read every past READY verdict
+on a collection that holds any:
+
+    Draft:       25
+    Active:      50
+    Total:       75
+    Net:         75  (total - expiring)
+    Threshold:   50 questions minimum
+    Verdict:     READY
+
+**`Total` is active + draft, and `Net` is computed from `Total`.** portland-or read "Net 75,
+READY" while serving players exactly **50** questions — sitting precisely on the threshold with
+no margin, which is the condition the session-7 note flagged and could not see the cause of.
+
+It cuts the other way too: **drafts dilute the expiring ratio.** portland-or reported 12.0%
+(a NOTE) with the drafts in the denominator and **16.0%** without them. Archiving 25 unusable
+drafts moved it from NOTE to healthy without a single question changing.
+
+**So a collection holding drafts reports a floor it does not meet and a ratio it beats.** Check
+the `Draft:` line before trusting either number. Only `norwich-uk`, `indio-ca`, `fremont-ca`
+and `portland-or` have been checked; nothing has swept the rest.
+
+## Drafts have now produced real defects in every collection where anyone looked (session 9)
+
+Four for four, and the pattern is consistent enough to act on without re-deriving it:
+
+| collection | drafts | what they were |
+|---|---|---|
+| fremont-ca | 25 | duplicates of its own live questions, off-tier content, a past deadline |
+| indio-ca | 19 | 13 duplicates, one incoherent, two contradicting their own source, all on the WRONG PREFIX |
+| norwich-uk | 1 | an exact duplicate of a live question |
+| portland-or | 25 | **not one added a fact the live 50 lacked** |
+
+portland-or is the sharpest case, because the audit that should have caught it *identified the
+very defect class*: session 7 recorded "website furniture" on this collection after archiving
+three questions about the City Auditor's **logo** — and left **four more sitting in drafts**,
+asking what colour the rose is, what colour the leaves are, what shape the rose is, and what
+the logo is. **Archiving the live symptoms of a defect does not touch the drafts carrying it.**
+
+The rest were duplicates of live answers (`por-313`/`por-439`/`por-571` all answering
+"Washington Park" against live `por-054`), inverse pairs (`por-309`/`por-319`,
+`por-495`/`por-582`), an email address, a meeting start time, and one incoherent question
+("Which neighborhood is included in both Portland City Council District 4's description?").
+
+**Check `status='draft'` on every remaining collection.** It is one query and it has never
+returned nothing interesting.
+
+## Attribution boilerplate is a leakage source in its own right (session 9)
+
+portland-or's explanations open with "According to portland.gov, ..." or "According to Portland
+Parks & Recreation, ...". The second of those **hands over `por-270`'s entire answer**, and it
+carries no information the `source` field does not already hold. Several of this collection's
+leaks were nothing but that phrase.
+
+When repairing explanations, delete the attribution rather than rewording around it. The
+citation lives in `source.url`; repeating the body's name in prose only creates give-aways.
+
 ## Still open, not fixed
 
 - ~~**NINE live questions mark a correct answer wrong.**~~ **DONE in session 7.** Eight were
@@ -3106,3 +3165,45 @@ Leakage outside the forced place-name set: **0**.
   "Riverside County" (~12) and "Empire Polo Club" (~8) are answers a collection about Indio
   cannot avoid printing - the same shape as norwich-uk's two councils. 74 of the 89 leakage
   hits are these three. Filter them out before reading the report, as with Norwich.
+
+### portland-or — DRAFTS pass complete (session 9)
+Active 50 -> 55 (+5). **Drafts 25 -> 0.** Expiring 12.0% (diluted by drafts) -> **16.4%**.
+Net 75 (inflated by drafts) -> **55**, a real margin over the 50 floor for the first time.
+Verdict READY, no DEFECT, no WARNING. Duplicate answers 0. Leakage **34 -> 17**, all
+seventeen forced. Spread 14/12/15/9 -> 14/14/15/12 (best single guess 27.3%).
+Bracketing 37.5% at an extreme, below the healthy ~50% and left as found.
+
+  **THE NUMBERS WERE LYING IN BOTH DIRECTIONS.** The gate counts drafts in `Total`, so this
+  collection reported Net 75 while serving 50 - exactly on the threshold, which is what the
+  session-7 note half-spotted. And the same drafts diluted the expiring ratio to a 12.0%
+  NOTE; removing them alone took it to 16.4%. Written up above.
+
+  **NOT ONE OF THE 25 DRAFTS ADDED A FACT THE LIVE 50 LACKED.** Checked by answer against the
+  live set: `por-262`->`por-009`, `por-313`/`por-571`->`por-054`, `por-319`->`por-142`,
+  `por-474`/`por-582`->`por-164`, `por-634`->`por-160`. The remainder duplicated each other
+  or were furniture.
+
+  **SESSION 7 NAMED THE DEFECT CLASS ON THIS COLLECTION AND LEFT FOUR MORE IN DRAFTS.** The
+  "website furniture" class was coined here after archiving three questions about the City
+  Auditor's LOGO. Four more sat in drafts: the rose's colour, the leaves' colour, the rose's
+  shape, and the logo itself. Also drafted: the Auditor's **email address** and the Council's
+  meeting start time.
+
+  THE ONE GENUINE GAP the drafts pointed at was real: the live set names the Council Vice
+  President (`por-164`) but never the President. Filled with a verified question rather than
+  by activating `por-245`, which asked the DATE of the vote instead of the officeholder.
+
+  AN EXPLANATION-LEAKAGE PASS WAS RUN because session 7 predates that sweep - the same
+  "audited does not mean meets the current rules" backlog as the expiring floor. 34 hits ->
+  17, every survivor forced (a question that must name its own subject: `por-105` "Who serves
+  as Portland's City Administrator?" cannot avoid printing `por-020`'s answer). Several of the
+  repaired ones were pure attribution boilerplate; see above.
+
+  Archived (25): all drafts. Written (5): `por-669` Council President (expiring), plus four
+  durable - the three counties Portland spans, the two rivers it sits on, Salem as the state
+  capital against Portland as the largest city, and the 1845 founding against the 1851
+  incorporation.
+
+  **Three of my own leaks were caught by re-running the sweep**, two from the backfill and one
+  introduced by a repair to `por-001`. That check has now caught a self-inflicted defect in
+  five consecutive collections.
