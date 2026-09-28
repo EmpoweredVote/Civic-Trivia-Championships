@@ -7,7 +7,7 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **33 of 43 collections audited.** 936 archived across all sessions, 339 written.
+- **34 of 43 collections audited.** 944 archived across all sessions, 339 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 8 audited **los-angeles-ca** (collection 3), the largest archive proportionally
   yet (48 of 73, 66%) and the first collection found carrying **another tier's content**;
@@ -234,7 +234,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,281 active questions** (re-measured after all five session 8 audits;
+- 43 active collections, **3,273 active questions** (re-measured after all six session 8 audits;
   identical under all three counting bases — all `status='active'`, those linked to any
   collection, and those in *active* collections)
 
@@ -255,7 +255,7 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-madison-wi, climate-change,
+climate-change,
 bend-or, wisconsin, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
 
@@ -2239,3 +2239,46 @@ including its own root - bot protection, not deadness, and a player in a browser
     new question and an existing one, and a new question that sat in the middle of an
     Ohlone/mission chain leaking in both directions. Both replaced. The sweep was run four
     times before it came back empty.
+
+### madison-wi — complete (session 8, 2026-09-28)
+90 -> 82 (8 archived, **nothing written**). Easy 32.2% -> 34.1%. Expiring 15.6% -> 17.1%.
+Readiness READY (net 82); bad_idx 0, unlinked 0, no_source 0, duplicate answers 0, leakage 0,
+spread 21/21/19/21 (best single guess 25.6%, the closest to ideal in the ledger),
+**all 4 officeholders covered**, all 17 citations resolve with no redirects.
+
+  **THE BEST-BUILT COLLECTION AUDITED SO FAR, and the second to need nothing written** after
+  washington-state. It arrived with every question cited, no drafts, expiring already at 15.6%,
+  an answer spread of 24/22/22/22, and collection-specific topic labels that actually matched
+  their questions - the check fremont-ca had just failed. Whoever built it was working to a
+  standard the older collections were not.
+  ARCHIVE (8), all minutiae or concentration, none of it error: Lake Mendota's acreage and
+    maximum depth, the years Olbrich and the Farmers' Market were founded, the year the city
+    bought the bus company, a bracket answer about how many neighbourhood associations exist,
+    a second "what office did Doty hold" question, and `madwi-030`.
+  `madwi-030` CARRIED THREE DEFECTS AT ONCE and is the one worth naming: it asked what year
+    **James Madison** died. That is a fact about the president, not about the city; its answer
+    "1836" duplicated `madwi-024`'s; and its own text - "James Madison, the president the city
+    was named for" - printed `madwi-022`'s entire answer.
+  VERIFIED BEFORE TRUSTING: **every officeholder claim was correct.** Mayor Satya
+    Rhodes-Conway (term to 20 April 2027), Council President Sabrina Madison, Vice President
+    Carmella Glenn, City Attorney Michael R. Haas, and the District 4 and 15 alders. Fourth
+    consecutive collection where nothing needed correcting - and the expiries were already set,
+    which no other collection managed.
+  SEVEN REAL LEAKS, AND 57 FALSE POSITIVES. The sweep returned 64 hits. The noise is this
+    collection's own proper nouns - "The City of Madison" alone accounted for 24 - and the
+    signal was questions that named the answer to another question **about the same thing**:
+    `madwi-024` asked what year "James Duane Doty" bought the isthmus while `madwi-021` asked
+    who bought it; `madwi-050` asked what year "Frank Lloyd Wright" proposed Monona Terrace
+    while `madwi-049` asked who designed it; `madwi-072` named "Rapid Route A" while
+    `madwi-070` asked what it is called. **The distinguishing test that worked: a hit is real
+    when the two questions are about the same subject and one of them supplies the other's
+    subject as a given.** Proper nouns scattered across unrelated questions are noise.
+  TWO PRESENTATION DEFECTS REPAIRED: `madwi-083` offered a precise population (269,840) among
+    round numbers, which gives itself away - the `pitpa-068` shape - and `madwi-078`'s options
+    ran Fourteen / Three / Nine / Five, out of numeric order.
+  NO BACKFILL. 82 clears the floor, easy sits at 34.1%, expiring rose to 17.1% because the
+    archived questions were durable ones, and all four officeholders already had coverage and
+    expiries. Writing here would have been motion, not improvement.
+  THE CITY ROSTER PAGE HAS MOVED: `cityofmadison.com/clerk/about/city-roster`, cited by ten
+    officeholder questions, now redirects to the departments guide. Caught by the
+    redirect check rather than the status check - the fourth moved-site instance this session.
