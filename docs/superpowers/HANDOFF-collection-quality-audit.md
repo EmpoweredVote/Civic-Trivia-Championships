@@ -7,7 +7,7 @@
 - Worktree in use: `C:/ctc-quality-audit` (any clean worktree works; see the DB note below).
 - Spec: `docs/superpowers/specs/2026-09-26-collection-quality-audit-design.md`
 - Plan: `docs/superpowers/plans/2026-09-26-collection-quality-audit.md`
-- **32 of 43 collections audited.** 893 archived across all sessions, 323 written.
+- **33 of 43 collections audited.** 936 archived across all sessions, 339 written.
   All archives reversible by `external_id` — nothing was ever `DELETE`d.
   Session 8 audited **los-angeles-ca** (collection 3), the largest archive proportionally
   yet (48 of 73, 66%) and the first collection found carrying **another tier's content**;
@@ -234,7 +234,7 @@ Expect `pure-lookup` to dominate `byRule` — it matches 15.3% of the live news 
 
 ## Where the bank stands (measured)
 
-- 43 active collections, **3,283 active questions** (re-measured after all four session 8 audits;
+- 43 active collections, **3,281 active questions** (re-measured after all five session 8 audits;
   identical under all three counting bases — all `status='active'`, those linked to any
   collection, and those in *active* collections)
 
@@ -255,7 +255,7 @@ clear the floor only on the labels they already had.
 
 ## Next collections, in priority order
 
-fremont-ca, madison-wi, climate-change,
+madison-wi, climate-change,
 bend-or, wisconsin, bloomington-in, milwaukee-wi, norwich-uk, indiana-state,
 war-in-iran, world-news.
 
@@ -514,6 +514,22 @@ Museum of Art (LACMA)` — and La Brea to two, as `La Brea Tar Pits & Museum` an
 Pits Museum`. Normalise before grouping:
 
     lower(regexp_replace(options->>correct_answer,'[^a-z0-9]','','gi'))
+
+**Topic labels are shown to the player, and nothing checks them either** (session 8,
+fremont-ca). `topics.name` renders on the question card. Eight fremont-ca questions carried
+the label "Elections & Voting" above a question about a lake, a mountain, a college and a car
+plant, because one whole block was filed under the wrong topic. Five more were mis-filed.
+It is a two-line query and worth running on every collection:
+
+    SELECT q.external_id, t.name, left(q.text,60)
+    FROM trivia.questions q JOIN trivia.collection_questions cq ON cq.question_id=q.id
+    JOIN trivia.topics t ON t.id=q.topic_id
+    WHERE cq.collection_id=<id> AND q.status='active' ORDER BY t.name;
+
+**Check `status='draft'` too.** fremont-ca held 25 drafts - duplicate copies of its own live
+questions, off-tier content and a reference to an already-past deadline. They serve nobody
+today and break the collection the moment anyone activates them. No other audited collection
+had any, so it is easy to forget the status exists.
 
 **Explanations leak too, and no check reads them.** The leakage queries here compare one
 question's *text and options* against another's answer. `la-105`'s explanation mentioned "the
@@ -2165,3 +2181,61 @@ return 200 **and none redirects**.
     year, the Preamble, federalism, why House seats differ by state, the Senate age
     requirement, which chamber tries impeachments, the presidential term, the Civil War, the
     rule of law, and what the State Department does.
+
+### fremont-ca — complete (session 8, 2026-09-28)
+60 -> 42 (18 archived) -> 58 (+16 written, 30 repaired in place), **plus 25 drafts archived**.
+Easy 31.7% -> 36.2%. Expiring **0.0% -> 19.0%**. Readiness READY (net 58); bad_idx 0,
+unlinked 0, **no_source 16 -> 0**, duplicate answers 0, leakage 0, spread 15/16/13/14.
+28 distinct citations: 24 clean, 4 are `fremont.gov` behind a WAF that 403s everything
+including its own root - bot protection, not deadness, and a player in a browser reaches them.
+
+  **TOPIC LABELS WERE WRONG, AND PLAYERS SEE THEM.** `topics.name` renders on the question
+    card, and **eight questions labelled "Elections & Voting" were about a lake, a mountain,
+    a college, a car plant, a bay, a wildlife refuge, a county and a person's name** - the
+    whole `fre-126`-`fre-133` block filed under one wrong topic. Five more were mis-filed
+    (county officeholders under "Local Services", two election questions under "Budget &
+    Finance"). Same class as the session-2 cross-wiring bug that was logged as cosmetic and
+    was not. **Check `topics.name` against question content; it is a two-line query and it
+    is visible to the player.**
+  SIXTEEN OF SIXTY ACTIVE QUESTIONS HAD NO CITATION AT ALL - 27% of the collection, with no
+    URL to check and no "learn more" for the player. Thirteen survived and were cited; three
+    were archived for other reasons.
+  TWENTY-FIVE QUESTIONS SAT IN `draft`, which no other audited collection has had. They never
+    reached a player, but they were a live hazard: **four duplicate copies of the same AC
+    Transit question**, three of the supervisor-districts question, the same off-tier
+    California elections block, and one referencing the already-past June 2026 registration
+    deadline. Archived. **Check `status='draft'` as well as `active` - the readiness script
+    reports drafts separately and they are easy to miss.**
+  OFF-TIER, FOR THE THIRD TIME IN ONE SESSION. Ten questions were California state content in
+    a city collection, and every one duplicated a question in `california-state` - the same
+    `sos.ca.gov/elections` page mined into los-angeles-ca, california-state and here.
+    **When a scope archive turns up, check whether the same source was mined elsewhere.**
+  MINUTIAE AND WEBSITE FURNITURE (5), including the worst single question seen: `fre-049`
+    asked what year Alameda County won its first **Digital Counties Survey Award**. Also
+    `fre-047`, which is malformed - it asks "what year" and answers "The designation is
+    ongoing", which is not a year.
+  ONE QUESTION ARCHIVED AS UNVERIFIABLE: `fre-095` claimed sales tax is the largest source of
+    Fremont's General Fund, with **no citation**. Fremont's budget pages sit behind the WAF,
+    and no reachable source settles it; for most California cities post-Proposition 13 the
+    answer would be property tax. Archived rather than guessed at in either direction.
+  VERIFIED BEFORE TRUSTING - **all six officeholder claims were correct**: Sheriff Yesenia
+    Sanchez, DA Ursula Jones Dickson (who won re-election in the June 2026 primary with 65%),
+    Assessor Phong La, Auditor-Controller Melissa Wilk, Superintendent Alysse Castro, and
+    Governor Newsom. None had an `expires_at`; five now do. Note the DA question already
+    carried the recalled Pamela Price as a distractor, correctly.
+  THE "ALAMEDA COUNTY" PROBLEM, and the tucson precedent applied again: `fre-126`'s whole
+    answer was "Alameda County", a phrase twenty other questions must use. Rather than archive
+    a sound easy question, the county fact moved into the **question text** and it now asks
+    which county lies to the south. Third instance of this pattern (`cal-085`, `cas-021`,
+    `tucaz-010`), and the second time the move-into-the-text remedy was the right one.
+  BACKFILL (+16, five expiring): mayor (Raj Salwan, sworn in December 2024), the U.S.
+    representative (Ro Khanna, CA-17), the county supervisor covering Fremont (David Haubert,
+    District 1), the county treasurer-tax collector, and the next mayoral election. Eleven
+    durable additions cover the gaps: population and Bay Area rank, the Tri-City area, the
+    GM-Toyota plant that preceded the car factory, the school district, how the mayor is
+    elected differently from the council, council term length, Ardenwood, the second-largest
+    employer, the regional park district, and what a special district is.
+  THREE LEAKS THIS SESSION INTRODUCED AND THEN CAUGHT: a duplicate "Tesla" answer between a
+    new question and an existing one, and a new question that sat in the middle of an
+    Ohlone/mission chain leaking in both directions. Both replaced. The sweep was run four
+    times before it came back empty.
