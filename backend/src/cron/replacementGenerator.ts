@@ -148,7 +148,11 @@ export async function generateReplacement(
     }
 
     // 6. Allocate externalId — queries ALL statuses to avoid collision with archived IDs
-    const nextId = await getNextExternalId(collectionId, config.externalIdPrefix);
+    // FROZEN FILE (ev-cto decision 0013). The non-null assertion keeps this compiling
+    // after externalIdPrefix became optional; it does NOT make this path correct for
+    // slug-derived ids. The live counterpart in ev-accounts
+    // (backend/src/trivia/cron/replacementGenerator.ts) has the real fix.
+    const nextId = await getNextExternalId(collectionId, config.externalIdPrefix!);
     parsedQuestion.externalId =
       config.externalIdPrefix + '-' + String(nextId).padStart(3, '0');
 
