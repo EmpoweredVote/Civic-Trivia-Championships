@@ -26,7 +26,7 @@ wrong when checked, including one that was written and corrected the same day.
 | **RULED 2026-09-28** | U.S. senators belong to **state** collections; Missouri done, `pla-172` deferred to post-3 Nov |
 | **RULED 2026-09-29** | roll-call ban **ENFORCED**; all six collections rebuilt, **zero roll-calls remain bank-wide** |
 | **GATE FIXED, session 12** | officeholder coverage is judged **per role**, not per seat (it used to demand the very roll-call the ban forbids), and name matching no longer breaks on a `, Jr.` suffix — it had been reporting `biloxi-ms`'s mayor as uncovered when the question exists and is correct |
-| **Expiring tier dies before Mar 2027** | re-derive it; worst today: `world-news` 22/22, `climate-change` 18/18, `wisconsin` 13/19 (see its entry — the rest is now on 2029-2035 clocks), `massachusetts-state` 12/12, `washington-dc` 11/15, `federal` 11/23, `asheville-nc` 8/9, `war-in-iran` 6/6, **`santa-monica-ca` 5/6** |
+| **Expiring tier dies before Mar 2027** | re-derive it; worst today: `world-news` 22/22, `climate-change` 18/18, `wisconsin` 13/19 (see its entry — the rest is now on 2029-2035 clocks), `massachusetts-state` 12/12, `washington-dc` 11/15, `federal` 11/23, `asheville-nc` 8/9, **`santa-monica-ca` 5/6** (`war-in-iran` is off this list — it is now 54 durable and 1 expiring) |
 | Easy tier | no collection is under the 25% easy floor |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
