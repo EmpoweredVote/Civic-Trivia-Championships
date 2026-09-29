@@ -239,7 +239,7 @@ async function generateBatch(
 
   const userMessage = `Generate ${config.batchSize} civic trivia questions for ${config.name}.
 
-External ID range for this batch: ${config.externalIdPrefix}-${String(startId).padStart(3, '0')} through ${config.externalIdPrefix}-${String(endId).padStart(3, '0')}
+External ID range for this batch: ${mintFor(config, startId)} through ${mintFor(config, endId)}
 
 Already used external IDs (do not reuse): ${existingExternalIds.size > 0 ? [...existingExternalIds].join(', ') : 'None'}
 
