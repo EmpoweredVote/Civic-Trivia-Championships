@@ -1,8 +1,8 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 12)
+# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 12b)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
-## START HERE — measured 2026-09-29, end of session 12
+## START HERE — measured 2026-09-29, end of session 12b
 
 Every number in this block was re-derived from the database, not carried forward. **Re-derive
 them again rather than trusting them**; three of this document's standing claims have been
@@ -13,7 +13,8 @@ wrong when checked, including one that was written and corrected the same day.
 | Active collections | **43** |
 | Active questions | **3,233** |
 | **Drafts, bank-wide** | **0** |
-| Collections audited | **38 of 43** |
+| Collections audited | **39 of 43** |
+| **BANK-WIDE, needs a ruling** | **1,978 of 3,233 questions in 37 collections** open their explanation with "According to …" — session 9 ruled to delete it; `milwaukee-wi` and `bloomington-in` are done, the rest is a sweep and Chris's call |
 | Under the 10% expiring floor | **2** — `biloxi-ms` 9.2% (documented breach, see its entry) and `santa-monica-ca` 9.8% |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
 | **Under 11% HARD** | `queens-ny` **10.1%**, `world-news` 10.6% |
@@ -48,13 +49,18 @@ wrong when checked, including one that was written and corrected the same day.
    `world-news` 47q are also unaudited but are under the *question* floor — a pipeline-yield
    problem an audit cannot fix.)
 
-   **`milwaukee-wi` is in exactly the position Bloomington was in**: 86 active, 11.6%
-   expiring, officeholder tier rebuilt in session 11, everything else untouched and unread.
-   Expect the same shape of findings and **start with the citation pass, grouping by
-   `source->>'url'` and by host** — on Bloomington that one step found three broken hosts, a
-   six-question stat strip and a fabricated programme before a single question was read for
-   content. Then the leakage sweep with numeric answers, normalised duplicate answers,
-   block-identity questions, bracketing and position spread.
+   **`milwaukee-wi` is DONE (session 12b)** — and was the first collection in twelve sessions
+   with **no wrong facts**, because its locale config opens with 60 lines of CRITICAL ACCURACY
+   NOTES. Copy that pattern into `wisconsin` and `bend-or` before auditing them.
+
+   **`wisconsin` then `bend-or`.** Both are **100% attribution boilerplate** (90/90 and 86/86
+   explanations opening "According to …"), so budget for that strip; the Milwaukee entry has
+   the exact SQL and the dry-run pattern. Start with the citation pass, grouping by
+   `source->>'url'` **and by host** — that one step found three broken hosts and a
+   six-question stat strip on Bloomington, and a Cloudflare wall on Milwaukee, before a single
+   question was read for content. Then sweep each **single-article block against itself**
+   (the Milwaukee finding), then numeric answers, normalised duplicate answers, bracketing and
+   position spread.
 5. **Three more collections are close to the question floor**: `norwich-uk` 52,
    `los-angeles-ca` 55, `portland-or` 55. None is breaching and none is urgent — but they are
    where the next `plano-tx` comes from, so re-derive rather than waiting for one to cross.
@@ -4973,3 +4979,223 @@ belongs on the list with `new-york-state` and `asheville-nc`.
 `milwaukee-wi` (86q), `wisconsin`, `bend-or` remain. `milwaukee-wi` is in the same position
 Bloomington was — tier rebuilt in session 11, the rest untouched — so expect the same shape
 of findings and start with the citation pass and the source-URL grouping.
+
+## Session 12b (2026-09-29) — milwaukee-wi, the second never-audited locale
+
+`milwaukee-wi` (collection 392). **86 active → 86**: 4 archived, 4 written, 95 repaired.
+Easy 40.7%, medium 40.7%, hard 18.6%, expiring 11.6% → **12.8%**, positions 23/22/22/19 →
+**22/21/22/21**, bracketing 50.0% (3/3/3/3), leakage **21 substantive hits → 3**,
+`city.milwaukee.gov` citations **8 → 0**, explanations carrying attribution boilerplate
+**86 → 0**, questions with `subcategory` NULL **86 → 0**. READY.
+
+**No fact in this collection was wrong.** That is the first time in twelve sessions, and it
+is not luck — see below.
+
+### Why a collection with no wrong facts still needed 95 repairs
+
+`milwaukee-wi`'s locale config is the best in the repo and deserves to be the model. It
+carries a 60-line **CRITICAL ACCURACY NOTES** block that pre-empts the exact errors this audit
+finds elsewhere: that the city attorney, comptroller and treasurer are *elected* not appointed;
+that the Fire and Police Commission appoints both chiefs and the mayor does not; that the
+county — not the city — runs the parks system Daniel Hoan built; that "Cream City" is brick and
+not dairy; that the Bridge War was 1845, *before* consolidation; that Harley-Davidson had four
+founders, not two. Every one of those is a trap another collection fell into.
+
+**Write the accuracy notes before the questions and the questions come out right.** Bloomington
+had no such block and carried five wrong facts. This is the single clearest lever the audit has
+found for preventing defects rather than repairing them.
+
+What the config could not prevent is everything below, because none of it is about accuracy.
+
+## The source list IS the topic list, and that guarantees the blocks (session 12b)
+
+`milwaukee-wi`'s config gives the generator **ten Wikipedia articles** and a 100-question
+distribution across seven topics. The result is exactly what that instruction asks for:
+
+| article | questions |
+|---|---|
+| `Milwaukee` | **22** |
+| `Sewer_socialism` | 11 |
+| `James_Groppi` | 10 |
+| `Beer_in_Milwaukee` | 8 |
+| `Milwaukee_Art_Museum` | 7 |
+| `Milwaukee_Common_Council` | 7 |
+| `Summerfest` / `Harley-Davidson` / `Milwaukee_Bridge_War` | 4 each |
+
+**77 of 86 questions (90%) cite Wikipedia**, and a quarter of the collection comes from one
+article. This is not the Bloomington failure — Wikipedia is readable, and the sewer-socialist
+and Groppi blocks are the best civic content in the bank. It is a different failure:
+
+**A single-article block is a leakage engine.** Ten questions mined from one article share that
+article's proper nouns, so each one prints the others' answers. Every substantive leak in this
+collection was inside a block:
+
+- `milwi-046`'s explanation named **all three** Socialist mayors, handing over `milwi-047`,
+  `milwi-048` and `milwi-049` — one explanation, three answers.
+- `milwi-055` named Emil Seidel (`milwi-047`'s answer); `milwi-054` named Daniel Hoan
+  (`milwi-048`'s); `milwi-053` named Victor Berger (`milwi-052`'s).
+- `milwi-026` named Solomon Juneau (`milwi-022`'s); `milwi-029` named Byron Kilbourn
+  (`milwi-023`'s).
+- `milwi-036` and `milwi-040` both named Schlitz (`milwi-033`'s).
+- `milwi-078` named the 16th Street Viaduct (`milwi-073`'s).
+
+**When a block is generated from one article, sweep the block against itself before anything
+else.** The generic fix is to describe rather than name: `milwi-054` now asks about "Milwaukee's
+longest-serving Socialist mayor" instead of Daniel Hoan, and `milwi-078` about "the bridge that
+marchers repeatedly crossed" instead of the viaduct by name. The question survives; the
+give-away does not.
+
+## Two questions contained their own answers (session 12b)
+
+Defect class 5 in its purest form, and it survived because the eponym reads as context:
+
+- `milwi-022` — "Who founded **Juneau**town and went on to become Milwaukee's first mayor?"
+  → **Solomon Juneau**.
+- `milwi-023` — "Who laid out **Kilbourn**town, west of the Milwaukee River?" → **Byron
+  Kilbourn**.
+
+Both now describe the settlement by geography instead ("the settlement east of the Milwaukee
+River"; "the settlement west of the Milwaukee River, even printing maps that showed the east
+side as blank"). **The tell is a place name built from a person's name** — Juneautown,
+Kilbourntown, Walker's Point — in a question whose answer is a person. The third founder
+question, `milwi-024`, was already written the right way.
+
+## A DISTRACTOR can leak, while still being the wrong answer (session 12b)
+
+`milwi-080` asks Milwaukee's 2020 census population → **577,222**. `milwi-082` asks when the
+city peaked and at what level → "741,324 in 1960", and offered **"577,222 in 2020"** as a
+distractor.
+
+The distractor is wrong *as an answer to `milwi-082`* and simultaneously a **true statement**
+that gives `milwi-080` away outright. Every leakage sweep this workstream runs reads question
+text and explanations; none reads other questions' option lists, so this was invisible.
+
+An options-level sweep was run here for the first time. **It has a high noise rate** — an
+answer appearing as a distractor elsewhere is normally healthy, that is what a distractor pool
+is — and of ~48 hits only this one was real. The shape worth grepping for is narrow:
+**a distractor that asserts a complete fact** ("577,222 in 2020", "1955, when X opened")
+rather than naming a bare entity. `milwi-082`'s options no longer restate the 2020 figure.
+
+## The citation that contradicted its own correct question (session 12b)
+
+`milwi-018` asks which alderperson is the newest on the Common Council → **Alex Brower**. Its
+source was `Wikipedia: Milwaukee Common Council`, whose roster gives Brower a start date of
+**8 November 2022** — on that table three other members start in April 2024, so **the cited
+source says the answer is wrong**.
+
+The question is right. Brower won an **April 2025 special election** for the seat left vacant
+by Jonathan Brostoff's death and took office on 22 April 2025; the locale config says so, and
+`Wikipedia: Government of Milwaukee` carries the correct date. **Two Wikipedia articles on the
+same council disagree, and the collection cited the one that is wrong.**
+
+This is the fourth time the verify-before-correcting rule has paid for itself, and the first
+where the trap was the *source* rather than my own reading: following the citation would have
+produced a confident "fix" to a correct answer. Both `milwi-014` and `milwi-018` now cite
+`Government of Milwaukee`.
+
+**When two sources on one subject disagree, cite the one that agrees with the verified fact and
+say why** — do not average them, and do not assume the more specific-sounding article is the
+better one.
+
+## The source-drift rule only sees NATIONAL superlatives (session 12b)
+
+`checkSourceDrift` flagged five questions here, and all five were sound. What it did **not**
+flag are the two most volatile questions in the collection:
+
+- `milwi-014` — "Which member is the **longest-serving** alderperson on the Milwaukee Common
+  Council?"
+- `milwi-018` — "Which alderperson is the **most recent** addition to the Milwaukee Common
+  Council?"
+
+The rule's `SUPERLATIVE` pattern matches both "longest" and "most". It fires only when
+`COMPARISON_FIELD` also matches, and that pattern requires a **national** scope — "in the
+nation", "U.S.", "American", "than any", "nationally". A superlative scoped to one body
+("on the Milwaukee Common Council") never qualifies.
+
+But a council-scoped superlative drifts *faster* than a national one: `milwi-018` changes the
+next time anyone is seated, which is precisely what happened when Brostoff died mid-term and a
+2025 special election seated Brower. Both questions carry `expires_at 2028-04-18`, the term
+end — a date that cannot protect them.
+
+**Not fixed here deliberately.** The rule is vendored in both repos and its tests live only
+beside the ev-accounts copy, so a change made in CTC is untested by construction. The fix is a
+one-line addition to `COMPARISON_FIELD` — an `\bon\s+the\b|\bin\s+the\s+(?:city|council|
+department)\b` style local-scope alternative — and it belongs in ev-accounts with a test, not
+here.
+
+## Attribution boilerplate is not a portland-or quirk — it is 61% of the bank (session 12b)
+
+Session 9 ruled: *"When repairing explanations, delete the attribution rather than rewording
+around it. The citation lives in `source.url`."* That was written about one collection.
+
+Measured bank-wide on 2026-09-29: **1,978 of 3,233 active questions across 37 of 43
+collections** open their explanation with "According to …". In `milwaukee-wi` it was
+**86 of 86** — every single question. Other collections at 100%: `wisconsin` 90/90,
+`bend-or` 86/86, `north-carolina` 82/82, `arizona` 81/81, `washington-state` 78/78.
+
+The prefix is the first thing a player reads after answering, it is identical on every
+question, it duplicates a field the UI already has — and on Bloomington eleven of them
+attributed facts to a host that **no longer resolves**, which is worse than saying nothing.
+
+Milwaukee's 86 were stripped mechanically here (`^According to [^,]+, ` removed, next letter
+capitalised; all 86 matched the pattern cleanly, none needed hand-editing).
+
+**The remaining ~1,892 are a bank-wide sweep and Chris's call, not an audit's.** Two things to
+check before running it: some prefixes do real work ("According to the 2020 census, …" is
+evidence, not boilerplate), and the strip must not leave an explanation starting mid-sentence.
+A dry run printing OLD/NEW for every row, as was done here, makes both visible in one pass.
+
+## A fourth self-inflicted leak, in a batch of four (session 12b)
+
+`milwi-091`'s explanation said the fire chief is appointed "by the Fire and Police Commission,
+which appoints both the fire and police chiefs rather than the mayor" — and that Commission is
+`milwi-006`'s entire answer. Fourth session running, and this time in a backfill of only
+**four** questions.
+
+The rate is now high enough to state plainly: **a self-inflicted leak is the expected outcome
+of writing a batch, not an occasional slip.** Writing new questions about a collection means
+writing about the things it already covers, in its vocabulary. The sweep after the insert is
+not a formality — it has caught something every single time.
+
+## Where milwaukee-wi finished
+
+    86 active, 0 drafts
+    easy 40.7% · medium 40.7% · hard 18.6%
+    expiring 12.8% (11 questions; 10 at 2028-04-18, 1 at 2030-05-17)
+    answer positions 22 / 21 / 22 / 21   (best single guess 25.6%)
+    bracketing 50.0% at an extreme, 3/3/3/3
+    leakage 3 hits, all forced names (see below)
+    city.milwaukee.gov citations: 0 · unsourced: 0 · unlabelled: 0
+    readiness: READY
+    nested-options 0 · anachronism 0 · source-drift 5, all read by hand
+
+**The three residual leaks stay**: `Milwaukee County` printed by `milwi-054` and `milwi-062`
+(both are *about* county institutions, and `milwi-008` asks which county Milwaukee is the seat
+of — the name is forced), and `Schlitz` printed by `milwi-036`, which asks which brewery
+Joseph Schlitz took over. Driving those to zero means archiving sound questions.
+
+**Archived (4), all minutiae:** the Burke Brise Soleil's 217-foot wingspan; the art museum's
+collection size as a **25,000–49,999 bracket** (the config states the real figure, "over 34,000
+works", so the bracket hid a number that is known); the Menomonee Valley's width in miles; and
+the year Schlitz closed, which was date-recall, repetitive with `milwi-039`, and leaked
+`milwi-033`.
+
+**Written (4), three of them hard**, to replace the hard tier those archives cost — session 11
+had propped that tier up by *promoting* the wingspan question, which is the wrong kind of hard:
+Fire Chief Aaron Lipski (the office the config deliberately left out pending his
+reappointment — **now settled**, a second four-year term from 17 May 2026); the limit on
+Milwaukee's "strong" mayor, who **cannot introduce legislation** other than the budget; the
+**Milwaukee Commandos**, who walked with the open-housing marchers; and how MPS gets its
+superintendent (an elected board hires one — the city/district split the config insists on).
+
+`city.milwaukee.gov` **returns 403 to everything** — a Cloudflare interstitial, with or without
+a browser User-Agent. Eight questions cited it. Their facts were all verified from readable
+sources this session and the citations were repointed. Worth knowing: **`data.milwaukee.gov` is
+not walled** — same city, different subdomain, different bot policy, and it carries the
+comptroller's office page. Try the open-data subdomain before giving up on a municipal host.
+
+## Still to do on the never-audited four
+
+`wisconsin` and `bend-or` remain, and **both are 100% attribution boilerplate** (90/90 and
+86/86), so budget for that strip. `war-in-iran` (31q) and `world-news` (47q) are still under the
+*question* floor, which an audit cannot fix.

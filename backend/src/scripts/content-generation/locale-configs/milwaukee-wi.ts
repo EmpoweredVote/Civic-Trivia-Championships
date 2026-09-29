@@ -75,9 +75,25 @@ import type { LocaleConfig } from './bloomington-in.js';
  * Spencer Coggs (Treasurer) and Milele A. Coggs (District 6) are DIFFERENT
  * people — never use one as a distractor for the other.
  *
- * DELIBERATELY OMITTED: the fire chief. Aaron Lipski's term was up for
- * reappointment by the Fire and Police Commission in spring 2026 and the
- * outcome was unconfirmed at the time of writing. Add once settled.
+ * RESOLVED 2026-09-29 (was: deliberately omitted pending the outcome): Fire Chief
+ * AARON LIPSKI was reappointed by the Fire and Police Commission to a second
+ * four-year term beginning 17 May 2026, so the term runs to 2030-05-17 — a
+ * different clock from every other office here. He is now in the roster and
+ * carries milwi-091.
+ *
+ * VOLATILE, RE-VERIFY BEFORE TRUSTING: milwi-014 (longest-serving alder) and
+ * milwi-018 (newest alder) are superlatives scoped to the council, so they can go
+ * stale at any special election — far sooner than their 2028-04-18 expiry implies,
+ * as happened when Jonathan Brostoff died in office in November 2024 and the April
+ * 2025 special election seated Alex Brower. `checkSourceDrift` cannot see these:
+ * its superlative trigger requires a NATIONAL comparison phrase.
+ *
+ * CITATION TRAP: `Wikipedia: Milwaukee Common Council` gives Alex Brower a start
+ * date of 8 November 2022, which is wrong and makes milwi-018 look incorrect. Use
+ * `Wikipedia: Government of Milwaukee`, which has 22 April 2025.
+ *
+ * `city.milwaukee.gov` returns HTTP 403 to everything (Cloudflare interstitial) —
+ * do not cite it; nothing can read it. `data.milwaukee.gov` is NOT walled.
  */
 export const milwaukeeWiConfig: LocaleConfig = {
   locale: 'milwaukee-wi',
@@ -163,6 +179,9 @@ export const milwaukeeWiConfig: LocaleConfig = {
     { name: 'Russell W. Stamper', role: 'Alderperson', district: 'District 15', termEnd: '2028-04-18T00:00:00Z' },
     { name: 'Alex Brower', role: 'Alderperson', district: 'District 3', termEnd: '2028-04-18T00:00:00Z' },
     { name: 'Jeffrey B. Norman', role: 'Chief of Police', termEnd: '2029-07-02T00:00:00Z' },
+    // Reappointed by the Fire and Police Commission to a second four-year term
+    // beginning 17 May 2026. Not the municipal clock — do not align this to April 2028.
+    { name: 'Aaron Lipski', role: 'Fire Chief', termEnd: '2030-05-17T00:00:00Z' },
     {
       name: 'Brenda Cassellius',
       role: 'Superintendent, Milwaukee Public Schools',
