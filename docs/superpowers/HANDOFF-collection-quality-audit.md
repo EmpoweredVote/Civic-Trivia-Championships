@@ -11,7 +11,7 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,256** |
+| Active questions | **3,239** |
 | **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
 | Under the 10% expiring floor | **2** — `biloxi-ms` 9.2% (documented breach, see its entry) and `santa-monica-ca` 9.8% |
@@ -21,7 +21,7 @@ wrong when checked, including one that was written and corrected the same day.
 | **SCHEDULED WORK, Dec 2026** | `alexandria-la` — city officeholder backfill, deliberately deferred past its election |
 | **SCHEDULED WORK, Jan 2027** | `new-york-state` — rewrite six statewide officeholders; `texas-state` — re-verify + take `pla-172` |
 | **RULED 2026-09-28** | U.S. senators belong to **state** collections; Missouri done, `pla-172` deferred to post-3 Nov |
-| **NEEDS A RULING** | roll-calls: ~39 expiring questions bank-wide sit inside one. See "The roll-call is not a Biloxi problem" |
+| **RULED 2026-09-29** | roll-call ban **ENFORCED**; all six collections rebuilt, **zero roll-calls remain bank-wide** |
 | **Expiring tier dies before Mar 2027** | `world-news` 22/22, `climate-change` 18/18, `massachusetts-state` 12/12, `new-york-state` 6/6, `wisconsin` 13/15, `asheville-nc` 10/11 |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
@@ -4618,3 +4618,69 @@ March 2027** (most on 2026-12-01 — Asheville's municipal election and the end 
 term). It clears the floor today and collapses in December. It belongs on the Q1 2027 sweep
 list alongside `new-york-state`. `milwaukee-wi` has **0 of 10** dying in that window and needs
 nothing.
+
+
+## philadelphia-pa, bloomington-in and springfield-mo — trim AND rebuild (session 11)
+
+The three where trimming alone left the collection under the floor. Each was rebuilt on the
+`madison-wi` model: **distinct offices, never more slot-holders**.
+
+| collection | before | after trim only | after rebuild |
+|---|---|---|---|
+| `philadelphia-pa` | 102q, 13.7% | 97q, 9.3% | **99q, 11.1%** · easy 31.3% · hard 24.2% |
+| `bloomington-in` | 78q, 15.4% | 71q, 7.0% | **74q, 10.8%** · easy 37.8% · hard 23.0% |
+| `springfield-mo` | 96q, 14.6% | 88q, 6.8% | **92q, 10.9%** · easy 31.5% · hard 17.4% |
+
+`springfield-mo`'s trim-only figure of 6.8% is the clearest measure of how much of the floor was
+being carried by repeated shapes: **eight of its fourteen expiring questions were slot-holders.**
+
+**What was trimmed** — one representative kept from each:
+
+- `philadelphia-pa`: "‹name› represents which district" ×4 (kept `phipa-016`); "‹name› serves in
+  which capacity" ×3 (kept `phipa-021`). **`phipa-010` / `-011` / `-018` were NOT touched** —
+  Majority Leader, Minority Leader and Majority Whip are three *offices*, not three slots.
+- `bloomington-in`: District I–VI ×6 (kept `bli-122`); "‹name› holds which kind of seat" ×3
+  (kept `bli-128`).
+- `springfield-mo`: Zone 1–4 (kept `sprmo-011`); General Seat A–D (kept `sprmo-015`); MO House
+  139/140/141 (kept `sprmo-091`).
+
+**What was added** — every fact searched before writing:
+
+| collection | new questions |
+|---|---|
+| `philadelphia-pa` | Sheriff Rochelle Bilal (elected, to Jan 2028); Police Commissioner Kevin Bethel (appointed) — deliberately paired, since the questions teach that one is elected and one is not |
+| `bloomington-in` | Fire Chief Roger Kerr; MCCSC Superintendent Markay Winston; State Sen. Shelli Yoder (District 40, to Nov 2028) |
+| `springfield-mo` | Police Chief Paul Williams; Fire Chief David Pennington; City Clerk Anita Cotter; Superintendent Grenita Lathan (contract runs to the 2028–29 school year) |
+
+**Three more offices were rejected on verification**, which is why `springfield-mo` needed four
+additions rather than two:
+
+- **Greene County Sheriff** — Jim Arnott left in 2026 to become a U.S. Marshal and the
+  replacement is an **interim** appointee. Skipped.
+- **Both of Springfield's state senators** — Curtis Trent (District 20) **lost his August 2026
+  primary** and Lincoln Hough (District 30) is **term-limited**. Both leave in January.
+- **Greene County Presiding Commissioner** — Bob Dixon's term ends January 2027 and the seat is
+  on the November ballot.
+
+Springfield is an unusually election-exposed jurisdiction this cycle; its durable expiring
+content is almost entirely **appointed city staff**, which is exactly what the `madison-wi`
+model is for.
+
+**Two ids collided on first attempt.** `phipa-201`/`-202` already existed — they are part of an
+earlier easy backfill block (`phipa-201`…`-209`). The transaction aborted on the unique
+constraint and rolled back cleanly, and the questions went in as `phipa-210`/`-211`.
+**Check `max(external_id)` for the prefix before choosing new ids**, as the `misso-211` insert
+did and this one did not.
+
+## The ban is fully applied — zero roll-calls remain (session 11)
+
+Re-running the strict detector across all 43 active collections after the five rebuilds:
+
+    REMAINING ROLL-CALLS (slot-index shape, >=3): NONE
+    expiring questions still inside a roll-call: 0
+
+Down from **39 across six collections**. Bank: 43 collections, **3,239 active questions**.
+
+**Still under the 10% expiring floor: two.** `biloxi-ms` 9.2% (documented breach — its
+officeholder surface is exhausted) and `santa-monica-ca` 9.8% (never examined). Every collection
+that previously cleared the floor still clears it, on honest tiers.
