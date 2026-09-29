@@ -11,16 +11,17 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,287** |
+| Active questions | **3,256** |
 | **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
-| Under the 10% expiring floor | **2**, both *already audited* (see the retroactive-floor section) |
+| Under the 10% expiring floor | **2** — `biloxi-ms` 9.2% (documented breach, see its entry) and `santa-monica-ca` 9.8% |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
 | **Under 11% HARD** | `queens-ny` **10.1%**, `world-news` 10.6% |
 | **Re-verify after 3 Nov 2026** | `texas-state` — its whole executive is on that ballot; `west-monroe-la` — `wmnla-093` |
 | **SCHEDULED WORK, Dec 2026** | `alexandria-la` — city officeholder backfill, deliberately deferred past its election |
 | **SCHEDULED WORK, Jan 2027** | `new-york-state` — rewrite six statewide officeholders; `texas-state` — re-verify + take `pla-172` |
-| **RULED 2026-09-28** | U.S. senators belong to **state** collections; `stlmo-217` and `pla-172` need handing up |
+| **RULED 2026-09-28** | U.S. senators belong to **state** collections; Missouri done, `pla-172` deferred to post-3 Nov |
+| **NEEDS A RULING** | roll-calls: ~39 expiring questions bank-wide sit inside one. See "The roll-call is not a Biloxi problem" |
 | **Expiring tier dies before Mar 2027** | `world-news` 22/22, `climate-change` 18/18, `massachusetts-state` 12/12, `new-york-state` 6/6, `wisconsin` 13/15, `asheville-nc` 10/11 |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
@@ -31,8 +32,9 @@ wrong when checked, including one that was written and corrected the same day.
 2. **Senator ruling: half applied.** `missouri`/`st-louis-mo` swap is DONE. `pla-172` in
    `plano-tx` is deliberately deferred to after 3 Nov 2026 — do it with the `texas-state`
    re-verify. See "The U.S.-senator tier ruling".
-3. **Two already-audited collections breach the 10% expiring floor**: `biloxi-ms` 8.5% and
-   `santa-monica-ca` 9.8%. `biloxi-ms` is the bigger job at 118 questions.
+3. **`santa-monica-ca` 9.8% is the last unexamined floor breach.** `biloxi-ms` was done in
+   session 11 and is a **documented breach at 9.2%** — its officeholder surface is eight
+   offices and they are all now used; do not "fix" it by reviving the ward roll-call.
    These are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
    different job from an audit". `west-monroe-la`, `alexandria-la` and `new-york-state` cleared
    in session 11.
@@ -4433,3 +4435,145 @@ elsewhere in the collection.
 The same shape appeared three more times in this one collection — the Capitol (10 questions),
 SUNY (6), and the state constitutions, where a single explanation on `nysts-011` listed **all
 four** constitutional years and thereby answered `012`, `017`, `020` and `021` outright.
+
+### biloxi-ms — RE-VISIT complete (session 11) — **STILL BELOW THE FLOOR, and that is the finding**
+
+118 → 81 (37 archived) → 87 (+6). **Expiring 8.5% → 9.2%.** Easy 30.5% → 33.3%,
+hard 24.6% → 20.7%, positions 25/21/19/22. Real leakage hits **120 → 4**.
+Duplicate answers 1 → **0**. Repeated question shapes **1 → 0**.
+
+**It does not clear the 10% floor, and it should not be recorded as if it does.** The
+8.5% it started at was manufactured; the 9.2% it ends at is real. Read on before "fixing" it.
+
+**THE BILOXI WARD DEFECT WAS STILL IN BILOXI.** This workstream named the defect after this
+collection in session 2 — "seven identical *which alderman represents Ward N* questions, the
+Biloxi ward defect again" — while writing up **st-louis-mo**. The lesson was extracted and
+applied to other collections and **never swept back to its origin**. `bxl-407`…`bxl-413` were
+still there, seven identical stems, and they were **7 of the collection's 10 expiring
+questions**. Removing them is why the honest ratio barely moved despite six new questions.
+
+This is the same shape as the retroactive-floor discovery: a rule was learned here, written
+down, applied forward, and never applied backward to the collection that taught it.
+
+**FOUR QUESTIONS ABOUT ONE MAYOR**, and the one that most needed a clock did not have one:
+`bxl-004` ("Who is the current mayor of Biloxi?") had **no `expires_at` at all**, while
+`bxl-402`, `bxl-403` and `bxl-414` — which term, when re-elected, when the term ends — all
+carried one and all leaked each other. Kept `bxl-004`, gave it the 2029 expiry, archived the
+other three.
+
+**A NEW DEFECT CLASS: the block-identity question.** `bxl-020` ("What is the name of the
+historic lighthouse in Biloxi?"), `bxl-022` (the Air Force base), `bxl-025` (the maritime
+museum) and `bxl-200` (the 2005 hurricane) each sat inside a block of 7–11 questions *about
+that very thing*, so the answer was printed in eight or nine other stems. Unlike ordinary
+leakage this **cannot be scrubbed** — the block is legitimately about the subject. The question
+has to go. Detection: an answer that appears in more than ~5 other stems in the same collection.
+
+Archived (37): the 6 surplus ward questions; 3 surplus mayor questions; 4 block-identity;
+6 museum furniture (floor area, a marine pump-out station); 4 Beauvoir Katrina minutiae
+(acreage, dollar figures, percentages); 5 wade-ins headcounts; 1 Keesler appropriation figure;
+4 session-2 easy-backfill questions that **duplicated questions already in the bank**
+(`bxl-517` vs `bxl-128`, `bxl-519` vs `bxl-192`, `bxl-011` vs `bxl-520`, `bxl-049` vs
+`bxl-518`); and 4 city-article furniture/derivative items.
+
+Promoted 6 mediums to hard (`012`, `037`, `114`, `169`, `184`, `191`) — archiving 18 hard
+furniture questions would otherwise have re-run the session 1–2 hard-tier collapse. Hard
+landed at 20.7%.
+
+Added (6), **all distinct offices — the `madison-wi` model, not a second roll-call**:
+
+| id | d | expires | office |
+|---|---|---|---|
+| `bxl-601` | medium | 2028-01-01 | Harrison County Sheriff (Matt Haley) |
+| `bxl-602` | hard | 2028-01-07 | MS Senate District 50 (Scott DeLano) |
+| `bxl-603` | hard | 2028-01-07 | MS House District 117 (Kevin Felsher) |
+| `bxl-604` | medium | 2029-06-01 | Biloxi Police Chief (Chris De Back) |
+| `bxl-605` | hard | 2029-06-01 | Biloxi Fire Chief (Nicholaus Geiser) |
+| `bxl-606` | medium | 2028-06-30 | Biloxi Schools Superintendent (Marcus Boudreaux) |
+
+**A mistake I made, caught by verifying:** all six went in with `topic_id = 838`, which is
+`missouri`'s "State Symbols & Culture" — copied from the previous collection's insert. Six
+officeholder questions would have displayed under a Missouri culture topic. This is the third
+time a hand-written SQL backfill has landed the wrong topic label (fremont-ca, plano-tx, now
+here). **Check `topic_id` against the collection's own topic list in the same transaction that
+inserts.**
+
+**Two more near-misses**, taking this session's total to seven: Harrison County Sheriff **Troy
+Peterson retired in 2024** (successor Matt Haley), and the Harrison County Board of Supervisors
+**president rotates annually**, so Dan Cuevas was dropped rather than written with a
+three-month life.
+
+### Why biloxi-ms stops at 9.2%
+
+Biloxi's honest officeholder surface is eight offices: mayor, one ward councillor, police
+chief, fire chief, schools superintendent, county sheriff, one state senator, one state
+representative. Every one is verified and every one is a *different* office. Eight questions
+against 87 is 9.2%.
+
+Reaching 10% needs either a ninth verified office — the county board president rotates
+annually, the city clerk and municipal judge are not published by name, and the second state
+House district covering Biloxi could not be confirmed — or archiving another ten questions
+purely to move a denominator, which is the same sin as the roll-call in the other direction.
+
+**Recorded as a documented breach, not a failure to finish.** `santa-monica-ca` (9.8%) is now
+the only other collection under the floor.
+
+---
+
+## The roll-call is not a Biloxi problem — it is how several collections meet the floor (session 11)
+
+The expiring ruling says never to buy the ratio by repeating a question shape. Nobody had ever
+checked whether collections were doing it. The detector is short:
+
+    -- shape = stem with digits and slot words blanked
+    SELECT slug, count(*), count(*) FILTER (WHERE expires_at IS NOT NULL)
+    FROM (... regexp_replace(lower(text), '[0-9]+', '#', 'g') ...) GROUP BY slug, shape
+    HAVING count(*) >= 3;
+
+Measured 2026-09-28, true roll-calls (the varying token is a **slot index**, not a different
+office):
+
+| collection | roll-call | expiring inside it | share of its expiring tier |
+|---|---|---|---|
+| `biloxi-ms` | Ward 1–7 | **7** | **70%** — now fixed |
+| `springfield-mo` | Zone 1–4, Seat A–D, MO House 139/140/141 | **11** | **79%** |
+| `philadelphia-pa` | "X represents which district" ×4, "X serves in which capacity" ×3 | **7** | 50% |
+| `milwaukee-wi` | alderperson, districts 6/8/13/14/15 | **5** | 36% |
+| `bloomington-in` | District I–VI | **6** | 50% |
+| `asheville-nc` | NC House 114/115/116 | **3** | 27% |
+
+**Do not run the loose version of this query.** Blanking proper nouns as well as digits makes
+`mississippi-state`'s "Who is the current Governor / Attorney General / Treasurer of
+Mississippi?" look identical to a ward roll-call. It is the opposite — those are ten *distinct*
+statewide offices, which is exactly what good looks like. The distinguishing test is whether
+the varying token is a **slot index** or an **office name**.
+
+**The good model is `madison-wi`: 14 expiring questions from 12 distinct city offices** — mayor,
+council president and vice-president, city attorney, clerk, assessor, finance director, civil
+rights director, fire chief, water utility general manager, city engineer, school
+superintendent. `washington-dc` and `mississippi-state` do the same thing. A city has far more
+*offices* than most collections use; it does not have more *ward-holders* worth naming.
+
+**What this means for the floor.** Roughly 39 expiring questions bank-wide sit inside a
+roll-call. Trimming each to one would drop `springfield-mo` from 14.6% to 6.8% and
+`bloomington-in` from 15.4% to 12.0%. **The floor's recorded compliance is better than its real
+compliance**, and the gap is concentrated in six collections. Worth a ruling: either the
+roll-call ban is enforced and those collections get rebuilt on the madison-wi model, or the ban
+is softened and this collection's seven ward questions should not have been removed.
+
+## The easy backfill duplicated the bank it was added to (session 11, biloxi-ms)
+
+Session 2 added twenty easy questions to `biloxi-ms` (`bxl-501`…`bxl-520`). Four of them asked
+something the collection already asked:
+
+| backfill | duplicated | both answer |
+|---|---|---|
+| `bxl-517` | `bxl-128` | Keesler's mission is technical training |
+| `bxl-519` | `bxl-192` | the wade-ins aimed to desegregate the beaches |
+| `bxl-011` | `bxl-520` | Biloxi and Gulfport are the county seats |
+| `bxl-049` | `bxl-518` | the Blessing of the Fleet |
+
+None was caught by the duplicate-answer check, because the two questions phrase the answer
+differently ("Gulfport" vs "Biloxi and Gulfport"; "blessing of fishing boats" vs "The Blessing
+of the Fleet"). **Duplicate *answers* and duplicate *facts* are different checks.** Before
+adding an easy block to an existing collection, read the collection first — the easy questions
+are exactly the ones most likely to already be there.
