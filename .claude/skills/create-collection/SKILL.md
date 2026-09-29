@@ -19,7 +19,7 @@ Ask the user (or parse from `$ARGUMENTS`) for the following. If they provided th
 **Required:**
 - **City and state** — e.g. "Austin, TX"
 - **Slug** — lowercase, hyphenated, e.g. `austin-tx`
-- **External ID prefix** — **5 lowercase letters**, `[city-letters][state-code]` (e.g. `madwi`, `phxaz`). Standardised 2026-03-22; older collections kept shorter legacy prefixes. Must be unique across ALL collections. Verify against the live DB rather than trusting a list, because prefixes have drifted: `SELECT DISTINCT split_part(external_id,'-',1) FROM trivia.questions ORDER BY 1;` — five collections use more than one prefix, and `ind` is already shared by Indiana and Indio CA. Choose something that collides with nothing. Note that a trailing `la` means Louisiana (`alxla`, `wmnla`) while a leading `la` means Los Angeles — do not reuse either.
+- **External ID prefix** — **no longer applicable to new collections.** External IDs now derive from the collection slug (`<slug>_0001`), so no prefix needs to be chosen, reserved, or checked against the DB. (Legacy: collections created before the slug-derived scheme shipped keep their old 5-letter `[city-letters][state-code]` prefixes, e.g. `madwi`, `phxaz`, and a few older collections kept shorter legacy prefixes. `ind` is shared by Indiana and Indio CA among those legacy prefixes — that collision is historical and does not apply to new, slug-derived collections.)
 - **Theme color** — hex, e.g. `#1A3A6B`. If not provided, suggest a color that matches the city's official colors or local identity.
 
 **Confirm before proceeding.** Show the user a summary table and ask for a go/no-go.
@@ -162,7 +162,6 @@ import type { LocaleConfig } from './bloomington-in.js';
 export const [camelCaseSlug]Config: LocaleConfig = {
   locale: '[slug]',
   name: '[City, ST]',
-  externalIdPrefix: '[prefix]',
   collectionSlug: '[slug]',
   targetQuestions: 130,
   batchSize: 25,
@@ -217,20 +216,26 @@ if the prefix is globally unique, so prove it is — **before** generating conte
 
 ```sql
 SELECT
-  (SELECT count(*) FROM trivia.questions WHERE external_id LIKE '[prefix]-%') AS questions,
+  (SELECT count(*) FROM trivia.questions WHERE split_part(external_id, '_', 1) = '[slug]') AS questions,
   (SELECT count(*) FROM trivia.topics    WHERE slug        LIKE '[prefix]-%') AS topics;
 ```
 
-**Both must be 0.** If either is non-zero the prefix is taken — pick another and
-re-run. Do not proceed on a non-zero count, and do not work around it by
-filtering more narrowly: every later step assumes the prefix belongs to exactly
-one collection.
+**Both must be 0.** If either is non-zero the identifier is taken — pick another
+slug (or, for a legacy prefix-based collection, another prefix) and re-run. Do
+not proceed on a non-zero count, and do not work around it by filtering more
+narrowly: every later step assumes the identifier belongs to exactly one
+collection.
 
-Why this is a hard gate rather than advice: `ind` is already shared by Indiana
-and Indio CA, so `LIKE 'ind-%'` matches 51 questions across two collections.
-Five collections use more than one prefix (Bloomington IN has three). A prefix
-has never actually identified a collection — this gate is what makes treating it
-as one safe for the length of this flow.
+New-scheme collections mint external IDs from `collectionSlug` (`<slug>_0001`),
+scoped with `split_part(external_id, '_', 1) = '[slug]'` — **never** a bare
+`LIKE '[slug]_%'`, because `_` is a SQL `LIKE` wildcard and would also match
+`[slug]X0001`. Legacy collections still identify their questions by their
+5-letter prefix (`LIKE '[prefix]-%'`); this doc marks each legacy-prefix step as
+it comes up. Why this was a hard gate for legacy collections: `ind` is already
+shared by Indiana and Indio CA, so `LIKE 'ind-%'` matches 51 questions across
+two collections. Five legacy collections use more than one prefix (Bloomington
+IN has three). A prefix has never actually identified a collection — this gate
+is what made treating it as one safe for the length of this flow.
 
 **Topics are global, not owned by a collection.** `trivia.topics` has no
 collection column; the link is the `trivia.collection_topics` join table. Create
@@ -269,7 +274,7 @@ This is the core of the skill. You will write **80–100 high-quality civic triv
 4. **Explanation** — Must start with `"According to [source name], ..."`. Cite the specific Wikipedia article or source.
 5. **Difficulty mix** — ~40% easy, ~40% medium, ~20% hard.
 6. **Topic distribution** — Follow the percentages you defined in Step 2. For 90 questions: multiply each % by 0.9 to get target counts.
-7. **External IDs** — Format: `[prefix]-001`, `[prefix]-002`, etc. Sequential, no gaps.
+7. **External IDs** — Format: `[slug]_0001`, `[slug]_0002`, etc. (four digits). Sequential, no gaps. (Legacy prefix-based collections use `[prefix]-001`, `[prefix]-002`, three digits — do not use that format for a new collection.)
 8. **ExpiresAt** — Set to officeholder's termEnd for any question about a specific officeholder. NULL for durable structural/historical questions.
 9. **Source** — Every question needs `{ name: "Wikipedia", url: "https://en.wikipedia.org/wiki/..." }` or the actual source.
 10. **Max 1 question per officeholder** — Do not write two questions about the same person.
@@ -300,7 +305,7 @@ INSERT INTO trivia.questions (
   status, created_at, updated_at
 ) VALUES
 (
-  '[prefix]-001',
+  '[slug]_0001',
   'Question text here?',
   '["Option A", "Option B", "Option C", "Option D"]',
   0,
@@ -319,14 +324,16 @@ INSERT INTO trivia.questions (
 
 **After each batch insert:** run a quick count check:
 ```sql
-SELECT COUNT(*) FROM trivia.questions WHERE external_id LIKE '[prefix]-%';
+SELECT COUNT(*) FROM trivia.questions WHERE split_part(external_id, '_', 1) = '[slug]';
 ```
+(Legacy prefix-based collections instead use: `external_id LIKE '[prefix]-%'`.)
 
-> This query and 6d's below match on the prefix instead of joining through
+> This query and 6d's below match on the identifier instead of joining through
 > `trivia.collection_questions`, deliberately: the link rows do not exist until
 > 6e, so a join would return zero here. They are safe **only** because 5a proved
-> the prefix matches nothing else. If you skipped 5a, go back — on a colliding
-> prefix, 6d's UPDATE rewrites another collection's answer options.
+> the identifier matches nothing else. If you skipped 5a, go back — on a
+> colliding slug or prefix, 6d's UPDATE rewrites another collection's answer
+> options.
 
 Continue until you have 80–100 questions inserted. Aim for at least 85.
 
@@ -341,13 +348,15 @@ Check, then rotate to a forced-uniform spread:
 
 ```sql
 SELECT correct_answer, COUNT(*) FROM trivia.questions
-WHERE external_id LIKE '[prefix]-%' GROUP BY 1 ORDER BY 1;
+WHERE split_part(external_id, '_', 1) = '[slug]' GROUP BY 1 ORDER BY 1;
+-- Legacy prefix-based collections instead use: external_id LIKE '[prefix]-%'
 
 WITH numbered AS (
   SELECT id, options, correct_answer,
          (row_number() OVER (ORDER BY hashtext(external_id)) - 1)::int % 4 AS target_pos
   FROM trivia.questions
-  WHERE external_id LIKE '[prefix]-%' AND jsonb_array_length(options) = 4
+  WHERE split_part(external_id, '_', 1) = '[slug]' AND jsonb_array_length(options) = 4
+  -- Legacy prefix-based collections instead use: external_id LIKE '[prefix]-%'
 ),
 calc AS (
   SELECT id, options, correct_answer, target_pos,
@@ -374,12 +383,16 @@ so promote the genuinely obvious ones to `easy` to reach roughly 40/40/20.
 
 ```sql
 -- NOT EXISTS is the load-bearing part: this is the one INSERT that could hand a
--- collection somebody else's questions, and it is the only place the prefix is
--- turned into ownership. Behind 5a it is redundant; the day 5a is skipped it is
--- the difference between a bad collection and a corrupted one.
+-- collection somebody else's questions, and it is the only place the
+-- identifier is turned into ownership. Behind 5a it is redundant; the day 5a
+-- is skipped it is the difference between a bad collection and a corrupted one.
+--
+-- `_` is a LIKE wildcard, so a bare `external_id LIKE '[slug]_%'` also matches
+-- `[slug]X0001` — scope with split_part instead. Legacy prefix-based
+-- collections instead use: q.external_id LIKE '[prefix]-%'
 INSERT INTO trivia.collection_questions (collection_id, question_id, created_at)
 SELECT [collection_id], q.id, NOW() FROM trivia.questions q
-WHERE q.external_id LIKE '[prefix]-%'
+WHERE split_part(q.external_id, '_', 1) = '[slug]'
   AND NOT EXISTS (
     SELECT 1 FROM trivia.collection_questions cq WHERE cq.question_id = q.id
   )
@@ -392,11 +405,13 @@ SELECT c.name, count(*) AS linked
 FROM trivia.collection_questions cq
 JOIN trivia.collections c ON c.id = cq.collection_id
 JOIN trivia.questions q ON q.id = cq.question_id
-WHERE q.external_id LIKE '[prefix]-%'
+WHERE split_part(q.external_id, '_', 1) = '[slug]'
 GROUP BY c.name;
 ```
-One row, your collection, the count you expect. More than one row means a prefix
-collision took effect — stop and unpick it before continuing.
+(Legacy prefix-based collections instead use: `q.external_id LIKE '[prefix]-%'`.)
+
+One row, your collection, the count you expect. More than one row means an
+identifier collision took effect — stop and unpick it before continuing.
 
 ### 6f. Expiring question check
 
@@ -508,9 +523,13 @@ Do NOT skip this step — the activate script will fail without the banner.
 > `is_active = false` and its questions are `draft`. There is no rush.
 
 ### 8a. Audit
-Run the readiness audit — **`--prefix` is required, not optional**:
+Run the readiness audit. **`--prefix` is deprecated for new collections — omit
+it.** It is advisory-only, but `audit-collection-readiness.ts` still validates
+whatever is passed against `/^[a-z]{2,5}$/`; passing your slug (e.g.
+`akron-oh`) there errors out rather than being ignored. (Legacy prefix-based
+collections still pass their real `--prefix`.)
 ```bash
-cd "C:/Project Test/backend" && npx tsx src/scripts/audit-collection-readiness.ts --slug [slug] --prefix [prefix]
+cd "C:/Project Test/backend" && npx tsx src/scripts/audit-collection-readiness.ts --slug [slug]
 ```
 
 Review the output. If it warns about expiring ratio, go back to Step 6f.

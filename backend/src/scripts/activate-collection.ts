@@ -167,8 +167,8 @@ async function main(): Promise<void> {
       console.error('Run the link step first (create-collection SKILL.md, step 6e):');
       console.error('  INSERT INTO trivia.collection_questions (collection_id, question_id, created_at)');
       console.error(`  SELECT ${collection.id}, q.id, NOW() FROM trivia.questions q`);
-      console.error("  WHERE split_part(q.external_id, '_', 1) = '<collection-slug>'   -- new scheme");
-      console.error("  WHERE q.external_id LIKE '<prefix>-%'                           -- legacy prefixes only");
+      console.error("  WHERE split_part(q.external_id, '_', 1) = '<collection-slug>'");
+      console.error("  --  legacy prefix collections instead use:  q.external_id LIKE '<prefix>-%'");
       console.error('    AND NOT EXISTS (SELECT 1 FROM trivia.collection_questions cq WHERE cq.question_id = q.id);');
       process.exit(1);
     }

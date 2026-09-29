@@ -11,7 +11,7 @@
  *
  * Usage:
  *   cd backend
- *   npx tsx src/scripts/scaffold-collection.ts --name "Austin, TX" --slug austin-tx --prefix aut --theme "#7C3AED"
+ *   npx tsx src/scripts/scaffold-collection.ts --name "Austin, TX" --slug austin-tx --theme "#7C3AED"
  *   npx tsx src/scripts/scaffold-collection.ts --help
  */
 
@@ -154,8 +154,8 @@ Optional:
   --help, -h             Show this help message
 
 Examples:
-  npx tsx src/scripts/scaffold-collection.ts --name "Austin, TX" --slug austin-tx --prefix aut --theme "#7C3AED"
-  npx tsx src/scripts/scaffold-collection.ts --name "Texas State" --slug texas-state --prefix txs --theme "#BF5700" --tier state
+  npx tsx src/scripts/scaffold-collection.ts --name "Austin, TX" --slug austin-tx --theme "#7C3AED"
+  npx tsx src/scripts/scaffold-collection.ts --name "Texas State" --slug texas-state --theme "#BF5700" --tier state
 `);
 }
 

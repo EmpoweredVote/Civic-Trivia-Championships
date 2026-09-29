@@ -664,7 +664,7 @@ async function main(): Promise<void> {
     const { sql: sqlForOffset } = await import('drizzle-orm');
     const { nextSequence, collectionKeyOf } = await import('./externalIdentity.js');
 
-    const namespace = config.externalIdPrefix ?? config.collectionSlug;
+    const namespace = config.externalIdPrefix || config.collectionSlug;
     const maxIdRows = await dbForOffset
       .select({ externalId: questionsForOffset.externalId })
       .from(questionsForOffset)
