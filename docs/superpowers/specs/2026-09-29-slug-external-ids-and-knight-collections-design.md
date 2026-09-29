@@ -365,7 +365,13 @@ WHERE external_id !~ '^[a-z][a-z0-9-]*_[0-9]{4,}$'
   AND external_id !~ '^q[0-9]{3}$';
 ```
 
-Check 3 should return only `elc-term-*` rows; if it returns anything else, the regex is wrong.
+Check 3 should return exactly the 15 archived `elc-1-NNN` rows and nothing else.
+
+**Corrected 2026-09-29:** this spec originally predicted `elc-term-*` here, from reading
+`CurrentTermQuestionGenerator.ts:55`. The live bank actually holds `elc-1-NNN`, minted by
+`ElectionQuestionGenerator.ts` — all 15 **archived**, created 2026-02-26. They are deliberately
+left unmatched by the validator: neither election generator imports `QuestionSchema`, so that
+shape never reaches it, and widening a validator for 15 dead rows weakens it for nothing.
 
 ## Risks
 
