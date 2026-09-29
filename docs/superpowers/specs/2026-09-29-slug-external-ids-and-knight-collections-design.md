@@ -159,9 +159,15 @@ runner. A change made here is untested until it is carried over.
 The widened validator, stated exactly so it is not re-derived during implementation:
 
 ```ts
-/^[a-z][a-z0-9-]*_\d{4,}$/     // new: slug-derived, four OR MORE digits
+/^[a-z][a-z0-9-]*_\d{4,}$/    // new: slug-derived, four OR MORE digits
 /^[a-z]{2,5}-\d{3,4}$/        // legacy: prefix-derived, widened from \d{3}
+/^q\d{3}$/                    // federal: bare, no separator at all
 ```
+
+**Three shapes, not two.** Federal's 161 questions are `q001`…`q161` with **no separator**, so
+neither of the first two patterns matches them — a two-shape validator would reject the entire
+Federal collection. This was caught reviewing the helper, not while writing the spec, and it is
+the reason the verification query below has three clauses rather than two.
 
 **Four or more digits, not exactly four.** `mintExternalId` widens past 9,999 rather than
 truncating, and this regex is what `QuestionSchema` validates against — so a regex pinned to
