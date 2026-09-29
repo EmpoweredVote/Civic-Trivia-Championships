@@ -4577,3 +4577,44 @@ differently ("Gulfport" vs "Biloxi and Gulfport"; "blessing of fishing boats" vs
 of the Fleet"). **Duplicate *answers* and duplicate *facts* are different checks.** Before
 adding an easy block to an existing collection, read the collection first — the easy questions
 are exactly the ones most likely to already be there.
+
+
+---
+
+# Roll-call ban ENFORCED (Chris ruled 2026-09-29)
+
+Chris's ruling on the finding at the end of the `biloxi-ms` entry: **the ban is enforced and the
+six collections get rebuilt.** `biloxi-ms` was already done. The other five are below.
+
+**The method, for each roll-call:** keep **one** representative question, archive the rest, and
+where the collection then falls under the floor, rebuild the expiring tier on the **`madison-wi`
+model** — distinct offices, not more slot-holders. Trimming is not enough on its own for three
+of the five.
+
+**What the ban does and does not catch.** `philadelphia-pa`'s at-large **Majority Leader**,
+**Minority Leader** and **Majority Whip** questions are *not* a roll-call and were kept: the
+varying token is an office name, not a slot index. That is the same test that keeps
+`mississippi-state`'s ten statewide offices out of scope.
+
+## milwaukee-wi and asheville-nc — trim only, both clear the floor (session 11)
+
+Neither needed new questions.
+
+| collection | before | after |
+|---|---|---|
+| `milwaukee-wi` | 90q, 14 expiring (15.6%) | **86q, 10 expiring (11.6%)**, easy 40.7%, hard 18.6% |
+| `asheville-nc` | 88q, 11 expiring (12.5%) | **86q, 9 expiring (10.5%)**, easy 31.4%, hard 23.3% |
+
+- `milwaukee-wi`: archived `milwi-016`, `-017`, `-019`, `-020`; kept `milwi-015` (District 6).
+  All four were **hard**, so three mediums that are recall-of-one-specific-figure were promoted
+  (`milwi-035` Jacob Best, `milwi-052` Victor Berger, `milwi-060` the Burke Brise Soleil
+  wingspan) to stop the hard tier collapsing from 18.9% to 15.1%. The rest of Milwaukee's tier
+  was already the good model — mayor, council president, city attorney, comptroller, treasurer,
+  schools superintendent, police chief.
+- `asheville-nc`: archived `ashnc-093`, `-094`; kept `ashnc-092` (NC House District 116).
+
+**A warning attached to `asheville-nc`: 8 of its 9 remaining expiring questions die before
+March 2027** (most on 2026-12-01 — Asheville's municipal election and the end of the NC House
+term). It clears the floor today and collapses in December. It belongs on the Q1 2027 sweep
+list alongside `new-york-state`. `milwaukee-wi` has **0 of 10** dying in that window and needs
+nothing.
