@@ -11,14 +11,16 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,294** |
+| Active questions | **3,287** |
 | **Drafts, bank-wide** | **0** |
 | Collections audited | **37 of 43** |
-| Under the 10% expiring floor | **3**, all *already audited* (see the retroactive-floor section) |
+| Under the 10% expiring floor | **2**, both *already audited* (see the retroactive-floor section) |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
 | **Under 11% HARD** | `queens-ny` **10.1%**, `world-news` 10.6% |
 | **Re-verify after 3 Nov 2026** | `texas-state` — its whole executive is on that ballot; `west-monroe-la` — `wmnla-093` |
 | **SCHEDULED WORK, Dec 2026** | `alexandria-la` — city officeholder backfill, deliberately deferred past its election |
+| **SCHEDULED WORK, Jan 2027** | `new-york-state` — rewrite six statewide officeholders; `texas-state` — re-verify + take `pla-172` |
+| **RULED 2026-09-28** | U.S. senators belong to **state** collections; `stlmo-217` and `pla-172` need handing up |
 | **Expiring tier dies before Mar 2027** | `world-news` 22/22, `climate-change` 18/18, `massachusetts-state` 12/12, `new-york-state` 6/6, `wisconsin` 13/15, `asheville-nc` 10/11 |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
@@ -26,12 +28,13 @@ wrong when checked, including one that was written and corrected the same day.
 1. **Run the expiry-cliff query before picking anything** — see "The expiring tier is
    FRONT-LOADED bank-wide". Several collections that pass the floor today fall through it in
    early 2027 untouched, so the backlog below is not the whole job.
-2. **Three already-audited collections breach the 10% expiring floor**:
-   `new-york-state` 6.7%, `biloxi-ms` 8.5%, `santa-monica-ca` 9.8%. `new-york-state` is the
-   pick — it is also one of the collections whose entire expiring tier (6 of 6) dies before
-   March 2027, so it needs rebuilding rather than topping up.
+2. **Apply the senator ruling** — write the `missouri` version and archive `stlmo-217`; leave
+   `pla-172` until after 3 Nov. Spans four collections; see "The U.S.-senator tier ruling".
+3. **Two already-audited collections breach the 10% expiring floor**: `biloxi-ms` 8.5% and
+   `santa-monica-ca` 9.8%. `biloxi-ms` is the bigger job at 118 questions.
    These are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
-   different job from an audit". `west-monroe-la` and `alexandria-la` cleared in session 11.
+   different job from an audit". `west-monroe-la`, `alexandria-la` and `new-york-state` cleared
+   in session 11.
 3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
    `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
    which is a pipeline-yield problem an audit cannot fix.
@@ -4228,7 +4231,7 @@ Measured 2026-09-28 — collections losing their **entire** expiring tier before
 | `world-news` | **22 / 22** |
 | `climate-change` | **18 / 18** |
 | `massachusetts-state` | **12 / 12** |
-| `new-york-state` | **6 / 6** |
+| `new-york-state` | **6 / 6** — now scheduled for Jan 2027 |
 | `wisconsin` | 13 / 15 |
 | `asheville-nc` | 10 / 11 |
 | `washington-dc` | 11 / 15 |
@@ -4261,3 +4264,146 @@ a state representative to 2028 — which is also why the collection lands at 10.
 city slate is up within a few months, fix the defects now and **schedule** the officeholder
 work for after the inauguration. Record the date. For alexandria-la that date is **December
 2026**, and the payoff is a jump to 15–20% for a collection that is otherwise structurally fine.
+
+### new-york-state — RE-VISIT complete (session 11)
+
+90 → 80 (10 archived) → 83 (+3). **Expiring 6.7% → 10.8%. Easy 30.1%**, hard 36.1%.
+bad_idx 0, bad option counts 0, unsourced 0, drafts 0. Answer positions 22 / 20 / 21 / 20.
+Real leakage hits **97 → 4**, and all four survivors are a *year* appearing inside a full-date
+answer (`1788`, `1789`, `1817`, `1825`), which is the weakest form of the defect.
+Duplicate answers 2 → 1 (`nysts-008`/`nysts-011`, both numeric `4`, unrelated questions).
+
+**This collection has the January 2027 cliff in its purest form.** All six of its expiring
+questions — Governor, Lieutenant Governor, Attorney General, Comptroller, Assembly Speaker,
+Senate Majority Leader — expire on **2027-01-01**, because New York elects its entire executive
+and both legislative chambers on **3 November 2026**. After 1 January the collection drops to
+**3 expiring = 3.6%**, below the floor, with nobody touching it. That is recorded, not
+accidental: see the scheduled work below.
+
+**New York has almost no long-clock state offices.** Governor, AG and Comptroller are four-year
+seats all moving together; both legislative chambers run on two-year terms. The only long clocks
+in the state are the **Court of Appeals** (14-year terms) and the **two U.S. Senate seats**,
+neither of which is on the 2026 ballot. All three new questions come from exactly those.
+
+**THE U.S.-SENATOR TIER RULING IS SETTLED.** Chris ruled on 2026-09-28: **state collections own
+"who are your U.S. senators".** See the section below for what that means for the two city
+collections currently carrying them.
+
+**STATE-SCALE VIOLATIONS FOUND.** The universal rule says a state collection must not hold
+anything a future city collection could own. This one held four New York City questions, three
+of them on a single fact:
+
+- `nysts-027` "Which city served as the first capital of the United States?" → New York City
+- `nysts-028` "Where was Washington inaugurated?" → Federal Hall in New York City
+- `nysts-041` "NYC served as the first U.S. capital until what year?" → 1790
+- `nysts-079` "CUNY serves which area?" → New York City — CUNY is *explicitly* the city system
+
+Archived `028`, `041` and `079`. **Kept `027`** as a judgment call: that New York hosted the
+first federal government is genuine state history and sits on the state's own encyclopedia
+entry, whereas three questions on it plus a CUNY question is the city collection's content.
+Flagging the call rather than burying it — if the rule is meant to be absolute, `027` goes too.
+
+Archived (10): `nysts-028`, `nysts-041`, `nysts-079` (state-scale, above); `nysts-113` (its stem
+printed `002`'s answer and the pair is an inverse); `nysts-033` (Erie Canal length — printed in
+three other explanations), `nysts-043` (canal cost — minutiae); `nysts-046` (Capitol "32 years"
+— derivable from `056` and mutually leaking with it), `nysts-050` (Capitol "444 steps" —
+furniture); `nysts-054` (Niagara "1885" — mutual twin of `053`, which owns the real fact);
+`nysts-071` ("4th most populous" — the same fact `061`'s explanation already stated).
+
+Rewritten stems (9): `005`, `006`, `016`, `018` (all four printed `003`'s answer, "Court of
+Appeals" — reworded to "New York's highest court"); `031`, `052`, `058`, `072`, `074`.
+
+Explanation scrubs (37 across three passes).
+
+Added (3), all long-clock:
+
+| id | d | expires | subject |
+|---|---|---|---|
+| `nysts-201` | medium | 2030-12-31 | Chief Judge Rowan Wilson, Court of Appeals |
+| `nysts-202` | medium | 2029-01-03 | Sen. Chuck Schumer (senior) |
+| `nysts-203` | medium | 2031-01-03 | Sen. Kirsten Gillibrand (junior) |
+
+### SCHEDULED WORK — January 2027, new-york-state
+
+After the new terms begin, rewrite these six in place. Four of them then run to **January 2031**;
+the two legislative leaders run to January 2029.
+
+| id | office | note |
+|---|---|---|
+| `nysts-082` | Governor | Hochul sought a second full term; Blakeman was the Republican nominee |
+| `nysts-083` | Attorney General | James sought a third term |
+| `nysts-084` | Comptroller | DiNapoli sought a fifth full term |
+| `nysts-087` | Lieutenant Governor | **Delgado did not seek re-election — this one changes for certain** |
+| `nysts-085` | Assembly Speaker | chosen by the chamber elected in Nov 2026 |
+| `nysts-086` | Senate Majority Leader | chosen by the chamber elected in Nov 2026 |
+
+Doing it restores the collection to roughly 10.8% and keeps it there for four years.
+
+### Still open on this collection
+
+- **12 bare-homepage citations** (`ny.gov/`, `dec.ny.gov/`, `parks.ny.gov/`).
+- **77 of 83 questions cite Wikipedia** — see the host-metric caveat below. The official state
+  sources exist (`nysenate.gov`, `nycourts.gov`, `dec.ny.gov`) and are barely used.
+- Hard sits at **36.1%**, the highest in the bank. Not a defined defect — the rule is a floor on
+  easy, which passes at 30.1% — but worth watching.
+
+---
+
+## The U.S.-senator tier ruling, and the cleanup it requires (Chris, 2026-09-28)
+
+**Ruled: state collections own "who are your U.S. senators."** Senators are elected statewide, so
+the state collection is the natural home; the city collections that currently carry them should
+hand them up.
+
+Bank-wide, current-senator questions sit in: `arizona` (2), `pennsylvania` (2),
+`washington-state` (2), `california-state` (1) — all state tier and all correct under the ruling
+— plus **two city collections that now need cleanup**:
+
+| question | collection | expires | what to do |
+|---|---|---|---|
+| `stlmo-217` | `st-louis-mo` | 2029-01-03 | **Clean swap.** Write the `missouri` version (Hawley to Jan 2031, Schmitt to Jan 2029 — both durable), then archive this. `st-louis-mo` goes 15.2% → 13.8%, `missouri` 16.0% → 17.1%. |
+| `pla-172` | `plano-tx` | 2027-01-03 | **Wait.** Texas's Cornyn seat is on the 3 Nov 2026 ballot, so a `texas-state` version written now is stale in January. Leave `pla-172` in place until then, and do the swap alongside the `texas-state` re-verify already scheduled for after the election. |
+
+Impact checked before touching anything: all four collections stay above the floor either way
+(`plano-tx` 16.9%, `st-louis-mo` 15.2%, `texas-state` 15.9%, `missouri` 16.0% today).
+
+**Not done in this PR** — it spans four other collections and belongs in its own change.
+
+## The host metric needs a Wikipedia exception (session 11, new-york-state)
+
+alexandria-la added "group citations by host, not just URL", because one tourism site carried 30%
+across three of its pages. `new-york-state` shows the metric's limit: **77 of 90 questions
+(86%) came from `en.wikipedia.org`** — the worst host concentration measured — and it is
+*mostly not the same defect*.
+
+Those 77 were spread across about twenty different Wikipedia articles; the worst single article
+carried 22. One tourism site's three pages are one editorial voice; twenty encyclopedia articles
+on the Erie Canal, the State Capitol, SUNY and the state economy are twenty separately-sourced
+subjects.
+
+**So read the two metrics differently:**
+
+- **max-on-one-URL** is the page-squeezing check. It fires on real density — here it caught the
+  Erie Canal (9 questions) and the Capitol (10), both of which duplicated and leaked heavily.
+- **max-on-one-HOST** is a *source-diversity* check, not a density one. On a third-party site it
+  means the collection was written from one voice. On Wikipedia it means something weaker but
+  still real: **nobody used the primary sources.** New York publishes `nysenate.gov`,
+  `nycourts.gov` and `dec.ny.gov`; this collection used them thirteen times out of ninety.
+
+Treat a high Wikipedia host share as "go find the official source", not as "archive something".
+
+## Nine questions from one article leak in a ring, not in pairs (session 11)
+
+west-monroe-la found *pairs* mined from one sentence. The Erie Canal block here is the larger
+form: **nine questions from one article, leaking in a ring** — the start date gave away the
+start city, which gave away the length, which was restated by the "which two bodies of water"
+question; the nickname gave away the governor, whose question gave the nickname back.
+
+Scrubbing a ring is not the same job as scrubbing a pair. Each explanation has to be rewritten
+to carry **only its own fact**, because any shared context re-links the ring. The rule that
+worked: an explanation may restate its own question's answer and nothing else that is an answer
+elsewhere in the collection.
+
+The same shape appeared three more times in this one collection — the Capitol (10 questions),
+SUNY (6), and the state constitutions, where a single explanation on `nysts-011` listed **all
+four** constitutional years and thereby answered `012`, `017`, `020` and `021` outright.
