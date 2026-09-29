@@ -1,8 +1,8 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 12c)
+# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 12d)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
-## START HERE — measured 2026-09-29, end of session 12c
+## START HERE — measured 2026-09-29, end of session 12d
 
 Every number in this block was re-derived from the database, not carried forward. **Re-derive
 them again rather than trusting them**; three of this document's standing claims have been
@@ -12,9 +12,10 @@ wrong when checked, including one that was written and corrected the same day.
 |---|---|
 | Active collections | **43** |
 | Active questions | **3,237** |
+| **Never-audited collections** | **NONE** — `bloomington-in`, `milwaukee-wi`, `wisconsin` and `bend-or` all done in session 12 |
 | **Drafts, bank-wide** | **0** |
-| Collections audited | **40 of 43** |
-| **RULED 2026-09-29, DONE** | attribution belongs in `source.url` — the "According to …" prefix is stripped **bank-wide, 1,978 → 0**, verified row by row against a snapshot |
+| Collections audited | **41 of 43** — the two left, `war-in-iran` and `world-news`, are under the question floor; that is a generator problem, not an audit one |
+| **RULED 2026-09-29, DONE** | attribution belongs in `source.url` — stripped **bank-wide, 1,978 → 0**. It corrupted **3 rows**, found and fixed in session 12d; read that entry before attempting a similar sweep |
 | Under the 10% expiring floor | **2** — `biloxi-ms` 9.2% (documented breach, see its entry) and `santa-monica-ca` 9.8% |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
 | **Under 11% HARD** | `queens-ny` **10.1%**, `world-news` 10.6% |
@@ -53,14 +54,17 @@ wrong when checked, including one that was written and corrected the same day.
    with **no wrong facts**, because its locale config opens with 60 lines of CRITICAL ACCURACY
    NOTES. Copy that pattern into `wisconsin` and `bend-or` before auditing them.
 
-   **`wisconsin` is DONE (session 12c). `bend-or` is the last of the four** — and the
-   attribution strip no longer needs budgeting for, it was applied bank-wide on 2026-09-29.
-   Start with the citation pass, grouping by
+   **All four are DONE (session 12).** Nothing in the bank is unaudited except `war-in-iran`
+   and `world-news`, which are short of questions rather than short of quality.
+
+   The method that worked, in order: **the citation pass first**, grouping by
    `source->>'url'` **and by host** — that one step found three broken hosts and a
-   six-question stat strip on Bloomington, and a Cloudflare wall on Milwaukee, before a single
-   question was read for content. Then sweep each **single-article block against itself**
-   (the Milwaukee finding), then numeric answers, normalised duplicate answers, bracketing and
-   position spread.
+   six-question stat strip on Bloomington, a Cloudflare wall on Milwaukee, a 403 on Ballotpedia
+   for Wisconsin, and a 35-question article with no government section on Bend, all before a
+   question was read for content. Then sweep each **single-article block against itself**, then
+   questions whose answer is a substring of their own text, then bracket answers against their
+   own explanations, then numeric bracketing and position spread — the last two are separate
+   checks and need separate fixes.
 5. **Three more collections are close to the question floor**: `norwich-uk` 52,
    `los-angeles-ca` 55, `portland-or` 55. None is breaching and none is urgent — but they are
    where the next `plano-tx` comes from, so re-derive rather than waiting for one to cross.
@@ -5407,3 +5411,178 @@ collection does not already discuss.**
 
 `bend-or` is the last of them (86 active). `war-in-iran` (31q) and `world-news` (47q) remain
 under the *question* floor, which is a pipeline-yield problem an audit cannot fix.
+
+## Session 12d (2026-09-29) — bend-or, the last never-audited locale
+
+`bend-or` (collection 350). **86 active → 86**: 4 archived, 4 written, 100 repaired.
+Easy 32.6% → 30.2%, hard 18.6% → 18.6%, expiring 15.1% → 12.8%, positions 19/23/21/23 →
+**21/23/20/22**, bracketing 46.7% → **53.3%**, leakage 33 hits → **13, all forced names**,
+`bendoregon.gov` citations **9 → 0**, `subcategory` NULL **86 → 0**. READY.
+
+**All four never-audited locale collections are now done.** 41 of 43.
+
+## MY OWN BANK-WIDE STRIP CORRUPTED THREE ROWS (session 12d)
+
+Found while reading a Bend explanation that began **"Oregon, John Young Todd, a Missouri
+native, purchased the land…"**. That is not how it was written — it is what my attribution
+strip left behind.
+
+The original was `According to Wikipedia's article on Bend, Oregon, John Young Todd…`.
+Pass D2's refusal test looked for the continuation signature
+`^[A-Z][A-Za-z .()]{1,30}, [a-z]` — a capitalised phrase followed by a **lowercase** word.
+Here the sentence resumes with a **capital** ("Oregon, **John**"), so the test did not fire and
+the qualifier stayed welded to the front of the sentence.
+
+**Three rows of 1,978 — `alxla-070`, `benor-018`, `penns-087`.** All three are fixed.
+
+### Why the verification I did missed it
+
+The invariant I checked was *"every new value is an exact tail of its original"*, and it held —
+for all 1,978, including these three. **A strip that removes too little still produces a tail.**
+The invariant proves nothing was scrambled, lost or reordered; it cannot prove the cut was in
+the right place.
+
+The check that would have caught it is the one I ran **before** passes D–F and never re-ran
+afterwards: scan the results for an explanation beginning with a bare place name and a comma.
+I ran it after pass C, found one hit, confirmed it was a false positive, and moved on — while
+passes D1, D2, E and F were still to come.
+
+**Re-run the corruption scan after the LAST pass, not after the first one.** A staged
+transform needs its check staged too.
+
+### What the full audit showed
+
+Re-derived across all 1,978 rows afterwards: the removed prefix was reconstructed for each and
+grouped by its final word. Every one is the tail of a genuine source name — hostnames,
+"website", "article", "records", "Capitol", "Legislature", "Constitution" — or a place
+qualifier belonging to a source title. **434 rows** had a prefix ending in a place name, which
+is the risky class; a sample of twelve reads as clean complete sentences, and the three
+corrupted ones were the only ones the place-name scan flagged bank-wide. Twelve further rows
+show as structurally changed for an innocent reason: they are questions I rewrote by hand in
+the `wisconsin` and `bend-or` passes after the strip ran.
+
+## Two questions that contained their own answers, again (session 12d)
+
+`benor-068` — **"What is Deschutes Brewery named after?" → "The Deschutes River".** The
+brewery's name is in the question. It was also the collection's only duplicate ANSWER, sharing
+"The Deschutes River" with `benor-021` ("Which river runs through Bend?"). Archived; the
+duplicate went with it.
+
+This is the same shape as Milwaukee's `Juneautown` → Juneau and `Kilbourntown` → Kilbourn.
+**Three instances in two sessions makes it a class worth grepping for directly**: a question
+whose answer string is a substring of its own text, or vice versa. That is a one-line SQL check
+and it would have found all three.
+
+## The fabricated bracket: the explanation was right and the OPTIONS invented a range (session 12d)
+
+Two bracket answers, and in both the defect is precisely located:
+
+| | explanation said | option said |
+|---|---|---|
+| `benor-046` | "produced **more than 500 million** board feet a year" | "500-999 million board feet" |
+| `benor-075` | "Tourism generates **more than $1 billion** a year" | "$1.0-1.9 billion" |
+
+The source gives an open-ended figure. The explanation carries it correctly. **The option list
+converted "more than X" into "X to Y" and invented Y.** Both now offer the source's own
+phrasing as the answer.
+
+A third, `benor-073` ("Roughly how many breweries operate in Bend?" → "30-49"), was archived:
+its own citation says Deschutes is "the largest of **over a dozen** microbreweries in the city",
+which the bracket contradicts outright, and the number churns as breweries open and close.
+
+**Where a bracket answer appears, read the explanation next to it.** If the explanation is
+open-ended and the option is a range, the range is invented.
+
+## A source article that carries 35 questions and has no government section (session 12d)
+
+`Wikipedia: Bend, Oregon` is the citation on **35 of this collection's 86 questions** — 41%,
+the heaviest single-article concentration seen. It is a good article on the city's history,
+geography and economy, and it contains **no government section at all**: no "council-manager",
+no "city manager", no "at-large".
+
+So every governance question cited to it was a wrong-article citation — `benor-001` (form of
+government), `benor-002` (who the chief executive is) and `benor-006` (when it was adopted).
+They now cite `List of mayors of Bend, Oregon`, which states the council–manager arrangement
+verbatim.
+
+**A single heavily-used source is not one citation problem, it is one per subject the article
+does not cover.** Group by `source->>'url'`, then ask what each cluster is *about* — not just
+how big it is.
+
+## A fourth bot-walled host, and a contested date (session 12d)
+
+`www.bendoregon.gov` — and `bendoregon.gov` without the `www`, which was worth testing —
+returns **HTTP 403** behind a Cloudflare interstitial. Nine questions cited it. That is four
+consecutive audits with a walled host: `city.milwaukee.gov`, `census.gov` QuickFacts,
+`ballotpedia.org`, now Bend's own city site.
+
+All nine were repointed after verifying their facts elsewhere, and the local press turned out
+to be the better source anyway: one *Source Weekly* election article states verbatim that the
+mayoral race is "Position 7", that "Ariel Méndez currently holds Position 5" and that Position
+6 is "currently held by Mike Riley" — three live questions, one readable citation.
+
+`benor-006` turned out to rest on a **contested date**: the charter was approved in **1928** and
+the council-appointed mayors begin in **January 1929**. Sources split between the two. Rather
+than pick one, the question now asks when the form of government *took effect* and the
+explanation gives both dates.
+
+## The verify-before-correcting rule, twice more (session 12d)
+
+Two facts I was ready to "fix" and should not have:
+
+- **`benor-024`, "Who served as Bend's first mayor?" → A. H. Goodwillie.** The
+  `List of mayors` article calls him **Arthur L. Goodwillie**. The `Bend, Oregon` article — the
+  question's own citation — says **"appointing A. H. Goodwillie as its first mayor"**. Two
+  Wikipedia articles, two sets of initials. The question matches its own source and was left
+  alone. Same shape as `milwi-018` last session.
+- **`benor-022`, "In what year was Bend incorporated as a city?" → 1905.** The mayors article
+  says "The City of Bend was incorporated in 1904". The Bend article's infobox says **Platted
+  May 28, 1904 / Incorporated January 4, 1905**, which settles it and confirms both `benor-022`
+  and `benor-023`.
+
+That is four sessions running where following a citation would have broken a correct answer.
+
+## Where bend-or finished
+
+    86 active, 0 drafts
+    easy 30.2% · medium 51.2% · hard 18.6%
+    expiring 12.8% (11 questions, well staggered: 2027-01-01, 2027-06-30, 2029-01-01, 2029-06-30)
+    answer positions 21 / 23 / 20 / 22   (best single guess 26.7%)
+    bracketing 53.3% at an extreme, 4/3/4/4
+    leakage 13 hits, all forced names
+    bendoregon.gov citations: 0 · unlabelled: 0
+    readiness: READY
+    nested-options 0 · anachronism 0 · source-drift 1, read by hand
+
+**Its expiry spread is the best in the bank** — four distinct dates across 2027 and 2029, no
+cliff. Worth noting as the counter-example to `wisconsin`: the same kind of collection, built
+on staggered clocks rather than one election night.
+
+**The thirteen residual leaks are four strings**: "The Deschutes River" (6 — the river a
+Bend collection cannot stop naming), "Bend–La Pine Schools" (4 — three questions are *about*
+the district), "The Old Mill District" (2) and "Deschutes County" (1). Archiving `benor-068`
+removed the only case where one of them was also a duplicate answer.
+
+**Archived (4):** the self-answering brewery question, the contradicted brewery-count bracket,
+and two of the four questions drawn from the single November 2024 council election —
+`benor-014` duplicated `benor-013`'s shape, and `benor-016` handed over three other live
+questions at once.
+
+**Written (4), two hard**, deliberately on subjects the collection did not already discuss:
+the nine "opportunity areas" where Bend plans to grow up rather than out; the state
+land-use agency whose sign-off a growth boundary expansion still needs after local approval;
+the 1910 power dam that created Mirror Pond; and the visitor room tax that pays for streets,
+fire and police — the collection had no municipal-finance content at all.
+
+**One self-inflicted leak again**, in a batch of four: `benor-088`'s text named Deschutes
+County, which is `benor-026`'s answer. The "write about subjects the collection does not cover"
+tactic from last session reduced it to one rather than eliminating it — the new questions still
+have to name the place they are about.
+
+## The never-audited four are done
+
+`bloomington-in`, `milwaukee-wi`, `wisconsin`, `bend-or` — all audited, all READY.
+**41 of 43.** The two that remain are `war-in-iran` (31q) and `world-news` (47q), both under
+the 50-question floor. That is a pipeline-yield problem, not an audit one: there is nothing
+wrong with those questions that reading them would fix, there are simply too few. The next
+useful work on them is on the generator, not the bank.
