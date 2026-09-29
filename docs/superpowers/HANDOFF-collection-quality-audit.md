@@ -1,8 +1,8 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 12d)
+# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 12e)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
-## START HERE — measured 2026-09-29, end of session 12d
+## START HERE — measured 2026-09-29, end of session 12e
 
 Every number in this block was re-derived from the database, not carried forward. **Re-derive
 them again rather than trusting them**; three of this document's standing claims have been
@@ -11,14 +11,15 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,237** |
+| Active questions | **3,264** |
 | **Never-audited collections** | **NONE** — `bloomington-in`, `milwaukee-wi`, `wisconsin` and `bend-or` all done in session 12 |
 | **Drafts, bank-wide** | **0** |
-| Collections audited | **41 of 43** — the two left, `war-in-iran` and `world-news`, are under the question floor; that is a generator problem, not an audit one |
+| Collections audited | **42 of 43** — only `world-news` is left, and it needs a hand-written **baseline**, not pipeline output (see the `war-in-iran` entry) |
 | **RULED 2026-09-29, DONE** | attribution belongs in `source.url` — stripped **bank-wide, 1,978 → 0**. It corrupted **3 rows**, found and fixed in session 12d; read that entry before attempting a similar sweep |
 | Under the 10% expiring floor | **2** — `biloxi-ms` 9.2% (documented breach, see its entry) and `santa-monica-ca` 9.8% |
-| At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
+| At or under the 50-question floor | `world-news` 47 — `war-in-iran` is CLEARED, 31 → 55 |
 | **Under 11% HARD** | `queens-ny` **10.1%**, `world-news` 10.6% |
+| **GATE, session 12e** | readiness now prints the **expiry spread** beside the ratio and warns when a tier shares one date — the `wisconsin` cliff is visible in the gate's own output now |
 | **Re-verify after 3 Nov 2026** | `texas-state` — its whole executive is on that ballot; `west-monroe-la` — `wmnla-093` |
 | **SCHEDULED WORK, Dec 2026** | `alexandria-la` — city officeholder backfill, deliberately deferred past its election |
 | **SCHEDULED WORK, Jan 2027** | `new-york-state` — rewrite six statewide officeholders; `texas-state` — re-verify + take `pla-172`; **`wisconsin` — 13 questions lapse on 2027-01-04, rebuild on the Supreme Court ladder, NOT on another four-year clock** |
@@ -5586,3 +5587,135 @@ have to name the place they are about.
 the 50-question floor. That is a pipeline-yield problem, not an audit one: there is nothing
 wrong with those questions that reading them would fix, there are simply too few. The next
 useful work on them is on the generator, not the bank.
+
+## Session 12e (2026-09-29) — war-in-iran gets a baseline (Chris's direction)
+
+**31 active → 55**: 4 archived, 28 written, 31 repaired. Easy 30.9%, medium 43.6%, hard 25.5%,
+positions 19/19/6/13 → **14/14/14/13**, questions with no source **25 → 0**. READY.
+
+Chris's framing, and it is the right one: *"we could have more baseline questions about the
+history of the conflict — these wouldn't change over time and would give the collection a
+foundation beyond expiring questions."*
+
+**I had written this collection off in the session 12d entry** as "a pipeline-yield problem an
+audit cannot fix". That was wrong, and wrong in a specific way: it is only true of the *news*
+layer. The durable layer is hand-written work, and nobody had done any since the collection was
+created.
+
+## What was actually there
+
+The collection already had a baseline — `wiran-0016`–`0040`, twenty-five durable questions on
+the 1953 coup, the revolution, the hostage crisis, the Iran–Iraq War, the IRGC, Hezbollah, the
+JCPOA, Soleimani, Stuxnet, the Green Movement. It is good material. **Nobody had extended it**,
+while the nightly pipeline kept stacking three- and four-day questions on top.
+
+Measured on arrival: **all six expiring questions lapsed between 30 September and 3 October** —
+tomorrow to Friday. The collection was four days from 25 questions against a 50-question floor,
+live in production.
+
+## The config was the city template, unedited (session 12e)
+
+`war-in-iran.ts` read, verbatim:
+
+    'War in Iran city government — mayor, city council, departments, and municipal services'
+    'War in Iran utilities, parks and recreation, public safety, and municipal services'
+    sourceUrls: [],   // TODO: Add authoritative source URLs
+
+A collection about a war, configured with a mayor and a parks department, and given **no
+sources at all**. It has been live the whole time.
+
+That stub is the direct cause of the strangest thing in the bank: **two questions about
+European heat pump sales, in a collection about a war.** `pipelineCron` re-ingests the same
+feeds once per registered news collection, and nothing in the config told it what this
+collection was about, so a Guardian climate story was written up into it. Both archived.
+
+**A stub config is not a neutral default.** It does not produce nothing; it produces whatever
+the feed happened to carry.
+
+## The pipeline stamps an expiry on facts that are permanently true (session 12e)
+
+`wiran-1730` asks **in what month and year the war broke out** → February 2026. The pipeline
+gave it a **four-day expiry**, because it gives everything it writes a four-day expiry —
+`volatility: 'fast'` is set per collection, not per question.
+
+The date a war started does not stop being true. Promoted to durable.
+
+**When reviewing pipeline output, sort it into news and history before letting it lapse.** A
+first-of-its-kind event, a start date, a casualty total that has settled, the name an event
+ends up being known by — these are baseline questions that arrived through the news door. The
+pipeline cannot tell the difference and does not try.
+
+## Also cleared: the last standing anachronism flag
+
+`wiran-1731` asked which year a 2026 memorandum was signed and offered **2027**, a year that
+has not happened. It had been the single bank-wide anachronism flag through four consecutive
+audits and nobody had actioned it — including me, three times. It is also a weak question on
+its own terms: the answer is the current year. Archived.
+
+**`audit-anachronism` now reports 0 flags bank-wide.**
+
+## The 28 baseline questions
+
+Written against 22 sources, all confirmed to exist in **one MediaWiki API call** rather than 22
+fetches (`action=query&titles=A|B|C&redirects=1`) — three were redirects and are cited at their
+canonical titles. The 25 original baseline questions, which carried **no source at all**, were
+mapped to 16 further articles checked the same way.
+
+Coverage added: how Iran is governed (Supreme Leader vs president, Guardian Council, Assembly
+of Experts, Majlis, Basij); the country itself (Tehran, Persian language and identity, the
+Caspian); pre-revolutionary history (1906 Constitutional Revolution, the White Revolution,
+SAVAK, the 1935 name change); the nuclear file (IAEA, the NPT, Fordow's depth, the AEOI,
+snapback); the region (Houthis and the Red Sea, Hormuz geography); modern Iran (Woman, Life,
+Freedom; Raisi's death; Iran Air 655); and the road to the present war (April and October 2024,
+the Twelve-Day War, the June 2025 US strikes and Iran's answer in Qatar).
+
+**Facts after the May 2026 knowledge cutoff were verified from reporting, not asserted** — the
+2025 Twelve-Day War sequence, Operation Rising Lion, the B-2 mission, the Qatar strikes and the
+ceasefire were each checked before being written.
+
+## A news collection SHOULD read low on the expiring ratio (session 12e)
+
+Finishing at **1.8% expiring** looks like a hard-floor DEFECT and is not one. Session 9 already
+ruled this on `climate-change`: on an Events-Focused collection the ratio measures **how
+recently the pipeline ran**, and the remedy is durable backfill, because adding expiring
+content re-arms the same cliff a fortnight later.
+
+`war-in-iran` is the same finding seen from the other side. `climate-change` was caught at the
+top of a burst reading 37.5%; this one was caught at the bottom of one reading 1.8%. **Neither
+number described the collection.** The thing that describes it is 54 durable questions.
+
+### The gate now prints the expiry spread
+
+Implementing what session 9 asked for and nobody had built. `audit-collection-readiness.ts`
+now reports, next to the ratio, how many distinct dates the expiring tier lands on and what its
+largest single date is — and warns when four or more questions share one date.
+
+It pays for itself immediately on collections audited earlier today:
+
+    wisconsin   Expiry spread: 7 distinct date(s), 2027-01-04 to 2035-07-31  |  largest single date: 13 on 2027-01-04
+    bend-or     Expiry spread: 4 distinct date(s), 2027-01-01 to 2029-06-30  |  largest single date: 6 on 2027-01-01
+    war-in-iran Expiry spread: 1 distinct date(s), 2026-09-30 to 2026-09-30
+
+The Wisconsin cliff that took a hand-written query to find this morning is now the third line
+of the gate's own output.
+
+## Where war-in-iran finished
+
+    55 active, 0 drafts
+    easy 30.9% · medium 43.6% · hard 25.5%
+    54 DURABLE questions — the foundation, which is the point
+    1 expiring (lapses 30 September, by design — the pipeline refills this layer nightly)
+    answer positions 14 / 14 / 14 / 13   (best single guess 25.5%)
+    leakage 8 hits, all forced names
+    questions with no source: 0 (was 25) · unlabelled: 0 (was 25)
+    readiness: READY — net 54 against a floor of 50
+    nested-options 0 · anachronism 0 (bank-wide) · source-drift 1, read by hand
+
+**One self-inflicted leak again** — `wiran-1741`'s text named the office that is `wiran-1736`'s
+answer. Sixth batch running. Three pre-existing leaks went with it: `wiran-0019`'s explanation
+gave away `wiran-0020`'s "444 days", `wiran-0016`'s gave away `wiran-0038`'s "Operation Ajax",
+and `wiran-0024`'s listed Hezbollah, which is `wiran-0025`'s answer.
+
+**`world-news` is the same job.** 47 questions, under the floor, pipeline-fed, and its expiring
+tier is 22 of 22 on the cliff list. It needs a durable baseline written the same way — world
+institutions, treaties, bodies and recent history that will still be true next year.

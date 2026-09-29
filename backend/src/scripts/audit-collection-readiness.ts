@@ -257,6 +257,32 @@ async function main(): Promise<void> {
 
     const expiringRatioCount = expiringRatioCountResult?.count ?? 0;
 
+    // Step 4c: the expiry DISTRIBUTION, not just the count.
+    //
+    // Session 9 found that `climate-change` measured 37.5% expiring — inside the
+    // healthy band — while all 30 of those questions expired within a single week.
+    // The ratio was measuring how recently the pipeline had run, not the health of
+    // the collection. The same shape in reverse showed up on `war-in-iran`, which
+    // reads 1.8% because its news layer happens to have just lapsed.
+    //
+    // A ratio drawn from one burst is a different object from the same ratio
+    // spread over a year, so the gate now prints the spread next to the number.
+    const expiryDatesResult = await db
+      .select({
+        day: sql<string>`(${questions.expiresAt})::date::text`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(questions)
+      .where(
+        sql`
+          ${inCollection}
+          AND ${questions.status} IN ('draft', 'active')
+          AND ${questions.expiresAt} IS NOT NULL
+        `
+      )
+      .groupBy(sql`(${questions.expiresAt})::date`)
+      .orderBy(sql`(${questions.expiresAt})::date`);
+
     // Step 5: Calculate net count
     const totalCount = draftCount + activeCount;
     const netCount = totalCount - expiringCount;
@@ -278,6 +304,20 @@ async function main(): Promise<void> {
     console.log(`    With expiresAt:  ${expiringRatioCount} (any date, for ratio)`);
     const expiringRatio = totalCount > 0 ? (expiringRatioCount / totalCount) * 100 : 0;
     console.log(`    Expiring ratio:  ${expiringRatio.toFixed(1)}% (target 15–30%, floor 10%)`);
+    if (expiryDatesResult.length > 0) {
+      const first = expiryDatesResult[0];
+      const last = expiryDatesResult[expiryDatesResult.length - 1];
+      const biggest = expiryDatesResult.reduce((a, b) => (b.count > a.count ? b : a));
+      console.log(
+        `    Expiry spread:   ${expiryDatesResult.length} distinct date(s), ${first.day} to ${last.day}` +
+          (biggest.count > 1 ? `  |  largest single date: ${biggest.count} on ${biggest.day}` : ''),
+      );
+      if (expiringRatioCount >= 4 && expiryDatesResult.length === 1) {
+        console.warn(
+          `    WARNING: every expiring question shares one date — this tier lapses in a single day.`,
+        );
+      }
+    }
     console.log(`    Net:         ${netCount}  (total - expiring)`);
     console.log('');
     console.log(`  Threshold:     50 questions minimum`);
