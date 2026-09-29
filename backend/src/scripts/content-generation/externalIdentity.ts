@@ -18,6 +18,9 @@
 export const NEW_EXTERNAL_ID_RE = /^[a-z][a-z0-9-]*_\d{4,}$/;
 export const LEGACY_EXTERNAL_ID_RE = /^[a-z]{2,5}-\d{3,4}$/;
 
+/** Federal questions predate every prefix scheme: bare `q001`, no separator. */
+export const FEDERAL_EXTERNAL_ID_RE = /^q\d{3}$/;
+
 /** Mint `<slug>_<NNNN>`. Widens past four digits rather than truncating. */
 export function mintExternalId(slug: string, seq: number): string {
   if (slug.includes('_')) {
