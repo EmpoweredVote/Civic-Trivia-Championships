@@ -4,6 +4,13 @@ import type { LocaleConfig } from './bloomington-in.js';
  * Wisconsin state locale configuration for civic trivia question generation.
  *
  * CRITICAL ACCURACY NOTES:
+ * - Wisconsin elects SIX statewide constitutional officers, not five: governor,
+ *   lieutenant governor, secretary of state, treasurer, attorney general AND the
+ *   superintendent of public instruction. Five is the tempting wrong answer
+ *   because those five are partisan and elected together in November, while the
+ *   superintendent is non-partisan and elected on its own cycle in April.
+ *   `wisco-010` shipped with "Five" and with SIX not even among its options,
+ *   while `wisco-019` in the same collection asked who the superintendent is.
  * - The legislature is the WISCONSIN LEGISLATURE, made up of a 33-member SENATE
  *   and a 99-member ASSEMBLY (not "House of Representatives"). Senators serve
  *   4-year staggered terms; Assembly members serve 2-year terms. Every Senate
@@ -139,6 +146,22 @@ export const wisconsinConfig: LocaleConfig = {
     },
     { name: 'Mary Felzkowski', role: 'Senate President', termEnd: '2027-01-04T00:00:00Z' },
     { name: 'Robin Vos', role: 'Speaker of the Assembly', termEnd: '2027-01-04T00:00:00Z' },
+
+    // ── Added 2026-09-29. Everything above this line expires on 2027-01-04, all
+    // on the same day. Everything below sits on a clock that survives it.
+    //
+    // U.S. senators belong to STATE collections by Chris's 2026-09-28 ruling, and
+    // this collection had neither of Wisconsin's. Six-year terms, staggered, so
+    // the two seats are never on the ballot together.
+    { name: 'Ron Johnson', role: 'U.S. Senator', termEnd: '2029-01-03T00:00:00Z' },
+    { name: 'Tammy Baldwin', role: 'U.S. Senator', termEnd: '2031-01-03T00:00:00Z' },
+
+    // Supreme Court justices serve TEN-year terms and, by law, only one may be
+    // elected in any year. That makes this court the most durable expiring ladder
+    // available anywhere in the bank — one new seat a year, a decade apart. Prefer
+    // it over executive offices when this collection needs expiring content.
+    { name: 'Susan Crawford', role: 'Justice, Wisconsin Supreme Court', termEnd: '2035-07-31T00:00:00Z' },
+    { name: 'Janet Protasiewicz', role: 'Justice, Wisconsin Supreme Court', termEnd: '2033-07-31T00:00:00Z' },
   ],
 
   sourceUrls: [
