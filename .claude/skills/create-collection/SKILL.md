@@ -118,7 +118,6 @@ Run the scaffold script from the `backend/` directory:
 cd "C:/Project Test/backend" && npx tsx src/scripts/scaffold-collection.ts \
   --name "[City, ST]" \
   --slug [slug] \
-  --prefix [prefix] \
   --theme "[#RRGGBB]" \
   --description "[tagline]"
 ```
@@ -217,8 +216,10 @@ if the prefix is globally unique, so prove it is — **before** generating conte
 ```sql
 SELECT
   (SELECT count(*) FROM trivia.questions WHERE split_part(external_id, '_', 1) = '[slug]') AS questions,
-  (SELECT count(*) FROM trivia.topics    WHERE slug        LIKE '[prefix]-%') AS topics;
+  (SELECT count(*) FROM trivia.topics    WHERE slug        LIKE '[slug]-%') AS topics;
 ```
+(Legacy prefix-based collections instead use: `slug LIKE '[prefix]-%'` for the
+topics check.)
 
 **Both must be 0.** If either is non-zero the identifier is taken — pick another
 slug (or, for a legacy prefix-based collection, another prefix) and re-run. Do
@@ -243,20 +244,21 @@ your topic rows, then link them:
 
 ```sql
 INSERT INTO trivia.topics (name, slug, description, created_at) VALUES
-  ('City Government', '[prefix]-city-government', '...', NOW())
-  -- one row per topic
+  ('City Government', '[slug]-city-government', '...', NOW())
+  -- one row per topic (legacy prefix-based collections instead use '[prefix]-city-government')
 ON CONFLICT (slug) DO NOTHING RETURNING id, slug;
 
--- The NOT EXISTS is defence in depth behind the 5a gate: even if a prefix does
--- collide, this can only ever link a topic no collection owns yet.
+-- The NOT EXISTS is defence in depth behind the 5a gate: even if an identifier
+-- does collide, this can only ever link a topic no collection owns yet.
 INSERT INTO trivia.collection_topics (collection_id, topic_id, created_at)
 SELECT [collection_id], t.id, NOW() FROM trivia.topics t
-WHERE t.slug LIKE '[prefix]-%'
+WHERE t.slug LIKE '[slug]-%'
   AND NOT EXISTS (
     SELECT 1 FROM trivia.collection_topics ct WHERE ct.topic_id = t.id
   )
 ON CONFLICT DO NOTHING;
 ```
+(Legacy prefix-based collections instead use: `t.slug LIKE '[prefix]-%'`.)
 
 Save the returned topic IDs — every question needs a `topic_id`.
 
@@ -543,13 +545,18 @@ ls "C:/Project Test/frontend/public/images/collections/[slug].jpg"
 If missing, do not proceed — handle Step 7 first.
 
 ### 8c. Activate (dry run first) — only after the code is deployed
+`--prefix` here is advisory-only and optional — omit it for a new, slug-derived
+collection. It still hard-validates whatever you pass against
+`/^[a-z]{2,5}$/`, same as the readiness audit, so passing your slug errors out
+rather than being ignored. Legacy prefix-based collections still pass their
+real `--prefix`.
 ```bash
-cd "C:/Project Test/backend" && npx tsx src/scripts/activate-collection.ts --slug [slug] --prefix [prefix] --dry-run
+cd "C:/Project Test/backend" && npx tsx src/scripts/activate-collection.ts --slug [slug] --dry-run
 ```
 
 Review the dry-run output. If everything looks correct:
 ```bash
-cd "C:/Project Test/backend" && npx tsx src/scripts/activate-collection.ts --slug [slug] --prefix [prefix]
+cd "C:/Project Test/backend" && npx tsx src/scripts/activate-collection.ts --slug [slug]
 ```
 
 ### 8d. Confirm live
@@ -571,7 +578,7 @@ Stats:
 - Total active questions: [N]
 - Expiring questions: [N] ([%]%)
 - Topic breakdown: [topic: N, ...]
-- External ID prefix: [prefix]
+- External ID namespace: [slug] (legacy prefix-based collections: [prefix])
 - Slug: [slug]
 - Theme: [color]
 - Banner: ✅ / ⚠️ pending
