@@ -130,8 +130,8 @@ runner. A change made here is untested until it is carried over.
 | `generate-locale-questions.ts:386` semantic dedup | scope by `collection_id` |
 | `generate-locale-questions.ts:498` officeholder expiry | scope by `collection_id` |
 | `generate-locale-questions.ts:628,635` ID offset | **stays ID-scoped**; use helper, `padStart(4)` |
-| `generate-replacements.ts:219` | scope by `collection_id` |
-| `international/question-generator.ts:238` | scope by `collection_id` |
+| `generate-replacements.ts:219` | drop redundant prefix filter; anchor digit extraction |
+| `international/question-generator.ts:238` | drop redundant prefix filter |
 | `activate-collection.ts:178,184` | display-only; use helper |
 | `audit-collection-readiness.ts:194,200` | display-only; use helper |
 | `scaffold-collection.ts` | `--prefix` becomes optional and ignored with a warning; ID space derives from slug |
@@ -158,7 +158,7 @@ A change committed to `backend/` here reaches nothing and creates silent drift.
 | `trivia/scripts/content-generation/question-schema.ts:12` | identical regex — vendored twin |
 | `trivia/cron/replacementGenerator.ts:153,237` | mint via helper |
 | `trivia/cron/replacementGenerator.ts:381` `getNextExternalId` | ID-scoped; `pad4` |
-| `trivia/cron/replacementGenerator.ts:395` | scope by `collection_id` |
+| `trivia/cron/replacementGenerator.ts:395` | drop redundant prefix filter; anchor digit extraction |
 
 **This group is load-bearing for the Knight program.** Knight collections carry 15–30%
 expiring officeholder questions by policy, so the replacement cron will mint IDs for them
@@ -182,20 +182,39 @@ will never change. Leave them.
 **All 8,389 existing rows.** Forward-only. Every question ID cited in past rulings, audit
 records, handoff docs and the 11 pinned `nested-options` fixtures stays valid.
 
-## The unguarded-LIKE class of bug
+## The prefix-LIKE sites are three different bugs, not one
 
-Four of the sites above are the same defect the `ind` collision produced: selecting a
-collection's questions with `LIKE '<prefix>-%'`. Activation was fixed on 2026-09-08;
-**generation never was**. Under the current bank this is mostly prospective, because Indio's
-20 `ind` rows are inactive. Under the new scheme it becomes impossible by construction for new
-collections, and the four fixes close it for legacy ones.
+Verified by reading each site on 2026-09-29. They look alike and are not.
 
-Failure modes, which differ per site and are worth stating:
+**(a) Genuinely unguarded — cross-collection contamination. 2 sites.**
+`generate-locale-questions.ts:386` and `:498` select purely by `LIKE '<prefix>-%'` with no
+join to `collection_questions`. This is the same defect the `ind` collision produced;
+activation was fixed on 2026-09-08 but **generation never was**. Distinct failure modes:
 
-- **semantic dedup (`:386`)** — compares two collections' questions against each other, and
+- **semantic dedup (`:386`)** — compares two collections' questions against each other and
   flags the loser as a near-duplicate of a question in a different collection
 - **officeholder expiry (`:498`)** — stamps `expiresAt` on another collection's rows
-- **replacement cron (`:395`)** — selects another collection's questions for replacement
+
+Mostly prospective today, because Indio's 20 `ind` rows are inactive. Fix: scope by
+`collection_id`.
+
+**(b) Already collection-scoped; the prefix filter is redundant and breaks. 3 sites.**
+`generate-replacements.ts:219`, `international/question-generator.ts:238`, and ev-accounts
+`replacementGenerator.ts:395` already `innerJoin collectionQuestions` and filter on
+`collectionQuestions.collectionId`. The prefix `LIKE` is an extra narrowing on top.
+
+Under slug IDs that `LIKE` matches **nothing**, so `MAX(...)` is null, `maxId` falls to 0, and
+the next mint is `_0001` — which collides with the existing `_0001` and violates
+`questions_external_id_key`. That is a crash on the first replacement run against a Knight
+collection, not silent contamination. Fix: delete the prefix filter; the join already scopes it.
+
+Two of the three also extract the sequence with `SUBSTRING(external_id FROM '[0-9]+')` —
+**unanchored**, so it takes the first digit run in the string. Harmless while no slug contains
+a digit, wrong the moment one does. `international/question-generator.ts` already anchors it
+with `'[0-9]+$'`. Fix: anchor the other two to match.
+
+**(c) Intentionally ID-space scoped. 1 site.**
+`generate-locale-questions.ts:628` has no collection join *by design* — see the next section.
 
 ---
 
