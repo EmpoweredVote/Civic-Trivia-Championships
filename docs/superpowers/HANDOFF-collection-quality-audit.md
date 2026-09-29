@@ -39,12 +39,24 @@ wrong when checked, including one that was written and corrected the same day.
    reviving the ward roll-call) and `santa-monica-ca` 9.8%, **which is 5/6 on the expiry
    cliff**. Auditing santa-monica now to add expiring questions would buy about five months.
    **Do it in the Q1 2027 sweep instead**, with the others.
-4. **So the real remaining work is the four never-audited locale collections**: `bend-or`,
-   `wisconsin`, `bloomington-in`, `milwaukee-wi`. (`war-in-iran` 31q and `world-news` 47q are
+4. **START WITH `bloomington-in`** — Chris's call, 2026-09-29. Then the other three
+   never-audited locale collections: `milwaukee-wi`, `wisconsin`, `bend-or`. (`war-in-iran` 31q and `world-news` 47q are
    also unaudited but are under the *question* floor — a pipeline-yield problem an audit
-   cannot fix.) `bloomington-in` and `milwaukee-wi` had their roll-calls rebuilt in session 11,
-   so their officeholder tiers are already known-good; the rest of those collections is
-   untouched.
+   cannot fix.)
+
+   **What is already true of `bloomington-in` before you start** (measured 2026-09-29, re-derive
+   anyway): **74 active, 0 drafts, 8 expiring (10.8%), easy 37.8%, hard 23.0%, positions
+   19/18/18/19.** Session 11 rebuilt its officeholder tier — the District I–VI roll-call and the
+   "‹name› holds which kind of seat" roll-call were each trimmed to one, and a fire chief, an
+   MCCSC superintendent and a state senator were added. **That tier is done; do not re-open it.**
+   All 12 of its expiring questions carry the same `2027-12-31` date, so it has no near-term
+   cliff but one single-date one.
+
+   Everything else in the collection is untouched and is the actual audit: run the per-collection
+   method below — the citation pass, max-questions-on-one-URL *and* per-host, the leakage sweep
+   with numeric answers, normalised duplicate answers, block-identity questions, bracketing and
+   position spread. `milwaukee-wi` is in the same position (86 active, 11.6% expiring, tier
+   rebuilt, rest untouched).
 5. **Three more collections are close to the question floor**: `norwich-uk` 52,
    `los-angeles-ca` 55, `portland-or` 55. None is breaching and none is urgent — but they are
    where the next `plano-tx` comes from, so re-derive rather than waiting for one to cross.
