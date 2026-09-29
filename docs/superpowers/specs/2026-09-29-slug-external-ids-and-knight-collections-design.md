@@ -391,3 +391,12 @@ shape never reaches it, and widening a validator for 15 dead rows weakens it for
 - Re-auditing Biloxi MS and Philadelphia PA to a Knight-specific standard
 - Fixing `CurrentTermQuestionGenerator`'s `elc-term-*` IDs — noted, not addressed
 - Importing the rules registry into the quality-rules gate (explicitly forbidden elsewhere)
+- **The `missing-citation` quality rule** (`services/qualityRules/rules/structural.ts:64`, live in
+  BOTH repos). It accepts an explanation only if it contains "According to", "Source:", "per the",
+  the source name, or a URL. With attribution moved to `source.url`, new explanations contain none of
+  those, so it will fire on essentially every Knight question. It is **advisory**, so nothing blocks —
+  but `TRIVIA_QUALITY_RULES_ENFORCE` is a comma-list of rule *names*, so adding `missing-citation` to it
+  would block the pipeline outright. Deliberately left for a separate change: different subsystem,
+  vendored twice, own test story. **Follow-up, not forgotten.**
+- The duplicate `'According to'` Zod schemas in `generate-biloxi-officeholder-questions.ts:47` and
+  `generate-wdc-officeholder-questions.ts:38` — historical one-off scripts for collections already built
