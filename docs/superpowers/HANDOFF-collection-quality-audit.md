@@ -1,8 +1,8 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 11)
+# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 12)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
-## START HERE — measured 2026-09-29, end of session 11
+## START HERE — measured 2026-09-29, end of session 12
 
 Every number in this block was re-derived from the database, not carried forward. **Re-derive
 them again rather than trusting them**; three of this document's standing claims have been
@@ -11,9 +11,9 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,239** |
+| Active questions | **3,233** |
 | **Drafts, bank-wide** | **0** |
-| Collections audited | **37 of 43** |
+| Collections audited | **38 of 43** |
 | Under the 10% expiring floor | **2** — `biloxi-ms` 9.2% (documented breach, see its entry) and `santa-monica-ca` 9.8% |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
 | **Under 11% HARD** | `queens-ny` **10.1%**, `world-news` 10.6% |
@@ -22,6 +22,7 @@ wrong when checked, including one that was written and corrected the same day.
 | **SCHEDULED WORK, Jan 2027** | `new-york-state` — rewrite six statewide officeholders; `texas-state` — re-verify + take `pla-172` |
 | **RULED 2026-09-28** | U.S. senators belong to **state** collections; Missouri done, `pla-172` deferred to post-3 Nov |
 | **RULED 2026-09-29** | roll-call ban **ENFORCED**; all six collections rebuilt, **zero roll-calls remain bank-wide** |
+| **GATE FIXED, session 12** | officeholder coverage is judged **per role**, not per seat (it used to demand the very roll-call the ban forbids), and name matching no longer breaks on a `, Jr.` suffix — it had been reporting `biloxi-ms`'s mayor as uncovered when the question exists and is correct |
 | **Expiring tier dies before Mar 2027** | re-derive it; worst today: `world-news` 22/22, `climate-change` 18/18, `wisconsin` 13/15, `massachusetts-state` 12/12, `washington-dc` 11/15, `federal` 11/23, `asheville-nc` 8/9, `war-in-iran` 6/6, **`santa-monica-ca` 5/6** |
 | Easy tier | no collection is under the 25% easy floor |
 
@@ -39,24 +40,21 @@ wrong when checked, including one that was written and corrected the same day.
    reviving the ward roll-call) and `santa-monica-ca` 9.8%, **which is 5/6 on the expiry
    cliff**. Auditing santa-monica now to add expiring questions would buy about five months.
    **Do it in the Q1 2027 sweep instead**, with the others.
-4. **START WITH `bloomington-in`** — Chris's call, 2026-09-29. Then the other three
-   never-audited locale collections: `milwaukee-wi`, `wisconsin`, `bend-or`. (`war-in-iran` 31q and `world-news` 47q are
-   also unaudited but are under the *question* floor — a pipeline-yield problem an audit
-   cannot fix.)
+4. **`bloomington-in` is DONE (session 12)** — 74 → 68, with **five facts wrong in
+   production**, one of which told voters they could vote anywhere in the county. See its
+   entry and the ten sections it produced.
 
-   **What is already true of `bloomington-in` before you start** (measured 2026-09-29, re-derive
-   anyway): **74 active, 0 drafts, 8 expiring (10.8%), easy 37.8%, hard 23.0%, positions
-   19/18/18/19.** Session 11 rebuilt its officeholder tier — the District I–VI roll-call and the
-   "‹name› holds which kind of seat" roll-call were each trimmed to one, and a fire chief, an
-   MCCSC superintendent and a state senator were added. **That tier is done; do not re-open it.**
-   All 12 of its expiring questions carry the same `2027-12-31` date, so it has no near-term
-   cliff but one single-date one.
+   **`milwaukee-wi` should be next**, then `wisconsin` and `bend-or`. (`war-in-iran` 31q and
+   `world-news` 47q are also unaudited but are under the *question* floor — a pipeline-yield
+   problem an audit cannot fix.)
 
-   Everything else in the collection is untouched and is the actual audit: run the per-collection
-   method below — the citation pass, max-questions-on-one-URL *and* per-host, the leakage sweep
-   with numeric answers, normalised duplicate answers, block-identity questions, bracketing and
-   position spread. `milwaukee-wi` is in the same position (86 active, 11.6% expiring, tier
-   rebuilt, rest untouched).
+   **`milwaukee-wi` is in exactly the position Bloomington was in**: 86 active, 11.6%
+   expiring, officeholder tier rebuilt in session 11, everything else untouched and unread.
+   Expect the same shape of findings and **start with the citation pass, grouping by
+   `source->>'url'` and by host** — on Bloomington that one step found three broken hosts, a
+   six-question stat strip and a fabricated programme before a single question was read for
+   content. Then the leakage sweep with numeric answers, normalised duplicate answers,
+   block-identity questions, bracketing and position spread.
 5. **Three more collections are close to the question floor**: `norwich-uk` 52,
    `los-angeles-ca` 55, `portland-or` 55. None is breaching and none is urgent — but they are
    where the next `plano-tx` comes from, so re-derive rather than waiting for one to cross.
@@ -4700,3 +4698,278 @@ Down from **39 across six collections**. Bank: 43 collections, **3,239 active qu
 **Still under the 10% expiring floor: two.** `biloxi-ms` 9.2% (documented breach — its
 officeholder surface is exhausted) and `santa-monica-ca` 9.8% (never examined). Every collection
 that previously cleared the floor still clears it, on honest tiers.
+
+## Session 12 (2026-09-29) — bloomington-in, the first of the four never-audited locales
+
+`bloomington-in` (collection 2). **74 active → 68**, 18 archived, 12 written, 35 repaired.
+Easy 37.8% → 39.7%, hard 23.0% → 22.1%, expiring 10.8% → 11.8%, answer positions
+19/18/18/19 → **17/17/17/17**, bracketing 45.5% → **50.0% at an extreme**, leakage
+**81 hits → 8**, questions with no source at all **10 → 0**.
+
+Session 11 had already rebuilt its officeholder tier and said so; that tier was not
+re-opened. Everything below is the rest of the collection, which nobody had read.
+
+**Five facts were wrong in production.** That is the most in any collection audited so
+far, and one of them is the kind that costs someone their vote.
+
+### The five wrong facts
+
+1. **`bli-110` told Bloomington voters they may vote anywhere in the county.** It asserted
+   Monroe County uses vote centers. It does not. Monroe is **absent from the Secretary of
+   State's list of 72 vote-center counties**, and its election board **rejected** the
+   vote-center plan (2–1; Indiana requires a unanimous bipartisan vote), so precinct voting
+   stands. In Indiana, voting at the wrong precinct means a provisional ballot that will not
+   count for most races. Rewritten to teach the true rule, cited to the SoS county list —
+   which is a source that supports the *negative* directly.
+2. **`bli-003` said Bloomington has three council districts.** It has **six**, plus three
+   at-large seats. The cited page says so verbatim: *"Six Councilmembers represent individual
+   City districts and three represent the City At-Large."* The question had been contradicting
+   its own citation, the repo's own locale config, and `bli-122`/`bli-128`.
+3. **`bli-001`'s explanation carried the same three-district error** while its answer (nine
+   members) was right — a wrong explanation under a right answer, which no structural rule sees.
+4. **`bloom-082` was wrong and the true answer was already among its options, marked
+   incorrect.** It asked how council members are elected, answered "by district, voters
+   choosing only their own district's representative", and offered the hybrid option — the
+   true one — as a distractor. Third instance of this shape (after `indiana-state` and
+   `norwich-uk`), and the first where the collection contradicted *itself*: `bli-122` and
+   `bli-128`, live in the same collection, describe the hybrid correctly.
+5. **`bloom-081` said the city runs a municipal electric utility.** City of Bloomington
+   Utilities supplies water, wastewater and stormwater; the word "electric" appears nowhere
+   on its page. **Duke Energy** supplies Bloomington's electricity — and Duke Energy was
+   offered as a wrong answer. Rewritten to teach the real split, which also cleared its
+   duplication with `bli-069`.
+
+`bli-019` was a sixth, milder one: Monroe County's population given as "approximately
+148,000", a figure in no source. The 2020 census is 139,718. Repaired with brackets that
+hold the true value.
+
+## Six questions from one sidebar line (session 12, bloomington-in)
+
+The clearest instance of **website furniture** yet, and worth the pattern rather than the
+instance. `bloomington.in.gov/parks` carries a single stats strip:
+
+    11 trails   32 parks   2 pools   4 sports complexes   1 golf course   1 ice arena
+
+**Six live questions had been generated from it, one per number**: `bli-066` (trails),
+`bli-007` (parks), `bli-010` (pools), `bli-073` (sports complexes), `bli-088` (the golf
+course's 27 holes), `bli-092` (ice arenas). A seventh, `bli-088`, lifted its explanation
+verbatim from the adjacent blurb.
+
+These are facts about a web page's furniture, not about civic life, and they read as six
+different questions to every check: different answers, different nouns, text similarity
+0.53–0.78 — under the 0.80 that reads as a duplicate. **Five were archived and `bli-007`
+kept** as the one representative.
+
+**The tell is the source URL, not the text.** Group by `source->>'url'` and look at what a
+cluster of "how many X" questions share; if the answers are consecutive items in one list on
+one page, it is a stat strip, not a subject.
+
+## A duplicate that BOTH sweeps miss (session 12)
+
+`bloom-064` "Which local tax is Bloomington's largest source of general fund revenue?" →
+**Income tax**, and `bloom-069` "What is the primary source of revenue for Bloomington's city
+government?" → **Income taxes**. Same fact, same collection.
+
+- The **answer sweep** missed it. Normalising punctuation and stripping a trailing `s` gives
+  `incometax` and `incometaxe` — the plural of a word ending in *x* takes **-es**, so the
+  strings still differ. This is the third suffix to defeat that normalisation, after articles
+  and corporate suffixes.
+- The **text sweep** missed it too: the wordings share almost nothing, and the pair scores
+  **0.386** — well under any usable threshold.
+
+It was found by reading. **On this collection the answer-duplicate sweep reported ZERO pairs
+while four real duplicates were live** (`bli-049`/`bli-108`, `bloom-067`/`bloom-073`,
+`bli-041`/`bloom-074`, `bloom-064`/`bloom-069`). A clean duplicate report is not evidence of
+a clean collection; it is evidence the sweep ran.
+
+## Three host-level citation failures in one collection (session 12)
+
+The citation pass found the *hosts* broken, not individual links — and each one maps onto a
+cluster of the collection's defects:
+
+| host | what it does | who cited it |
+|---|---|---|
+| `co.monroe.in.us` | **404 at the apex — the host is gone** | named as the authority in the *explanation text* of **eleven** questions, ten of which carried no `source` at all |
+| `www.monroecounty.in.gov` | HTTP 200 and **byte-identical content (same md5) at EVERY path**, including invented ones | `bli-022` |
+| `iga.in.gov` | a **691-byte React shell** at every path — `<div id="root">`, "You need to enable JavaScript" | seven questions |
+
+The middle one is a **sixth way a citation can be live and worthless**, and the nastiest so
+far: not a soft 404 that merely renders a "not found" page, but the same bytes for every
+URL. A link checker reports 200 for a path you made up. Tell it apart by fetching two paths
+and comparing hashes — `md5sum` on the body catches it in one command.
+
+`www.in.gov` is a fourth, milder case: HTTP 200, but a meta-refresh stub with an empty body
+(240 bytes), so a checker that does not follow HTML-level refreshes sees a live page with
+nothing on it.
+
+And a fifth shape, already known but newly instructive: **`www.in.gov/sos/elections` is live,
+readable and contains none of the four voting facts cited to it.** 4,214 characters, and no
+poll hours, no registration deadline, no vote centers. The facts *were* right; the citation
+was decoration. They now point at the Secretary of State's election-calendar PDF, which
+states both verbatim — `pdftotext` reads it fine, and a PDF is worth reaching for when the
+HTML page is a menu.
+
+## Attribution in the EXPLANATION is not a citation, and it rots invisibly (session 12)
+
+Eleven Bloomington explanations opened "According to co.monroe.in.us, …". The `source`
+column on ten of them was **NULL**. So the only citation the collection offered for its
+entire county tier was a sentence fragment inside player-facing text — pointing at a host
+that no longer resolves.
+
+Nothing checks this. `checkLearnMoreLink` and the dead-link sweeps read `source->>'url'`;
+they cannot see a hostname sitting in prose. **Grep explanations for `according to` and for
+bare hostnames** when auditing a collection, and treat every hit as an uncited question until
+proven otherwise.
+
+## The readiness gate and the roll-call ban contradicted each other (session 12)
+
+The officeholder-coverage check demanded **one question per officeholder entry**. After the
+2026-09-29 roll-call ban that is unsatisfiable by construction: covering all nine Bloomington
+council members, or all seven Biloxi aldermen, means building exactly the repeated-shape
+roll-call the ban archives. The gate printed **seven WARNINGs against a collection that had
+just been rebuilt to comply with the ruling**, and its remedy line advised re-running
+generation — which would have rebuilt the roll-call.
+
+**The gate was the one that was wrong, and it is fixed.** Coverage is now judged **per role**:
+a role is covered when at least one of its holders is covered, every holder is still listed
+so thin coverage stays visible, and the warning line now says *"Add ONE question per
+uncovered role — never one per seat holder."*
+
+Re-running the fixed check across other collections then exposed a **second bug in the same
+check, and the verify-before-correcting rule caught me writing the wrong finding about it.**
+
+The fixed gate reported that `biloxi-ms` had **no Mayor question** — which, with the ward
+warnings now correctly suppressed, looked like a real gap the old noise had buried. It was
+not. `bxl-004` exists, is active, expires 2029-06-01 and answers `Andrew "FoFo" Gilich`.
+
+**The matcher tested containment in one direction only.** It asked whether the question's
+answer contains the config's name. The config carries the fuller form — `Andrew "FoFo"
+Gilich, Jr.` — so the answer does *not* contain it, and coverage that plainly exists reported
+as zero. **A generational suffix was enough to hide a correct question**, which is the same
+family as the suffixes that defeat duplicate-answer normalisation, in a third place.
+
+Names are now normalised (punctuation and `Jr`/`Sr`/`II`/`III`/`IV` stripped) and containment
+is tested **both ways**, guarded on length so a short answer cannot match a long name by
+accident. `biloxi-ms` now reports its Mayor covered, `madison-wi` still reports all four roles
+covered, and `bloomington-in` all seven.
+
+**I had already written the false finding into this handoff before checking it.** The claim
+was three keystrokes from being permanent, and the only thing that stopped it was querying
+the collection instead of trusting a tool that had just been changed. When a check starts
+reporting something new, suspect the check first — especially the one you just edited.
+
+## Three leaks I wrote myself, in one batch of twelve (session 12)
+
+The self-inflicted leak is now a reliable feature of writing a backfill rather than an
+occasional slip — third session running. All three were caught by re-running the sweep after
+the insert, not by care while writing:
+
+- `bli-136`'s text called Lake Monroe *"the source of Bloomington's drinking water"* — which
+  is the entire answer to `bli-135`, written minutes earlier in the same file.
+- `bli-146`'s explanation named the department that is `bli-145`'s answer.
+- `bli-142` named a sitting officeholder who is `bli-121`'s answer. Replaced outright rather
+  than reworded, with a founding fact from the city's own history page.
+
+**Run the leakage sweep AFTER the insert, always.** A batch written in one sitting shares
+vocabulary by construction, and that is exactly the condition that produces leaks.
+
+## Eight leaks left, and why they stay (session 12)
+
+Down from 81 (34 of which were substantive; 47 were the string "Bloomington" appearing in
+the text of nearly every question — its own collection's name is noise by definition).
+
+- **Four hits on `Indiana University`**, the answer to `bloom-063` "What major university
+  calls Bloomington home?" IU is named in `bli-030`'s text and three explanations. This is the
+  `texas-state` ruling applied: the substance test, not the string count. That IU is in
+  Bloomington is the collection's *premise*; archiving a sound easy question to hide a fact
+  every player already holds would make the collection worse.
+- **`bli-072` "City Clerk" ← `bli-121`'s explanation.** Deliberate pairing, the `madison-wi`
+  model: one question asks what the office does, the other who holds it. The explanation
+  naming the office is the explanation doing its job, after the answer.
+- **`bli-135` "Lake Monroe" ← `bli-136`'s text**, which now names the lake without saying it
+  is the water supply. Forced name, substance withheld.
+- **`bloom-080` "The Mayor" ← `bli-132`** ("appointed by the Mayor") and **`bli-064`
+  "The Common Council"** — office names a city collection cannot avoid printing.
+
+## Off-tier content, and the case where archiving is easy (session 12)
+
+Fifteen of Bloomington's 74 questions were about the state of Indiana — the same class-12
+defect as `los-angeles-ca`, and visible in SQL before reading anything: ten were literally
+labelled `indiana-state` inside a *city* collection.
+
+What made the call easy here is that **the destination collection is audited and already
+holds the content**. `indiana-state` was audited in session 9 and carries `ins-001` (Indiana
+House, 100), `ins-002` (Senate, 50), `ins-008` (two chambers) and `ins-066` (the 1851
+constitution). Four of the Bloomington questions were **exact duplicates of those**, and two
+more were derived from them. Eight were archived — the General Assembly bloc, the Statehouse
+and the state constitution.
+
+**The voting-mechanics questions were kept**, and that is the line: poll hours, the
+registration deadline, whether same-day registration exists and where a Monroe County voter
+may vote are rules a *Bloomington* voter follows, and the collection has an
+`elections-voting` topic whose description says exactly that. State *institutions* go; state
+*rules the local voter lives under* stay. Their labels were corrected from `indiana-state`
+to `elections-voting`, which is what they always were.
+
+## A question can be unsupported in BOTH directions (session 12)
+
+`bli-027` asked when Bloomington was incorporated as a city, answered **1876**, and explained
+"incorporated as a town in 1818 and as a city in 1876". No source says 1876. The city's own
+history page says Bloomington was *established* in 1818; Wikipedia says it was platted in
+1818 and **incorporated in 1827**. Three sources, three different framings, none supporting
+the live answer — and the natural repair (1818) collides with `bli-033`'s answer. Archived.
+
+The shape to watch: a date question whose explanation gives **two** dates. It reads as
+thoroughness and it is often a sign that the generator found neither.
+
+## A fabricated programme (session 12)
+
+`bloom-075` asked what Bloomington's **"CFC" utility programme** helps residents do, answering
+"Conservation, Flexibility, and Choice". The string `CFC` appears nowhere on
+`bloomington.in.gov/utilities`, and no search finds such a programme. The city's real rebate
+scheme is **BGHIP** (Bloomington Green Home Improvement Program). No option was correct;
+archived.
+
+The city *does* use a similar-looking acronym — **CFRD**, Community and Family Resources
+Department — which is the likeliest source of the confabulation. **An unfamiliar acronym in a
+question is worth one grep of the cited page**; it costs a second and this one had been live
+for months.
+
+## Labels: the collection slug is not a topic (session 12)
+
+Session 11's officeholder rows went in with `subcategory` NULL on four and the **collection
+slug** `bloomington-in` on three — the session-10 "hand-written backfill inherits the wrong
+topic" finding in a new form. `bli-045`, a question about *Bloomington's own* election cycle,
+was labelled `indiana-state`.
+
+All eleven were corrected, and every active question in the collection now has a
+`subcategory` that matches its `topic_id`. **Set both explicitly in any hand-written insert**
+— the 12 written this session do.
+
+## Where bloomington-in finished
+
+    68 active, 0 drafts
+    easy 39.7% · medium 38.2% · hard 22.1%
+    expiring 11.8% (8 questions, all 2027-12-31 except bli-134 at 2028-11-07)
+    answer positions 17 / 17 / 17 / 17   (best single guess 25.0%)
+    bracketing 50.0% at an extreme
+    leakage 8 hits, all recorded above
+    questions with no source: 0
+    readiness: READY
+    nested-options: 0 · anachronism: 0 · source-drift: 4, all read by hand this session
+
+The four source-drift flags (`bli-001`, `bli-003`, `bli-014`, `bli-016` — all governed
+counts) were verified against their sources by hand during the citation pass, so **no
+`--judge` spend was needed**. Worth doing that way round: the citation pass and the
+source-drift flag ask the same question, and doing the reading first makes the flag free.
+
+**Its one single-date cliff stands**: seven of the eight expiring questions carry
+`2027-12-31`, the end of the current municipal term. Bloomington loses its whole city
+officeholder tier in one night after the November 2027 municipal election. Not urgent, but it
+belongs on the list with `new-york-state` and `asheville-nc`.
+
+## Still to do on the never-audited four
+
+`milwaukee-wi` (86q), `wisconsin`, `bend-or` remain. `milwaukee-wi` is in the same position
+Bloomington was — tier rebuilt in session 11, the rest untouched — so expect the same shape
+of findings and start with the citation pass and the source-URL grouping.
