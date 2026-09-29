@@ -111,30 +111,65 @@ export const bloomingtonConfig: LocaleConfig = {
     'budget-finance': 12,
   },
 
-  // Authoritative source URLs for RAG — fetched and parsed before generation
+  /**
+   * Authoritative source URLs for RAG — fetched and parsed before generation.
+   *
+   * Re-checked 2026-09-29, every URL, during the collection audit. FIVE of the
+   * fifteen were feeding the generator nothing, and the collection's citation
+   * defects map exactly onto them:
+   *
+   *   - `bloomington.in.gov/city-council` returned 404. The real path is `/council`.
+   *   - All three `www.co.monroe.in.us` URLs fail to resolve — the host is gone.
+   *     Its replacement, `www.monroecounty.in.gov`, serves BYTE-IDENTICAL content
+   *     at every path including invented ones, at HTTP 200, so it cannot be used
+   *     as a citation and a link checker cannot tell. Monroe County facts are
+   *     sourced from the `in.gov/counties/monroe` department pages, which do
+   *     differ per path, and from Wikipedia where they do not.
+   *   - `www.in.gov` is a meta-refresh stub with an empty body (240 bytes).
+   *   - `iga.in.gov` is a React shell (691 bytes, `<div id="root">`) at EVERY
+   *     path — the same defect found on `www.plano.gov` in session 10. Seven
+   *     questions were cited to it; all seven have been archived.
+   *
+   * Anything added here should be fetched and grepped for real text first.
+   */
   sourceUrls: [
     // City of Bloomington
     'https://bloomington.in.gov',
-    'https://bloomington.in.gov/city-council',
+    'https://bloomington.in.gov/about/history',
+    'https://bloomington.in.gov/council',
     'https://bloomington.in.gov/mayor',
+    'https://bloomington.in.gov/clerk',
+    'https://bloomington.in.gov/controller',
+    'https://bloomington.in.gov/boards',
+    'https://bloomington.in.gov/boards/public-works',
+    'https://bloomington.in.gov/hand',
     'https://bloomington.in.gov/utilities',
+    'https://bloomington.in.gov/utilities/water-quality',
     'https://bloomington.in.gov/parks',
-    'https://bloomington.in.gov/police',
+    'https://bloomington.in.gov/departments/police',
     'https://bloomington.in.gov/fire',
     'https://bloomington.in.gov/planning',
 
-    // Monroe County
-    'https://www.co.monroe.in.us',
-    'https://www.co.monroe.in.us/government/county-commissioners',
-    'https://www.co.monroe.in.us/government/county-council',
+    // Monroe County — the county's own portal is a navigation shell; these
+    // department paths are the ones that return distinct content.
+    'https://www.in.gov/counties/monroe/Departments/council/',
+    'https://www.in.gov/counties/monroe/Departments/recorder/',
+    'https://www.in.gov/counties/monroe/Departments/assessor/',
+    'https://www.in.gov/counties/monroe/Departments/treasurer/',
+    'https://www.in.gov/counties/monroe/Departments/clerk-of-court/',
+    'https://en.wikipedia.org/wiki/Monroe_County,_Indiana',
 
-    // Indiana State Government
-    'https://www.in.gov',
+    // Indiana State Government — `iga.in.gov` and `www.in.gov` are deliberately
+    // NOT listed; see the note above. State-institution questions belong to the
+    // `indiana-state` collection in any case.
     'https://www.in.gov/gov',
-    'https://iga.in.gov',
 
-    // Indiana Election Division
-    'https://www.in.gov/sos/elections',
+    // Elections. The landing page carries almost no text — the calendar PDF is
+    // where poll hours and the registration deadline are actually stated, and
+    // the vote-center page is the only source that shows which counties have
+    // adopted them (Monroe has NOT).
+    'https://www.in.gov/sos/elections/files/2026-Calendar-Brochure.FINAL-VERSION.pdf',
+    'https://www.in.gov/sos/elections/voter-information/ways-to-vote/vote-centers/',
   ],
 
   /**
@@ -178,5 +213,16 @@ export const bloomingtonConfig: LocaleConfig = {
     // Appointed, not elected — no fixed term. The date is a re-verification horizon
     // aligned to the elected cycle, not a term expiry.
     { name: 'Michael Diekhoff', role: 'Chief of Police', termEnd: '2027-12-31T00:00:00Z' },
+    { name: 'Roger Kerr', role: 'Fire Chief', termEnd: '2027-12-31T00:00:00Z' },
+
+    // Appointed by the MCCSC Board of School Trustees, January 2025. The school
+    // corporation is county-wide; it is listed here because it serves Bloomington
+    // and the collection carries the question.
+    { name: 'Markay Winston', role: 'MCCSC Superintendent', termEnd: '2027-12-31T00:00:00Z' },
+
+    // State office, elected on its own six-year-staggered clock — not the municipal
+    // cycle. Senate District 40 covers most of Monroe County; last elected
+    // November 2024, so the term runs to November 2028.
+    { name: 'Shelli Yoder', role: 'State Senator, District 40', termEnd: '2028-11-07T00:00:00Z' },
   ],
 };

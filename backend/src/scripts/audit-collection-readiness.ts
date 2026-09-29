@@ -457,29 +457,80 @@ async function main(): Promise<void> {
       //
       // A name appearing ONLY as a wrong-answer distractor is deliberately not
       // counted — that is the opposite of coverage.
+      // Names are compared on a normalised form, and containment is tested BOTH
+      // ways. One-way containment silently failed whenever the config carried a
+      // fuller name than the question used: biloxi-ms lists its mayor as
+      // `Andrew "FoFo" Gilich, Jr.` while bxl-004 answers `Andrew "FoFo" Gilich`,
+      // so the check reported ZERO coverage for a mayor question that exists and
+      // is correct. A generational suffix was enough to hide it — the same family
+      // as the suffixes that defeat duplicate-answer normalisation.
+      const normaliseName = (s: string): string =>
+        s
+          .toLowerCase()
+          .replace(/[.,"'’]/g, ' ')
+          .replace(/\b(jr|sr|ii|iii|iv)\b/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
       const namesQuestion = (
         q: { text: string; options: string[] | null; correctAnswer: number },
-        nameLower: string,
+        name: string,
       ): boolean => {
-        if (q.text.toLowerCase().includes(nameLower)) return true;
+        const nameNorm = normaliseName(name);
+        if (!nameNorm) return false;
+        if (normaliseName(q.text).includes(nameNorm)) return true;
+
         const answer = q.options?.[q.correctAnswer];
-        return typeof answer === 'string' && answer.toLowerCase().includes(nameLower);
+        if (typeof answer !== 'string') return false;
+        const answerNorm = normaliseName(answer);
+        if (answerNorm.includes(nameNorm)) return true;
+
+        // Reverse direction: the config name is the longer string. Guarded on
+        // length so a short answer cannot match a long name by accident.
+        return answerNorm.length >= 6 && nameNorm.includes(answerNorm);
       };
 
-      let zeroCoverageCount = 0;
+      // Coverage is judged per ROLE, not per person.
+      //
+      // Before 2026-09-29 this demanded a question for every officeholder entry.
+      // For any multi-seat body that is unsatisfiable: covering all nine
+      // Bloomington council members, or all six Biloxi aldermen, means building
+      // exactly the repeated-shape roll-call that Chris's 2026-09-29 ruling bans
+      // ("keep one representative question, archive the rest"). The two checks
+      // contradicted each other outright, and this one was wrong — it reported
+      // seven WARNINGs against a collection that had just been rebuilt to comply.
+      //
+      // A role is covered when at least one of its holders is covered. Every
+      // holder is still listed, so thin coverage is still visible; what is no
+      // longer demanded is one question per seat.
+      const byRole = new Map<string, typeof localeConfig.officeholders>();
       for (const official of localeConfig.officeholders) {
-        const nameLower = official.name.toLowerCase();
-        const covered = allWithExpiry.filter(q => namesQuestion(q, nameLower));
-        const icon = covered.length === 0 ? 'WARNING' : 'OK';
-        console.log(`    [${icon}] ${official.role}${official.district ? `, ${official.district}` : ''} — ${official.name}: ${covered.length} question(s)`);
-        if (covered.length === 0) zeroCoverageCount++;
+        const group = byRole.get(official.role) ?? [];
+        group.push(official);
+        byRole.set(official.role, group);
       }
 
-      if (zeroCoverageCount > 0) {
-        console.warn(`\n  WARNING: ${zeroCoverageCount} officeholder(s) have zero question coverage.`);
-        console.warn('  Consider re-running generation with officeholders defined in locale config.\n');
+      let zeroCoverageRoles = 0;
+      for (const [role, holders] of byRole) {
+        const coveredHolders = holders.filter(
+          official => allWithExpiry.some(q => namesQuestion(q, official.name)),
+        );
+        const icon = coveredHolders.length === 0 ? 'WARNING' : 'OK';
+        const seats = holders.length > 1 ? ` (${coveredHolders.length} of ${holders.length} seats)` : '';
+        console.log(`    [${icon}] ${role}${seats}`);
+        for (const official of holders) {
+          const covered = allWithExpiry.filter(q => namesQuestion(q, official.name));
+          const mark = covered.length === 0 ? '-' : '+';
+          console.log(`         ${mark} ${official.district ? `${official.district} — ` : ''}${official.name}: ${covered.length} question(s)`);
+        }
+        if (coveredHolders.length === 0) zeroCoverageRoles++;
+      }
+
+      if (zeroCoverageRoles > 0) {
+        console.warn(`\n  WARNING: ${zeroCoverageRoles} role(s) have no question coverage at all.`);
+        console.warn('  Add ONE question per uncovered role — never one per seat holder.\n');
       } else {
-        console.log(`    All ${localeConfig.officeholders.length} officeholders have question coverage.\n`);
+        console.log(`    All ${byRole.size} roles have question coverage.\n`);
       }
     }
 
