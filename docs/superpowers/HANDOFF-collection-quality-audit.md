@@ -5199,3 +5199,62 @@ comptroller's office page. Try the open-data subdomain before giving up on a mun
 `wisconsin` and `bend-or` remain, and **both are 100% attribution boilerplate** (90/90 and
 86/86), so budget for that strip. `war-in-iran` (31q) and `world-news` (47q) are still under the
 *question* floor, which an audit cannot fix.
+
+## Attribution strip applied BANK-WIDE (Chris ruled 2026-09-29)
+
+Chris's ruling on the session-12b finding: **attribution belongs in `source.url`.** Applied to
+the whole bank the same day.
+
+**1,978 → 0.** Every active question in all 43 collections. Verified by diffing every changed
+row against a pre-change snapshot: **all 1,978 new values are an exact tail of their original**,
+modulo the leading letter's case. Nothing else moved.
+
+### The naive version of this would have shipped corrupted text
+
+`regexp_replace(explanation, '^According to [^,]+, ', '')` is the obvious implementation and it
+is wrong, because **the attribution often contains its own comma**:
+
+    According to Wikipedia's article on Asheville, North Carolina, the city did not finish
+    paying off its Depression-era bonds until 1977
+
+    naive result -> "North Carolina, the city did not finish paying off its Depression-era..."
+
+**900 of the 1,978 rows had a capitalised word after the first comma**, and those split two
+ways that no regex can tell apart by shape alone: genuine continuations (`Asheville, North
+Carolina`, `Alexandria, Louisiana`, `Springfield, MO`, `Port Blakely, Bainbridge Island`) and
+perfectly ordinary sentence starts (`Congress passed the Residence Act…`, `Mark Kelly, a
+Democrat…`, `Bethlehem Steel, based in…`).
+
+### What made it safe: guard on the RESULT, not the pattern
+
+Every pass carried the same guard — **apply the strip, then keep it only if what remains
+begins the way a sentence begins.** A pass that would leave `North Carolina, the city…`
+refuses itself. The passes, in order:
+
+| pass | shape | rows |
+|---|---|---|
+| A | single clause, remainder starts lowercase | 987 |
+| B | attribution + place qualifier, remainder lowercase | 188 |
+| C | long source name, no comma inside 80 chars | 8 |
+| D1/D2 | remainder starts capitalised, refused if itself continuation-shaped | 89 / 605 |
+| E | attribution is a bare URL containing its own comma (`…/wiki/Indio,_California,`) | 79 |
+| F | the last 22, read individually | 22 |
+
+Passes D–F use the inverse test: refuse when the remainder matches
+`^[A-Z][A-Za-z .()]{1,30}, [a-z]`, the continuation signature. **Refusing is free; corrupting
+is not**, so every ambiguous case was left for the next pass or for hand review rather than
+guessed at.
+
+The residue that reached hand review was 22 rows and all one shape — a proper noun with an
+appositive (`Ed Larvadain III, a Democrat, represents…`), which is genuinely
+indistinguishable from `Asheville, North Carolina,` without knowing what the words mean.
+
+### Worth reusing
+
+- **Snapshot before a bank-wide text change.** `external_id` + old value to a TSV; it cost one
+  query and turned "did this work?" into a provable diff.
+- **"New value must be a tail of the old value"** is a strong, cheap invariant for any strip.
+  It catches truncation, reordering and over-matching in one check, and it is what proved this
+  one clean.
+- The ordered-passes-with-a-refusal-guard shape suits any bank-wide text repair, not just this
+  one.
