@@ -57,23 +57,29 @@ export function checkStructuralQuality(question: QuestionInput): RuleResult {
     });
   }
 
-  // Check 3: Explanation should cite a source
+  // Check 3: the question must cite a source — in source.url, NOT in the prose.
+  //
+  // This used to require the explanation itself to contain "According to",
+  // "Source:", "per the", the source name, or a URL. Attribution boilerplate was
+  // ruled out bank-wide on 2026-09-29 (1,978 explanations stripped to 0), so that
+  // test would have fired on essentially every question written since. It is an
+  // advisory rule and so could never block a write, but every hit is tallied into
+  // `trivia.generation_jobs.notes.qualityRules.byRule` — which is the diagnostic
+  // you are meant to read BEFORE adding a rule to TRIVIA_QUALITY_RULES_ENFORCE.
+  // A rule that fires on 100% of questions makes that number useless.
   const explanation = question.explanation;
-  const sourceName = question.source.name;
+  const sourceUrl = question.source.url;
   const hasCitation = (
-    explanation.includes('According to') ||
-    explanation.includes('Source:') ||
-    explanation.includes('per the') ||
-    explanation.includes(sourceName) ||
-    /https?:\/\//i.test(explanation) // Contains a URL
+    (typeof sourceUrl === 'string' && /^https?:\/\//i.test(sourceUrl)) ||
+    /https?:\/\//i.test(explanation) // a URL inline still counts
   );
 
   if (!hasCitation) {
     violations.push({
       rule: 'missing-citation',
       severity: 'advisory',
-      message: 'Explanation does not cite a source',
-      evidence: 'No citation pattern found (e.g., "According to", "Source:", URL)'
+      message: 'Question does not cite a source',
+      evidence: 'source.url is missing or is not an http(s) URL'
     });
   }
 

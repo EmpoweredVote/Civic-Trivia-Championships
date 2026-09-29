@@ -86,8 +86,16 @@ function validate(args: ParsedArgs): void {
   // so it reached into other collections on a collision and ignored a collection's
   // remaining questions whenever it used more than one prefix. Bloomington IN has
   // three; auditing it by the documented prefix missed 37 of its 157 questions.
+  // --prefix is advisory and ignored, so a malformed one is a warning, not an
+  // error. It used to be validated against /^[a-z]{2,5}$/ and pushed onto
+  // `errors` — which meant that after ids moved to `<slug>_<NNNN>`, anyone
+  // passing the new-scheme identifier (`--prefix akron-oh`) got a hard failure
+  // from a flag the script no longer uses for anything.
   if (args.prefix && !/^[a-z]{2,5}$/.test(args.prefix)) {
-    errors.push(`--prefix "${args.prefix}" must match /^[a-z]{2,5}$/ (2–5 lowercase letters)`);
+    console.warn(
+      `Note: --prefix "${args.prefix}" is not a legacy 2–5 letter prefix. ` +
+      `The flag is advisory and ignored; collections are scoped by slug.`
+    );
   }
 
   if (errors.length > 0) {

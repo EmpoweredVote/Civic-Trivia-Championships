@@ -1,6 +1,6 @@
 import { client, MODEL } from '../../scripts/content-generation/anthropic-client.js';
 import type { ClaimResult } from './claim-extractor.js';
-import { mintExternalId, nextSequence } from '../content-generation/externalIdentity.js';
+import { mintExternalId, mintForConfig, nextSequence } from '../content-generation/externalIdentity.js';
 
 // ─── Volatility Types & Helpers ───────────────────────────────────────────────
 
@@ -263,9 +263,14 @@ export async function writePassingQuestions(
   const primarySource = claim.sourceArticles[0];
 
   for (const q of passingQuestions) {
-    const externalId = externalIdPrefix
-      ? `${externalIdPrefix}-${String(nextIdNum).padStart(4, '0')}`
-      : mintExternalId(collectionSlugForMint!, nextIdNum);
+    // FOUR-digit legacy width here, unlike the three-digit generators — it
+    // matches ids already in the DB. The width is the third argument, not a
+    // convention; see mintForConfig.
+    const externalId = mintForConfig(
+      { externalIdPrefix, collectionSlug: collectionSlugForMint! },
+      nextIdNum,
+      4,
+    );
     nextIdNum++;
 
     const inserted = await db

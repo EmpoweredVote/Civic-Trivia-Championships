@@ -29,7 +29,7 @@ import { loadSourceDocuments } from './rag/parse-sources.js';
 import type { LocaleConfig, OfficeholderEntry } from './locale-configs/bloomington-in.js';
 import { validateAndRetry, createReport, saveReport, type RegenerateFn } from './utils/quality-validation.js';
 import { DuplicateDetector } from '../../services/qualityRules/rules/duplicate.js';
-import { mintExternalId } from './externalIdentity.js';
+import { mintExternalId, mintForConfig } from './externalIdentity.js';
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
 
@@ -555,9 +555,7 @@ async function seedOfficeholderExpiresAt(
  * new-scheme collections mint `slug_NNNN` via `mintExternalId`.
  */
 function mintFor(config: { externalIdPrefix?: string; collectionSlug: string }, seq: number): string {
-  return config.externalIdPrefix
-    ? `${config.externalIdPrefix}-${String(seq).padStart(3, '0')}`
-    : mintExternalId(config.collectionSlug, seq);
+  return mintForConfig(config, seq);
 }
 
 // ─── Main orchestrator ────────────────────────────────────────────────────────
