@@ -1,8 +1,8 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-28, session 11)
+# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 11)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
-## START HERE — measured 2026-09-28, end of session 11
+## START HERE — measured 2026-09-29, end of session 11
 
 Every number in this block was re-derived from the database, not carried forward. **Re-derive
 them again rather than trusting them**; three of this document's standing claims have been
@@ -22,7 +22,8 @@ wrong when checked, including one that was written and corrected the same day.
 | **SCHEDULED WORK, Jan 2027** | `new-york-state` — rewrite six statewide officeholders; `texas-state` — re-verify + take `pla-172` |
 | **RULED 2026-09-28** | U.S. senators belong to **state** collections; Missouri done, `pla-172` deferred to post-3 Nov |
 | **RULED 2026-09-29** | roll-call ban **ENFORCED**; all six collections rebuilt, **zero roll-calls remain bank-wide** |
-| **Expiring tier dies before Mar 2027** | `world-news` 22/22, `climate-change` 18/18, `massachusetts-state` 12/12, `new-york-state` 6/6, `wisconsin` 13/15, `asheville-nc` 10/11 |
+| **Expiring tier dies before Mar 2027** | re-derive it; worst today: `world-news` 22/22, `climate-change` 18/18, `wisconsin` 13/15, `massachusetts-state` 12/12, `washington-dc` 11/15, `federal` 11/23, `asheville-nc` 8/9, `war-in-iran` 6/6, **`santa-monica-ca` 5/6** |
+| Easy tier | no collection is under the 25% easy floor |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
 
@@ -32,16 +33,19 @@ wrong when checked, including one that was written and corrected the same day.
 2. **Senator ruling: half applied.** `missouri`/`st-louis-mo` swap is DONE. `pla-172` in
    `plano-tx` is deliberately deferred to after 3 Nov 2026 — do it with the `texas-state`
    re-verify. See "The U.S.-senator tier ruling".
-3. **`santa-monica-ca` 9.8% is the last unexamined floor breach.** `biloxi-ms` was done in
-   session 11 and is a **documented breach at 9.2%** — its officeholder surface is eight
-   offices and they are all now used; do not "fix" it by reviving the ward roll-call.
-   These are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
-   different job from an audit". `west-monroe-la`, `alexandria-la` and `new-york-state` cleared
-   in session 11.
-3. **Six collections have never been audited**: `bend-or`, `wisconsin`, `bloomington-in`,
-   `milwaukee-wi`, `war-in-iran`, `world-news`. The last two are under the *question* floor,
-   which is a pipeline-yield problem an audit cannot fix.
-4. **Three more collections are close to the question floor**: `norwich-uk` 52,
+3. **THE FLOOR BACKLOG IS EFFECTIVELY CLOSED — pick up the AUDIT instead.** Only two
+   collections are under the 10% expiring floor: `biloxi-ms` 9.2% (a **documented breach**;
+   its officeholder surface is eight offices and all eight are used — do not "fix" it by
+   reviving the ward roll-call) and `santa-monica-ca` 9.8%, **which is 5/6 on the expiry
+   cliff**. Auditing santa-monica now to add expiring questions would buy about five months.
+   **Do it in the Q1 2027 sweep instead**, with the others.
+4. **So the real remaining work is the four never-audited locale collections**: `bend-or`,
+   `wisconsin`, `bloomington-in`, `milwaukee-wi`. (`war-in-iran` 31q and `world-news` 47q are
+   also unaudited but are under the *question* floor — a pipeline-yield problem an audit
+   cannot fix.) `bloomington-in` and `milwaukee-wi` had their roll-calls rebuilt in session 11,
+   so their officeholder tiers are already known-good; the rest of those collections is
+   untouched.
+5. **Three more collections are close to the question floor**: `norwich-uk` 52,
    `los-angeles-ca` 55, `portland-or` 55. None is breaching and none is urgent — but they are
    where the next `plano-tx` comes from, so re-derive rather than waiting for one to cross.
 
