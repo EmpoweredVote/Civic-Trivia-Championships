@@ -28,8 +28,9 @@ wrong when checked, including one that was written and corrected the same day.
 1. **Run the expiry-cliff query before picking anything** — see "The expiring tier is
    FRONT-LOADED bank-wide". Several collections that pass the floor today fall through it in
    early 2027 untouched, so the backlog below is not the whole job.
-2. **Apply the senator ruling** — write the `missouri` version and archive `stlmo-217`; leave
-   `pla-172` until after 3 Nov. Spans four collections; see "The U.S.-senator tier ruling".
+2. **Senator ruling: half applied.** `missouri`/`st-louis-mo` swap is DONE. `pla-172` in
+   `plano-tx` is deliberately deferred to after 3 Nov 2026 — do it with the `texas-state`
+   re-verify. See "The U.S.-senator tier ruling".
 3. **Two already-audited collections breach the 10% expiring floor**: `biloxi-ms` 8.5% and
    `santa-monica-ca` 9.8%. `biloxi-ms` is the bigger job at 118 questions.
    These are **re-visits, not re-audits** — the cheaper job described under "A re-visit is a
@@ -4361,13 +4362,38 @@ Bank-wide, current-senator questions sit in: `arizona` (2), `pennsylvania` (2),
 
 | question | collection | expires | what to do |
 |---|---|---|---|
-| `stlmo-217` | `st-louis-mo` | 2029-01-03 | **Clean swap.** Write the `missouri` version (Hawley to Jan 2031, Schmitt to Jan 2029 — both durable), then archive this. `st-louis-mo` goes 15.2% → 13.8%, `missouri` 16.0% → 17.1%. |
-| `pla-172` | `plano-tx` | 2027-01-03 | **Wait.** Texas's Cornyn seat is on the 3 Nov 2026 ballot, so a `texas-state` version written now is stale in January. Leave `pla-172` in place until then, and do the swap alongside the `texas-state` re-verify already scheduled for after the election. |
+| `stlmo-217` | `st-louis-mo` | 2029-01-03 | **DONE 2026-09-28.** `misso-211` written, `stlmo-217` archived. |
+| `pla-172` | `plano-tx` | 2027-01-03 | **DEFERRED to after 3 Nov 2026.** Texas's Cornyn seat is on that ballot, so a `texas-state` version written now is stale in January. Leave `pla-172` in place until then, and do the swap alongside the `texas-state` re-verify already scheduled for after the election. |
 
-Impact checked before touching anything: all four collections stay above the floor either way
-(`plano-tx` 16.9%, `st-louis-mo` 15.2%, `texas-state` 15.9%, `missouri` 16.0% today).
+Impact checked before touching anything: all four collections stay above the floor either way.
 
-**Not done in this PR** — it spans four other collections and belongs in its own change.
+### The swap, as executed (session 11)
+
+**Order matters: write the state question first, archive the city one second**, so the fact is
+never absent from the bank. Both were done in one transaction.
+
+`misso-211` — "Which two U.S. senators represent Missouri?" → Josh Hawley and Eric Schmitt,
+medium, expires **2029-01-03** (the earlier of the two seats). Distractors are the two most
+recent former Missouri senators, Claire McCaskill and Roy Blunt. Verified before writing:
+Hawley is Class 1, next on the ballot in November 2030; Schmitt is Class 3, next in November
+2028. **Neither Missouri seat was on the 2026 ballot**, which is what makes this a durable swap
+and the Texas one not.
+
+Measured after:
+
+| collection | active | expiring | easy | hard | positions |
+|---|---|---|---|---|---|
+| `missouri` | 75 → **76** | 16.0% → **17.1%** | 31.6% | 21.1% | **19/19/19/19** |
+| `st-louis-mo` | 66 → **65** | 15.2% → **13.8%** | 38.5% | 16.9% | 17/17/15/16 |
+
+`misso-211` leaks nothing into `missouri` and duplicates no answer there (checked).
+
+**Current-senator questions now sit at state tier everywhere except `plano-tx`**, which is the
+one deliberate exception above:
+
+    arizona (2) · california-state (1) · missouri (1) · new-york-state (2)
+    pennsylvania (2) · washington-state (2)  — all state tier
+    plano-tx (1)  — city tier, deferred until after 3 Nov 2026
 
 ## The host metric needs a Wikipedia exception (session 11, new-york-state)
 
