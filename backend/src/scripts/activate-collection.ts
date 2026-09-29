@@ -167,7 +167,8 @@ async function main(): Promise<void> {
       console.error('Run the link step first (create-collection SKILL.md, step 6e):');
       console.error('  INSERT INTO trivia.collection_questions (collection_id, question_id, created_at)');
       console.error(`  SELECT ${collection.id}, q.id, NOW() FROM trivia.questions q`);
-      console.error("  WHERE q.external_id LIKE '<prefix>-%'");
+      console.error("  WHERE split_part(q.external_id, '_', 1) = '<collection-slug>'");
+      console.error("  --  legacy prefix collections instead use:  q.external_id LIKE '<prefix>-%'");
       console.error('    AND NOT EXISTS (SELECT 1 FROM trivia.collection_questions cq WHERE cq.question_id = q.id);');
       process.exit(1);
     }
@@ -175,17 +176,21 @@ async function main(): Promise<void> {
     // Cross-check the advisory prefix against what this collection actually holds.
     const ownPrefixes = await db
       .select({
-        prefix: sql<string>`split_part(${questions.externalId}, '-', 1)`,
+        prefix: sql<string>`CASE WHEN strpos(${questions.externalId}, '_') > 0
+                                 THEN left(${questions.externalId}, strpos(${questions.externalId}, '_') - 1)
+                                 ELSE split_part(${questions.externalId}, '-', 1) END`,
         count: sql<number>`count(*)::int`,
       })
       .from(questions)
       .innerJoin(collectionQuestions, eq(collectionQuestions.questionId, questions.id))
       .where(eq(collectionQuestions.collectionId, collection.id))
-      .groupBy(sql`split_part(${questions.externalId}, '-', 1)`);
+      .groupBy(sql`CASE WHEN strpos(${questions.externalId}, '_') > 0
+                                 THEN left(${questions.externalId}, strpos(${questions.externalId}, '_') - 1)
+                                 ELSE split_part(${questions.externalId}, '-', 1) END`);
 
     const prefixList = ownPrefixes.map(r => `${r.prefix} (${r.count})`).join(', ');
     if (ownPrefixes.length > 1) {
-      console.log(`Note: "${collection.name}" spans ${ownPrefixes.length} external-id prefixes: ${prefixList}.`);
+      console.log(`Note: "${collection.name}" spans ${ownPrefixes.length} external-id namespaces: ${prefixList}.`);
       console.log('All of them are covered — activation is scoped by collection, not by prefix.');
     }
     if (prefix && !ownPrefixes.some(r => r.prefix === prefix)) {

@@ -23,6 +23,18 @@ import { loadSourceDocuments } from './rag/parse-sources.js';
 import { validateAndRetry, createReport, saveReport } from './utils/quality-validation.js';
 import { DuplicateDetector } from '../../services/qualityRules/rules/duplicate.js';
 import type { LocaleConfig } from './locale-configs/bloomington-in.js';
+import { mintExternalId } from './externalIdentity.js';
+
+/**
+ * The single place this file builds an external ID. Legacy collections
+ * (`config.externalIdPrefix` set) keep their three-digit `prefix-NNN` shape;
+ * new-scheme collections mint `slug_NNNN` via `mintExternalId`.
+ */
+function mintFor(config: { externalIdPrefix?: string; collectionSlug: string }, seq: number): string {
+  return config.externalIdPrefix
+    ? `${config.externalIdPrefix}-${String(seq).padStart(3, '0')}`
+    : mintExternalId(config.collectionSlug, seq);
+}
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
 
@@ -173,7 +185,7 @@ async function generateBatch(
 
   const userMessage = `Generate ${config.batchSize} state-level civic trivia questions for ${config.name}.
 
-External ID range for this batch: ${config.externalIdPrefix}-${String(startId).padStart(3, '0')} through ${config.externalIdPrefix}-${String(endId).padStart(3, '0')}
+External ID range for this batch: ${mintFor(config, startId)} through ${mintFor(config, endId)}
 
 Already used external IDs (do not reuse): ${existingExternalIds.size > 0 ? [...existingExternalIds].join(', ') : 'None'}
 

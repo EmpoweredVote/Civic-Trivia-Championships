@@ -19,7 +19,8 @@ export interface OfficeholderEntry {
 export interface LocaleConfig {
   locale: string;
   name: string;
-  externalIdPrefix: string;
+  /** Legacy collections only. New collections derive ids from collectionSlug. */
+  externalIdPrefix?: string;
   collectionSlug: string;
   targetQuestions: number;
   batchSize: number;

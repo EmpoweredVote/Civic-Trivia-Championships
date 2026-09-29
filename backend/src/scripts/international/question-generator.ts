@@ -1,5 +1,6 @@
 import { client, MODEL } from '../../scripts/content-generation/anthropic-client.js';
 import type { ClaimResult } from './claim-extractor.js';
+import { mintExternalId, nextSequence } from '../content-generation/externalIdentity.js';
 
 // ─── Volatility Types & Helpers ───────────────────────────────────────────────
 
@@ -188,7 +189,7 @@ export async function writePassingQuestions(
   claim: ClaimResult,
   collectionId: number,
   jobId: number,
-  externalIdPrefix: string,
+  externalIdPrefix: string | undefined,
   volatility: Volatility,
 ): Promise<QuestionWriteResult[]> {
   const passingQuestions = questions.filter(q => q.qualityGate.passed);
@@ -196,8 +197,8 @@ export async function writePassingQuestions(
 
   // Lazy DB imports (ESM pattern — consistent with replacementGenerator.ts)
   const { db } = await import('../../db/index.js');
-  const { questions: questionsTable, collectionQuestions, topics } = await import('../../db/schema.js');
-  const { eq, and, sql } = await import('drizzle-orm');
+  const { questions: questionsTable, collectionQuestions, topics, collections } = await import('../../db/schema.js');
+  const { eq, sql } = await import('drizzle-orm');
 
   // ── Resolve/create "world-news" topic ──────────────────────────────────────
   const WORLD_NEWS_SLUG = 'world-news';
@@ -225,28 +226,46 @@ export async function writePassingQuestions(
     console.log(`[QuestionGenerator] Created topic: ${WORLD_NEWS_NAME} (id=${topicId})`);
   }
 
-  // ── Get current max external ID for this prefix ────────────────────────────
+  // ── Get current max external ID for this collection ────────────────────────
+  // Scoped by collectionId via the join. The prefix LIKE that used to sit here
+  // was redundant on top of correct scoping. '[0-9]+$' is anchored deliberately
+  // — unanchored, it takes the FIRST digit run, which is wrong for a slug id.
   const maxIdResult = await db
     .select({
       maxId: sql<string>`MAX(SUBSTRING(${questionsTable.externalId} FROM '[0-9]+$')::int)`,
     })
     .from(questionsTable)
     .innerJoin(collectionQuestions, eq(questionsTable.id, collectionQuestions.questionId))
-    .where(
-      and(
-        eq(collectionQuestions.collectionId, collectionId),
-        sql`${questionsTable.externalId} LIKE ${externalIdPrefix + '-%'}`,
-      ),
-    );
+    .where(eq(collectionQuestions.collectionId, collectionId));
 
-  let nextIdNum = (maxIdResult[0]?.maxId ? parseInt(maxIdResult[0].maxId, 10) : 0) + 1;
+  let nextIdNum = nextSequence(maxIdResult[0]?.maxId);
+
+  // A legacy collection has an externalIdPrefix and keeps minting its old
+  // `prefix-NNNN` shape. A new-scheme collection has none — resolve its slug
+  // from collectionId and mint `slug_NNNN` via mintExternalId.
+  let collectionSlugForMint: string | undefined;
+  if (!externalIdPrefix) {
+    const [col] = await db
+      .select({ slug: collections.slug })
+      .from(collections)
+      .where(eq(collections.id, collectionId))
+      .limit(1);
+    collectionSlugForMint = col?.slug;
+    if (!collectionSlugForMint) {
+      throw new Error(
+        `Cannot mint external id for collection ${collectionId}: no externalIdPrefix and no resolvable slug.`,
+      );
+    }
+  }
 
   // ── Insert each passing question ────────────────────────────────────────────
   const results: QuestionWriteResult[] = [];
   const primarySource = claim.sourceArticles[0];
 
   for (const q of passingQuestions) {
-    const externalId = `${externalIdPrefix}-${String(nextIdNum).padStart(4, '0')}`;
+    const externalId = externalIdPrefix
+      ? `${externalIdPrefix}-${String(nextIdNum).padStart(4, '0')}`
+      : mintExternalId(collectionSlugForMint!, nextIdNum);
     nextIdNum++;
 
     const inserted = await db

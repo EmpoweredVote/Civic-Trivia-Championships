@@ -1,16 +1,29 @@
 import { z } from 'zod';
+import {
+  NEW_EXTERNAL_ID_RE,
+  LEGACY_EXTERNAL_ID_RE,
+  FEDERAL_EXTERNAL_ID_RE,
+} from './externalIdentity.js';
 
 /**
  * Zod schema for validating AI-generated civic trivia questions.
  * Mirrors the database questions table structure from src/db/schema.ts.
  */
 export const QuestionSchema = z.object({
-  // External ID: locale-prefix + 3-digit number (e.g., "bli-001", "lac-001")
+  // External ID: either scheme.
+  //   new     <collection-slug>_<NNNN>   e.g. "akron-oh_0001"
+  //   legacy  <prefix>-<NNN|NNNN>        e.g. "bli-001", "wiran-1761"
+  //   federal q<NNN>                     e.g. "q001" (no separator, predates every prefix scheme)
+  // Widened from /^[a-z]{2,5}-\d{3}$/ on 2026-09-29: that pattern rejected
+  // 3,501 rows the nightly news pipeline had already written.
   externalId: z
     .string()
-    .regex(
-      /^[a-z]{2,5}-\d{3}$/,
-      'externalId must match pattern like "bli-001", "lac-001", or "alxla-001"'
+    .refine(
+      (v) =>
+        NEW_EXTERNAL_ID_RE.test(v) ||
+        LEGACY_EXTERNAL_ID_RE.test(v) ||
+        FEDERAL_EXTERNAL_ID_RE.test(v),
+      'externalId must look like "akron-oh_0001" (new), "bli-001" (legacy), or "q001" (federal)'
     ),
 
   // Question text
@@ -36,15 +49,13 @@ export const QuestionSchema = z.object({
     .min(0, 'correctAnswer must be 0-3')
     .max(3, 'correctAnswer must be 0-3'),
 
-  // Explanation citing the source using "According to..." pattern
+  // Explanation. Attribution lives in source.url, NOT in the prose — the
+  // "According to ..." opener was stripped bank-wide on 2026-09-29 (1,978 -> 0),
+  // and this refine would have made the generator write it straight back.
   explanation: z
     .string()
     .min(20, 'Explanation must be at least 20 characters')
-    .max(500, 'Explanation must be at most 500 characters')
-    .refine(
-      (val) => val.includes('According to'),
-      'Explanation must include "According to" citation'
-    ),
+    .max(500, 'Explanation must be at most 500 characters'),
 
   // Difficulty level matching federal questions
   difficulty: z.enum(['easy', 'medium', 'hard']),

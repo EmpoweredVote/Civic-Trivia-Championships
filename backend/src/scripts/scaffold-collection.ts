@@ -11,7 +11,7 @@
  *
  * Usage:
  *   cd backend
- *   npx tsx src/scripts/scaffold-collection.ts --name "Austin, TX" --slug austin-tx --prefix aut --theme "#7C3AED"
+ *   npx tsx src/scripts/scaffold-collection.ts --name "Austin, TX" --slug austin-tx --theme "#7C3AED"
  *   npx tsx src/scripts/scaffold-collection.ts --help
  */
 
@@ -142,10 +142,10 @@ Usage: npx tsx src/scripts/scaffold-collection.ts [options]
 Required:
   --name <string>        Display name (e.g. "Austin, TX")
   --slug <string>        URL slug (e.g. austin-tx)  [a-z0-9-]
-  --prefix <string>      External ID prefix, 2–5 chars (e.g. austx)  [a-z]{2,5}
   --theme <hex>          Theme color as 6-digit hex (e.g. "#7C3AED")
 
 Optional:
+  --prefix <string>      DEPRECATED, ignored. External IDs derive from --slug.
   --tier <type>          city | state | federal | international  (default: city)
   --sort-order <n>       Sort order integer (default: auto-detect max+1)
   --locale-code <code>   Locale code (default: en-US)
@@ -154,8 +154,8 @@ Optional:
   --help, -h             Show this help message
 
 Examples:
-  npx tsx src/scripts/scaffold-collection.ts --name "Austin, TX" --slug austin-tx --prefix aut --theme "#7C3AED"
-  npx tsx src/scripts/scaffold-collection.ts --name "Texas State" --slug texas-state --prefix txs --theme "#BF5700" --tier state
+  npx tsx src/scripts/scaffold-collection.ts --name "Austin, TX" --slug austin-tx --theme "#7C3AED"
+  npx tsx src/scripts/scaffold-collection.ts --name "Texas State" --slug texas-state --theme "#BF5700" --tier state
 `);
 }
 
@@ -166,15 +166,18 @@ function validate(args: ParsedArgs): void {
 
   if (!args.name) errors.push('--name is required');
   if (!args.slug) errors.push('--slug is required');
-  if (!args.prefix) errors.push('--prefix is required');
   if (!args.theme) errors.push('--theme is required');
 
   if (args.slug && !/^[a-z0-9-]+$/.test(args.slug)) {
     errors.push(`--slug "${args.slug}" must match /^[a-z0-9-]+$/`);
   }
 
-  if (args.prefix && !/^[a-z]{2,5}$/.test(args.prefix)) {
-    errors.push(`--prefix "${args.prefix}" must match /^[a-z]{2,5}$/ (2–5 lowercase letters)`);
+  if (args.prefix) {
+    console.warn(
+      `Warning: --prefix "${args.prefix}" is ignored. External IDs now derive from the ` +
+      `collection slug (e.g. "${args.slug}_0001"). The flag is accepted for compatibility ` +
+      `with /create-collection and the handbook, and will be dropped later.`
+    );
   }
 
   if (args.theme && !/^#[0-9A-Fa-f]{6}$/.test(args.theme)) {
@@ -327,7 +330,6 @@ function step2CreateLocaleConfig(args: ParsedArgs, configVarName: string): strin
 export const ${configVarName}Config: LocaleConfig = {
   locale: '${args.slug}',
   name: '${escapeSingleQuoted(args.name!)}',
-  externalIdPrefix: '${args.prefix}',
   collectionSlug: '${args.slug}',
   targetQuestions: 100,
   batchSize: 25,
@@ -479,7 +481,6 @@ function main(): void {
   // Safe to assert non-null after validation
   const name = args.name!;
   const slug = args.slug!;
-  const prefix = args.prefix!;
 
   // Read collections.ts to detect sort order
   const collectionsPath = resolve(process.cwd(), 'src/db/seed/collections.ts');
@@ -502,7 +503,6 @@ function main(): void {
   }
 
   console.log(`\nScaffolding collection: ${name} (${slug})`);
-  console.log(`  Prefix: ${prefix}`);
   console.log(`  Tier: ${args.tier}`);
   console.log(`  Sort order: ${sortOrder}`);
   console.log(`  Theme: ${args.theme}`);
@@ -540,7 +540,7 @@ Next steps:
   5. Add banner image:
      frontend/public/images/collections/${slug}.jpg${args.tier === 'state' ? '\n     ⚠  STATE COLLECTION: use a photo of the state capitol building.' : ''}
   6. Activate when ready:
-     cd backend && npx tsx src/scripts/activate-collection.ts --slug ${slug} --prefix ${prefix}
+     cd backend && npx tsx src/scripts/activate-collection.ts --slug ${slug}
 `);
 }
 

@@ -29,6 +29,7 @@ import { loadSourceDocuments } from './rag/parse-sources.js';
 import type { LocaleConfig, OfficeholderEntry } from './locale-configs/bloomington-in.js';
 import { validateAndRetry, createReport, saveReport, type RegenerateFn } from './utils/quality-validation.js';
 import { DuplicateDetector } from '../../services/qualityRules/rules/duplicate.js';
+import { mintExternalId } from './externalIdentity.js';
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
 
@@ -238,7 +239,7 @@ async function generateBatch(
 
   const userMessage = `Generate ${config.batchSize} civic trivia questions for ${config.name}.
 
-External ID range for this batch: ${config.externalIdPrefix}-${String(startId).padStart(3, '0')} through ${config.externalIdPrefix}-${String(endId).padStart(3, '0')}
+External ID range for this batch: ${mintFor(config, startId)} through ${mintFor(config, endId)}
 
 Already used external IDs (do not reuse): ${existingExternalIds.size > 0 ? [...existingExternalIds].join(', ') : 'None'}
 
@@ -371,7 +372,7 @@ function calculateCost(inputTokens: number, outputTokens: number, cachedTokens: 
  * - Skips if fewer than 2 questions exist in the collection
  * - Archives only questions in clusters where recommendation.archive has entries
  */
-async function runWithinCollectionSemanticDedup(prefix: string, collectionSlug: string): Promise<void> {
+async function runWithinCollectionSemanticDedup(collectionSlug: string): Promise<void> {
   if (!process.env.OPENAI_API_KEY) {
     console.log('\n[Semantic Dedup] Skipping — OPENAI_API_KEY not set.');
     return;
@@ -379,11 +380,15 @@ async function runWithinCollectionSemanticDedup(prefix: string, collectionSlug: 
 
   console.log('\n[Step 5] Running within-collection semantic near-duplicate detection...');
 
-  // Query draft and active questions for this collection (prefix-filtered)
   const { db } = await import('../../db/index.js');
-  const { questions } = await import('../../db/schema.js');
-  const { sql } = await import('drizzle-orm');
-  const prefixPattern = prefix + '-%';
+  const { questions, collections, collectionQuestions } = await import('../../db/schema.js');
+  const { sql, eq } = await import('drizzle-orm');
+
+  // Scoped by collection, not by external-id prefix. A prefix does not identify
+  // a collection: `ind` is shared by Indiana and Indio CA, and five collections
+  // use more than one. Selecting by prefix here compared two collections'
+  // questions against each other and flagged the loser as a near-duplicate of a
+  // question in a different collection.
   const rows = await db
     .select({
       id: questions.id,
@@ -394,7 +399,9 @@ async function runWithinCollectionSemanticDedup(prefix: string, collectionSlug: 
       qualityScore: questions.qualityScore,
     })
     .from(questions)
-    .where(sql`${questions.externalId} LIKE ${prefixPattern} AND ${questions.status} IN ('draft', 'active')`);
+    .innerJoin(collectionQuestions, eq(questions.id, collectionQuestions.questionId))
+    .innerJoin(collections, eq(collections.id, collectionQuestions.collectionId))
+    .where(sql`${collections.slug} = ${collectionSlug} AND ${questions.status} IN ('draft', 'active')`);
 
   if (rows.length < 2) {
     console.log(`  [Semantic Dedup] Only ${rows.length} questions found — skipping (need at least 2).`);
@@ -492,16 +499,26 @@ async function seedOfficeholderExpiresAt(
   if (officeholders.length === 0) return { updated: 0 };
 
   const { db: dbSeeder } = await import('../../db/index.js');
-  const { questions: questionsSeeder } = await import('../../db/schema.js');
-  const { sql: sqlSeeder } = await import('drizzle-orm');
+  const { questions: questionsSeeder, collections: collectionsSeeder, collectionQuestions: cqSeeder } =
+    await import('../../db/schema.js');
+  const { sql: sqlSeeder, eq: eqSeeder } = await import('drizzle-orm');
 
-  const prefixPattern = config.externalIdPrefix + '-%';
-
-  // Fetch draft AND active questions with no expiresAt for this collection
+  // Scoped by collection, not by external-id prefix — selecting by prefix here
+  // stamped expiresAt on another collection's rows.
   const rows = await dbSeeder
-    .select({ id: questionsSeeder.id, externalId: questionsSeeder.externalId, text: questionsSeeder.text })
+    .select({
+      id: questionsSeeder.id,
+      externalId: questionsSeeder.externalId,
+      text: questionsSeeder.text,
+    })
     .from(questionsSeeder)
-    .where(sqlSeeder`${questionsSeeder.externalId} LIKE ${prefixPattern} AND ${questionsSeeder.status} IN ('draft', 'active') AND ${questionsSeeder.expiresAt} IS NULL`);
+    .innerJoin(cqSeeder, eqSeeder(questionsSeeder.id, cqSeeder.questionId))
+    .innerJoin(collectionsSeeder, eqSeeder(collectionsSeeder.id, cqSeeder.collectionId))
+    .where(
+      sqlSeeder`${collectionsSeeder.slug} = ${config.collectionSlug}
+        AND ${questionsSeeder.status} IN ('draft', 'active')
+        AND ${questionsSeeder.expiresAt} IS NULL`
+    );
 
   let updated = 0;
 
@@ -528,6 +545,19 @@ async function seedOfficeholderExpiresAt(
   }
 
   return { updated };
+}
+
+// ─── External ID minting ───────────────────────────────────────────────────────
+
+/**
+ * The single place this file builds an external ID. Legacy collections
+ * (`config.externalIdPrefix` set) keep their three-digit `prefix-NNN` shape;
+ * new-scheme collections mint `slug_NNNN` via `mintExternalId`.
+ */
+function mintFor(config: { externalIdPrefix?: string; collectionSlug: string }, seq: number): string {
+  return config.externalIdPrefix
+    ? `${config.externalIdPrefix}-${String(seq).padStart(3, '0')}`
+    : mintExternalId(config.collectionSlug, seq);
 }
 
 // ─── Main orchestrator ────────────────────────────────────────────────────────
@@ -618,25 +648,39 @@ async function main(): Promise<void> {
   const allPassed: ValidatedQuestion[] = [];
   const existingIds = new Set<string>();
 
-  // Determine ID offset: start above the highest externalId already in the DB for this prefix
-  // so re-generation runs never collide with prior run IDs (including archived questions).
+  // Determine ID offset: start above the highest sequence already present in
+  // this collection's ID NAMESPACE, including archived rows — external_id has a
+  // UNIQUE constraint, so a reused number is an insert failure.
+  //
+  // DELIBERATELY NOT scoped by collection_id, unlike the dedup and expiry
+  // queries above. External IDs must be unique per NAMESPACE, not per
+  // collection. If two collections ever share one (Indiana and Indio CA both
+  // use `ind`), scoping this by collection is exactly what would mint a
+  // duplicate. This reads like the same bug as its neighbours and is not.
   let idOffset = 0;
   if (!args.dryRun && collectionId !== null) {
     const { db: dbForOffset } = await import('../../db/index.js');
     const { questions: questionsForOffset } = await import('../../db/schema.js');
     const { sql: sqlForOffset } = await import('drizzle-orm');
-    const prefixPattern = config.externalIdPrefix + '-%';
+    const { nextSequence, collectionKeyOf } = await import('./externalIdentity.js');
+
+    const namespace = config.externalIdPrefix || config.collectionSlug;
     const maxIdRows = await dbForOffset
       .select({ externalId: questionsForOffset.externalId })
       .from(questionsForOffset)
-      .where(sqlForOffset`${questionsForOffset.externalId} LIKE ${prefixPattern}`);
+      .where(
+        sqlForOffset`split_part(${questionsForOffset.externalId}, '_', 1) = ${namespace}
+                     OR split_part(${questionsForOffset.externalId}, '-', 1) = ${namespace}`
+      );
+
     if (maxIdRows.length > 0) {
       const maxNum = maxIdRows.reduce((max, row) => {
-        const num = parseInt(row.externalId.split('-').pop() ?? '0', 10);
-        return Math.max(max, isNaN(num) ? 0 : num);
+        const tail = row.externalId.slice(collectionKeyOf(row.externalId).length + 1);
+        const num = parseInt(tail, 10);
+        return Math.max(max, Number.isNaN(num) ? 0 : num);
       }, 0);
       idOffset = maxNum;
-      console.log(`  ID offset: ${idOffset} (starting from ${config.externalIdPrefix}-${String(idOffset + 1).padStart(3, '0')})`);
+      console.log(`  ID offset: ${idOffset} (next is ${mintFor(config, nextSequence(idOffset))})`);
     }
   }
   let totalSeeded = 0;
@@ -891,7 +935,7 @@ Return ONLY a JSON object with a "questions" array containing exactly 1 question
 
   // Step 5: Run within-collection semantic dedup (skips gracefully if no OPENAI_API_KEY)
   if (!args.dryRun) {
-    await runWithinCollectionSemanticDedup(config.externalIdPrefix, config.collectionSlug);
+    await runWithinCollectionSemanticDedup(config.collectionSlug);
   }
 
   // Final summary

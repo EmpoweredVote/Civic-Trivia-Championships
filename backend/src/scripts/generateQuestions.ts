@@ -30,6 +30,7 @@ import { OpenAIEmbeddingService } from '../services/embeddings/OpenAIEmbeddingSe
 import { SemanticDupDetector } from '../services/embeddings/SemanticDupDetector.js';
 import type { QuestionForDedup } from '../services/embeddings/types.js';
 import { loadCollectionTierMap } from '../services/embeddings/types.js';
+import { mintExternalId } from './content-generation/externalIdentity.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -301,8 +302,13 @@ async function generateOneQuestion(
       }
 
       // 4. Build GeneratedQuestion
+      // Collections in COLLECTION_PREFIXES are legacy and keep their three-digit
+      // `prefix-NNN` shape; anything absent from the map is new-scheme and mints
+      // `slug_NNNN` — no entry needs to be added here for a new collection.
       const prefix = COLLECTION_PREFIXES[collectionSlug];
-      const externalId = `${prefix}-${String(externalIdCounter).padStart(3, '0')}`;
+      const externalId = prefix
+        ? `${prefix}-${String(externalIdCounter).padStart(3, '0')}`
+        : mintExternalId(collectionSlug, externalIdCounter);
 
       const question: GeneratedQuestion = {
         externalId,
