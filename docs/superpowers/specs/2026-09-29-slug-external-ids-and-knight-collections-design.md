@@ -106,6 +106,26 @@ new — they are merely currently undeclared.
 Widening the regex to accept both shapes therefore also legalizes 3,501 rows that are
 currently invalid against their own validator.
 
+## Added to scope: the validator still requires attribution boilerplate
+
+Found on 2026-09-29 while reading `question-schema.ts` for the ID regex, in the same block of
+the same file:
+
+```ts
+explanation: z.string()
+  .refine((val) => val.includes('According to'),
+          'Explanation must include "According to" citation'),
+```
+
+Attribution boilerplate was ruled out bank-wide **the same day** — 1,978 explanations stripped
+to 0, attribution belongs in `source.url`. The validator mandates exactly what was just
+removed, so every question generated for the 35 Knight collections would write it straight
+back in.
+
+**In scope:** delete that `refine` in both vendored copies. Length bounds stay. This is added
+because it is in the same lines this change already edits, and because leaving it would
+silently undo a ruling made today across the entire program.
+
 ## The helper
 
 A single source of truth, `externalIdentity.ts`:
