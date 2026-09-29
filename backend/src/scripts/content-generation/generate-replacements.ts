@@ -20,6 +20,18 @@ import { validateAndRetry, createReport, saveReport } from './utils/quality-vali
 import { db } from '../../db/index.js';
 import { questions as questionsTable, collections, collectionQuestions, topics, collectionTopics } from '../../db/schema.js';
 import { eq, and, inArray, sql } from 'drizzle-orm';
+import { mintExternalId, nextSequence } from './externalIdentity.js';
+
+/**
+ * The single place this file builds an external ID. Legacy collections
+ * (`config.externalIdPrefix` set) keep their three-digit `prefix-NNN` shape;
+ * new-scheme collections mint `slug_NNNN` via `mintExternalId`.
+ */
+function mintFor(config: { externalIdPrefix?: string; collectionSlug: string }, seq: number): string {
+  return config.externalIdPrefix
+    ? `${config.externalIdPrefix}-${String(seq).padStart(3, '0')}`
+    : mintExternalId(config.collectionSlug, seq);
+}
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
 
@@ -205,23 +217,23 @@ async function analyzeArchivedQuestions(
 
 // ─── External ID management ───────────────────────────────────────────────────
 
-async function getNextExternalId(collectionId: number, prefix: string): Promise<number> {
-  // Find max external ID for this collection's prefix
+async function getNextExternalId(collectionId: number): Promise<number> {
+  // Scoped by collectionId via the join. The prefix LIKE that used to sit here
+  // was redundant — and under slug-derived ids it matched nothing, so MAX()
+  // went null, the sequence reset to 1, and the mint collided with the
+  // existing _0001 (questions_external_id_key).
+  //
+  // '[0-9]+$' is anchored deliberately: unanchored, it takes the FIRST digit
+  // run in the string, which is wrong the moment a slug contains a digit.
   const result = await db
     .select({
-      maxId: sql<string>`MAX(SUBSTRING(${questionsTable.externalId} FROM '[0-9]+')::int)`,
+      maxId: sql<string>`MAX(SUBSTRING(${questionsTable.externalId} FROM '[0-9]+$')::int)`,
     })
     .from(questionsTable)
     .innerJoin(collectionQuestions, eq(questionsTable.id, collectionQuestions.questionId))
-    .where(
-      and(
-        eq(collectionQuestions.collectionId, collectionId),
-        sql`${questionsTable.externalId} LIKE ${prefix + '-%'}`
-      )
-    );
+    .where(eq(collectionQuestions.collectionId, collectionId));
 
-  const maxId = result[0]?.maxId ? parseInt(result[0].maxId, 10) : 0;
-  return maxId + 1;
+  return nextSequence(result[0]?.maxId);
 }
 
 // ─── Topic distribution calculation ───────────────────────────────────────────
@@ -292,7 +304,7 @@ These are REPLACEMENT questions for questions that were removed due to quality i
 - Topics that lost questions: ${Object.keys(analysis.archivedTopics).join(', ')}
 - Topics needing more coverage: ${Object.keys(analysis.topicGaps).length > 0 ? Object.keys(analysis.topicGaps).join(', ') : 'None'}
 
-External ID range for this batch: ${config.externalIdPrefix}-${String(startId).padStart(3, '0')} through ${config.externalIdPrefix}-${String(endId).padStart(3, '0')}
+External ID range for this batch: ${mintFor(config, startId)} through ${mintFor(config, endId)}
 
 Topic distribution for this batch:
 ${Object.entries(topicDistribution).map(([slug, count]) => `- ${slug}: ${count} questions`).join('\n')}
@@ -632,8 +644,8 @@ async function main(): Promise<void> {
     );
 
     // Get next external ID
-    const nextId = await getNextExternalId(analysis.collectionId, config.externalIdPrefix);
-    console.log(`  Next external ID: ${config.externalIdPrefix}-${String(nextId).padStart(3, '0')}`);
+    const nextId = await getNextExternalId(analysis.collectionId);
+    console.log(`  Next external ID: ${mintFor(config, nextId)}`);
 
     // Generate questions
     const batchQuestions = await generateReplacementBatch(
