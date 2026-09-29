@@ -313,6 +313,33 @@ built. Building Gulfport would add a collection Knight did not ask for.
 
 A `county` tier remains possible later. It is a third project, not part of this one.
 
+## Officeholders come from `essentials.offices` (decided 2026-09-29)
+
+The ev-accounts Knight program has already seated all 11 Knight states and their anchor cities
+in the **same Supabase project**, with sourcing — Aberdeen SD's inventory came from its Home
+Rule Charter, including a full-charter scan proving no elected municipal judge exists.
+
+Measured 2026-09-29: GA 308, FL 269, MN 255, SC 240, KS 193, KY 187, OH 186, MI 210, ND 165,
+CO 156, SD 132 offices. Akron has all 14 of Ohio's seated city offices — Mayor Shammas Malik
+plus 3 at-large and 10 ward council members, so **Akron City Council is 13 seats**.
+
+CTC collections take office structure and current officeholders from that table instead of
+hand-researching them 35 times. This also retires a known defect: the readiness gate's
+officeholder roster is a hardcoded locale config, not live data — it once demanded a question
+about a termed-out legislator and named the wrong Indio mayor for a question already fixed.
+
+**Three things the table does not provide, which still need research:**
+
+| Gap | Consequence |
+|---|---|
+| `term_end` is null on all 14 Akron offices (9 of 2,288 statewide have one; none in the future) | `expiresAt` still needs the election-calendar check. The table cannot date the expiring tier. |
+| `is_appointed_position` is **null, not false** | Elected-vs-appointed is not derivable and must come from the charter. |
+| Clerk, law director, treasurer, police chief absent | The roster is council + mayor only. |
+
+Reading "not marked appointed" as elected, or "absent" as nonexistent, produces a confidently
+wrong question. Where the table and the charter disagree, the charter wins — and the
+disagreement is reported back, because it may be a defect in data another workstream owns.
+
 ## Quality bar
 
 Every Knight collection carries the full existing bar. Nothing here is new; it is restated so

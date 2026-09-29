@@ -25,6 +25,7 @@
 - **State collections are strict state-scale.** Test every Ohio question: "could a future city collection own this?" If yes, cut it. Akron is being built in the same pilot, so this is directly checkable.
 - **Attribution boilerplate is banned.** Explanations must not open "According to …". Attribution belongs in `source.url`.
 - **`seed.ts` and `activate-collection.ts` hang** after "PostgreSQL connected" when run via `npx tsx`. Insert collections, topics and `collection_topics` directly via Supabase MCP SQL.
+- **Officeholders come from `essentials.offices`, not from hand research** (decided 2026-09-29). It is in the same Supabase project. It gives office titles, seat structure and current holders; it does **not** give term ends, elected-vs-appointed flags, or any appointed office. Cross-check against the charter — where they disagree, the charter wins and the disagreement is reported back.
 - **Every change goes through a PR.** Do not use the admin bypass; never rename CI job names.
 
 ## Review Focus
@@ -36,6 +37,7 @@ Five conditions that will not surface on the happy path, each pinned to the task
 3. **A source URL that returns 200 but carries no fact** — bot walls, React shells, byte-identical pages at every path. Pinned to Tasks 1 and 5, before generation.
 4. **An expiring tier that meets the ratio but expires all at once** — the count passes while the collection dies in one month. Pinned to Task 7.
 5. **The replacement cron never actually runs against the pilot** — an empty night proves nothing; `audited: 0` means untested, not working. Pinned to Task 8.
+6. **`essentials.offices` is trusted where it is silent** — `is_appointed_position` is NULL rather than false on all 14 Akron offices, and the clerk, law director and treasurer are absent entirely. Reading "not marked appointed" as "elected", or "absent from the table" as "does not exist", produces a confidently wrong question. Pinned to Task 1, which must state elected-vs-appointed from the charter and not from this column.
 
 ---
 
@@ -50,17 +52,45 @@ Five conditions that will not surface on the happy path, each pinned to the task
 
 This task exists before scaffolding because the accuracy-notes block is the strongest defect-prevention lever measured: `milwaukee-wi` had ~60 lines of it and was the first collection in twelve sessions with zero wrong facts; `bloomington-in` had none and shipped five. **The block is a list and protects exactly what is on it.**
 
-- [ ] **Step 1: Establish the countable, confusable facts**
+- [ ] **Step 1: Pull the office inventory from `essentials.offices` FIRST**
 
-Research and write down, with a source for each:
-- How many Akron City Council seats, and the ward/at-large split
+**Decided 2026-09-29 (Chris):** source officeholders from `essentials.offices` rather than
+hand-researching them. The ev-accounts Knight program has already seated all 11 Knight states
+and their anchor cities in the same Supabase project, with sourcing (Aberdeen SD's inventory
+was derived from its Home Rule Charter, including a full-charter scan proving no elected
+municipal judge exists).
+
+```sql
+SELECT o.title, o.seats, o.representing_city, p.full_name, ot.term_start, ot.term_end
+FROM essentials.offices o
+LEFT JOIN essentials.office_terms ot ON ot.office_id = o.id
+LEFT JOIN essentials.politicians p ON p.id = ot.politician_id
+WHERE o.representing_state = 'OH'
+  AND (o.representing_city = 'Akron' OR o.representing_city IS NULL)
+ORDER BY o.representing_city NULLS LAST, o.title;
+```
+
+Measured for Akron on 2026-09-29 — **14 offices, 0 vacant**: Mayor (Shammas Malik, term start
+2024-01-01), 3 × Council Member At Large, 10 × Council Member Ward 1–10. So **Akron City
+Council is 13 seats: 10 ward + 3 at-large.** Ohio itself has 172 state offices seated.
+
+**WHAT THIS TABLE DOES NOT GIVE YOU — you must still research these:**
+
+| Missing | Consequence |
+|---|---|
+| `term_end` is **NULL on all 14** (9 of 2,288 statewide have one, none future) | Every `expiresAt` still needs the election-calendar check in Step 4. The table cannot date your expiring tier. |
+| `is_appointed_position` is **NULL, not false** | Elected-vs-appointed is **not** derivable. Research it — it is one of the confusable facts the accuracy block exists to pin down. |
+| Clerk, law director, treasurer, police chief **absent entirely** | The roster is council + mayor only. Any question about an appointed office is unsourced by this table. |
+
+So still research and source, for the accuracy-notes block:
 - Whether the mayor is strong or weak, and the term length
-- Which offices are elected vs appointed (clerk, treasurer, law director, police chief)
-- Which body appoints whom
+- Which offices are elected vs appointed, and which body appoints whom
 - Which level of government runs schools, transit, water, courts
 - Summit County's relationship to Akron — what the county runs that the city does not
 
-These are the categories generators get wrong.
+**Cross-check, do not just copy.** This data was seated for a different product. If it
+disagrees with the city charter, the charter wins and the disagreement goes in your report —
+it may be a defect in the shared data that the other workstream needs to hear about.
 
 - [ ] **Step 2: Fetch and grep every candidate source URL**
 
