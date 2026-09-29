@@ -106,6 +106,24 @@ new — they are merely currently undeclared.
 Widening the regex to accept both shapes therefore also legalizes 3,501 rows that are
 currently invalid against their own validator.
 
+## Corrected: the prompt-text class, and a file with no task
+
+**This spec originally counted 12 sites. The real number is ~18 across 9 files.** The inventory
+was built by grepping for prefix-based *selection* (`LIKE`, `split_part`) and for *minting*. It
+missed a third class entirely: **`externalIdPrefix` interpolated into the prompt text sent to
+the model**, which appears in three separate generators.
+
+That class is not cosmetic. The line reads `External ID range for this batch:
+${config.externalIdPrefix}-001 through ...`, so for a new-scheme config with no prefix it
+renders `undefined-001` and instructs the model to use it. The model then emits `undefined-003`
+and friends, which either fail `QuestionSchema` or get written.
+
+Worse, the miss included a whole file: **`generate-state-questions.ts` was owned by no task.**
+It is the state-collection generator, and Ohio — the pilot — is a state collection, so all 11
+Knight state collections would have generated against a broken prompt.
+
+Found by the Task 3 implementer flagging a site outside its own brief rather than ignoring it.
+
 ## Added to scope: the validator still requires attribution boilerplate
 
 Found on 2026-09-29 while reading `question-schema.ts` for the ID regex, in the same block of
@@ -150,8 +168,11 @@ runner. A change made here is untested until it is carried over.
 | `generate-locale-questions.ts:386` semantic dedup | scope by `collection_id` |
 | `generate-locale-questions.ts:498` officeholder expiry | scope by `collection_id` |
 | `generate-locale-questions.ts:628,635` ID offset | **stays ID-scoped**; use helper, `padStart(4)` |
+| `generate-locale-questions.ts:242` | **prompt text** — build the range through `mintFor` |
 | `generate-replacements.ts:219` | drop redundant prefix filter; anchor digit extraction |
-| `international/question-generator.ts:238` | drop redundant prefix filter |
+| `generate-replacements.ts:295,636` | **prompt text + log line** — build through `mintFor` |
+| `generate-state-questions.ts:176` | **prompt text** — build through `mintFor` |
+| `international/question-generator.ts:238,249` | drop redundant prefix filter; mint via helper |
 | `activate-collection.ts:178,184` | display-only; use helper |
 | `audit-collection-readiness.ts:194,200` | display-only; use helper |
 | `scaffold-collection.ts` | `--prefix` becomes optional and ignored with a warning; ID space derives from slug |
