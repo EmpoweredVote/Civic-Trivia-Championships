@@ -110,7 +110,7 @@ async function tryLoadLocaleConfig(slug: string): Promise<LocaleConfig | null> {
       const mod = await import(path);
       for (const key of Object.keys(mod)) {
         const val = mod[key];
-        if (val && typeof val === 'object' && 'locale' in val && 'externalIdPrefix' in val) {
+        if (val && typeof val === 'object' && 'locale' in val && 'collectionSlug' in val) {
           return val as LocaleConfig;
         }
       }
@@ -191,13 +191,17 @@ async function main(): Promise<void> {
     // advisory one so a stale invocation is visible rather than silently ignored.
     const ownPrefixes = await db
       .select({
-        prefix: sql<string>`split_part(${questions.externalId}, '-', 1)`,
+        prefix: sql<string>`CASE WHEN strpos(${questions.externalId}, '_') > 0
+                                 THEN left(${questions.externalId}, strpos(${questions.externalId}, '_') - 1)
+                                 ELSE split_part(${questions.externalId}, '-', 1) END`,
         count: sql<number>`count(*)::int`,
       })
       .from(questions)
       .innerJoin(collectionQuestions, eq(collectionQuestions.questionId, questions.id))
       .where(eq(collectionQuestions.collectionId, collection.id))
-      .groupBy(sql`split_part(${questions.externalId}, '-', 1)`);
+      .groupBy(sql`CASE WHEN strpos(${questions.externalId}, '_') > 0
+                                 THEN left(${questions.externalId}, strpos(${questions.externalId}, '_') - 1)
+                                 ELSE split_part(${questions.externalId}, '-', 1) END`);
 
     const prefixList = ownPrefixes.map(r => `${r.prefix} (${r.count})`).join(', ');
     if (ownPrefixes.length > 1) {
