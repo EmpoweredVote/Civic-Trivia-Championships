@@ -159,9 +159,15 @@ runner. A change made here is untested until it is carried over.
 The widened validator, stated exactly so it is not re-derived during implementation:
 
 ```ts
-/^[a-z][a-z0-9-]*_\d{4}$/     // new: slug-derived
+/^[a-z][a-z0-9-]*_\d{4,}$/     // new: slug-derived, four OR MORE digits
 /^[a-z]{2,5}-\d{3,4}$/        // legacy: prefix-derived, widened from \d{3}
 ```
+
+**Four or more digits, not exactly four.** `mintExternalId` widens past 9,999 rather than
+truncating, and this regex is what `QuestionSchema` validates against — so a regex pinned to
+exactly four would reject IDs the minter itself had just produced, the moment any collection
+passed 9,999 questions. It still rejects `akron-oh_1` and `akron-oh_001`. Do not "tighten" it
+back to `\d{4}`.
 
 `--prefix` is accepted rather than rejected because `/create-collection` and the handbook both
 pass it today; a hard error would break a documented flow for no benefit. It warns and is
@@ -348,7 +354,7 @@ GROUP BY 1,2 HAVING c.slug <> split_part(q.external_id,'_',1);
 
 -- 3. Nothing violates the widened validator
 SELECT count(*) FROM trivia.questions
-WHERE external_id !~ '^[a-z][a-z0-9-]*_[0-9]{4}$'
+WHERE external_id !~ '^[a-z][a-z0-9-]*_[0-9]{4,}$'
   AND external_id !~ '^[a-z]{2,5}-[0-9]{3,4}$'
   AND external_id !~ '^q[0-9]{3}$';
 ```

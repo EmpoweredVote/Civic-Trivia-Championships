@@ -18,7 +18,7 @@
 - **Test command:** `cd /c/ev-accounts/backend && npm run test:unit`. Never `npm test` — it is red on master with ~25 flaky integration failures.
 - **ID format:** `<slug>_<NNNN>`, four zero-padded digits, underscore separator.
 - **Validator regexes**, verbatim:
-  - new: `/^[a-z][a-z0-9-]*_\d{4}$/`
+  - new: `/^[a-z][a-z0-9-]*_\d{4,}$/`
   - legacy: `/^[a-z]{2,5}-\d{3,4}$/`
 - **Every PR goes through the gate.** `master` has a ruleset requiring two build checks and an admin bypass that works. Do not use the bypass. Never rename CI job names.
 - **Vendored files must be byte-identical** between repos except for import paths.
@@ -182,7 +182,7 @@ Create `C:\ev-accounts\backend\src\trivia\utils\externalIdentity.ts`:
  * change across by hand.
  */
 
-export const NEW_EXTERNAL_ID_RE = /^[a-z][a-z0-9-]*_\d{4}$/;
+export const NEW_EXTERNAL_ID_RE = /^[a-z][a-z0-9-]*_\d{4,}$/;
 export const LEGACY_EXTERNAL_ID_RE = /^[a-z]{2,5}-\d{3,4}$/;
 
 /** Mint `<slug>_<NNNN>`. Widens past four digits rather than truncating. */
@@ -364,7 +364,7 @@ Run this against Supabase (project `kxsdzaojfaibhuzmclfq`):
 
 ```sql
 SELECT external_id FROM trivia.questions
-WHERE external_id !~ '^[a-z][a-z0-9-]*_[0-9]{4}$'
+WHERE external_id !~ '^[a-z][a-z0-9-]*_[0-9]{4,}$'
   AND external_id !~ '^[a-z]{2,5}-[0-9]{3,4}$'
   AND external_id !~ '^q[0-9]{3}$'
 LIMIT 50;
