@@ -1,8 +1,8 @@
-# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 12b)
+# HANDOFF — Collection Quality Audit (updated 2026-09-29, end of session 12c)
 
 **Resume with:** `/gsd:resume-work` or just point a session at this file.
 
-## START HERE — measured 2026-09-29, end of session 12b
+## START HERE — measured 2026-09-29, end of session 12c
 
 Every number in this block was re-derived from the database, not carried forward. **Re-derive
 them again rather than trusting them**; three of this document's standing claims have been
@@ -11,20 +11,20 @@ wrong when checked, including one that was written and corrected the same day.
 | | |
 |---|---|
 | Active collections | **43** |
-| Active questions | **3,233** |
+| Active questions | **3,237** |
 | **Drafts, bank-wide** | **0** |
-| Collections audited | **39 of 43** |
-| **BANK-WIDE, needs a ruling** | **1,978 of 3,233 questions in 37 collections** open their explanation with "According to …" — session 9 ruled to delete it; `milwaukee-wi` and `bloomington-in` are done, the rest is a sweep and Chris's call |
+| Collections audited | **40 of 43** |
+| **RULED 2026-09-29, DONE** | attribution belongs in `source.url` — the "According to …" prefix is stripped **bank-wide, 1,978 → 0**, verified row by row against a snapshot |
 | Under the 10% expiring floor | **2** — `biloxi-ms` 9.2% (documented breach, see its entry) and `santa-monica-ca` 9.8% |
 | At or under the 50-question floor | `war-in-iran` 31, `world-news` 47 |
 | **Under 11% HARD** | `queens-ny` **10.1%**, `world-news` 10.6% |
 | **Re-verify after 3 Nov 2026** | `texas-state` — its whole executive is on that ballot; `west-monroe-la` — `wmnla-093` |
 | **SCHEDULED WORK, Dec 2026** | `alexandria-la` — city officeholder backfill, deliberately deferred past its election |
-| **SCHEDULED WORK, Jan 2027** | `new-york-state` — rewrite six statewide officeholders; `texas-state` — re-verify + take `pla-172` |
+| **SCHEDULED WORK, Jan 2027** | `new-york-state` — rewrite six statewide officeholders; `texas-state` — re-verify + take `pla-172`; **`wisconsin` — 13 questions lapse on 2027-01-04, rebuild on the Supreme Court ladder, NOT on another four-year clock** |
 | **RULED 2026-09-28** | U.S. senators belong to **state** collections; Missouri done, `pla-172` deferred to post-3 Nov |
 | **RULED 2026-09-29** | roll-call ban **ENFORCED**; all six collections rebuilt, **zero roll-calls remain bank-wide** |
 | **GATE FIXED, session 12** | officeholder coverage is judged **per role**, not per seat (it used to demand the very roll-call the ban forbids), and name matching no longer breaks on a `, Jr.` suffix — it had been reporting `biloxi-ms`'s mayor as uncovered when the question exists and is correct |
-| **Expiring tier dies before Mar 2027** | re-derive it; worst today: `world-news` 22/22, `climate-change` 18/18, `wisconsin` 13/15, `massachusetts-state` 12/12, `washington-dc` 11/15, `federal` 11/23, `asheville-nc` 8/9, `war-in-iran` 6/6, **`santa-monica-ca` 5/6** |
+| **Expiring tier dies before Mar 2027** | re-derive it; worst today: `world-news` 22/22, `climate-change` 18/18, `wisconsin` 13/19 (see its entry — the rest is now on 2029-2035 clocks), `massachusetts-state` 12/12, `washington-dc` 11/15, `federal` 11/23, `asheville-nc` 8/9, `war-in-iran` 6/6, **`santa-monica-ca` 5/6** |
 | Easy tier | no collection is under the 25% easy floor |
 
 **Do next, in this order — the priority list further down cannot see any of these:**
@@ -53,9 +53,9 @@ wrong when checked, including one that was written and corrected the same day.
    with **no wrong facts**, because its locale config opens with 60 lines of CRITICAL ACCURACY
    NOTES. Copy that pattern into `wisconsin` and `bend-or` before auditing them.
 
-   **`wisconsin` then `bend-or`.** Both are **100% attribution boilerplate** (90/90 and 86/86
-   explanations opening "According to …"), so budget for that strip; the Milwaukee entry has
-   the exact SQL and the dry-run pattern. Start with the citation pass, grouping by
+   **`wisconsin` is DONE (session 12c). `bend-or` is the last of the four** — and the
+   attribution strip no longer needs budgeting for, it was applied bank-wide on 2026-09-29.
+   Start with the citation pass, grouping by
    `source->>'url'` **and by host** — that one step found three broken hosts and a
    six-question stat strip on Bloomington, and a Cloudflare wall on Milwaukee, before a single
    question was read for content. Then sweep each **single-article block against itself**
@@ -5258,3 +5258,152 @@ indistinguishable from `Asheville, North Carolina,` without knowing what the wor
   one clean.
 - The ordered-passes-with-a-refusal-guard shape suits any bank-wide text repair, not just this
   one.
+
+## Session 12c (2026-09-29) — wisconsin, the third never-audited locale
+
+`wisconsin` (collection 309). **90 active → 94**: 0 archived, 4 written, 104 repaired.
+Easy 34.4% → 33.0%, hard 17.8% → 19.1%, expiring 16.7% → **20.2% (into the target band)**,
+positions 23/23/22/22 → **24/24/22/24**, bracketing 43.8% → **50.0% (4/4/4/4)**, leakage
+13 → 5, `ballotpedia.org` citations **7 → 0**, `subcategory` NULL **90 → 0**. READY.
+
+**Nothing was archived.** Everything the sweeps flagged was repairable in place — the first
+audit where that was true.
+
+## One wrong fact, and the true answer was not among the options (session 12c)
+
+`wisco-010` asked how many statewide constitutional officers Wisconsin elects and answered
+**Five**. It is **six**: governor, lieutenant governor, secretary of state, treasurer,
+attorney general **and the superintendent of public instruction**. The options were
+Seven / Nine / Five / Three — **six was not offered at all.**
+
+This is the third instance of the missing-true-answer class, and the second time a collection
+has **contradicted itself**: `wisco-019`, live in the same collection, asks who the state
+superintendent is — the sixth officer.
+
+Why the generator got it wrong is worth keeping: **five of the six are partisan and elected
+together in November; the superintendent is non-partisan and elected on its own cycle in
+April.** Counting the November ballot gives five. The repair now teaches that distinction
+rather than just correcting the number.
+
+## The accuracy block works, and the error landed exactly where it wasn't (session 12c)
+
+Session 12b concluded that `milwaukee-wi`'s CRITICAL ACCURACY NOTES block is why that
+collection had no wrong facts. `wisconsin` **has such a block too** — a good one, which
+pre-empts the motto/slogan/nickname confusion, the lead-miner origin of "Badger State", the
+Vanna White veto, and the Senate/Assembly naming.
+
+Every one of those held. The single wrong fact in the collection was on the **one governance
+topic the block does not mention**: how many constitutional officers there are.
+
+**That sharpens the finding rather than weakening it.** The accuracy block is not a general
+quality boost — it is a list, and it protects exactly the items on the list. So the way to use
+it is to put the *countable, confusable* facts on it: how many seats, how many officers, which
+offices are elected versus appointed, which body appoints whom. Those are the facts generators
+get wrong. The constitutional-officer count is now on Wisconsin's list.
+
+## The January cliff, and what to build instead of another one (session 12c)
+
+`wisconsin` is the expiry cliff in its purest form yet: **13 of its 15 expiring questions
+carried the same date, 2027-01-04** — five statewide executives and eight legislative
+leadership posts, all turning over at once. On 5 January 2027 the collection would have gone
+from 16.7% expiring to **2.2%** overnight, breaching the floor with no warning.
+
+Worse, the election is five weeks away and **the outcome is already partly known**:
+
+- **Tony Evers is not on the ballot** — he announced in July 2025 that he would not seek a
+  third term, so `wisco-005` is guaranteed wrong in January.
+- **Sarah Godlewski declined to run** for a full term as secretary of state, so `wisco-008` is
+  too.
+- The **lieutenant governor runs on the governor's ticket** in Wisconsin, so `wisco-006` goes
+  with the governor's race.
+
+Only the attorney general (Kaul, seeking a third term) and the treasurer (Leiber, seeking
+re-election) can survive, and the eight legislative leadership posts are all chosen afresh by
+the new legislature.
+
+**The questions are not wrong and were not touched** — they are correct today and their
+`expires_at` is exactly right. This is the expiry system working. The defect is the
+*concentration*: one date carrying an entire tier.
+
+**Four durable questions were added instead**, on clocks that survive January:
+
+| added | clock |
+|---|---|
+| Ron Johnson, U.S. Senator | 2029-01-03 |
+| Tammy Baldwin, U.S. Senator | 2031-01-03 |
+| Janet Protasiewicz, elected 2023 | 2033-07-31 |
+| Susan Crawford, elected 2025 | 2035-07-31 |
+
+Two of those were **overdue on their own account**: Chris's 2026-09-28 ruling puts U.S.
+senators in state collections, and `wisconsin` — a state collection — had neither of its own.
+**Worth checking the other state collections for the same gap.**
+
+### Wisconsin's Supreme Court is the best expiring ladder in the bank
+
+Justices serve **ten-year terms**, and by law **only one may be elected in any year**. That is
+a seven-rung ladder, one rung a year, each a decade long — the most durable source of expiring
+content available to any collection in the bank, and the exact opposite of a tier that all
+lapses on one morning. Prefer it whenever this collection needs expiring questions.
+
+The two justice questions are **not a roll-call**: they ask about two different *elections*
+(the 2023 race that flipped the court's majority, and the 2025 race that became the most
+expensive judicial election in American history), not about two seats by index.
+
+### SCHEDULED WORK, January 2027
+
+The cliff is reduced, not removed: after 2027-01-04 the collection sits at **6 expiring of 94,
+6.4%** — still under the floor. `wisconsin` joins `new-york-state` and `asheville-nc` on the
+Q1 2027 list. When it is rewritten:
+
+1. Replace the five executives and eight leadership posts with the new holders.
+2. **Do not rebuild the tier on the same four-year clock.** Add justices from the ladder above
+   instead; each one bought is good for up to a decade.
+
+## A third bot-walled host (session 12c)
+
+`ballotpedia.org` returns **HTTP 403** to every request. Seven questions cited it — six for the
+statewide executives and one for the state superintendent — and not one of those citations can
+be read by a checker or by anyone following the link programmatically.
+
+That makes three hosts in three consecutive audits that are live to a browser and closed to
+everything else: `city.milwaukee.gov` (Cloudflare interstitial, 403), `census.gov` QuickFacts
+(403), and now `ballotpedia.org`. **Check the host before citing it, not after**, and prefer a
+source you have actually fetched and grepped. All seven were repointed to
+`Wikipedia: Government of Wisconsin`, which names every one of those officeholders in a single
+readable sentence.
+
+Two more wrong-article citations came out of the same pass: `wisco-026` ("how many justices")
+and `wisco-027` ("how long is a term") were both cited to **one justice's biography page**,
+which contains neither figure. They now cite the court's own justices index, which states both
+verbatim. And `wisco-041`, "Who served as Wisconsin's first state governor?", was cited to the
+article on the **University of Wisconsin–Madison**.
+
+## Where wisconsin finished
+
+    94 active, 0 drafts
+    easy 33.0% · medium 47.9% · hard 19.1%
+    expiring 20.2% — inside the 15-30% target band
+    answer positions 24 / 24 / 22 / 24   (best single guess 25.5%)
+    bracketing 50.0% at an extreme, 4/4/4/4
+    leakage 5 hits, all forced names
+    ballotpedia citations: 0 · unsourced: 0 · unlabelled: 0
+    readiness: READY
+    nested-options 0 · anachronism 0 · source-drift 7, all read by hand
+
+**The five residual leaks stay.** Three are the word "Assembly" — `wisco-002` asks what the
+lower chamber is called, and a state-legislature collection cannot avoid naming it. One is
+`wisco-059`'s "the badger", printed by the question about where the Badger State nickname came
+from. The last is a good illustration of the substance test: `wisco-085`'s explanation contains
+the string "Forward", which is `wisco-058`'s answer — but it says "Forward" is a *separate
+sculpture on the Capitol grounds*, not that it is the state motto. The string transfers; the
+fact does not.
+
+**No self-inflicted leaks this time** — the first clean backfill in five. The likely reason is
+that all four new questions are about offices the collection did not already cover, so they
+shared no vocabulary with it. That is a usable tactic: **when backfilling, prefer subjects the
+collection does not already discuss.**
+
+## Still to do on the never-audited four
+
+`bend-or` is the last of them (86 active). `war-in-iran` (31q) and `world-news` (47q) remain
+under the *question* floor, which is a pipeline-yield problem an audit cannot fix.
