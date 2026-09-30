@@ -110,7 +110,7 @@ export const akronOhConfig: LocaleConfig = {
       slug: 'city-government',
       name: 'City Government',
       description:
-        'Akron city government: the mayor-council charter form, the 13-member Council (10 wards + 3 at-large), the mayor as chief executive with veto power, appointed department directors, and how Akron relates to Summit County. Structural questions about who holds which power, not rosters of names.',
+        'Akron city government: the mayor-council charter form, the 13-member Council (10 wards + 3 at-large), the mayor as chief executive, department directors appointed rather than elected, and how Akron relates to Summit County. Structural questions about who holds which power, not rosters of names. Do NOT write about the mayoral veto: it is real, but no source document in this collection describes it, so any detail would be invented.',
     },
     {
       slug: 'civic-history',
@@ -133,31 +133,52 @@ export const akronOhConfig: LocaleConfig = {
     'local-services': 30,
   },
 
-  // Every URL below was FETCHED and READ on 2026-09-29, and the fact it
-  // supports is named. Rejected: library.municode.com (JavaScript shell, no
-  // code text at any path).
+  // ── SOURCE LIST — validated THROUGH THE PIPELINE'S OWN EXTRACTOR ────────
+  // Every URL below was run through the exact extraction logic in
+  // rag/fetch-sources.ts on 2026-09-29, and the character count it actually
+  // yields is recorded beside it. Checking a page with a browser or a generic
+  // fetcher proves nothing: "readable to a human" and "readable to the
+  // generator" are different properties, and only the second one matters here.
+  //
+  // REJECTED, and why — do not re-add these:
+  //   akroncitycouncil.org/members ....... 0 chars. The page is built entirely
+  //       from <nav>/<footer>/<header>/<aside>; its whole body is ~1,240 chars
+  //       and the councillor names sit inside <footer>, which the extractor
+  //       strips. It reads perfectly in a browser. It is a link list, not a
+  //       content page.
+  //   signalakron.org glossary ........... 0 chars. Same landmark-only shape.
+  //   ballotpedia.org/Akron,_Ohio ........ 0 chars.
+  //   library.municode.com (any nodeId) .. 0 chars. JavaScript shell.
+  //
+  // DELIBERATELY NOT INCLUDED: Ohio Revised Code chapters 705/731/733/1901.
+  // They survive extraction well (73K-264K chars each) but they are STATE law
+  // covering every Ohio municipality. Adding ~500K of generic statute to a
+  // ~115K Akron corpus would make the source list — which becomes the topic
+  // list — overwhelmingly about Ohio municipal law rather than Akron, and it
+  // would collide directly with the `ohio` state collection. They belong there.
   sourceUrls: [
-    // Three branches, department list, "10 Ward Representatives, and 3 At-Large members"
-    'https://www.akronohio.gov/government/index.php',
-    // All 13 sitting members by ward and at-large; names the Council President
-    'https://www.akroncitycouncil.org/members',
-    // Local-press glossary: council composition, mayor's cabinet appointments
-    'https://signalakron.org/glossary-to-navigate-local-government-in-akron/',
-    // City portal — confirms sitting mayor, department structure
-    'https://www.akronohio.gov/',
-    // Existence verified via the Wikipedia API on 2026-09-29
-    'https://en.wikipedia.org/wiki/Akron,_Ohio',
-    'https://en.wikipedia.org/wiki/Summit_County,_Ohio',
-    'https://en.wikipedia.org/wiki/Akron_Public_Schools',
-    'https://en.wikipedia.org/wiki/METRO_Regional_Transit_Authority',
-    'https://en.wikipedia.org/wiki/Shammas_Malik',
+    // Wikipedia is fetched via the Wikipedia API, not the HTML extractor, so it
+    // is unaffected by the landmark problem. All titles verified to exist.
+    'https://en.wikipedia.org/wiki/Akron,_Ohio',                    // ~52,700
+    'https://en.wikipedia.org/wiki/Akron_Public_Schools',            // ~11,800
+    'https://en.wikipedia.org/wiki/Summit_County,_Ohio',             //  ~7,600
+    'https://en.wikipedia.org/wiki/METRO_Regional_Transit_Authority',//  ~5,500
+    'https://en.wikipedia.org/wiki/Shammas_Malik',                   //  ~2,100
+
+    // Akron-specific municipal pages, char counts measured through the extractor
+    'https://www.akronohio.gov/government/index.php',                             // 1,258 — three branches, 10 wards + 3 at-large
+    'https://www.akronohio.gov/government/mayor_s_office/index.php',              // 3,783 — mayor's role and appointments
+    'https://www.akronohio.gov/departments/law/index.php',                        // 3,028 — Department of Law
+    'https://www.akronohio.gov/departments/human_resources/index.php',            // 6,343
+    'https://www.akronohio.gov/departments/recreation_and_parks/index.php',       // 5,473
+    'https://www.akronohio.gov/departments/police/index.php',                     // 3,933
+    'https://www.akronohio.gov/departments/service/water_supply_bureau/index.php',// 2,066 — water IS a city function
+    'https://www.akronohio.gov/departments/fire/index.php',                       // 1,277
+    'https://www.downtownakron.com/go/city-of-akron',                             // 1,137 — council composition, charter
+    'https://www.akronschools.com/district/board-of-education',                   // 2,782 — the separate school board
+    'https://akronmunicipalcourt.org/general-info/history/',                      // 2,059 — municipal court
   ],
 
-  // Deliberately SHORT. The officeholder tier is built on DISTINCT OFFICES, not
-  // on listing all 13 members — that is the roll-call shape ruled out on
-  // 2026-09-29. Sommerville carries an earlier termEnd on purpose: the Council
-  // presidency is re-chosen every January, so it is the one officeholder fact
-  // that does not expire on Akron's single 2027 cliff.
   officeholders: [
     { name: 'Shammas Malik', role: 'Mayor', termEnd: '2027-12-31T23:59:59Z' },
     {

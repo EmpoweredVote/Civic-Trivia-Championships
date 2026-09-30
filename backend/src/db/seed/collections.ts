@@ -517,4 +517,16 @@ export const collectionsData: NewCollection[] = [
     isActive: false,
     sortOrder: 43
   },
+  {
+    name: 'Ohio',
+    slug: 'ohio',
+    description: 'Statehouse to county seat: how well do you know Ohio?',
+    localeCode: 'en-US',
+    localeName: 'Ohio',
+    iconIdentifier: 'state',
+    themeColor: '#C8102E',
+    tier: 'state',
+    isActive: false,
+    sortOrder: 44
+  },
 ];
