@@ -730,10 +730,28 @@ Please fix the question and return a single question in the same JSON format. Th
 
 Return ONLY a JSON object with a "questions" array containing exactly 1 question.`;
 
-    // Build messages with prompt caching (source documents already cached)
+    // Build messages with prompt caching.
+    //
+    // COST: source documents are re-sent on every retry. "Already cached" makes
+    // that cheaper, not free — cache reads are still billed, and the retry loop
+    // is where the money goes. Measured on the Akron and Ohio pilot runs
+    // (2026-09-30): 351 of 357 API calls were single-question retries, carrying
+    // ~31K cached tokens each, which was ~57% of a $2.93 collection.
+    //
+    // Most violations are about the SHAPE of a question, not its facts, and a
+    // model does not need 30K characters of source material to stop asking
+    // "in what year was...". Measured across both pilot runs: duplicate-text
+    // 239, pure-lookup 93, nested-options 7, address-phone 3,
+    // ambiguous-answers 2, vague-qualifiers 1.
+    //
+    // duplicate-text is the exception that KEEPS its sources: the fix is to
+    // write a genuinely different question, which needs material to draw on.
+    const FACTUAL_VIOLATIONS = ['duplicate-text', 'source-drift', 'anachronism'];
+    const needsSources = FACTUAL_VIOLATIONS.some(v => violationMessages.includes(v));
+
     const messages: MessageParam[] = [];
 
-    if (sourceDocuments.length > 0) {
+    if (sourceDocuments.length > 0 && needsSources) {
       const sourceContent: ContentBlockParam[] = [
         {
           type: 'text',

@@ -101,9 +101,21 @@ export const akronOhConfig: LocaleConfig = {
   locale: 'akron-oh',
   name: 'Akron, OH',
   collectionSlug: 'akron-oh',
-  targetQuestions: 100,
+
+  // ── SIZING, measured rather than guessed (2026-09-30) ────────────────────
+  // The first pilot run asked for 100 with overshoot 1.3 = 150 questions from
+  // a ~114,000-character corpus. It produced 109 seeded, and semantic dedup then
+  // archived the excess. The failure curve tells the story: 2, 5, 2, 8, 11, 13
+  // rejections per batch as the space saturated, and 69% of ALL retries were
+  // duplicate-text. We were paying, one API call at a time, to repair
+  // collisions we had asked for.
+  //
+  // A corpus supports a finite number of genuinely distinct civic questions.
+  // Overshooting does not buy more of them; it buys duplicates and the retry
+  // cost of rewriting them. Target what the sources can carry.
+  targetQuestions: 70,
   batchSize: 25,
-  overshootFactor: 1.3,
+  overshootFactor: 1.0,
 
   topicCategories: [
     {
