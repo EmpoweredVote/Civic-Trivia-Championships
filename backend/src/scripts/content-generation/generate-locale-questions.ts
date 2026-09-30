@@ -30,6 +30,7 @@ import type { LocaleConfig, OfficeholderEntry } from './locale-configs/bloomingt
 import { validateAndRetry, createReport, saveReport, type RegenerateFn } from './utils/quality-validation.js';
 import { DuplicateDetector } from '../../services/qualityRules/rules/duplicate.js';
 import { mintExternalId, mintForConfig, answerPositionTable } from './externalIdentity.js';
+import { targetPosition } from '../../services/questionQuality/answerPlacement.js';
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
 
@@ -729,6 +730,7 @@ Please fix the question and return a single question in the same JSON format. Th
 - Address the specific violations listed above
 - Maintain the same external ID: ${failedQuestion.externalId}
 - Stay in the topic category: ${failedQuestion.topicCategory}
+- Place the correct answer at position ${'ABCD'[targetPosition(failedQuestion.externalId)]}, per the Answer position rules in the system prompt
 
 Return ONLY a JSON object with a "questions" array containing exactly 1 question.`;
 
