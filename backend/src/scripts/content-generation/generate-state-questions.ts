@@ -23,7 +23,7 @@ import { loadSourceDocuments } from './rag/parse-sources.js';
 import { validateAndRetry, createReport, saveReport } from './utils/quality-validation.js';
 import { DuplicateDetector } from '../../services/qualityRules/rules/duplicate.js';
 import type { LocaleConfig } from './locale-configs/bloomington-in.js';
-import { mintExternalId } from './externalIdentity.js';
+import { mintExternalId, mintForConfig } from './externalIdentity.js';
 
 /**
  * The single place this file builds an external ID. Legacy collections
@@ -31,9 +31,7 @@ import { mintExternalId } from './externalIdentity.js';
  * new-scheme collections mint `slug_NNNN` via `mintExternalId`.
  */
 function mintFor(config: { externalIdPrefix?: string; collectionSlug: string }, seq: number): string {
-  return config.externalIdPrefix
-    ? `${config.externalIdPrefix}-${String(seq).padStart(3, '0')}`
-    : mintExternalId(config.collectionSlug, seq);
+  return mintForConfig(config, seq);
 }
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────

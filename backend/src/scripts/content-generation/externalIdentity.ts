@@ -59,3 +59,28 @@ export function nextSequence(maxId: string | number | null | undefined): number 
   const n = typeof maxId === 'number' ? maxId : parseInt(maxId, 10);
   return Number.isFinite(n) && n > 0 ? n + 1 : 1;
 }
+
+/**
+ * Mint an external id for a locale config, honouring whichever scheme it uses.
+ *
+ * A config WITH `externalIdPrefix` is legacy and keeps its old shape; one
+ * WITHOUT derives from `collectionSlug`.
+ *
+ * `legacyPad` exists because the legacy widths are genuinely different and must
+ * not be unified: THREE digits in the replacement cron and the locale, state and
+ * replacement generators; FOUR in the international generators. Each matches ids
+ * already in the database, so "tidying" them into one width would mint ids that
+ * collide with, or fail to continue, existing sequences.
+ *
+ * This replaced five hand-copied `mintFor` helpers. Keep it here so the two
+ * repos' copies stay byte-identical and the widths stay under test.
+ */
+export function mintForConfig(
+  config: { externalIdPrefix?: string; collectionSlug: string },
+  seq: number,
+  legacyPad: 3 | 4 = 3,
+): string {
+  return config.externalIdPrefix
+    ? `${config.externalIdPrefix}-${String(seq).padStart(legacyPad, '0')}`
+    : mintExternalId(config.collectionSlug, seq);
+}

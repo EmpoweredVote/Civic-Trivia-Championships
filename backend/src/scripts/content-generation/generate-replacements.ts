@@ -20,7 +20,7 @@ import { validateAndRetry, createReport, saveReport } from './utils/quality-vali
 import { db } from '../../db/index.js';
 import { questions as questionsTable, collections, collectionQuestions, topics, collectionTopics } from '../../db/schema.js';
 import { eq, and, inArray, sql } from 'drizzle-orm';
-import { mintExternalId, nextSequence } from './externalIdentity.js';
+import { mintExternalId, mintForConfig, nextSequence } from './externalIdentity.js';
 
 /**
  * The single place this file builds an external ID. Legacy collections
@@ -28,9 +28,7 @@ import { mintExternalId, nextSequence } from './externalIdentity.js';
  * new-scheme collections mint `slug_NNNN` via `mintExternalId`.
  */
 function mintFor(config: { externalIdPrefix?: string; collectionSlug: string }, seq: number): string {
-  return config.externalIdPrefix
-    ? `${config.externalIdPrefix}-${String(seq).padStart(3, '0')}`
-    : mintExternalId(config.collectionSlug, seq);
+  return mintForConfig(config, seq);
 }
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
