@@ -464,23 +464,46 @@ async function main(): Promise<void> {
         `    Best single guess: ${pctWorstPos.toFixed(1)}% (random 25%, ideal ~25%)`
       );
 
-      // 40% against a 25% baseline -- lenient enough that an ordinary lumpy
-      // collection stays quiet, tight enough to have caught all 22 collections
-      // that were above 45% when this was written.
-      if (pctWorstPos > 40) {
-        console.log(
-          `\n  WARNING: "always pick ${letter}" scores ${pctWorstPos.toFixed(1)}% ` +
+      // Bands against a 25% baseline. Tightened from a single 40% WARNING on
+      // 2026-09-30: 40% let the Akron pilot through at 41% overall while its NUMERIC
+      // questions sat at 61% on C, which is comfortably exploitable. Above 35% is a
+      // defect, 30-35% is worth a line in the collection's notes, below is quiet.
+      //
+      // Non-blocking, like the expiring ratio above and for the same reason: the rule
+      // is "fix it or document why", and a hard exit leaves nowhere to document.
+      //
+      // Bands need a bigger sample than the summary line does. At n=8 a 35% threshold
+      // is three questions and fires on ordinary noise; the readiness gate already
+      // demands 50 net questions, so 30 is a floor a real collection clears easily.
+      const BAND_MIN_SAMPLE = 30;
+      if (positionTotal >= BAND_MIN_SAMPLE && pctWorstPos > 35) {
+        console.warn(
+          `
+  DEFECT: "always pick ${letter}" scores ${pctWorstPos.toFixed(1)}% ` +
             'without reading the question (random 25%).'
         );
-        console.log(
-          '  Fix by moving the correct answer across positions. For PROSE options, ' +
-            'permute freely. For NUMERIC options, sort them ascending instead of ' +
-            'rotating -- that fixes position and value rank together and leaves the ' +
-            'series readable.'
+        console.warn(
+          "  Answer position is chosen from the question's external ID BEFORE its options " +
+            'are written, so a skew this size means generation is not honouring the target.'
         );
-        console.log(
+        console.warn(
+          '  For PROSE options, placeAnswer permutes and always hits the target. For ' +
+            'NUMERIC options the player sees them sorted ascending, so the distractors ' +
+            'must be built around the true value -- N strictly below and 3-N strictly ' +
+            'above -- to land it. Do NOT rotate numeric options: that moves the answer ' +
+            'without touching the values and leaves the sort-and-pick exploit intact.'
+        );
+        console.warn(
           '  Check for "all of the above"-style options first; those must stay last.'
         );
+        console.warn('');
+      } else if (positionTotal >= BAND_MIN_SAMPLE && pctWorstPos > 30) {
+        console.log(
+          `
+  NOTE: "always pick ${letter}" scores ${pctWorstPos.toFixed(1)}% - above the ` +
+            '~25% ideal, below the 35% defect line. Acceptable; worth a line in the notes.'
+        );
+        console.log('');
       }
     }
 
