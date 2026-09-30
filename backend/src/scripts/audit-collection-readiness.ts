@@ -476,7 +476,16 @@ async function main(): Promise<void> {
       // is three questions and fires on ordinary noise; the readiness gate already
       // demands 50 net questions, so 30 is a floor a real collection clears easily.
       const BAND_MIN_SAMPLE = 30;
-      if (positionTotal >= BAND_MIN_SAMPLE && pctWorstPos > 35) {
+      // Below BAND_MIN_SAMPLE the 35% band is meaningless, but a collection mid-build
+      // can sit at 80-100% on one position -- the 2026-09-08 survey found five at 100%
+      // on A -- and /create-collection runs this auditor before the pool reaches 30.
+      // 60% at n>=8 is roughly four sigma under a uniform draw, so it cannot fire on
+      // noise and keeps the mid-build signal the old n>=8 WARNING used to give.
+      const SMALL_SAMPLE_DEFECT = 60;
+      const bigEnoughForBands = positionTotal >= BAND_MIN_SAMPLE;
+      const grossSkewInSmallSample =
+        !bigEnoughForBands && pctWorstPos > SMALL_SAMPLE_DEFECT;
+      if ((bigEnoughForBands && pctWorstPos > 35) || grossSkewInSmallSample) {
         console.warn(
           `
   DEFECT: "always pick ${letter}" scores ${pctWorstPos.toFixed(1)}% ` +
@@ -484,7 +493,7 @@ async function main(): Promise<void> {
         );
         console.warn(
           "  Answer position is chosen from the question's external ID BEFORE its options " +
-            'are written, so a skew this size means generation is not honouring the target.'
+            'are written, so a skew this size usually means generation is not honouring the target.'
         );
         console.warn(
           '  For PROSE options, placeAnswer permutes and always hits the target. For ' +
@@ -497,7 +506,7 @@ async function main(): Promise<void> {
           '  Check for "all of the above"-style options first; those must stay last.'
         );
         console.warn('');
-      } else if (positionTotal >= BAND_MIN_SAMPLE && pctWorstPos > 30) {
+      } else if (bigEnoughForBands && pctWorstPos > 30) {
         console.log(
           `
   NOTE: "always pick ${letter}" scores ${pctWorstPos.toFixed(1)}% - above the ` +

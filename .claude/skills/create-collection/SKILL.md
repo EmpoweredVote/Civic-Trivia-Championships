@@ -339,44 +339,50 @@ SELECT COUNT(*) FROM trivia.questions WHERE split_part(external_id, '_', 1) = '[
 
 Continue until you have 80–100 questions inserted. Aim for at least 85.
 
-### 6d. Fix answer-position bias — DO NOT SKIP
+### 6d. Check answer-position bias — DO NOT SKIP
 
 Writing questions one at a time reliably produces `correct_answer = 0` almost
-every time; observed rates have been 78–96%. That makes the collection trivially
+every time; observed rates have been 78-96%. That makes the collection trivially
 gameable — always picking A scores near-perfect. It is invisible unless you
 measure it.
 
-Check, then rotate to a forced-uniform spread:
+**Position is now assigned before generation, not repaired afterwards.** Each
+question's answer position is a pure function of its external ID
+(`targetPosition()` in `services/questionQuality/answerPlacement.ts`), the
+generator is told the target in its prompt, and `placeAnswer()` applies or
+verifies it on the way into the database via `utils/seed-questions.ts`. Anything
+seeded through the pipeline is already placed.
+
+Check it anyway — the check is cheap and the failure is silent:
 
 ```sql
 SELECT correct_answer, COUNT(*) FROM trivia.questions
 WHERE split_part(external_id, '_', 1) = '[slug]' GROUP BY 1 ORDER BY 1;
 -- Legacy prefix-based collections instead use: external_id LIKE '[prefix]-%'
-
-WITH numbered AS (
-  SELECT id, options, correct_answer,
-         (row_number() OVER (ORDER BY hashtext(external_id)) - 1)::int % 4 AS target_pos
-  FROM trivia.questions
-  WHERE split_part(external_id, '_', 1) = '[slug]' AND jsonb_array_length(options) = 4
-  -- Legacy prefix-based collections instead use: external_id LIKE '[prefix]-%'
-),
-calc AS (
-  SELECT id, options, correct_answer, target_pos,
-         ((correct_answer - target_pos) % 4 + 4) % 4 AS k FROM numbered
-),
-rot AS (
-  SELECT id, target_pos,
-    jsonb_build_array(options->((0+k)%4), options->((1+k)%4),
-                      options->((2+k)%4), options->((3+k)%4)) AS new_options
-  FROM calc
-)
-UPDATE trivia.questions q
-SET options = r.new_options, correct_answer = r.target_pos, updated_at = NOW()
-FROM rot r WHERE q.id = r.id;
 ```
 
-Then **spot-check that answers survived** — confirm `options ->> correct_answer`
-still returns the right value for several known questions before moving on.
+`npx tsx src/scripts/audit-collection-readiness.ts --slug [slug]` reports the same
+split and emits a DEFECT above 35% (or above 60% while the pool is still small).
+
+**If it is skewed, do NOT rotate the options.** A skew here means rows were
+inserted by a path that bypassed `placeAnswer()` — almost always a hand-written
+backfill using raw SQL. Rotation was the old remedy and it is now wrong on three
+counts:
+
+- It reorders NUMERIC options, breaking the ascending order the player is shown
+  and that the whole placement design depends on.
+- It targets `hashtext()` + `row_number()`, which is a different function from
+  `targetPosition()` (FNV-1a mod 4). Rows "fixed" this way disagree permanently
+  with what the generator was told and report `sorted-off-target` forever.
+- For numeric questions it moves the answer without touching the values, so
+  "sort the four numbers and pick the third" still wins. Position and value rank
+  are separate exploits; rotation addresses neither properly.
+
+The correct repair is to put the rows back through `placeAnswer()` — re-seed them
+via the pipeline, or write a one-off script that imports `placeAnswer` and updates
+each row with the options and index it returns. For numeric questions whose answer
+cannot reach its target, the fix is to rebuild the DISTRACTORS around the true
+value (N strictly below, 3-N strictly above), never to move the correct value.
 
 Re-check the difficulty mix the same way; hand-written batches skew medium-heavy,
 so promote the genuinely obvious ones to `easy` to reach roughly 40/40/20.

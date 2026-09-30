@@ -29,7 +29,8 @@ import { loadSourceDocuments } from './rag/parse-sources.js';
 import type { LocaleConfig, OfficeholderEntry } from './locale-configs/bloomington-in.js';
 import { validateAndRetry, createReport, saveReport, type RegenerateFn } from './utils/quality-validation.js';
 import { DuplicateDetector } from '../../services/qualityRules/rules/duplicate.js';
-import { mintExternalId, mintForConfig, answerPositionTable } from './externalIdentity.js';
+import { mintExternalId, mintForConfig } from './externalIdentity.js';
+import { answerPositionTable } from './answer-position.js';
 import { targetPosition } from '../../services/questionQuality/answerPlacement.js';
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
@@ -231,9 +232,9 @@ async function generateBatch(
   let systemPromptText: string;
   if (stateFeatures) {
     const { buildStateSystemPrompt } = await import('./prompts/state-system-prompt.js');
-    systemPromptText = buildStateSystemPrompt(config.name, stateFeatures, batchTopicDistribution, config.officeholders);
+    systemPromptText = buildStateSystemPrompt(config.name, stateFeatures, batchTopicDistribution, config.officeholders, true);
   } else {
-    systemPromptText = buildSystemPrompt(config.name, batchTopicDistribution, config.locale, config.officeholders);
+    systemPromptText = buildSystemPrompt(config.name, batchTopicDistribution, config.locale, config.officeholders, true);
   }
 
   // Determine next ID range for this batch, offset above any pre-existing IDs in the DB
@@ -781,9 +782,9 @@ Return ONLY a JSON object with a "questions" array containing exactly 1 question
     let systemPromptText: string;
     if (stateFeatures) {
       const { buildStateSystemPrompt } = await import('./prompts/state-system-prompt.js');
-      systemPromptText = buildStateSystemPrompt(config.name, stateFeatures, config.topicDistribution, config.officeholders);
+      systemPromptText = buildStateSystemPrompt(config.name, stateFeatures, config.topicDistribution, config.officeholders, true);
     } else {
-      systemPromptText = buildSystemPrompt(config.name, config.topicDistribution, config.locale, config.officeholders);
+      systemPromptText = buildSystemPrompt(config.name, config.topicDistribution, config.locale, config.officeholders, true);
     }
 
     const response = await client.messages.create({
