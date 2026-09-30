@@ -505,4 +505,16 @@ export const collectionsData: NewCollection[] = [
     isActive: false,
     sortOrder: 42
   },
+  {
+    name: 'Akron, OH',
+    slug: 'akron-oh',
+    description: 'Rubber City civics: who actually runs Akron?',
+    localeCode: 'en-US',
+    localeName: 'Akron, Ohio',
+    iconIdentifier: 'flag-oh',
+    themeColor: '#041E42',
+    tier: 'city',
+    isActive: false,
+    sortOrder: 43
+  },
 ];
