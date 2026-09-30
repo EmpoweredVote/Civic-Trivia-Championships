@@ -15,6 +15,8 @@
  * change across by hand.
  */
 
+import { targetPosition } from '../../services/questionQuality/answerPlacement.js';
+
 export const NEW_EXTERNAL_ID_RE = /^[a-z][a-z0-9-]*_\d{4,}$/;
 export const LEGACY_EXTERNAL_ID_RE = /^[a-z]{2,5}-\d{3,4}$/;
 
@@ -83,4 +85,30 @@ export function mintForConfig(
   return config.externalIdPrefix
     ? `${config.externalIdPrefix}-${String(seq).padStart(legacyPad, '0')}`
     : mintExternalId(config.collectionSlug, seq);
+}
+
+/**
+ * The answer position each question in a batch must use, as prompt text.
+ *
+ * Position is a pure function of the external ID, so this table is the same on every
+ * run and the generator can be told the target BEFORE it writes the options. That
+ * ordering is the whole fix: `placeAnswer` used to sort four numeric options ascending
+ * after generation and take whatever rank the true value landed at, and models bracket
+ * the true value two-below/one-above, so the answer ranked third and C hit 61%.
+ *
+ * Emitted for every question, not only numeric ones -- the generator does not know which
+ * of its questions will parse as a magnitude series, and the non-numeric path honours the
+ * same hashed target by permuting.
+ */
+export function answerPositionTable(
+  config: { externalIdPrefix?: string; collectionSlug: string },
+  startId: number,
+  endId: number
+): string {
+  const lines: string[] = [];
+  for (let seq = startId; seq <= endId; seq++) {
+    const id = mintForConfig(config, seq);
+    lines.push(`  ${id} -> ${'ABCD'[targetPosition(id)]}`);
+  }
+  return lines.join('\n');
 }

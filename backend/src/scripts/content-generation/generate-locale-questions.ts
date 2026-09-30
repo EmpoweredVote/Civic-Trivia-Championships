@@ -29,7 +29,7 @@ import { loadSourceDocuments } from './rag/parse-sources.js';
 import type { LocaleConfig, OfficeholderEntry } from './locale-configs/bloomington-in.js';
 import { validateAndRetry, createReport, saveReport, type RegenerateFn } from './utils/quality-validation.js';
 import { DuplicateDetector } from '../../services/qualityRules/rules/duplicate.js';
-import { mintExternalId, mintForConfig } from './externalIdentity.js';
+import { mintExternalId, mintForConfig, answerPositionTable } from './externalIdentity.js';
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
 
@@ -241,7 +241,8 @@ async function generateBatch(
 
   const userMessage = `Generate ${config.batchSize} civic trivia questions for ${config.name}.
 
-External ID range for this batch: ${mintFor(config, startId)} through ${mintFor(config, endId)}
+External IDs and required answer positions for this batch:
+${answerPositionTable(config, startId, endId)}
 
 Already used external IDs (do not reuse): ${existingExternalIds.size > 0 ? [...existingExternalIds].join(', ') : 'None'}
 
@@ -559,6 +560,7 @@ async function seedOfficeholderExpiresAt(
 function mintFor(config: { externalIdPrefix?: string; collectionSlug: string }, seq: number): string {
   return mintForConfig(config, seq);
 }
+
 
 // ─── Main orchestrator ────────────────────────────────────────────────────────
 
