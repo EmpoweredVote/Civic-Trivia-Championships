@@ -30,6 +30,8 @@ import type { LocaleConfig, OfficeholderEntry } from './locale-configs/bloomingt
 import { validateAndRetry, createReport, saveReport, type RegenerateFn } from './utils/quality-validation.js';
 import { DuplicateDetector } from '../../services/qualityRules/rules/duplicate.js';
 import { mintExternalId, mintForConfig } from './externalIdentity.js';
+import { answerPositionTable } from './answer-position.js';
+import { targetPosition } from '../../services/questionQuality/answerPlacement.js';
 
 // ─── CLI argument parsing ─────────────────────────────────────────────────────
 
@@ -135,6 +137,8 @@ async function loadLocaleConfig(locale: string): Promise<LoadedConfig> {
       'wisconsin': () => import('./locale-configs/wisconsin.js') as Promise<{ wisconsinConfig: LocaleConfig }>,
       'bend-or': () => import('./locale-configs/bend-or.js') as Promise<{ bendOrConfig: LocaleConfig }>,
       'milwaukee-wi': () => import('./locale-configs/milwaukee-wi.js') as Promise<{ milwaukeeWiConfig: LocaleConfig }>,
+      'akron-oh': () => import('./locale-configs/akron-oh.js') as Promise<{ akronOhConfig: LocaleConfig }>,
+      'ohio': () => import('./locale-configs/ohio.js') as Promise<{ ohioConfig: LocaleConfig }>,
   };
 
   const loader = supportedLocales[locale];
@@ -144,7 +148,7 @@ async function loadLocaleConfig(locale: string): Promise<LoadedConfig> {
     const module = await loader();
 
     // Extract the config from the module (different export names per file)
-    const configKeys = ['bloomingtonConfig', 'losAngelesConfig', 'fremontConfig', 'norwichConfig', 'cambridgeMaConfig', 'planoTxConfig', 'portlandOrConfig', 'washingtonDcConfig', 'biloxiMsConfig', 'santaMonicaCaConfig', 'indioCaConfig', 'alexandriaLaConfig', 'louisianaConfig', 'springfieldMoConfig', 'stLouisMoConfig', 'missouriConfig', 'arizonaConfig', 'tucsonAzConfig', 'phoenixAzConfig', 'ashevilleNcConfig', 'northCarolinaConfig', 'westMonroeLaConfig', 'newYorkStateConfig', 'queensNyConfig', 'pennsylvaniaConfig', 'philadelphiaPaConfig', 'pittsburghPaConfig', 'warInIranConfig', 'climateAgreementsConfig', 'bainbridgeIslandWaConfig', 'washingtonStateConfig', 'madisonWiConfig', 'wisconsinConfig', 'bendOrConfig', 'milwaukeeWiConfig'];
+    const configKeys = ['bloomingtonConfig', 'losAngelesConfig', 'fremontConfig', 'norwichConfig', 'cambridgeMaConfig', 'planoTxConfig', 'portlandOrConfig', 'washingtonDcConfig', 'biloxiMsConfig', 'santaMonicaCaConfig', 'indioCaConfig', 'alexandriaLaConfig', 'louisianaConfig', 'springfieldMoConfig', 'stLouisMoConfig', 'missouriConfig', 'arizonaConfig', 'tucsonAzConfig', 'phoenixAzConfig', 'ashevilleNcConfig', 'northCarolinaConfig', 'westMonroeLaConfig', 'newYorkStateConfig', 'queensNyConfig', 'pennsylvaniaConfig', 'philadelphiaPaConfig', 'pittsburghPaConfig', 'warInIranConfig', 'climateAgreementsConfig', 'bainbridgeIslandWaConfig', 'washingtonStateConfig', 'madisonWiConfig', 'wisconsinConfig', 'bendOrConfig', 'milwaukeeWiConfig', 'akronOhConfig', 'ohioConfig'];
     for (const key of configKeys) {
       if (module[key]) return { config: module[key] as LocaleConfig };
     }
@@ -228,9 +232,9 @@ async function generateBatch(
   let systemPromptText: string;
   if (stateFeatures) {
     const { buildStateSystemPrompt } = await import('./prompts/state-system-prompt.js');
-    systemPromptText = buildStateSystemPrompt(config.name, stateFeatures, batchTopicDistribution, config.officeholders);
+    systemPromptText = buildStateSystemPrompt(config.name, stateFeatures, batchTopicDistribution, config.officeholders, true);
   } else {
-    systemPromptText = buildSystemPrompt(config.name, batchTopicDistribution, config.locale, config.officeholders);
+    systemPromptText = buildSystemPrompt(config.name, batchTopicDistribution, config.locale, config.officeholders, true);
   }
 
   // Determine next ID range for this batch, offset above any pre-existing IDs in the DB
@@ -239,7 +243,8 @@ async function generateBatch(
 
   const userMessage = `Generate ${config.batchSize} civic trivia questions for ${config.name}.
 
-External ID range for this batch: ${mintFor(config, startId)} through ${mintFor(config, endId)}
+External IDs and required answer positions for this batch:
+${answerPositionTable(config, startId, endId)}
 
 Already used external IDs (do not reuse): ${existingExternalIds.size > 0 ? [...existingExternalIds].join(', ') : 'None'}
 
@@ -558,6 +563,7 @@ function mintFor(config: { externalIdPrefix?: string; collectionSlug: string }, 
   return mintForConfig(config, seq);
 }
 
+
 // ─── Main orchestrator ────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -725,13 +731,32 @@ Please fix the question and return a single question in the same JSON format. Th
 - Address the specific violations listed above
 - Maintain the same external ID: ${failedQuestion.externalId}
 - Stay in the topic category: ${failedQuestion.topicCategory}
+- Place the correct answer at position ${'ABCD'[targetPosition(failedQuestion.externalId)]}, per the Answer position rules in the system prompt
 
 Return ONLY a JSON object with a "questions" array containing exactly 1 question.`;
 
-    // Build messages with prompt caching (source documents already cached)
+    // Build messages with prompt caching.
+    //
+    // COST: source documents are re-sent on every retry. "Already cached" makes
+    // that cheaper, not free — cache reads are still billed, and the retry loop
+    // is where the money goes. Measured on the Akron and Ohio pilot runs
+    // (2026-09-30): 351 of 357 API calls were single-question retries, carrying
+    // ~31K cached tokens each, which was ~57% of a $2.93 collection.
+    //
+    // Most violations are about the SHAPE of a question, not its facts, and a
+    // model does not need 30K characters of source material to stop asking
+    // "in what year was...". Measured across both pilot runs: duplicate-text
+    // 239, pure-lookup 93, nested-options 7, address-phone 3,
+    // ambiguous-answers 2, vague-qualifiers 1.
+    //
+    // duplicate-text is the exception that KEEPS its sources: the fix is to
+    // write a genuinely different question, which needs material to draw on.
+    const FACTUAL_VIOLATIONS = ['duplicate-text', 'source-drift', 'anachronism'];
+    const needsSources = FACTUAL_VIOLATIONS.some(v => violationMessages.includes(v));
+
     const messages: MessageParam[] = [];
 
-    if (sourceDocuments.length > 0) {
+    if (sourceDocuments.length > 0 && needsSources) {
       const sourceContent: ContentBlockParam[] = [
         {
           type: 'text',
@@ -757,9 +782,9 @@ Return ONLY a JSON object with a "questions" array containing exactly 1 question
     let systemPromptText: string;
     if (stateFeatures) {
       const { buildStateSystemPrompt } = await import('./prompts/state-system-prompt.js');
-      systemPromptText = buildStateSystemPrompt(config.name, stateFeatures, config.topicDistribution, config.officeholders);
+      systemPromptText = buildStateSystemPrompt(config.name, stateFeatures, config.topicDistribution, config.officeholders, true);
     } else {
-      systemPromptText = buildSystemPrompt(config.name, config.topicDistribution, config.locale, config.officeholders);
+      systemPromptText = buildSystemPrompt(config.name, config.topicDistribution, config.locale, config.officeholders, true);
     }
 
     const response = await client.messages.create({

@@ -9,7 +9,7 @@
  * Embeds quality guidelines from Phase 19 rules engine.
  */
 
-import { QUALITY_GUIDELINES } from './quality-guidelines.js';
+import { buildQualityGuidelines } from './quality-guidelines.js';
 import type { OfficeholderEntry } from '../locale-configs/bloomington-in.js';
 import { buildOfficeholderBlock } from './system-prompt.js';
 
@@ -17,8 +17,43 @@ export function buildStateSystemPrompt(
   stateName: string,
   stateFeatures: string,
   topicDistribution: Record<string, number>,
-  officeholders?: OfficeholderEntry[]
+  officeholders?: OfficeholderEntry[],
+  /** True when the caller prints a per-question answer-position table. */
+  answerPositionAssigned?: boolean
 ): string {
+  // Only stated when the caller actually prints a per-question position table.
+  // Emitting the rule without the table would point the model at something that is
+  // not there, and would also remove the only instruction to vary correctAnswer.
+  const answerPositionBlock = answerPositionAssigned
+    ? `
+### Answer position
+
+Each external ID you are given is listed with the position its correct answer must
+occupy. Use the position printed next to that question's ID.
+
+For options that are numbers, years, or quantities, the options will be shown to
+the player sorted from smallest to largest. So build the distractors around the
+true value to land it in the required position:
+  position A -> all three distractors LARGER than the true value
+  position B -> one smaller, two larger
+  position C -> two smaller, one larger
+  position D -> all three distractors SMALLER than the true value
+
+For every other question, put the correct value at the required index directly and
+set \`correctAnswer\` to it.
+
+Every distractor must still be plausible on its own. Never produce one that makes
+the question unanswerable or absurd:
+  - never a future date for something that has already happened
+  - never a negative or zero count for a thing that exists
+  - never a value outside the real range for that quantity
+
+If the required position cannot be reached with plausible distractors, use the
+nearest position you CAN support and say so in one short note. A believable
+question in the wrong position is better than an impossible one in the right
+position.
+`
+    : '';
   const topicLines = Object.entries(topicDistribution)
     .map(([slug, count]) => `  - ${slug}: ${count} questions`)
     .join('\n');
@@ -30,7 +65,7 @@ These are STATE-LEVEL questions covering both government structure AND broader c
 
 ## Output Format
 
-Return ONLY valid JSON — no markdown code blocks, no explanatory text before or after. The JSON must match this exact structure. The \`correctAnswer\` index below is an example value only — vary it across questions rather than placing the answer first every time:
+Return ONLY valid JSON — no markdown code blocks, no explanatory text before or after. The JSON must match this exact structure. The \`correctAnswer\` index below is an example value only — ${answerPositionAssigned ? "set it per question from the required answer position listed with that question's external ID (see Answer position below)" : 'vary it across questions rather than placing the answer first every time'}:
 {
   "questions": [
     {
@@ -123,8 +158,8 @@ and only 25 points above blind guessing.
 
 If a famous subject has four independently plausible options, it is NOT easy. Never move
 the correct value to fix this — change the distractors around it.
-
-${QUALITY_GUIDELINES}
+${answerPositionBlock}
+${buildQualityGuidelines(answerPositionAssigned)}
 
 ## Content Rules
 

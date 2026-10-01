@@ -331,8 +331,16 @@ export const ${configVarName}Config: LocaleConfig = {
   locale: '${args.slug}',
   name: '${escapeSingleQuoted(args.name!)}',
   collectionSlug: '${args.slug}',
-  targetQuestions: 100,
+  // Sized from the Akron/Ohio pilot (2026-09-30), not from habit. Asking for
+  // 100 with overshoot 1.3 against a ~114K-char corpus produced 150 questions,
+  // 109 seeded, and a saturating failure curve (2,5,2,8,11,13 rejections per
+  // batch) in which 69% of ALL retries were duplicate-text. Each retry is its
+  // own API call, so overshoot buys duplicates and then pays to rewrite them:
+  // ~57% of a $2.93 collection. A corpus supports a finite number of distinct
+  // civic questions. Raise this only alongside more SOURCE material.
+  targetQuestions: 70,
   batchSize: 25,
+  overshootFactor: 1.0,
 
   topicCategories: [
     {

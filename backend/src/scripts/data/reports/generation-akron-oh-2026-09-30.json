@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-09-30T07:19:10.238Z",
+  "target": "akron-oh",
+  "config": {
+    "targetQuestions": 130,
+    "batchSize": 25,
+    "maxRetries": 3
+  },
+  "results": {
+    "totalGenerated": 328,
+    "passedValidation": 109,
+    "failedValidation": 0,
+    "retryExhausted": 0,
+    "finalInserted": 109
+  },
+  "breakdown": {
+    "byRule": {
+      "pure-lookup": 59,
+      "duplicate-text": 147,
+      "ambiguous-answers": 2,
+      "vague-qualifiers": 1,
+      "address-phone": 3,
+      "nested-options": 8
+    },
+    "byRetryAttempt": {
+      "0": 76,
+      "1": 20,
+      "2": 4,
+      "3": 9
+    },
+    "byDifficulty": {
+      "easy": 38,
+      "medium": 54,
+      "hard": 17
+    },
+    "byTopic": {
+      "city-government": 37,
+      "civic-history": 32,
+      "local-services": 40
+    }
+  },
+  "failures": [],
+  "performance": {
+    "totalDurationMs": 1205732,
+    "apiCalls": 184,
+    "tokensUsed": {
+      "input": 29963,
+      "output": 73526,
+      "cached": 5798353
+    },
+    "estimatedCostUsd": 2.9322849
+  }
+}

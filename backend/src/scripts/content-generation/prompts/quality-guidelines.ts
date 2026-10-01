@@ -9,7 +9,8 @@
  * summary that tells the AI what to avoid.
  */
 
-export const QUALITY_GUIDELINES = `
+export function buildQualityGuidelines(answerPositionAssigned = false): string {
+  return `
 ## Quality Guidelines
 
 Your generated questions will be validated against strict quality rules. Follow these guidelines to ensure all questions pass validation:
@@ -118,7 +119,9 @@ time and at either extreme only 14% — so "sort the four numbers and pick the t
 scored 54% with no knowledge at all, and 96% in one collection. The cause is a habit:
 writing the true value, then padding it with two smaller and one larger distractor.
 
-**Vary the bracket deliberately.** Across a batch, aim for roughly equal numbers of:
+${answerPositionAssigned
+    ? '**The bracket is assigned per question.** Each question names the position its answer\nmust occupy, and that assignment decides the split -- N distractors strictly below the\ntrue value and 3-N strictly above. Do NOT balance the bracket across the batch yourself;\nfollowing the per-question positions produces the balance. For reference, the shapes are:'
+    : '**Vary the bracket deliberately.** Across a batch, aim for roughly equal numbers of:'}
 
 - answer is the **smallest** offered — "9 members" → 9 / 11 / 13 / 15
 - answer is **second** — "9 members" → 7 / 9 / 11 / 13
@@ -144,3 +147,7 @@ fixes it. Both matter and they are separate concerns.
 **Validation Process:**
 After generation, each question is validated with auditQuestion(). Questions with blocking violations are rejected and regenerated with feedback. Follow these guidelines to maximize first-pass success rate.
 `;
+}
+
+/** Back-compat for callers that do not assign positions. */
+export const QUALITY_GUIDELINES = buildQualityGuidelines(false);

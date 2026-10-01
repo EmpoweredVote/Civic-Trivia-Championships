@@ -100,10 +100,27 @@ export async function seedQuestionBatch(
   batch: ValidatedQuestion[],
   collectionId: number,
   topicIdMap: Record<string, number>
-): Promise<{ seeded: number; skipped: number; duplicateTexts: number }> {
+): Promise<{
+  seeded: number;
+  skipped: number;
+  duplicateTexts: number;
+  placements: Record<string, number>;
+}> {
   let seeded = 0;
   let skipped = 0;
   let duplicateTexts = 0;
+  // Tallied per batch so an off-target answer is visible rather than silent. Some misses
+  // are CORRECT -- a "in what year did X happen?" question cannot take position A without
+  // inventing three later years -- so this number should be small, not zero.
+  // Seeded with the four known outcomes so a zero PRINTS -- "0 sorted-off-target" says
+  // the run had no misses, whereas an absent line cannot be told from an unreported one.
+  // Not a closed set: an unrecognised placement still appears rather than being dropped.
+  const placements: Record<string, number> = {
+    sorted: 0,
+    'sorted-off-target': 0,
+    permuted: 0,
+    unchanged: 0,
+  };
 
   // Load existing ACTIVE and DRAFT questions for this collection to detect duplicate text.
   // Archived questions are excluded — they were curated out and must not block regeneration.
@@ -153,6 +170,7 @@ export async function seedQuestionBatch(
     // example says correctAnswer: 0 and models copy it. Seeded on externalId so
     // regenerating the same question does not move its answer between reviews.
     const placed = placeAnswer(question.options, question.correctAnswer, question.externalId);
+    placements[placed.placement] = (placements[placed.placement] ?? 0) + 1;
 
     // Build question record matching NewQuestion type from schema
     const newQuestion = {
@@ -198,5 +216,19 @@ export async function seedQuestionBatch(
   }
 
   console.log(`  Seeded: ${seeded} questions, Skipped: ${skipped} (${duplicateTexts} duplicate text, ${skipped - duplicateTexts} duplicate externalId)`);
-  return { seeded, skipped, duplicateTexts };
+  // Read as a set, not as individual rows: 'sorted-off-target' is generation failing to
+  // build distractors that land the answer where the id said, which is sometimes the only
+  // plausible outcome. A large share of it means the prompt is not being followed.
+  const placementOrder = ['sorted', 'sorted-off-target', 'permuted', 'unchanged'];
+  const placementSummary = Object.entries(placements)
+    .sort(([a], [b]) => {
+      const ia = placementOrder.indexOf(a);
+      const ib = placementOrder.indexOf(b);
+      return (ia < 0 ? placementOrder.length : ia) - (ib < 0 ? placementOrder.length : ib)
+        || a.localeCompare(b);
+    })
+    .map(([kind, n]) => `${n} ${kind}`)
+    .join(', ');
+  console.log(`  Answer placement: ${placementSummary}`);
+  return { seeded, skipped, duplicateTexts, placements };
 }

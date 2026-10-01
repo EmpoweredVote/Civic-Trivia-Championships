@@ -1,0 +1,37 @@
+SOURCE: https://en.wikipedia.org/wiki/Ohio_General_Assembly
+============================================================
+The Ohio General Assembly is the state legislature of the U.S. state of Ohio. It consists of the 99-member Ohio House of Representatives and the 33-member Ohio Senate. Both houses of the General Assembly meet at the Ohio Statehouse in Columbus.
+
+Legislative agencies
+The Legislative Service Commission is one of several legislative agencies. It serves as a source for legal expertise and staffing and drafts proposed legislation, also helps serve as an advertisement to the general public as to what is happening inside the assembly.
+
+History
+
+The General Assembly first convened in Chillicothe, then the Ohio capital, on March 1, 1803.
+The second constitution of Ohio, effective in 1851, took away the power of the General Assembly to choose the state's executive officers, granting that right to the voters. A complicated formula apportioned legislators to Ohio counties and the number of seats in the legislative houses varied from year-to-year.
+The Ohio Politics Almanac by Michael F. Curtin (Kent State University Press) described apportionment thus:
+
+The new [1851] constitution ... contained a complicated formula for apportionment, the so-called "major fraction rule." Under it, the state's population was divided by 100, with the resulting quotient being the ratio of representation in the House of Representatives. Any county with a population equal to at least half the ratio was entitled to one representative; a county with a population of less than half the ratio was grouped with an adjacent county for districting; a county containing a population of at least one and three-fourths the ratio was entitled to two representatives; a county with a population equal to three times the ratio was entitled to three representatives. To determine Senate districts, a similar procedure was followed; the starting point, however was figured by dividing the state's population by 35. The ratios for the House and Senate and the resulting apportionment was determined by a board consisting of the governor, auditor, and secretary of state.
+In 1903, the apportionment system was modified by the Hanna amendment, which also gave the governor veto power over the assembly's acts, which could be overridden by a two-thirds vote of both houses. The last state constitutional convention, held in 1912, gave the governor a line-item veto, but reduced the supermajority required for overriding the veto to three-fifths. In 1956, a referendum increased the terms of state senators from two to four years.
+The Hanna amendment (which guaranteed each county at least one representative and all members elected at large) guaranteed that rural areas of Ohio would dominate the legislature. However, several decisions by the U.S. Supreme Court surrounding the legal principal of one man, one vote mandated apportionment proportional to population. Reapportionment was ordered in 1964. Starting with the 1966 election, the number of seats in the two chambers were fixed at their present numbers of 33 and 99.
+Republican activists, led by Fred A. Lennon, began pursuing term limits in the 1980s, in 1992, a referendum set term limits of eight consecutive years in office: four consecutive terms in the House or two consecutive terms in the Senate. Years in office are considered consecutive if they are separated by less than four years. A former member of the legislature who had served eight years becomes eligible for election to the legislature after four years out of office.
+
+Vacancies
+The Ohio House and Ohio Senate use slightly different methods to fill vacant seats. In both chambers, a replacement is first elected by the members of the relevant chamber who are affiliated with the same party as the departing member. In the House, the replacement will serve for the remainder of the term. In the Senate, the replacement will serve for the remainder of the term only if the vacancy occurred after the first 20 months of the four-year Senate term. If the vacancy occurred during the first 20 months of the term, then a special election will be held during the next regularly scheduled even-year statewide election. The replacement selected by the party members will then serve until the end of December following the special election, with the winner serving the remainder of the term.
+
+See also
+Representative history of the Ohio Senate
+Representative history of the Ohio House of Representatives
+List of Ohio state legislatures
+
+References
+
+Further reading
+Curtin, Michael F. (1996). The Ohio Politics Almanac. Kent State University Press. ISBN 9780873385404.
+Gold, David M. (2009). Democracy In Session: A History of the Ohio General Assembly. Ohio University Press. ISBN 9780821418444.
+"A Guidebook For Ohio Legislators, 2013-2014" (PDF). Ohio Legislative Service Commission. Retrieved August 12, 2014.
+Little, Thomas H.; Ogle, David B., eds. (2006). The Legislative Branch of State Government: People, Process, and Politics. ABC-CLIO. pp. 369–373. ISBN 9781851097616. the legislative branch of state government: people.
+Scarselli, Gino J.; Steinglass, Steven H. (2011). The Ohio State Constitution. Oxford University Press. ISBN 9780199778720.
+
+External links
+Official Ohio General Assembly Website Archived February 19, 2010, at the Wayback Machine

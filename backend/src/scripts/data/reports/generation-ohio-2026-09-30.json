@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-09-30T07:54:19.093Z",
+  "target": "ohio",
+  "config": {
+    "targetQuestions": 130,
+    "batchSize": 25,
+    "maxRetries": 3
+  },
+  "results": {
+    "totalGenerated": 317,
+    "passedValidation": 107,
+    "failedValidation": 0,
+    "retryExhausted": 0,
+    "finalInserted": 107
+  },
+  "breakdown": {
+    "byRule": {
+      "pure-lookup": 46,
+      "duplicate-text": 163,
+      "address-phone": 4
+    },
+    "byRetryAttempt": {
+      "0": 84,
+      "1": 10,
+      "2": 11,
+      "3": 2
+    },
+    "byDifficulty": {
+      "easy": 46,
+      "medium": 48,
+      "hard": 13
+    },
+    "byTopic": {
+      "state-government": 40,
+      "civic-history": 32,
+      "state-services": 35
+    }
+  },
+  "failures": [],
+  "performance": {
+    "totalDurationMs": 1149919,
+    "apiCalls": 173,
+    "tokensUsed": {
+      "input": 25943,
+      "output": 66867,
+      "cached": 6381654
+    },
+    "estimatedCostUsd": 2.9953301999999997
+  }
+}

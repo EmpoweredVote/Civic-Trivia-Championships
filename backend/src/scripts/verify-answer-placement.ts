@@ -26,6 +26,19 @@ import {
 let failures = 0;
 let checks = 0;
 
+/**
+ * The sorted branch ran, whether or not it landed on the hashed target.
+ *
+ * These checks care that a series took the sorted path rather than the permute path.
+ * Since answerPlacement became a verifier, 'sorted' narrowed to mean "sorted AND on
+ * target" and 'sorted-off-target' carries the rest, so asserting the bare string here
+ * tested the seed's hash rather than the branch. Mirrors SORTED_PATH in the ev-accounts
+ * answerPlacement.test.ts, which is where this file's checks are also kept.
+ */
+function isSortedPath(placement: string): boolean {
+  return placement === 'sorted' || placement === 'sorted-off-target';
+}
+
 function check(name: string, condition: boolean, detail?: string): void {
   checks++;
   if (condition) {
@@ -94,7 +107,7 @@ console.log('\nSorting (numeric series → position equals rank):');
 {
   const placed = placeAnswer(['100 members', '160 members', '200 members', '120 members'], 1, 'q');
   check('sorted ascending', placed.options.join(',') === '100 members,120 members,160 members,200 members');
-  check('placement reported as sorted', placed.placement === 'sorted');
+  check('placement reported as a sorted path', isSortedPath(placed.placement));
   check('position equals value rank', placed.correctAnswer === 2, `got ${placed.correctAnswer}`);
   check('answer text unchanged', placed.options[placed.correctAnswer] === '160 members');
 }
@@ -124,15 +137,15 @@ console.log('Bounded series (rank fixed by the world -> permute, do not sort):')
 {
   // Unbounded numeric series must still sort -- the bounded rule has to stay narrow.
   const placed = placeAnswer(['800,000', '1,000,000', '2,250,000', '5,000,000'], 2, 'stlmo-020');
-  check('large-magnitude series still sorts', placed.placement === 'sorted');
+  check('large-magnitude series still sorts', isSortedPath(placed.placement));
 }
 {
   const placed = placeAnswer(['13th Amendment', '14th Amendment', '15th Amendment', '19th Amendment'], 2, 'q058');
-  check('label-style ordinals still sort (they read naturally in order)', placed.placement === 'sorted');
+  check('label-style ordinals still sort (they read naturally in order)', isSortedPath(placed.placement));
 }
 {
   const placed = placeAnswer(['1 mile', '5 miles', '12.5 miles', '25 miles'], 2, 'stlmo-058');
-  check('non-integer series is not bounded', placed.placement === 'sorted');
+  check('non-integer series is not bounded', isSortedPath(placed.placement));
 }
 
 console.log('\nPermuting (prose):');

@@ -181,6 +181,11 @@ export function hasFixedPositionOption(options: string[]): boolean {
   return options.some((o) => FIXED_POSITION_OPTION.test(o));
 }
 
+/** The position an answer should occupy, derived only from the question's id. */
+export function targetPosition(seed: string): number {
+  return hashToPosition(seed);
+}
+
 /** FNV-1a. Any stable string->int would do; this one is short and has no dependencies. */
 function hashToPosition(seed: string): number {
   let h = 0x811c9dc5;
@@ -195,7 +200,7 @@ export interface PlacedAnswer {
   options: string[];
   correctAnswer: number;
   /** How the position was chosen, for logging. */
-  placement: 'sorted' | 'permuted' | 'unchanged';
+  placement: 'sorted' | 'sorted-off-target' | 'permuted' | 'unchanged';
 }
 
 /**
@@ -241,10 +246,23 @@ export function placeAnswer(
     const order = values
       .map((v, i) => ({ v, i }))
       .sort((a, b) => (a.v - b.v) || (a.i - b.i));
+    const sortedOptions = order.map((o) => options[o.i]);
+    const sortedIndex = order.findIndex((o) => o.i === correctAnswer);
+
+    // The options stay ascending either way -- readability is not the thing being
+    // traded. What changes is that we now REPORT whether the sorted rank matches the
+    // position this question was supposed to use, instead of silently accepting it.
+    //
+    // Generation is responsible for making these agree: it is told the target and
+    // builds distractors around the true value to satisfy it (N strictly below,
+    // 3-N strictly above). When it cannot do that plausibly -- asking for position A
+    // on "in what year did X happen?" would need three later years, and for a recent
+    // event those are in the future -- it is correct for generation to miss, and
+    // 'sorted-off-target' is how that surfaces rather than becoming a silent bias.
     return {
-      options: order.map((o) => options[o.i]),
-      correctAnswer: order.findIndex((o) => o.i === correctAnswer),
-      placement: 'sorted',
+      options: sortedOptions,
+      correctAnswer: sortedIndex,
+      placement: sortedIndex === hashToPosition(seed) ? 'sorted' : 'sorted-off-target',
     };
   }
 
