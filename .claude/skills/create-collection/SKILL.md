@@ -46,7 +46,7 @@ Fetch it and read the full content. Extract:
 
 ### 1b. Additional targeted searches
 Run WebSearch queries for:
-- `"[City] city government council members 2025 2026"`
+- `"[City] city government council members [current year]"`
 - `"[City] city history founding landmark"`
 - `"[City] mayor [current year]"`
 - `"[City] notable facts civic"`
@@ -61,7 +61,7 @@ You need current officeholder names + term end dates for:
 - State Assembly member for this city's district
 - State Senator for this city's district
 
-Search: `"[City] city council 2025"`, `"[City] mayor term expires"`, `"[City state] assembly district [city]"`
+Search: `"[City] city council [current year]"`, `"[City] mayor term expires"`, `"[City state] assembly district [city]"`
 
 **Only include an officeholder if you found their name from a credible source.** Mark any uncertain names as VERIFY during curation.
 
@@ -112,20 +112,20 @@ Good examples:
 
 ## STEP 3 — Scaffold and Seed
 
-Run the scaffold script from the `backend/` directory:
+Run the scaffold script from the `backend/` directory (paths below are relative to the repo root; each command runs in a subshell so the working directory stays at the root):
 
 ```bash
-cd "C:/Project Test/backend" && npx tsx src/scripts/scaffold-collection.ts \
+(cd backend && npx tsx src/scripts/scaffold-collection.ts \
   --name "[City, ST]" \
   --slug [slug] \
   --theme "[#RRGGBB]" \
-  --description "[tagline]"
+  --description "[tagline]")
 ```
 
 Then seed the database:
 
 ```bash
-cd "C:/Project Test/backend" && npx tsx src/db/seed/seed.ts
+(cd backend && npx tsx src/db/seed/seed.ts)
 ```
 
 Verify seed output — look for the new collection name in the output. If you see errors, diagnose and fix before continuing.
@@ -189,7 +189,7 @@ export const [camelCaseSlug]Config: LocaleConfig = {
 };
 ```
 
-After writing, verify the file compiles by checking it has no obvious TypeScript errors (balanced braces, valid JSON arrays, etc.).
+After writing, run `(cd backend && npx tsc --noEmit)` and fix any errors it reports in the new file.
 
 ---
 
@@ -537,7 +537,7 @@ whatever is passed against `/^[a-z]{2,5}$/`; passing your slug (e.g.
 `akron-oh`) there errors out rather than being ignored. (Legacy prefix-based
 collections still pass their real `--prefix`.)
 ```bash
-cd "C:/Project Test/backend" && npx tsx src/scripts/audit-collection-readiness.ts --slug [slug]
+(cd backend && npx tsx src/scripts/audit-collection-readiness.ts --slug [slug])
 ```
 
 Review the output. If it warns about expiring ratio, go back to Step 6f.
@@ -545,7 +545,7 @@ If it warns about fewer than 50 questions, you need to write more before activat
 
 ### 8b. Verify banner exists
 ```bash
-ls "C:/Project Test/frontend/public/images/collections/[slug].jpg"
+ls frontend/public/images/collections/[slug].jpg
 ```
 
 If missing, do not proceed — handle Step 7 first.
@@ -557,18 +557,18 @@ collection. It still hard-validates whatever you pass against
 rather than being ignored. Legacy prefix-based collections still pass their
 real `--prefix`.
 ```bash
-cd "C:/Project Test/backend" && npx tsx src/scripts/activate-collection.ts --slug [slug] --dry-run
+(cd backend && npx tsx src/scripts/activate-collection.ts --slug [slug] --dry-run)
 ```
 
 Review the dry-run output. If everything looks correct:
 ```bash
-cd "C:/Project Test/backend" && npx tsx src/scripts/activate-collection.ts --slug [slug]
+(cd backend && npx tsx src/scripts/activate-collection.ts --slug [slug])
 ```
 
 ### 8d. Confirm live
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" "https://civic-trivia-frontend.onrender.com/images/collections/[slug].jpg"
-curl -s "https://civic-trivia-backend.onrender.com/api/game/collections" | grep -c '"slug":"[slug]"'
+curl -s "https://api.empowered.vote/api/trivia/game/collections" | grep -c '"slug":"[slug]"'
 ```
 
 ---
@@ -643,6 +643,7 @@ Only after all notes are resolved is the collection ready to push. Do not leave 
 5. **At-large vs. district councils** — Verify the council structure before writing any district-specific questions.
 6. **State legislators** — Verify which Assembly and Senate district covers this city before writing those questions.
 7. **Name spelling** — Look up official spellings (e.g., `"FoFo" Gilich` in Biloxi). Do not guess nicknames.
+8. **Louisiana specifics** — Louisiana has parishes, not counties. The governing body above city level is a parish. Keep parish government out of city questions unless the city IS the parish seat and it matters.
 
 ---
 
