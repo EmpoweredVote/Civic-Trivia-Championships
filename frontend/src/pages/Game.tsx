@@ -325,7 +325,6 @@ export function Game() {
   return (
     <GameScreen
       state={state}
-      collectionQuestionCount={collectionQuestionCount}
       currentQuestion={currentQuestion}
       startGame={handleStartGame}
       selectAnswer={selectAnswer}

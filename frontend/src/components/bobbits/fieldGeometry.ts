@@ -106,7 +106,7 @@ export function figureBounds(f: FieldFigure) {
  */
 export interface FieldProp {
   id: string;
-  kind: 'cannon' | 'tree' | 'marginTree';
+  kind: 'cannon' | 'tableau';
   x: number;
   /** px from the field's top to the prop's ground contact line. */
   groundY: number;
@@ -116,6 +116,18 @@ export interface FieldProp {
   angle?: number;
   /** 0-1 for a tree that is still sprouting. Ignored by every other kind. */
   grow?: number;
+  /** Which stack a `tableau` prop draws, and how many of its lines are standing. */
+  side?: 'left' | 'right';
+  built?: number;
+  /** Foliage colour for the tableau's one string line. Theme-derived, never fixed. */
+  leafColor?: string;
+  /**
+   * The tableau line currently being raised, and how far into its build it is.
+   *
+   * Typed loosely here on purpose: `fieldGeometry` is the rig's own module and must not take
+   * a dependency on the collection feature. The tableau's draw narrows it.
+   */
+  site?: { line: unknown; t: number } | null;
   /**
    * Body colour. Supplied by the caller because only it knows the theme -- a fixed dark barrel
    * is all but invisible against a dark-mode background, which is how it first shipped.
