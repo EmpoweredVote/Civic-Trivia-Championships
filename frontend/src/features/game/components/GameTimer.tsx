@@ -35,12 +35,13 @@ export function GameTimer({
           onTimeout();
           return { shouldRepeat: false };
         }}
+        // Reporting upward belongs here, NOT in the children render prop below:
+        // the library calls onUpdate from a layout effect, after commit, so the
+        // parent's setState no longer runs during this component's render. It also
+        // fires only when the whole second changes rather than every frame.
+        onUpdate={onTimeUpdate}
       >
         {({ remainingTime, color }) => {
-          if (onTimeUpdate) {
-            onTimeUpdate(remainingTime);
-          }
-
           const isCritical = remainingTime <= 5;
 
           return (
