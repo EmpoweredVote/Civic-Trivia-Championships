@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "start": "serve -s dist -l 10000",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:game": "node scripts/game-smoke.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
