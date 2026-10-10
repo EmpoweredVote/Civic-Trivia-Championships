@@ -4,7 +4,7 @@ import type { FieldFigure, FieldProp } from '../../../components/bobbits/fieldGe
 import { groundLineFromBottom } from '../crowdLayout';
 import { originX } from './tableauGeometry';
 import type { MarginBox } from './tableauGeometry';
-import type { StackSide } from './blueprint';
+import type { StackSide, TableauLine } from './blueprint';
 
 interface TableauMarginProps {
   side: StackSide;
@@ -20,7 +20,12 @@ interface TableauMarginProps {
    * see that; a screenshot shows it immediately.
    */
   builtFor: () => number;
-  /** Everyone perched, climbing or descending on THIS stack, in THIS canvas's coordinates. */
+  /**
+   * The line currently going up, and its clock. A callback for the same reason `builtFor` is:
+   * the build advances on rAF and a value prop would be frozen at the last React render.
+   */
+  siteFor: () => { line: TableauLine; t: number } | null;
+  /** Everyone perched, climbing, descending or WORKING on THIS stack, in its coordinates. */
   figuresFor: () => FieldFigure[];
 }
 
@@ -48,7 +53,7 @@ interface TableauMarginProps {
  * crowd walks on -- from the same constant the floor line itself is drawn from.
  */
 export function TableauMargin({
-  side, box, scale, darkMode, builtFor, figuresFor,
+  side, box, scale, darkMode, builtFor, siteFor, figuresFor,
 }: TableauMarginProps) {
   // Light timber on a dark ground and vice versa, exactly as the cannon learned to be: a fixed
   // dark prop is a smudge in dark mode.
@@ -62,6 +67,7 @@ export function TableauMargin({
     kind: 'tableau',
     side,
     built: builtFor(),
+    site: siteFor(),
     x: originX(side, box.width, scale),
     // The canvas's bottom edge IS the band's floor line, so the stack stands on the same
     // ground the crowd walks on.

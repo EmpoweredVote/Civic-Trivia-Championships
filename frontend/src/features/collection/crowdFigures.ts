@@ -8,6 +8,8 @@ import type { AgentState, Agent } from './crowdAgents';
 import { celebrationPose, ripplePose, pairUp, reactionOffset } from './crowdReactions';
 import { isStunned, LOSS_RISE } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
+import { crewAt } from './tableau/buildSequence';
+import type { TableauLine } from './tableau/blueprint';
 import { actorsOf } from './sceneDirector';
 import type { DirectorState } from './sceneDirector';
 
@@ -232,6 +234,59 @@ export function tableauFigures(
       poofable: false,
       // No greeting mid-climb, and NO hoverAnim: `climb` is standing, and a seated hover pose
       // on a standing base is drawn ~104 units from where this put him.
+      greetable: false,
+    });
+  }
+  return out;
+}
+
+/**
+ * The crew working on the line currently going up, on ONE stack's canvas.
+ *
+ * Kept out of `tableauFigures` rather than folded into it: that function positions a figure
+ * from his `Surface`, and a worker has none -- the line he is raising has not become scenery
+ * yet. Reading a Surface he does not have is a crash, and inventing one for him would be a
+ * second opinion about where he is.
+ *
+ * Positions come from `crewAt`, which is pure and scripted, so a contact sheet samples the
+ * same raise identically on every run.
+ */
+export function workerFigures(
+  agents: AgentState,
+  band: CrowdBand,
+  darkMode: boolean,
+  side: 'left' | 'right',
+  site: { line: TableauLine; t: number } | null,
+  ox: number,
+  floorY: number,
+  scale: number | null,
+): FieldFigure[] {
+  if (!site || scale === null || site.line.side !== side) return [];
+  const crew = crewAt(site.line, site.t, ox, floorY, scale);
+  if (crew.length === 0) return [];
+
+  const jobId = `job:${side}:${site.line.n}`;
+  const out: FieldFigure[] = [];
+  for (const id of Object.keys(agents)) {
+    const a = agents[id];
+    if (a.jobId !== jobId) continue;
+    // Only somebody who has ARRIVED. A crew member still walking to the site is `moving`, and
+    // `canvasOf` leaves him on the band where his walk is being drawn.
+    if (canvasOf(a, [], []) !== side) continue;
+    const w = crew.find(c => c.role === a.jobRole);
+    if (!w) continue;
+    out.push({
+      id,
+      anim: w.anim,
+      color: figColor(toneOf(id), darkMode),
+      x: w.x,
+      groundY: w.groundY,
+      scale: band.scale * heightFactor(id),
+      phase: (hashId(id) % 1000) / 250,
+      flip: w.flip,
+      poofable: false,
+      // No greeting mid-lift: a greet pose would drop the line he is holding, and a seated
+      // hover pose on a standing base draws ~104 units from its own hit box.
       greetable: false,
     });
   }

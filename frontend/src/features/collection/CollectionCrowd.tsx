@@ -10,14 +10,18 @@ import { createPeakStore } from './bobitPeak';
 import { tableauScale, originX, MIN_TABLEAU_MARGIN } from './tableau/tableauGeometry';
 import type { MarginBox } from './tableau/tableauGeometry';
 import { tableauSurfaces } from './tableau/tableauSurfaces';
-import { linesBuilt } from './tableau/tableauProgress';
-import { STRUCTURES } from './tableau/blueprint';
+import { linesBuilt, linesStandingOnArrival } from './tableau/tableauProgress';
+import { STRUCTURES, BLUEPRINT } from './tableau/blueprint';
+import type { TableauLine } from './tableau/blueprint';
+import {
+  buildDuration, phaseAt, crewRolesFor, siteX,
+} from './tableau/buildSequence';
 import { TableauMargin } from './tableau/TableauMargin';
 import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
 import {
-  crowdFigures, overflowCount, aerialFigures, tableauFigures, sceneGroundY,
+  crowdFigures, overflowCount, aerialFigures, tableauFigures, workerFigures, sceneGroundY,
 } from './crowdFigures';
 import {
   directorInit, directorStep, startScene, canStage, castIds,
@@ -33,9 +37,9 @@ import {
 } from './crowdLayout';
 import {
   initAgents, agentsAdvance, syncCast, rotateCast, makeRand, rescaleTo, placeReleased,
-  nearestAgent, assignPerch,
+  nearestAgent, assignPerch, assignJob, releaseJob,
 } from './crowdAgents';
-import type { AgentState } from './crowdAgents';
+import type { AgentState, Activity } from './crowdAgents';
 import type { Surface } from '../../components/bobbits/fieldGeometry';
 import type { Rand } from '../../components/bobbits/wanderReducer';
 import type { CrowdBand } from './crowdLayout';
@@ -187,6 +191,19 @@ export function CollectionCrowd({
    */
   const lastStructureRef = useRef(-1);
   /**
+   * How many lines the player has actually WATCHED go up, and the line in flight.
+   *
+   * `shownRef` is seeded to whatever was already earned when the collection opens, so a
+   * returning player finds his tableau standing rather than watching fifteen build sequences
+   * run back to back for three and a half minutes of a match in which he earned none of them.
+   * Only lines earned on camera are built on camera.
+   */
+  const shownRef = useRef(0);
+  const shownSlugRef = useRef<string | null>(null);
+  const siteRef = useRef<{ n: number; t: number } | null>(null);
+  /** Resolved once per frame from `siteRef`, so the figures and the canvases cannot disagree. */
+  const siteForRef = useRef<{ line: TableauLine; t: number } | null>(null);
+  /**
    * Each stack's climbable surfaces, in ITS canvas's coordinates. Recomputed each frame: the
    * measured margins change with the viewport, so a Surface cached at mount would leave a
    * perched bobit sitting in mid-air after a resize.
@@ -260,6 +277,15 @@ export function CollectionCrowd({
     peakStore.record(slugNow, stateRef.current.residents.length);
     builtRef.current = linesBuilt(peakStore.peak(slugNow));
 
+    // First look at THIS collection: everything already earned is already standing, and no
+    // build is owed for it. Keyed on the slug so switching collections re-seeds rather than
+    // carrying one room's progress into another's.
+    if (shownSlugRef.current !== slugNow) {
+      shownSlugRef.current = slugNow;
+      shownRef.current = linesStandingOnArrival(peakStore.peak(slugNow));
+      siteRef.current = null;
+    }
+
     // A COMPLETED STRUCTURE is the moment worth marking. The tree had one ceremony because it
     // had one threshold; the tableau has six, which is the same promise kept more often. On a
     // phone, where there is no tableau to watch, this is the only sign that anything happened
@@ -312,6 +338,7 @@ export function CollectionCrowd({
       // "not looked yet", so the first syncMilestone below records where this collection
       // starts rather than celebrating six structures a returning player built weeks ago.
       lastStructureRef.current = -1;
+      shownSlugRef.current = null;          // force syncMilestone to re-seed what is standing
       setOverflow(overflowCount(stateRef.current));
       syncMilestone(slug);
       repaint();
@@ -482,6 +509,58 @@ export function CollectionCrowd({
 
       agentsRef.current = agentsAdvance(agentsRef.current, dt, opts);
 
+      // ── THE WORKSITE ──────────────────────────────────────────────────────────────────
+      //
+      // Its own clock, not the game's: the crew keeps working while the timer runs, which is
+      // what makes the margin a place rather than an event. One line at a time, in blueprint
+      // order, so a player who earns four bobits at once watches them go up in sequence.
+      //
+      // AFTER the advance, for the same reason `assignPerch` is: a bobit released from a
+      // scene or finishing a walk is eligible this frame rather than next.
+      if (siteRef.current === null) {
+        if (shownRef.current < builtRef.current) {
+          const next = BLUEPRINT[shownRef.current];
+          // BAND coordinates. The joint is in a margin canvas's box, which is a different one
+          // -- handing `assignJob` a canvas x walks the crew into the question column.
+          const after = assignJob(
+            agentsRef.current, `job:${next.side}:${next.n}`, crewRolesFor(next),
+            siteX(next.side, measured), opts,
+          );
+          // All or nothing. If the room could not spare a crew this frame, try again next:
+          // a half-cast crew is a beam raising itself with one bobit watching.
+          if (after !== agentsRef.current) {
+            agentsRef.current = after;
+            siteRef.current = { n: next.n, t: 0 };
+          }
+        }
+      } else {
+        const line = BLUEPRINT[siteRef.current.n - 1];
+        const t = siteRef.current.t + dt;
+        if (t >= buildDuration(line)) {
+          agentsRef.current = releaseJob(agentsRef.current, `job:${line.side}:${line.n}`);
+          shownRef.current = line.n;
+          siteRef.current = null;
+        } else {
+          siteRef.current = { n: siteRef.current.n, t };
+          // The crew's ACTIVITY follows the phase, so `agentAnim` stays meaningful and
+          // `canvasOf` keeps them on their own stack for the whole job.
+          const { phase } = phaseAt(line, t);
+          const activity: Activity = phase === 'raise' ? 'raising'
+            : phase === 'lash' || phase === 'curl' ? 'lashing'
+            : 'hauling';
+          const jobId = `job:${line.side}:${line.n}`;
+          let next = agentsRef.current;
+          for (const id of Object.keys(next)) {
+            const a = next[id];
+            if (a.jobId !== jobId || a.activity === 'moving' || a.activity === activity) {
+              continue;
+            }
+            next = { ...next, [id]: { ...a, activity } };
+          }
+          agentsRef.current = next;
+        }
+      }
+
       // After the advance, so a bobit who has just been released from a scene or finished a
       // move is eligible this frame rather than next. A no-op while every seat is claimed.
       //
@@ -525,12 +604,32 @@ export function CollectionCrowd({
     // whole flight because the band read a ref while the render read a prop.
     const lSurf = leftSurfacesRef.current;
     const rSurf = rightSurfacesRef.current;
-    leftFiguresRef.current = tableauFigures(
-      stateRef.current, agentsRef.current, band, darkMode, 'left', lSurf, rSurf, s,
-    );
-    rightFiguresRef.current = tableauFigures(
-      stateRef.current, agentsRef.current, band, darkMode, 'right', lSurf, rSurf, s,
-    );
+    // The line under construction, resolved ONCE and read by both the figures below and the
+    // canvases' `siteFor`. Two readers fetching it separately could disagree about a frame,
+    // which is the whole reason this pass exists.
+    const site = siteRef.current === null
+      ? null
+      : { line: BLUEPRINT[siteRef.current.n - 1], t: siteRef.current.t };
+    siteForRef.current = site;
+
+    leftFiguresRef.current = [
+      ...tableauFigures(
+        stateRef.current, agentsRef.current, band, darkMode, 'left', lSurf, rSurf, s,
+      ),
+      ...(lBox === null ? [] : workerFigures(
+        agentsRef.current, band, darkMode, 'left', site,
+        s === null ? 0 : originX('left', lBox.width, s), lBox.height, s,
+      )),
+    ];
+    rightFiguresRef.current = [
+      ...tableauFigures(
+        stateRef.current, agentsRef.current, band, darkMode, 'right', lSurf, rSurf, s,
+      ),
+      ...(rBox === null ? [] : workerFigures(
+        agentsRef.current, band, darkMode, 'right', site,
+        s === null ? 0 : originX('right', rBox.width, s), rBox.height, s,
+      )),
+    ];
 
     // The band owns no surfaces now: everything climbable belongs to a margin. The parameter
     // stays until the in-band fallback tree is retired with the rest of it.
@@ -573,6 +672,9 @@ export function CollectionCrowd({
   const leftFiguresForCanvas = useMemo(() => (): FieldFigure[] => leftFiguresRef.current, []);
   const rightFiguresForCanvas = useMemo(() => (): FieldFigure[] => rightFiguresRef.current, []);
   const builtForCanvas = useMemo(() => (): number => builtRef.current, []);
+  const siteForCanvas = useMemo(
+    () => (): { line: TableauLine; t: number } | null => siteForRef.current, [],
+  );
 
   if (!slug) return null;
 
@@ -630,6 +732,7 @@ export function CollectionCrowd({
           scale={scale}
           darkMode={darkMode}
           builtFor={builtForCanvas}
+          siteFor={siteForCanvas}
           figuresFor={leftFiguresForCanvas}
         />
       )}
@@ -640,6 +743,7 @@ export function CollectionCrowd({
           scale={scale}
           darkMode={darkMode}
           builtFor={builtForCanvas}
+          siteFor={siteForCanvas}
           figuresFor={rightFiguresForCanvas}
         />
       )}

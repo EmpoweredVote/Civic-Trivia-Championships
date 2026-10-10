@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { linesBuilt, bobitsForLine, BOBITS_PER_LINE } from '../tableauProgress';
+import {
+  linesBuilt, bobitsForLine, linesStandingOnArrival, BOBITS_PER_LINE,
+} from '../tableauProgress';
 import { TOTAL_LINES } from '../blueprint';
 
 describe('linesBuilt', () => {
@@ -32,6 +34,29 @@ describe('linesBuilt', () => {
     expect(linesBuilt(Infinity)).toBe(TOTAL_LINES);
     expect(linesBuilt(-Infinity)).toBe(0);
     expect(linesBuilt(undefined as unknown as number)).toBe(0);
+  });
+});
+
+/**
+ * REVIEW FOCUS 3. A returning player, or a contact sheet asking for `&tableau=25`.
+ *
+ * Fifteen build sequences back to back is three and a half minutes of a match in which the
+ * player earned none of them, and it would make `bobit-tableau.mjs` unable to photograph a
+ * finished tableau at all. Only lines earned ON CAMERA are built on camera.
+ */
+describe('linesStandingOnArrival', () => {
+  it('has everything already earned already standing', () => {
+    expect(linesStandingOnArrival(60)).toBe(15);
+    expect(linesStandingOnArrival(100)).toBe(TOTAL_LINES);
+    expect(linesStandingOnArrival(0)).toBe(0);
+  });
+
+  it('agrees with linesBuilt at every bobit count, so nothing is ever skipped', () => {
+    // If these two could disagree the worksite would either replay finished work or skip a
+    // line outright -- the tableau would be permanently one short and never catch up.
+    for (let peak = 0; peak <= 110; peak++) {
+      expect(linesStandingOnArrival(peak), `peak ${peak}`).toBe(linesBuilt(peak));
+    }
   });
 });
 

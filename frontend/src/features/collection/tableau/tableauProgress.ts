@@ -26,3 +26,19 @@ export function linesBuilt(peak: number): number {
 export function bobitsForLine(n: number): number {
   return n * BOBITS_PER_LINE;
 }
+
+/**
+ * What is already up the moment a collection is opened.
+ *
+ * Everything earned before this session is simply STANDING. Playing fifteen build sequences
+ * back to back for a returning player would take three and a half minutes of a match in which
+ * they earned none of it, and `&tableau=25` would do the same to a contact sheet. Only lines
+ * earned on camera are built on camera.
+ *
+ * The same number as `linesBuilt` by construction, and that is the point: a separate rule for
+ * "what is standing" and "what is earned" could drift, and a tableau permanently one line
+ * behind would never catch up.
+ */
+export function linesStandingOnArrival(peak: number): number {
+  return linesBuilt(peak);
+}

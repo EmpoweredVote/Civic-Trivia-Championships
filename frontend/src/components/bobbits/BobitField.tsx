@@ -350,6 +350,7 @@ export function BobitField({
             ctx, pr.side ?? 'right', pr.built ?? 0,
             pr.x, pr.groundY, pr.scale,
             pr.color || CANNON_COLOR, pr.leafColor || LEAF_COLOR,
+            pr.site as Parameters<typeof drawTableau>[8],
           );
         }
       }

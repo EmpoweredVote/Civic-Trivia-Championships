@@ -122,6 +122,13 @@ export interface FieldProp {
   /** Foliage colour for the tableau's one string line. Theme-derived, never fixed. */
   leafColor?: string;
   /**
+   * The tableau line currently being raised, and how far into its build it is.
+   *
+   * Typed loosely here on purpose: `fieldGeometry` is the rig's own module and must not take
+   * a dependency on the collection feature. The tableau's draw narrows it.
+   */
+  site?: { line: unknown; t: number } | null;
+  /**
    * Body colour. Supplied by the caller because only it knows the theme -- a fixed dark barrel
    * is all but invisible against a dark-mode background, which is how it first shipped.
    */
