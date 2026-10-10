@@ -63,8 +63,14 @@ covers both margins**.
 
 ### 2.2 The upward rule
 
-Every line declares what it is lashed to. Line 1 is lashed to the ground; **nothing else is.**
-A structure may only be built on a structure already standing.
+Every line declares what it is lashed to — either **the ground, or a line with a lower number
+than its own.** Nothing may be lashed to something that is not up yet, so a structure may only
+be built on a structure already standing.
+
+Two lines rest on the ground in this blueprint (the cabin's two wall posts); the rule is the
+ordering, not the count. Mechanically it is two invariants: `anchor < n`, and **endpoint 1 of
+every line lies on its anchor** — which is what makes "nothing floats" a thing a test can
+check rather than a thing a reviewer has to eyeball.
 
 This is both the physical logic of the scene and the reason a bobit has to climb in order to
 work — he is building above his own head. It is enforced by a test, not by care: the blueprint
