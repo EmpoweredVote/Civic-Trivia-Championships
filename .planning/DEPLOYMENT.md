@@ -234,6 +234,27 @@ cd frontend && npm run smoke
 page in production: `react-canvas-confetti` is CJS-only and triggered React error #130. It was
 replaced with `canvas-confetti` directly. Run the smoke test.
 
+### After any change to game render logic
+
+```bash
+cd frontend && npm run dev      # in another shell
+cd frontend && npm run smoke:game
+```
+
+**A green test run is not a rendered component.** `vitest.config.ts` sets
+`environment: 'node'` deliberately, so nothing in the suite renders anything and React's
+correctness warnings are invisible to `npm test`, `tsc` and `vite build` alike. That gap
+shipped a setState-during-render in `GameTimer` that logged on every page load and was
+found only by reading console output off a screenshot run (#203).
+
+`smoke:game` drives a real question in a browser and fails on any console error. It also
+asserts the countdown still reaches `GameScreen` state, via the "10 seconds remaining"
+aria-live announcement — because silencing a React warning by deleting the callback
+would pass the first check while breaking speed scoring.
+
+Point it at a **dev server**. The warnings it exists to catch are development-only and are
+compiled out of a production build, so against production it would pass regardless.
+
 ### Manual deploy
 
 Render dashboard → service → "Manual Deploy" → "Deploy latest commit".
