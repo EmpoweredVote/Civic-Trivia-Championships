@@ -106,7 +106,11 @@ export function figureBounds(f: FieldFigure) {
  */
 export interface FieldProp {
   id: string;
-  kind: 'cannon' | 'tree' | 'marginTree';
+  /**
+   * `tree` and `marginTree` are the retiring milestone tree, kept only until its last caller
+   * goes; `tableau` replaces both. See the tableau spec's migration section.
+   */
+  kind: 'cannon' | 'tree' | 'marginTree' | 'tableau';
   x: number;
   /** px from the field's top to the prop's ground contact line. */
   groundY: number;
@@ -116,6 +120,11 @@ export interface FieldProp {
   angle?: number;
   /** 0-1 for a tree that is still sprouting. Ignored by every other kind. */
   grow?: number;
+  /** Which stack a `tableau` prop draws, and how many of its lines are standing. */
+  side?: 'left' | 'right';
+  built?: number;
+  /** Foliage colour for the tableau's one string line. Theme-derived, never fixed. */
+  leafColor?: string;
   /**
    * Body colour. Supplied by the caller because only it knows the theme -- a fixed dark barrel
    * is all but invisible against a dark-mode background, which is how it first shipped.

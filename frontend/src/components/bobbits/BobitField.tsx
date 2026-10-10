@@ -5,6 +5,7 @@ import { ALL_ANIMATIONS } from './rigExtras';
 import { pelvisOffset, sortByDepth, figureBounds, resolveX, resolveAnimKey } from './fieldGeometry';
 import type { FieldFigure, FieldProp, FieldEffect } from './fieldGeometry';
 import { drawCannon, drawTree, drawMarginTree } from './props';
+import { drawTableau } from '../../features/collection/tableau/drawTableau';
 import { drawSmokePuff, SMOKE_DUR, FLASH_DUR } from './rigExtras';
 import { figureAtPoint } from './hitTest';
 import { greetReduce, isGreeting, greetClock, greetingIds } from './greetReducer';
@@ -81,6 +82,13 @@ interface BobitFieldProps {
 
 /** Fallback barrel colour, for a prop that did not name one. */
 const CANNON_COLOR = '#6B7686';
+/**
+ * Last-resort foliage colour for a `tableau` prop that supplied none.
+ *
+ * A fallback, never the intended path: the caller knows the theme and this file does not, and
+ * a fixed green is wrong against one of the two backgrounds. `TableauMargin` always passes one.
+ */
+const LEAF_COLOR = '#5E8C4A';
 
 // ev-figures.js caps at 1.5 and CTC's old canvas capped at 2. 1.5 is the landing page's
 // measured choice and one of the levers the stage 2 spike will revisit.
@@ -343,6 +351,13 @@ export function BobitField({
         if (pr.kind === 'marginTree') {
           drawMarginTree(
             ctx, pr.x, pr.groundY, pr.scale, pr.grow ?? 1, pr.color || CANNON_COLOR,
+          );
+        }
+        if (pr.kind === 'tableau') {
+          drawTableau(
+            ctx, pr.side ?? 'right', pr.built ?? 0,
+            pr.x, pr.groundY, pr.scale,
+            pr.color || CANNON_COLOR, pr.leafColor || LEAF_COLOR,
           );
         }
       }
