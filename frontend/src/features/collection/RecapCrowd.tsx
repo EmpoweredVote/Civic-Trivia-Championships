@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BobitField } from '../../components/bobbits/BobitField';
-import type { FieldFigure } from '../../components/bobbits/fieldGeometry';
+import type { FieldFigure, FieldProp } from '../../components/bobbits/fieldGeometry';
 import { figColor } from '../../components/bobbits/rigExtras';
 import { useAuthStore } from '../../store/authStore';
 import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
@@ -12,12 +12,26 @@ import {
   bandFor, CROWD_CAP, groundLineFromBottom, agentPlacement, bandHeadroomSpare,
 } from './crowdLayout';
 import { recapPose } from './recapPoses';
+import { createPeakStore } from './bobitPeak';
+import { linesBuilt } from './tableau/tableauProgress';
+import { fitScale, originX } from './tableau/tableauGeometry';
 
 /**
  * The localStorage driver, shared across every signed-out mount: its state IS the browser's,
  * so there is nothing per-instance about it and rebuilding it would only re-read storage.
  */
 const localStore = createLocalProgressStore();
+
+/** The same high-water mark the play screen builds from, so both screens agree. */
+const peakStore = createPeakStore();
+
+/**
+ * How much of the band's width each stack is allowed, as a fraction.
+ *
+ * The middle is left clear for the celebrating crowd, which is what this screen is for. The
+ * stacks frame it rather than competing with it.
+ */
+const STACK_FRACTION = 1 / 3;
 
 /** How close two bobits must be to slap hands, in rig units. Matches crowdFigures. */
 const HIGHFIVE_REACH_UNITS = 160;
@@ -88,6 +102,57 @@ export function RecapCrowd({ slug, darkMode, isMobile, newBobitIds }: RecapCrowd
 
   const shown = useMemo(() => owned.slice(0, CROWD_CAP), [owned]);
   const overflow = Math.max(0, owned.length - CROWD_CAP);
+
+  /**
+   * How much of the tableau is standing, from the SAME high-water mark the play screen uses.
+   *
+   * Read from the peak rather than from `owned.length` so the two screens cannot disagree: a
+   * player who lost a bobit this match still sees everything he has ever built.
+   */
+  const built = useMemo(() => (slug ? linesBuilt(peakStore.peak(slug)) : 0), [slug]);
+
+  /**
+   * The tableau, STATIC, behind the celebrating crowd.
+   *
+   * Static on purpose. The recap's governing decision is that nothing on it reads the match
+   * result -- the room celebrates whether you won or lost -- and a crew working through the
+   * celebration contradicts that. This shows what is built; it does not run the worksite.
+   *
+   * SCALED BY HEIGHT, which is the binding constraint: the band is 96px and in document flow,
+   * and the recap page already overflows its viewport at 390px by 246px, so making it taller
+   * to fit a bigger tableau would worsen a bug that predates the bobits entirely. The result
+   * is a small, distant skyline, which is the right register for a backdrop.
+   *
+   * `fitScale` rather than `tableauScale`: the margin minimum exists because a strip narrower
+   * than 140px beside a QUESTION COLUMN cannot hold a legible tableau and the crowd is the
+   * fallback. There is no column here and no fallback, and applying it would hide the tableau
+   * from exactly the phone players this screen exists to show it to.
+   */
+  const propsFor = useMemo(() => (
+    _t: number, _dt: number, width: number,
+  ): FieldProp[] => {
+    if (built <= 0) return [];
+    const measured = width || band.width;
+    const sideW = Math.floor(measured * STACK_FRACTION);
+    const box = { width: sideW, height: band.height };
+    const s = fitScale(box, box);
+    if (s === null) return [];
+    const color = darkMode ? '#9AA6B8' : '#4A5568';
+    const leafColor = darkMode ? '#7FB069' : '#4F7942';
+    const groundY = band.height - groundLineFromBottom();
+    return [
+      {
+        id: 'recap:tableau:left', kind: 'tableau', side: 'left', built,
+        x: originX('left', sideW, s), groundY, scale: s, color, leafColor,
+      },
+      {
+        // Drawn in the RIGHT-hand third, so its own origin is offset by everything to its left.
+        id: 'recap:tableau:right', kind: 'tableau', side: 'right', built,
+        x: (measured - sideW) + originX('right', sideW, s),
+        groundY, scale: s, color, leafColor,
+      },
+    ];
+  }, [built, band, darkMode]);
 
   const figuresFor = useMemo(() => (
     elapsed: number, _dt: number, width: number,
@@ -166,6 +231,7 @@ export function RecapCrowd({ slug, darkMode, isMobile, newBobitIds }: RecapCrowd
       <BobitField
         figures={[]}
         figuresFor={figuresFor}
+        propsFor={propsFor}
         height={band.height}
         interactive
       />

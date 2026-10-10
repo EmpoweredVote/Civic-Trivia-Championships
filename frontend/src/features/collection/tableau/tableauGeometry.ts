@@ -64,13 +64,38 @@ export function inkBox(side: StackSide): { left: number; right: number; top: num
   return { left, right, top };
 }
 
+/** How far one stack may be scaled before it outgrows a box of this size. */
+function fitsIn(side: StackSide, box: MarginBox): number[] {
+  const b = inkBox(side);
+  return [box.height / b.top, box.width / (b.right - b.left)];
+}
+
 /**
- * ONE scale for BOTH stacks.
+ * ONE scale for BOTH stacks, given a box for each.
  *
  * Per-side scaling was the obvious first move and it is wrong: the left stack tops out at 712
- * rig units and the right at 985, so scaling each to fill its own margin would draw the cabin
+ * rig units and the right at 985, so scaling each to fill its own box would draw the cabin
  * half again as large as the tree standing next to it. The two stacks are one world and they
  * agree about how big it is.
+ *
+ * The shared definition of the fit. `tableauScale` adds the margin-specific minimum width on
+ * top of it; the recap, which has no question column to sit beside and no fallback to demote
+ * to, uses it directly. Two places computing a scale separately is how the margin tree's draw
+ * and its Surfaces came to disagree by half a trunk width.
+ */
+export function fitScale(
+  leftBox: MarginBox | null, rightBox: MarginBox | null,
+): number | null {
+  const fits: number[] = [];
+  if (leftBox) fits.push(...fitsIn('left', leftBox));
+  if (rightBox) fits.push(...fitsIn('right', rightBox));
+  if (fits.length === 0) return null;
+  const scale = Math.min(...fits);
+  return finitePositive(scale) ? scale : null;
+}
+
+/**
+ * The scale for the two MARGIN canvases beside the question column.
  *
  * Returns null when there is no usable margin at all, which is the signal for "no tableau" --
  * narrow viewport, a phone, or a margin measured while its nodes were detached.
@@ -78,21 +103,7 @@ export function inkBox(side: StackSide): { left: number; right: number; top: num
 export function tableauScale(
   leftBox: MarginBox | null, rightBox: MarginBox | null,
 ): number | null {
-  const l = usable(leftBox);
-  const r = usable(rightBox);
-  if (!l && !r) return null;
-
-  const fits: number[] = [];
-  if (l) {
-    const b = inkBox('left');
-    fits.push(l.height / b.top, l.width / (b.right - b.left));
-  }
-  if (r) {
-    const b = inkBox('right');
-    fits.push(r.height / b.top, r.width / (b.right - b.left));
-  }
-  const scale = Math.min(...fits);
-  return finitePositive(scale) ? scale : null;
+  return fitScale(usable(leftBox), usable(rightBox));
 }
 
 /**
