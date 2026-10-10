@@ -18,7 +18,7 @@ import { AdminArchiveButton } from './AdminArchiveButton';
 import { CelebrationEffects } from '../../../components/animations/CelebrationEffects';
 import { DegradedBanner } from '../../../components/DegradedBanner';
 import { CollectionCrowd } from '../../collection/CollectionCrowd';
-import type { MarginBox } from '../../collection/treePlacement';
+import type { MarginBox } from '../../collection/tableau/tableauGeometry';
 import { groundLineFromBottom } from '../../collection/crowdLayout';
 import { useAuthStore } from '../../../store/authStore';
 import { useConfettiStore } from '../../../store/confettiStore';
@@ -145,7 +145,9 @@ export function GameScreen({
   const shellEl = useRef<HTMLDivElement | null>(null);
   const columnEl = useRef<HTMLDivElement | null>(null);
   const roRef = useRef<ResizeObserver | null>(null);
-  const [marginBox, setMarginBox] = useState<MarginBox | null>(null);
+  const [margins, setMargins] = useState<{ left: MarginBox | null; right: MarginBox | null }>(
+    { left: null, right: null },
+  );
 
   const measureMargin = useCallback(() => {
     const col = columnEl.current;
@@ -153,8 +155,8 @@ export function GameScreen({
     if (!col || !shell) return;
     const c = col.getBoundingClientRect();
     const sh = shell.getBoundingClientRect();
-    // A detached node measures all zeros. Publishing that would collapse the margin and
-    // silently demote the tree to its in-band fallback -- see the attach note below.
+    // A detached node measures all zeros. Publishing that would collapse the margins and
+    // silently take the tableau away mid-match -- see the attach note below.
     if (sh.width <= 0 || c.width <= 0) return;
     // The shell's rect is its BORDER box, so its bottom is outside the padding the band sits
     // inside. The band is the last flex child, so its bottom edge is the content-box bottom,
@@ -162,22 +164,29 @@ export function GameScreen({
     const cs = getComputedStyle(shell);
     const padBottom = parseFloat(cs.paddingBottom) || 0;
     const padRight = parseFloat(cs.paddingRight) || 0;
+    const padLeft = parseFloat(cs.paddingLeft) || 0;
     const floorY = sh.bottom - padBottom - groundLineFromBottom();
-    setMarginBox(prev => {
-      // To the CONTENT-box right edge, not the border-box one. The band -- and therefore the
-      // tree's canvas, which is flush with it -- lives inside this shell's `px-4 sm:px-6`.
-      // Measuring to `sh.right` overstates the margin by that padding, and since the canvas is
-      // positioned from its RIGHT edge the surplus comes off the left: the canvas would start
-      // ~24px inside the question column, which is bound 1 breached by arithmetic.
-      const width = Math.max(0, Math.round((sh.right - padRight) - c.right));
-      // Top of the content box down to the floor line. The column is the first child, so its
-      // own top IS the content top -- and the HUD shares this column, so the tree may rise
-      // past the score row without ever being over it.
-      const height = Math.max(0, Math.round(floorY - c.top));
+
+    // CONTENT box, not border box, on BOTH sides. The band -- and therefore each tableau
+    // canvas, which is flush with it -- lives inside this shell's `px-4 sm:px-6`. Measuring to
+    // `sh.right` overstates the right margin by that padding, and since that canvas is
+    // positioned from its right edge the surplus comes off its left: it would start ~24px
+    // inside the question column, which is bound 1 breached by arithmetic. The left margin has
+    // the mirror of the same trap.
+    const right = Math.max(0, Math.round((sh.right - padRight) - c.right));
+    const left = Math.max(0, Math.round(c.left - (sh.left + padLeft)));
+    // Top of the content box down to the floor line. The column is the first child, so its
+    // own top IS the content top -- and the HUD shares this column, so a stack may rise past
+    // the score row without ever being over it. Both margins share this height.
+    const height = Math.max(0, Math.round(floorY - c.top));
+
+    setMargins(prev => {
       // Same identity when nothing moved, so a ResizeObserver firing on every frame of a drag
       // does not re-render the crowd for no reason.
-      if (prev && prev.width === width && prev.height === height) return prev;
-      return { width, height };
+      const same = (a: MarginBox | null, w: number) =>
+        a !== null && a.width === w && a.height === height;
+      if (same(prev.left, left) && same(prev.right, right)) return prev;
+      return { left: { width: left, height }, right: { width: right, height } };
     });
   }, []);
 
@@ -893,9 +902,10 @@ export function GameScreen({
             // Bound 2 of the occlusion relaxation: a figure may only pass in front of the
             // question card once the answer is revealed, never while the timer is running.
             aerialAllowed={state.phase === 'revealing'}
-            // The empty strip beside the question column, measured here because this is
-            // where that column lives. CollectionCrowd does not reach up for it.
-            marginBox={marginBox}
+            // The empty strips either side of the question column, measured here because this
+            // is where that column lives. CollectionCrowd does not reach up for them.
+            leftMargin={margins.left}
+            rightMargin={margins.right}
             // Reported up to Game.tsx, which hands the set to the recap screen.
             onBobitEarned={onBobitEarned}
           />
