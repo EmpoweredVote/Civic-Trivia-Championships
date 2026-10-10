@@ -43,7 +43,6 @@ interface GameScreenProps {
    * Questions in this collection, for the crowd's 25% milestone. Null while the collection list
    * is still loading and after a failed fetch.
    */
-  collectionQuestionCount?: number | null;
   currentQuestion: Question | null;
   startGame: () => Promise<void>;
   selectAnswer: (optionIndex: number, timeRemaining?: number) => void;
@@ -71,7 +70,6 @@ interface GameScreenProps {
 
 export function GameScreen({
   state,
-  collectionQuestionCount,
   currentQuestion,
   startGame,
   selectAnswer,
@@ -898,7 +896,6 @@ export function GameScreen({
             isMobile={isMobile}
             lastAnswer={lastAnswer}
             finished5of5={finished5of5}
-            questionCount={collectionQuestionCount}
             // Bound 2 of the occlusion relaxation: a figure may only pass in front of the
             // question card once the answer is revealed, never while the timer is running.
             aerialAllowed={state.phase === 'revealing'}
