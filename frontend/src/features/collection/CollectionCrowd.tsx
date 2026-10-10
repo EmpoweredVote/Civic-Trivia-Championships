@@ -7,16 +7,21 @@ import { useAuthStore } from '../../store/authStore';
 import { useConfettiStore } from '../../store/confettiStore';
 import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
 import { createPeakStore } from './bobitPeak';
-import { treeX, TREE_GROW_SEC, treeScale } from './treePlacement';
-import type { MarginBox } from './treePlacement';
-import { treeSurfaces, marginTreeSurfaces, marginTreeX } from '../../components/bobbits/props';
-import { TreeMargin } from './TreeMargin';
-import { treeEarned } from './milestone';
+import { tableauScale, originX, stackLive } from './tableau/tableauGeometry';
+import type { MarginBox } from './tableau/tableauGeometry';
+import { tableauSurfaces } from './tableau/tableauSurfaces';
+import { linesBuilt, linesStandingOnArrival } from './tableau/tableauProgress';
+import { STRUCTURES, BLUEPRINT } from './tableau/blueprint';
+import type { TableauLine } from './tableau/blueprint';
+import {
+  buildDuration, phaseAt, crewRolesFor, siteX,
+} from './tableau/buildSequence';
+import { TableauMargin } from './tableau/TableauMargin';
 import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
 import {
-  crowdFigures, overflowCount, aerialFigures, treeFigures, sceneGroundY,
+  crowdFigures, overflowCount, aerialFigures, tableauFigures, workerFigures, sceneGroundY,
 } from './crowdFigures';
 import {
   directorInit, directorStep, startScene, canStage, castIds,
@@ -32,9 +37,9 @@ import {
 } from './crowdLayout';
 import {
   initAgents, agentsAdvance, syncCast, rotateCast, makeRand, rescaleTo, placeReleased,
-  nearestAgent, assignPerch,
+  nearestAgent, assignPerch, assignJob, releaseJob,
 } from './crowdAgents';
-import type { AgentState } from './crowdAgents';
+import type { AgentState, Activity } from './crowdAgents';
 import type { Surface } from '../../components/bobbits/fieldGeometry';
 import type { Rand } from '../../components/bobbits/wanderReducer';
 import type { CrowdBand } from './crowdLayout';
@@ -49,13 +54,6 @@ interface CollectionCrowdProps {
   /** True once the match ends with every question correct. */
   finished5of5: boolean;
   /**
-   * Questions in this collection: the 25% milestone's denominator.
-   *
-   * Null means UNKNOWN, not zero, and an unknown denominator must never earn anything -- see
-   * `treeEarned`. It is null while the collection list is in flight and after a failed fetch.
-   */
-  questionCount?: number | null;
-  /**
    * True only while an answer is revealed.
    *
    * Gates the aerial overlay. Nothing may pass in front of the question card while the timer
@@ -64,12 +62,13 @@ interface CollectionCrowdProps {
    */
   aerialAllowed?: boolean;
   /**
-   * The empty strip beside the question column, measured by GameScreen.
+   * The empty strips either side of the question column, measured by GameScreen.
    *
-   * GameScreen owns that column, so GameScreen measures it -- this component does not reach
+   * GameScreen owns that column, so GameScreen measures them -- this component does not reach
    * up into its parent's layout. Null until the first measurement, and ignored on mobile.
    */
-  marginBox?: MarginBox | null;
+  leftMargin?: MarginBox | null;
+  rightMargin?: MarginBox | null;
   /**
    * Fired once for each bobit the player EARNS in this session -- a correct answer to a
    * question this collection had not already given him.
@@ -138,7 +137,7 @@ function castFromRoom(
 
 export function CollectionCrowd({
   slug, darkMode, isMobile, lastAnswer, finished5of5, aerialAllowed = false,
-  questionCount = null, marginBox = null, onBobitEarned,
+  leftMargin = null, rightMargin = null, onBobitEarned,
 }: CollectionCrowdProps) {
   const reducedMotion = useReducedMotion();
   // Resize-aware rather than a one-off window.innerHeight read: the overlay's height is a
@@ -174,39 +173,46 @@ export function CollectionCrowd({
   ));
   const [overflow, setOverflow] = useState(0);
   /**
-   * Whether this collection has earned its tree. State rather than a ref, because the tree
-   * arriving has to cause a render -- the prop list is rebuilt from it.
-   */
-  const [earned, setEarned] = useState(false);
-  const earnedRef = useRef(false);
-  /**
-   * Seconds the tree has been growing, starting at FULL HEIGHT.
+   * Lines of the tableau standing, from the high-water mark.
    *
-   * Growing is for the moment the milestone is earned, and for that moment only. Starting this
-   * at zero would sprout the tree out of the floor every time the game screen mounted, so a
-   * player who earned it weeks ago would watch it grow again on every match.
-   */
-  const growRef = useRef(TREE_GROW_SEC);
-  /**
-   * Has the milestone been evaluated for this collection with a REAL denominator yet?
+   * A ref, not state: the canvases read it per frame through `builtFor`, and a value that
+   * crossed a prop boundary would be frozen at the last React render while the room advances
+   * on the rAF clock. That is exactly how the tree's sprout once stalled part-grown.
    *
-   * Without this, the first evaluation that finds the tree earned looks exactly like earning
-   * it: `earnedRef` starts false, so "false -> true" fires for a player who crossed 25% weeks
-   * ago. And it cannot simply be "the first call", because the first call almost always runs
-   * with `questionCount` still null from its fetch.
+   * No `earned` latch and no `grow` clock any more. The tree had both because it arrived whole
+   * at a threshold; the tableau arrives a line at a time and `linesBuilt` is the whole of it.
    */
-  const milestoneSettledRef = useRef(false);
-  /** The milestone set piece is a one-off; a re-render must not restage it. */
-  const milestoneFiredRef = useRef(false);
+  const builtRef = useRef(0);
   /**
-   * The tree's branch, or nothing. Recomputed each frame: the band's measured width changes
-   * with the viewport and the trunk moves with it, so a Surface cached at mount would leave a
+   * Which structure was complete last time we looked, so completing one can be celebrated.
+   *
+   * -1 rather than 0 so that "nothing finished yet" is distinguishable from "the cabin is
+   * finished", and so a seed can set it without firing a ceremony for work done weeks ago.
+   */
+  const lastStructureRef = useRef(-1);
+  /**
+   * How many lines the player has actually WATCHED go up, and the line in flight.
+   *
+   * `shownRef` is seeded to whatever was already earned when the collection opens, so a
+   * returning player finds his tableau standing rather than watching fifteen build sequences
+   * run back to back for three and a half minutes of a match in which he earned none of them.
+   * Only lines earned on camera are built on camera.
+   */
+  const shownRef = useRef(0);
+  const shownSlugRef = useRef<string | null>(null);
+  const siteRef = useRef<{ n: number; t: number } | null>(null);
+  /** Resolved once per frame from `siteRef`, so the figures and the canvases cannot disagree. */
+  const siteForRef = useRef<{ line: TableauLine; t: number } | null>(null);
+  /**
+   * Each stack's climbable surfaces, in ITS canvas's coordinates. Recomputed each frame: the
+   * measured margins change with the viewport, so a Surface cached at mount would leave a
    * perched bobit sitting in mid-air after a resize.
    */
-  const surfacesRef = useRef<Surface[]>([]);
-  /** The tree canvas's figures, published from the frame loop for TreeMargin to paint. */
-  const treeFiguresRef = useRef<FieldFigure[]>([]);
-  useEffect(() => { earnedRef.current = earned; }, [earned]);
+  const leftSurfacesRef = useRef<Surface[]>([]);
+  const rightSurfacesRef = useRef<Surface[]>([]);
+  /** Each margin canvas's figures, published from the frame loop for TableauMargin to paint. */
+  const leftFiguresRef = useRef<FieldFigure[]>([]);
+  const rightFiguresRef = useRef<FieldFigure[]>([]);
   /**
    * Forces a repaint of the band when it is NOT animating.
    *
@@ -230,16 +236,16 @@ export function CollectionCrowd({
   const height = band.height;
 
   /**
-   * How big the margin tree is, or null for "no room -- use the in-band one".
+   * How big the tableau is, or null for "no room -- no tableau at all".
    *
-   * Mobile is null unconditionally: a phone band has no strip beside it to stand a tree in.
+   * ONE scale for both stacks, so the cabin is not drawn larger than the tree beside it. Mobile
+   * is null unconditionally: a phone has no strips beside the question column to build in, and
+   * the spec sends it to the crowd celebration instead.
    */
-  const marginScale = useMemo(
-    () => (isMobile ? null : treeScale(marginBox ?? null)),
-    [marginBox, isMobile],
+  const scale = useMemo(
+    () => (isMobile ? null : tableauScale(leftMargin ?? null, rightMargin ?? null)),
+    [leftMargin, rightMargin, isMobile],
   );
-  /** True when the tree lives in the margin; false means the in-band fallback. */
-  const inMargin = earned && marginScale !== null && marginBox !== null;
 
   /**
    * Mirrored for the frame loop, in LAYOUT effects rather than passive ones.
@@ -248,47 +254,65 @@ export function CollectionCrowd({
    * figures against the previous frame's geometry. That is the same fix the aerial gate needed
    * after it was found leaving the sky open for a frame past the end of a reveal.
    */
-  const marginBoxRef = useRef<MarginBox | null>(marginBox);
-  const marginScaleRef = useRef<number | null>(marginScale);
-  useLayoutEffect(() => { marginBoxRef.current = marginBox ?? null; }, [marginBox]);
-  useLayoutEffect(() => { marginScaleRef.current = marginScale; }, [marginScale]);
+  const leftBoxRef = useRef<MarginBox | null>(leftMargin);
+  const rightBoxRef = useRef<MarginBox | null>(rightMargin);
+  const scaleRef = useRef<number | null>(scale);
+  useLayoutEffect(() => { leftBoxRef.current = leftMargin ?? null; }, [leftMargin]);
+  useLayoutEffect(() => { rightBoxRef.current = rightMargin ?? null; }, [rightMargin]);
+  useLayoutEffect(() => { scaleRef.current = scale; }, [scale]);
 
   /**
-   * Tell the latch how many bobits the room holds, and recompute.
+   * Tell the latch how many bobits the room holds, and recompute what is standing.
    *
    * Called wherever the resident list changes -- the seed, and every answer. Recording is
-   * monotonic, so calling it with a smaller number after a loss is a no-op by design.
+   * monotonic, so calling it with a smaller number after a loss is a no-op by design: a house
+   * that un-builds itself when you miss a question punishes twice and reads as a bug.
+   *
+   * `questionCount` is no longer read at all. The tableau is driven by an absolute bobit count,
+   * which deletes a whole failure mode -- the tree earned nothing while the denominator was
+   * still in flight, and needed a `settled` latch to tell "inherited" from "just happened".
    */
   const syncMilestone = useCallback((slugNow: string | null) => {
-    if (!slugNow) { setEarned(false); return; }
+    if (!slugNow) { builtRef.current = 0; lastStructureRef.current = -1; return; }
     peakStore.record(slugNow, stateRef.current.residents.length);
-    const qc = questionCount ?? null;
-    const nowEarned = treeEarned(peakStore.peak(slugNow), qc);
-    // Sprout only when the milestone is crossed while the player is WATCHING. The first
-    // evaluation against a real denominator reports a state we inherited, not an event.
-    const crossedLive = nowEarned && !earnedRef.current && milestoneSettledRef.current;
+    builtRef.current = linesBuilt(peakStore.peak(slugNow));
+
+    // Under reduced motion there is no worksite to advance `shownRef`, so it is snapped to
+    // what has been earned and the line simply APPEARS. Reconciliation happens either way --
+    // only MOTION is skipped -- and without this the tableau would stop growing entirely for
+    // an accessible player, which is not the same thing as not animating.
+    if (reducedMotion) {
+      shownRef.current = builtRef.current;
+      siteRef.current = null;
+    }
+
+    // First look at THIS collection: everything already earned is already standing, and no
+    // build is owed for it. Keyed on the slug so switching collections re-seeds rather than
+    // carrying one room's progress into another's.
+    if (shownSlugRef.current !== slugNow) {
+      shownSlugRef.current = slugNow;
+      shownRef.current = linesStandingOnArrival(peakStore.peak(slugNow));
+      siteRef.current = null;
+    }
+
+    // A COMPLETED STRUCTURE is the moment worth marking. The tree had one ceremony because it
+    // had one threshold; the tableau has six, which is the same promise kept more often. On a
+    // phone, where there is no tableau to watch, this is the only sign that anything happened
+    // -- cutting it would leave a phone player with nothing but pool entrances.
+    const done = STRUCTURES.filter(s => s.to <= builtRef.current).length - 1;
+    const crossedLive = done > lastStructureRef.current && lastStructureRef.current >= 0;
+    lastStructureRef.current = Math.max(lastStructureRef.current, done);
     if (crossedLive && !reducedMotion) {
-      growRef.current = 0;
-      // The ceremony belongs to the moment it is earned. A player who arrives already past 25%
-      // gets the tree without it, which is correct rather than a shortfall.
-      if (!milestoneFiredRef.current) {
-        milestoneFiredRef.current = true;
-        const w = laidOutAtRef.current || band.width;
-        // A phone gets the crowd's version: no tree to gather around, so the room celebrates
-        // instead. Cutting the milestone along with the tree would leave a phone player with
-        // nothing but pool entrances for the rest of a collection.
-        const scene = isMobile ? TREE_MILESTONE_MOBILE : TREE_MILESTONE;
-        if (canStage(directorRef.current, scene.span, w)) {
-          directorRef.current = startScene(
-            directorRef.current, scene, `milestone-${Date.now()}`, w, randRef.current,
-            castFromRoom(directorRef.current, agentsRef.current, scene, w, ''),
-          );
-        }
+      const w = laidOutAtRef.current || band.width;
+      const scene = isMobile ? TREE_MILESTONE_MOBILE : TREE_MILESTONE;
+      if (canStage(directorRef.current, scene.span, w)) {
+        directorRef.current = startScene(
+          directorRef.current, scene, `milestone-${Date.now()}`, w, randRef.current,
+          castFromRoom(directorRef.current, agentsRef.current, scene, w, ''),
+        );
       }
     }
-    if (qc !== null) milestoneSettledRef.current = true;
-    setEarned(nowEarned);
-  }, [questionCount, reducedMotion, band, isMobile]);
+  }, [reducedMotion, band, isMobile]);
 
 
   // Seed from storage whenever the collection -- or the driver behind it -- changes.
@@ -319,9 +343,11 @@ export function CollectionCrowd({
       // A returning player's bobits are already standing there. Seeding must never fire the
       // entrances -- forty owned questions would otherwise mean forty cannon shots on load.
       directorRef.current = directorInit();
-      growRef.current = TREE_GROW_SEC;
-      milestoneSettledRef.current = false;
-      milestoneFiredRef.current = false;
+      // Everything already earned is already STANDING, and no ceremony is owed for it. -1 is
+      // "not looked yet", so the first syncMilestone below records where this collection
+      // starts rather than celebrating six structures a returning player built weeks ago.
+      lastStructureRef.current = -1;
+      shownSlugRef.current = null;          // force syncMilestone to re-seed what is standing
       setOverflow(overflowCount(stateRef.current));
       syncMilestone(slug);
       repaint();
@@ -384,9 +410,11 @@ export function CollectionCrowd({
   // 2 is the one that says nothing may cross the card while the timer runs.
   useLayoutEffect(() => { allowAirRef.current = aerialAllowed; }, [aerialAllowed]);
 
-  // questionCount arrives from a fetch, so the first evaluation almost always happens with it
-  // null. Re-run when it lands, or a player at 30 of 120 would never see the tree this session.
-  useEffect(() => { syncMilestone(slug ?? null); }, [slug, questionCount, syncMilestone]);
+  // No `questionCount` dependency any more: the tableau is driven by an absolute bobit count,
+  // so there is no denominator to wait on. That removed the re-run this effect used to need
+  // when the collection fetch landed -- and with it the whole "settled" latch that existed to
+  // tell an inherited milestone from one just crossed.
+  useEffect(() => { syncMilestone(slug ?? null); }, [slug, syncMilestone]);
 
   // Dev replay. The set pieces fire once per collection EVER, so there is otherwise no way to
   // see one twice -- not for building them, and not for reviewing them. That is why the spec
@@ -424,15 +452,24 @@ export function CollectionCrowd({
     // than a still one, which is not the same thing and is not what the spec asks for.
     const measured = width || band.width;
     /**
-     * ONE read of the tree's geometry per frame, feeding the surfaces, the perch assignment and
-     * all three figure lists.
+     * ONE read of the tableau's geometry per frame, feeding the surfaces, the perch assignment
+     * and all three figure lists.
      *
-     * Read here rather than at each use for the same reason the aerial gate is: three readers
-     * that each fetch their own copy can disagree about a frame, and the partition between the
+     * Read here rather than at each use for the same reason the aerial gate is: readers that
+     * each fetch their own copy can disagree about a frame, and the partition between the
      * canvases only holds while they agree.
      */
-    const mScale = marginScaleRef.current;
-    const mBox = marginBoxRef.current;
+    const s = scaleRef.current;
+    const lBox = leftBoxRef.current;
+    const rBox = rightBoxRef.current;
+    // STANDING, not earned. A seat on a line the crew is still dragging across the floor is
+    // the "Surface whose wood has not arrived" failure `tableauSurfaces` exists to prevent --
+    // a bobit sent to it hangs in mid-air beside it.
+    const built = shownRef.current;
+    // ONE predicate for "is this stack live", shared by the surfaces, the worksite, the
+    // figure lists and the mount below. Four expressions that had to agree is how a canvas
+    // came to be handed bobits it was never going to draw.
+    const live = { left: stackLive(lBox, s), right: stackLive(rBox, s) };
     if (laidOutAtRef.current && measured !== laidOutAtRef.current) {
       agentsRef.current = rescaleTo(agentsRef.current, laidOutAtRef.current, measured);
       laidOutAtRef.current = measured;
@@ -448,22 +485,19 @@ export function CollectionCrowd({
 
       directorRef.current = directorStep(directorRef.current, dt, sceneGroundY(band), band.scale);
 
-      if (earnedRef.current) growRef.current = Math.min(TREE_GROW_SEC, growRef.current + dt);
-
-      // In the coordinate system of whichever canvas holds them. The margin tree's branches are
-      // the TREE canvas's; the in-band fallback's one branch is the BAND's. An agent's perchId
-      // belongs to exactly one list, which is what `onTheTree` partitions on.
-      // NOTHING to sit on until the tree has finished growing. The branches are DRAWN at
-      // `grow` height while the Surfaces are computed at full height, so during the 3s sprout
-      // the two disagree -- and a bobit placed on a Surface hangs in the air above a branch
-      // that has not reached him yet. Seen in a screenshot of a real milestone: three figures
-      // floating beside a half-grown tree.
-      const grown = growRef.current >= TREE_GROW_SEC;
-      surfacesRef.current = !earnedRef.current || isMobile || !grown
-        ? []
-        : mScale !== null && mBox !== null
-          ? marginTreeSurfaces(marginTreeX(mBox.width, mScale), mBox.height, mScale)
-          : treeSurfaces(treeX(measured, band.scale), sceneGroundY(band), band.scale);
+      // In the coordinate system of whichever canvas holds them. An agent's perchId belongs to
+      // exactly one list, which is what `canvasOf` partitions on.
+      //
+      // Only BUILT lines offer a seat. `tableauSurfaces` enforces that, and it is the same
+      // rule the tree learned the hard way: a bobit placed on a Surface whose wood has not
+      // arrived hangs in mid-air beside it, which a screenshot of a real milestone caught
+      // three figures doing.
+      leftSurfacesRef.current = live.left && s !== null && lBox !== null
+        ? tableauSurfaces('left', built, originX('left', lBox.width, s), lBox.height, s)
+        : [];
+      rightSurfacesRef.current = live.right && s !== null && rBox !== null
+        ? tableauSurfaces('right', built, originX('right', rBox.width, s), rBox.height, s)
+        : [];
 
       // An agent the director owns is held exactly as a greeting one is: wanderAdvance must
       // not walk somebody a scene is choreographing, or the two fight over his position.
@@ -491,16 +525,79 @@ export function CollectionCrowd({
 
       agentsRef.current = agentsAdvance(agentsRef.current, dt, opts);
 
+      // ── THE WORKSITE ──────────────────────────────────────────────────────────────────
+      //
+      // Its own clock, not the game's: the crew keeps working while the timer runs, which is
+      // what makes the margin a place rather than an event. One line at a time, in blueprint
+      // order, so a player who earns four bobits at once watches them go up in sequence.
+      //
+      // AFTER the advance, for the same reason `assignPerch` is: a bobit released from a
+      // scene or finishing a walk is eligible this frame rather than next.
+      if (siteRef.current === null) {
+        const next = shownRef.current < builtRef.current
+          ? BLUEPRINT[shownRef.current]
+          : null;
+        // No crew for a stack nobody can see. Without this the worksite still ran on a phone
+        // -- claiming two or three of the player's bobits every four he earned, routing them
+        // to a canvas that is not mounted, and silently thinning the crowd for fourteen
+        // seconds at a time.
+        if (next && live[next.side]) {
+          // BAND coordinates. The joint is in a margin canvas's box, which is a different one
+          // -- handing `assignJob` a canvas x walks the crew into the question column.
+          const after = assignJob(
+            agentsRef.current, `job:${next.side}:${next.n}`, crewRolesFor(next),
+            siteX(next.side, measured), opts,
+          );
+          // All or nothing. If the room could not spare a crew this frame, try again next:
+          // a half-cast crew is a beam raising itself with one bobit watching.
+          if (after !== agentsRef.current) {
+            agentsRef.current = after;
+            siteRef.current = { n: next.n, t: 0 };
+          }
+        }
+      } else {
+        const line = BLUEPRINT[siteRef.current.n - 1];
+        const t = siteRef.current.t + dt;
+        if (t >= buildDuration(line)) {
+          agentsRef.current = releaseJob(agentsRef.current, `job:${line.side}:${line.n}`);
+          shownRef.current = line.n;
+          siteRef.current = null;
+        } else {
+          siteRef.current = { n: siteRef.current.n, t };
+          // The crew's ACTIVITY follows the phase, so `agentAnim` stays meaningful and
+          // `canvasOf` keeps them on their own stack for the whole job.
+          const { phase } = phaseAt(line, t);
+          const activity: Activity = phase === 'raise' ? 'raising'
+            : phase === 'lash' || phase === 'curl' ? 'lashing'
+            : 'hauling';
+          const jobId = `job:${line.side}:${line.n}`;
+          let next = agentsRef.current;
+          for (const id of Object.keys(next)) {
+            const a = next[id];
+            if (a.jobId !== jobId || a.activity === 'moving' || a.activity === activity) {
+              continue;
+            }
+            next = { ...next, [id]: { ...a, activity } };
+          }
+          agentsRef.current = next;
+        }
+      }
+
       // After the advance, so a bobit who has just been released from a scene or finished a
-      // move is eligible this frame rather than next. A no-op while the branch is claimed.
-      if (surfacesRef.current.length > 0) {
-        // The floor the climb starts from, in the same coordinates as the Surfaces: the margin
-        // canvas's own height when the tree is there, the band's own ground line when it is not.
-        // NOT derivable from the band -- the two floors are ~868 and 90.
-        const floorY = mScale !== null && mBox !== null
-          ? mBox.height
-          : sceneGroundY(band);
-        agentsRef.current = assignPerch(agentsRef.current, surfacesRef.current, opts, floorY);
+      // move is eligible this frame rather than next. A no-op while every seat is claimed.
+      //
+      // Each stack is assigned SEPARATELY, because the floor a climb starts from is that
+      // canvas's own height and the two canvases are not the same box. Not derivable from the
+      // band either -- a margin floor is ~868 where the band's is 90.
+      if (leftSurfacesRef.current.length > 0 && lBox !== null) {
+        agentsRef.current = assignPerch(
+          agentsRef.current, leftSurfacesRef.current, opts, lBox.height,
+        );
+      }
+      if (rightSurfacesRef.current.length > 0 && rBox !== null) {
+        agentsRef.current = assignPerch(
+          agentsRef.current, rightSurfacesRef.current, opts, rBox.height,
+        );
       }
     }
 
@@ -523,68 +620,92 @@ export function CollectionCrowd({
       setAerial({ figures: air, dx, dy });
     }
 
-    // The THIRD canvas, published from this SAME pass. Not a second read of the geometry: the
-    // three lists partition every agent between them, and a partition only holds if every side
+    // The MARGIN canvases, published from this SAME pass. Not a second read of the geometry:
+    // the lists partition every agent between them, and a partition only holds if every side
     // is answering the same question. An airborne bobit was once painted on two canvases for a
     // whole flight because the band read a ref while the render read a prop.
-    const bandSurfaces = mScale !== null && mBox !== null ? [] : surfacesRef.current;
-    const treeCanvasSurfaces = mScale !== null && mBox !== null ? surfacesRef.current : [];
-    treeFiguresRef.current = treeFigures(
-      stateRef.current, agentsRef.current, band, darkMode, treeCanvasSurfaces, mScale,
-    );
+    const lSurf = leftSurfacesRef.current;
+    const rSurf = rightSurfacesRef.current;
+    // The line under construction, resolved ONCE and read by both the figures below and the
+    // canvases' `siteFor`. Two readers fetching it separately could disagree about a frame,
+    // which is the whole reason this pass exists.
+    const site = siteRef.current === null
+      ? null
+      : { line: BLUEPRINT[siteRef.current.n - 1], t: siteRef.current.t };
+    siteForRef.current = site;
 
+    leftFiguresRef.current = [
+      ...tableauFigures(
+        stateRef.current, agentsRef.current, band, darkMode, 'left', lSurf, rSurf, s, live,
+      ),
+      ...(!live.left || lBox === null ? [] : workerFigures(
+        agentsRef.current, band, darkMode, 'left', site,
+        s === null ? 0 : originX('left', lBox.width, s), lBox.height, s, live,
+      )),
+    ];
+    rightFiguresRef.current = [
+      ...tableauFigures(
+        stateRef.current, agentsRef.current, band, darkMode, 'right', lSurf, rSurf, s, live,
+      ),
+      ...(!live.right || rBox === null ? [] : workerFigures(
+        agentsRef.current, band, darkMode, 'right', site,
+        s === null ? 0 : originX('right', rBox.width, s), rBox.height, s, live,
+      )),
+    ];
+
+    // The band owns no surfaces now: everything climbable belongs to a margin. The parameter
+    // stays until the in-band fallback tree is retired with the rest of it.
     return crowdFigures(
       stateRef.current, agentsRef.current, band, darkMode, directorRef.current,
-      allowAir, bandSurfaces, treeCanvasSurfaces,
+      allowAir, [], lSurf, rSurf, live,
     );
   }, [band, darkMode, reducedMotion, isMobile]);
 
   // Props and effects come straight off the director. Stable identities so BobitField's refs
   // are not rebuilt every render.
   /**
-   * The director's set pieces PLUS the room's own permanent scenery.
+   * The director's set pieces. Scene-owned and transient -- a cannon leaves with the scene
+   * that placed it.
    *
-   * The cannon is scene-owned and transient -- it leaves with the scene that placed it. The
-   * tree is room-owned and persistent, which is why it is concatenated here rather than being
-   * a Scene beat: a scene would end and take it away again.
+   * The tableau is NOT here: it is room-owned, persistent, and lives on its own canvases in
+   * the margins. That is the same reason the tree was never a Scene beat -- a scene would end
+   * and take the scenery away with it.
    */
   const propsFor = useMemo(() => (): FieldProp[] => {
     // Light barrel on a dark ground and vice versa. A fixed dark cannon was invisible in dark
     // mode -- it read as a smudge on the floor rather than as the joke it is.
     const color = darkMode ? '#9AA6B8' : '#4A5568';
-    const out: FieldProp[] = directorRef.current.props.map(p => ({
+    return directorRef.current.props.map(p => ({
       id: p.id, kind: p.kind, x: p.x, groundY: p.groundY, scale: band.scale,
       flip: p.flip, angle: p.angle, color,
     }));
-    // Desktop only, and only when there is no room for the MARGIN tree -- otherwise this is
-    // the fallback and TreeMargin is drawing the real thing. Two trees on one page is the
-    // failure mode to watch for here.
-    if (earnedRef.current && !isMobile && marginScaleRef.current === null) {
-      out.push({
-        id: 'room:tree',
-        kind: 'tree',
-        x: treeX(laidOutAtRef.current || band.width, band.scale),
-        groundY: sceneGroundY(band),
-        scale: band.scale,
-        grow: growRef.current / TREE_GROW_SEC,
-        color,
-      });
-    }
-    return out;
-  }, [band, darkMode, isMobile]);
+  }, [band, darkMode]);
 
   const effectsFor = useMemo(() => (): FieldEffect[] => directorRef.current.effects, []);
   /**
-   * The tree canvas's figures, read from the ref the frame loop fills.
+   * Each margin canvas's figures, and how much is standing, read from the refs the frame loop
+   * fills.
    *
-   * Stable identity, and a REF read rather than state: BobitField calls the band's
-   * `figuresFor` first, which is what publishes this, so by the time the tree canvas paints
+   * Stable identities, and REF reads rather than state: BobitField calls the band's
+   * `figuresFor` first, which is what publishes these, so by the time a margin canvas paints
    * it is reading the current frame rather than the previous one -- the same arrangement
    * `propsFor` already uses for the director's props.
    */
-  const treeFiguresForCanvas = useMemo(() => (): FieldFigure[] => treeFiguresRef.current, []);
-  /** The sprout's progress, read per frame for the same reason the figures are. */
-  const growForCanvas = useMemo(() => (): number => growRef.current / TREE_GROW_SEC, []);
+  const leftFiguresForCanvas = useMemo(() => (): FieldFigure[] => leftFiguresRef.current, []);
+  const rightFiguresForCanvas = useMemo(() => (): FieldFigure[] => rightFiguresRef.current, []);
+  /**
+   * What is STANDING, which is `shownRef` -- not `builtRef`.
+   *
+   * `builtRef` is what the player has EARNED: the target the worksite walks toward. A line
+   * becomes earned the instant an answer is revealed and takes fourteen seconds to go up, so
+   * drawing from `builtRef` would put the finished line on screen immediately and then have a
+   * crew haul a second copy of it into the same spot. The two counters are different
+   * questions and only one of them is "what is up".
+   */
+  const builtForCanvas = useMemo(() => (): number => shownRef.current, []);
+  const siteForCanvas = useMemo(
+    () => (): { line: TableauLine; t: number } | null => siteForRef.current, [],
+  );
 
   if (!slug) return null;
 
@@ -626,18 +747,37 @@ export function CollectionCrowd({
           />
         </div>
       )}
-      {/* The tree, in the margin.
-          Mounted before the floor line and the band so it paints BEHIND both: the trunk rises
+      {/* The tableau, one stack per margin.
+          Mounted before the floor line and the band so they paint BEHIND both: a trunk rises
           out of the same ground the crowd walks on, and a bobit at the foot of it passes in
-          front rather than behind. Its box can never overlap the question column -- see
-          TreeMargin, and the bound-1 test in marginTree.test.ts. */}
-      {inMargin && marginBox && (
-        <TreeMargin
-          box={marginBox}
-          scale={marginScale as number}
-          growFor={growForCanvas}
+          front rather than behind. Neither box can ever overlap the question column -- see
+          TableauMargin, and the bound-1 test in tableauGeometry.test.ts.
+
+          Each side is gated on ITS OWN width, not on the shared scale alone: an asymmetric
+          layout can leave one margin usable and the other too narrow, and the wide side should
+          still get its stack. */}
+      {scale !== null && leftMargin && stackLive(leftMargin, scale) && (
+        <TableauMargin
+          side="left"
+          box={leftMargin}
+          scale={scale}
           darkMode={darkMode}
-          figuresFor={treeFiguresForCanvas}
+          builtFor={builtForCanvas}
+          siteFor={siteForCanvas}
+          figuresFor={leftFiguresForCanvas}
+          repaintKey={repaintKey}
+        />
+      )}
+      {scale !== null && rightMargin && stackLive(rightMargin, scale) && (
+        <TableauMargin
+          side="right"
+          box={rightMargin}
+          scale={scale}
+          darkMode={darkMode}
+          builtFor={builtForCanvas}
+          siteFor={siteForCanvas}
+          figuresFor={rightFiguresForCanvas}
+          repaintKey={repaintKey}
         />
       )}
       {/* The floor.

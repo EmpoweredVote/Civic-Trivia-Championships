@@ -183,8 +183,7 @@ The mock's collection has `questionCount: 120`, so the 25% milestone is 30 resid
 
 | Script | What it answers |
 |---|---|
-| `bobit-tree.mjs` | the margin tree at 1920/1440/1280/1024 × both themes, plus a climb strip |
-| `bobit-milestone.mjs` | drives a REAL 25% crossing — does it sprout, is anybody floating, are the admirers under the trunk |
+| `bobit-tableau.mjs` | the tableau at every build state × widths × both themes, plus a curl strip. Takes TABLEAU_WIDTHS / TABLEAU_THEMES / TABLEAU_STATES / TABLEAU_SETTLE |
 | `bobit-recap.mjs` | the recap crowd at four widths × both themes × rosters either side of the cap, **and the scroll measurement** |
 | `bobit-scenes.mjs` | contact sheets for the entrances |
 | `bobit-props.mjs` | every prop at the 0.2 scale the player sees it, both themes |

@@ -23,7 +23,13 @@ import type { CrowdBand } from './crowdLayout';
  * there and back: the vertical half of the same promise. Going straight from `moving` to
  * `perch` is a teleport, and at the margin tree's 600px it is a visible one.
  */
-export type Activity = 'wander' | 'rank' | 'moving' | 'climbing' | 'descending' | 'perch';
+export type Activity =
+  | 'wander' | 'rank' | 'moving' | 'climbing' | 'descending' | 'perch'
+  // The worksite. A bobit hauling a line in, heaving it upright, or lashing it on.
+  | 'hauling' | 'raising' | 'lashing';
+
+/** What one worker does on a job. A line needs two or three of these. */
+export type JobRole = 'hauler' | 'steadier' | 'lasher';
 
 export interface Agent extends Wanderer {
   /** 0 = front of the stage (nearest), 1 = back. */
@@ -60,6 +66,21 @@ export interface Agent extends Wanderer {
   climbToY?: number;
   climbFromX?: number;
   climbToX?: number;
+  /**
+   * The line this agent is building, as `job:<side>:<n>`.
+   *
+   * Claimed the instant he sets off walking to the site -- the same discipline `perchId` uses
+   * for a branch, and for the same reason: two jobs must never recruit the same bobit. Held
+   * until `releaseJob`.
+   *
+   * It CARRIES ITS SIDE because `canvasOf` has no other way to know which stack a worker is
+   * on. A line under construction has no Surface yet, so there is no list to look him up in,
+   * and a partition that has to guess is not a partition.
+   */
+  jobId?: string;
+  jobRole?: JobRole;
+  /** Seconds this agent has been on the job. */
+  jobT?: number;
 }
 
 export type AgentState = Record<string, Agent>;
@@ -301,6 +322,63 @@ export function assignPerch(
   };
 }
 
+/**
+ * Cast a crew for one line.
+ *
+ * ALL OR NOTHING. A half-cast crew means a beam raising itself with one bobit watching, which
+ * reads as a bug rather than as a short-handed site -- so if there are not enough idle bobits
+ * the job simply does not start this frame and tries again next.
+ *
+ * Claimed with exactly the discipline `assignPerch` uses for a branch: the claim lands the
+ * instant they set off walking, which is what stops two jobs recruiting the same bobit, and it
+ * is held until `releaseJob`. The failure mode of releasing early is already understood here:
+ * a branch released early gets two occupants.
+ *
+ * They WALK to the site. "No bobit ever teleports" is the one rule the spec restates as
+ * load-bearing, and at a tableau's height a teleport is a very visible one.
+ */
+export function assignJob(
+  state: AgentState, jobId: string, roles: readonly JobRole[], atX: number, opts: AgentOpts,
+): AgentState {
+  const free = Object.keys(state)
+    .filter(id => state[id].activity === 'wander' && !state[id].perchId && !state[id].jobId)
+    .sort();
+  if (free.length < roles.length) return state;
+
+  // Nearest first, so the crew that turns up is the one that was already standing there.
+  const picked = [...free]
+    .sort((a, b) => Math.abs(state[a].x - atX) - Math.abs(state[b].x - atX))
+    .slice(0, roles.length);
+
+  const out = { ...state };
+  picked.forEach((id, i) => {
+    out[id] = {
+      ...startMove(state[id], atX, 0, opts),
+      jobId,
+      jobRole: roles[i],
+      jobT: 0,
+    };
+  });
+  return out;
+}
+
+/** Hand the whole crew back to the floor. Only called when the line is permanent. */
+export function releaseJob(state: AgentState, jobId: string): AgentState {
+  let out: AgentState | null = null;
+  for (const id of Object.keys(state)) {
+    if (state[id].jobId !== jobId) continue;
+    out ??= { ...state };
+    out[id] = {
+      ...state[id],
+      activity: 'wander',
+      jobId: undefined,
+      jobRole: undefined,
+      jobT: undefined,
+    };
+  }
+  return out ?? state;
+}
+
 export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): AgentState {
   if (opts.frozen) return state;
 
@@ -330,6 +408,15 @@ export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): A
 
     if (a.activity === 'rank') {
       out[id] = a;
+      continue;
+    }
+
+    // On the worksite. Position and pose both come from the build sequence, which reads the
+    // same clock this advances -- so nothing here touches `x`. Held out of `wanderAdvance`
+    // for the same reason a director's cast is: two writers fighting over one position is how
+    // a figure comes to be in two places at once.
+    if (a.activity === 'hauling' || a.activity === 'raising' || a.activity === 'lashing') {
+      out[id] = { ...a, jobT: (a.jobT ?? 0) + dt };
       continue;
     }
 
@@ -402,7 +489,13 @@ export function agentsAdvance(state: AgentState, dt: number, opts: AgentOpts): A
         // to be placed on it outright, which at the in-band tree's 50px looked like a step and
         // at the margin tree's 600 is a figure blinking into the canopy.
         // Otherwise: targetDepth 1 is the ranks, anything shallower a return to the stage.
-        activity: a.perchId ? 'climbing' : (a.targetDepth >= 1 ? 'rank' : 'wander'),
+        // A bobit who set off for a JOB starts work now that he is standing at the site. The
+        // build sequence takes over his position from here, and `canvasOf` hands him to his
+        // stack's canvas -- continuous, because that canvas's floor is this same floor line.
+        activity: a.jobId
+          ? 'hauling'
+          : a.perchId ? 'climbing' : (a.targetDepth >= 1 ? 'rank' : 'wander'),
+        jobT: a.jobId ? 0 : a.jobT,
         perchT: a.perchId ? undefined : a.perchT,
         climbT: a.perchId ? 0 : a.climbT,
         moveT: a.moveDur,
@@ -452,6 +545,13 @@ export function agentAnim(a: Agent): string {
   // point. A seated pose on a beat that leaves the ground draws the figure 104 units from where
   // it was put, and that trap has now been recorded four times in this feature.
   if (a.activity === 'climbing' || a.activity === 'descending') return 'climb';
+  // The worksite. Chosen by what each frame function DOES, never by name: `hefty` is the heavy
+  // haul with a measured sag onto the weight-bearing leg, `heave` a straight-back hinge that
+  // folds deep and lifts. Both are standing poses, which is what a figure positioned from a
+  // ground line needs. A fallback only -- `crewAt` overrides these per role and phase.
+  if (a.activity === 'hauling') return 'hefty';
+  if (a.activity === 'raising') return 'heave';
+  if (a.activity === 'lashing') return 'climb';
   if (a.activity === 'rank') return 'standstill';
   if (a.activity === 'moving') return 'stroll';
   return a.phase === 'walk' ? 'stroll' : 'standstill';

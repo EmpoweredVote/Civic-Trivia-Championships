@@ -5,7 +5,7 @@ import type { Scene } from './types';
  * 25% of a collection: the tree arrives.
  *
  * The TREE IS NOT IN THIS SCENE. It is room-owned and grows on its own clock the moment the
- * milestone latches (see treePlacement.TREE_GROW_SEC), because a permanent structure has no
+ * milestone latches, because a permanent structure has no
  * business inside a transient Scene -- the scene would end and take it away again, the way a
  * cannon leaves with its shot.
  *

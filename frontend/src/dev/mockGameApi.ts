@@ -17,8 +17,12 @@
  *
  * Options:
  *   &owned=0..100   how many bobits are already earned  (default 30)
+ *   &tableau=0..25  force an exact tableau line count (overrides &owned)
  *   &bobitSeed=xyz  fix the room's layout across reloads
  */
+
+import { BOBITS_PER_LINE } from '../features/collection/tableau/tableauProgress';
+import { CROWD_CAP } from '../features/collection/crowdLayout';
 
 const SLUG = 'milwaukee-wi';
 
@@ -70,7 +74,16 @@ export function installMockGameApi() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('mock') !== '1') return;
 
-  seedOwned(Number(params.get('owned') ?? 30));
+  // `&tableau=N` asks for an exact number of standing tableau lines, which the contact sheets
+  // want. It is expressed as a bobit count rather than written into the peak store directly,
+  // so the sheets exercise the SAME path a player does -- residents -> high-water mark ->
+  // linesBuilt. A tool that reaches past the code it is meant to photograph can be
+  // structurally unable to show the bug it was built to find; `__bobitScene` already learned
+  // that by passing an id that never becomes a resident.
+  const lines = params.get('tableau');
+  seedOwned(lines !== null
+    ? Math.max(0, Math.min(CROWD_CAP, Number(lines) * BOBITS_PER_LINE))
+    : Number(params.get('owned') ?? 30));
 
   const real = window.fetch.bind(window);
 
