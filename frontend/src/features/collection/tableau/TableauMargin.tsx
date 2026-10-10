@@ -27,6 +27,14 @@ interface TableauMarginProps {
   siteFor: () => { line: TableauLine; t: number } | null;
   /** Everyone perched, climbing, descending or WORKING on THIS stack, in its coordinates. */
   figuresFor: () => FieldFigure[];
+  /**
+   * Forces a repaint when this canvas is NOT animating.
+   *
+   * Under reduced motion `BobitField` paints once and stops, so a line going up would never
+   * reach the screen until the next resize or navigation. The band already had this; both
+   * margins need it for the same reason, and for the same players.
+   */
+  repaintKey?: number;
 }
 
 /**
@@ -53,7 +61,7 @@ interface TableauMarginProps {
  * crowd walks on -- from the same constant the floor line itself is drawn from.
  */
 export function TableauMargin({
-  side, box, scale, darkMode, builtFor, siteFor, figuresFor,
+  side, box, scale, darkMode, builtFor, siteFor, figuresFor, repaintKey,
 }: TableauMarginProps) {
   // Light timber on a dark ground and vice versa, exactly as the cannon learned to be: a fixed
   // dark prop is a smudge in dark mode.
@@ -96,6 +104,7 @@ export function TableauMargin({
         figuresFor={figuresFor}
         propsFor={propsFor}
         height={box.height}
+        repaintKey={repaintKey}
         interactive
       />
     </div>

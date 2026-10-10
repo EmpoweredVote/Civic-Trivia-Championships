@@ -10,8 +10,20 @@
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
 
-const BASE = 'http://localhost:5173';
+const BASE = process.env.SHOTS_URL || 'http://localhost:5173';
 const OUT = '.shots';
+
+/**
+ * How many bobits the room starts with, and what the next line therefore is.
+ *
+ * 15 is three lines standing and one short of the fourth -- the cabin's right rafter, a HOIST
+ * onto a joint above the ground. 35 is eight lines and one short of the ninth -- the tree's
+ * green curl, the one piece of this blueprint whose success is purely how it looks. Both are
+ * driven the player's way; `&tableau=N` cannot show either, because it seeds what is already
+ * standing and leaves the worksite with nothing to do.
+ */
+const OWNED = Number(process.env.CROSS_OWNED || 15);
+const TAG = process.env.CROSS_TAG || `line${Math.floor(OWNED / 4) + 1}`;
 
 await mkdir(OUT, { recursive: true });
 const browser = await chromium.launch({ args: ['--no-sandbox'] });
@@ -21,7 +33,7 @@ const page = await context.newPage();
 await page.setViewportSize({ width: 1920, height: 1080 });
 page.on('pageerror', e => console.log(`[pageerror] ${e.message}`));
 
-await page.goto(`${BASE}/?mock=1&collection=milwaukee-wi&owned=15&bobitSeed=crossing`);
+await page.goto(`${BASE}/?mock=1&collection=milwaukee-wi&owned=${OWNED}&bobitSeed=crossing`);
 const play = page.getByRole('button', { name: /play now|continue playing|quick play/i });
 await play.waitFor({ timeout: 20000 });
 await play.click();
@@ -45,12 +57,12 @@ for (let q = 1; q <= 3; q++) {
   // build BEFORE clicking Next, so the frames span the reveal the raise actually happens in.
   if (q >= 3) {  // owned=15 is 3 lines; Q3 grants the 16th bobit and line 4 goes up
     for (let i = 0; i < 7; i++) {
-      await page.screenshot({ path: `${OUT}/crossing-q${q}-${i}.png` });
+      await page.screenshot({ path: `${OUT}/crossing-${TAG}-${i}.png` });
       await page.waitForTimeout(1700);
     }
   }
   await next.click();
   await page.waitForTimeout(500);
 }
-console.log('crossing frames written to .shots/');
+console.log(`crossing frames written to ${OUT}/crossing-${TAG}-*.png`);
 await browser.close();

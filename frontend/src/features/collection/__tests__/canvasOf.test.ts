@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { canvasOf } from '../crowdFigures';
+import { canvasOf, tableauFigures } from '../crowdFigures';
+import { crowdInit } from '../crowdReducer';
+import { bandFor } from '../crowdLayout';
 import type { Agent, Activity } from '../crowdAgents';
 import type { Surface } from '../../../components/bobbits/fieldGeometry';
 
@@ -59,6 +61,64 @@ describe('canvasOf — the partition', () => {
     }
     // Claimed, not yet arrived: still the band's. The claim lands when he sets off walking.
     expect(canvasOf(agent({ activity: 'moving', jobId: 'job:left:9' }), [], [])).toBe('band');
+  });
+
+  /**
+   * C1. A worker is routed to his stack's canvas by `jobId`, but he has NO `perchId` -- the
+   * line he is raising is not scenery yet. `tableauFigures` positions a figure from his
+   * Surface, so it looked him up, got `undefined`, and dereferenced it.
+   *
+   * The blast radius is why this is the first test here and not a footnote: the throw is
+   * inside `figuresFor`, which `BobitField` calls from inside its rAF tick BEFORE scheduling
+   * the next frame. One exception and the band's animation loop stops for the rest of the
+   * match.
+   *
+   * Reachable on the happy path at 24 bobits: that is line 6, the tree's first branch, which
+   * is the first line that is BOTH a perch (so the surface list is non-empty and the early
+   * return does not fire) and built by a crew.
+   */
+  it('does not hand a worker to the perch renderer, which cannot position him', () => {
+    const agents = {
+      w: agent({ activity: 'raising', jobId: 'job:right:6', jobRole: 'hauler' }),
+    };
+    const band = bandFor(false);
+    expect(() => tableauFigures(
+      crowdInit(), agents, band, false, 'right', LEFT, RIGHT, 0.868,
+    )).not.toThrow();
+    // And he is not drawn here at all: `workerFigures` owns him, and a figure pushed onto
+    // both lists is the double-paint this partition exists to prevent.
+    expect(tableauFigures(crowdInit(), agents, band, false, 'right', LEFT, RIGHT, 0.868))
+      .toHaveLength(0);
+  });
+
+  /**
+   * C3. A stack that is not MOUNTED must not be handed anybody.
+   *
+   * The routing predicate and the mounting predicate are different questions, and they drifted:
+   * surfaces and workers were produced whenever a margin had been measured, while the canvas
+   * only mounted if that margin was also wide enough. An asymmetric layout -- a scrollbar on
+   * one side, 130px left and 200px right -- put climbers and crews on a canvas that does not
+   * exist, and they were drawn nowhere.
+   *
+   * This is the bug `crowdFigures`' own history note already records: "he was excluded from
+   * the band and handed to a canvas that is not mounted".
+   */
+  it('falls a worker back to the band when his stack is not mounted', () => {
+    const both = { left: true, right: true };
+    expect(canvasOf(agent({ activity: 'raising', jobId: 'job:left:9' }), [], [], both))
+      .toBe('left');
+    expect(canvasOf(
+      agent({ activity: 'raising', jobId: 'job:left:9' }), [], [], { left: false, right: true },
+    )).toBe('band');
+    expect(canvasOf(
+      agent({ activity: 'raising', jobId: 'job:right:14' }), [], [], { left: true, right: false },
+    )).toBe('band');
+  });
+
+  it('never guesses a side for a worker with no job id', () => {
+    // Unreachable while claim and release move together, but a silent wrong answer is worse
+    // than a fallback: it would draw him on a stack he has nothing to do with.
+    expect(canvasOf(agent({ activity: 'raising' }), LEFT, RIGHT)).toBe('band');
   });
 
   it('is TOTAL and DISJOINT over a generated population', () => {

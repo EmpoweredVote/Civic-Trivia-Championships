@@ -15,6 +15,7 @@ import { recapPose } from './recapPoses';
 import { createPeakStore } from './bobitPeak';
 import { linesBuilt } from './tableau/tableauProgress';
 import { fitScale, originX } from './tableau/tableauGeometry';
+import { tableauSurfaces } from './tableau/tableauSurfaces';
 
 /**
  * The localStorage driver, shared across every signed-out mount: its state IS the browser's,
@@ -128,31 +129,46 @@ export function RecapCrowd({ slug, darkMode, isMobile, newBobitIds }: RecapCrowd
    * fallback. There is no column here and no fallback, and applying it would hide the tableau
    * from exactly the phone players this screen exists to show it to.
    */
-  const propsFor = useMemo(() => (
-    _t: number, _dt: number, width: number,
-  ): FieldProp[] => {
-    if (built <= 0) return [];
-    const measured = width || band.width;
+  /**
+   * The tableau's geometry on the recap, resolved ONCE and read by both the props and the
+   * figures. Two readers computing it separately is how a draw and its Surfaces drift apart.
+   */
+  const stacks = useMemo(() => (measured: number) => {
+    if (built <= 0) return null;
     const sideW = Math.floor(measured * STACK_FRACTION);
     const box = { width: sideW, height: band.height };
     const s = fitScale(box, box);
-    if (s === null) return [];
+    if (s === null) return null;
+    return {
+      s,
+      sideW,
+      leftOx: originX('left', sideW, s),
+      rightOx: (measured - sideW) + originX('right', sideW, s),
+      groundY: band.height - groundLineFromBottom(),
+    };
+  }, [built, band]);
+
+  const propsFor = useMemo(() => (
+    _t: number, _dt: number, width: number,
+  ): FieldProp[] => {
+    const measured = width || band.width;
+    const g = stacks(measured);
+    if (g === null) return [];
+    const s = g.s;
     const color = darkMode ? '#9AA6B8' : '#4A5568';
     const leafColor = darkMode ? '#7FB069' : '#4F7942';
-    const groundY = band.height - groundLineFromBottom();
     return [
       {
         id: 'recap:tableau:left', kind: 'tableau', side: 'left', built,
-        x: originX('left', sideW, s), groundY, scale: s, color, leafColor,
+        x: g.leftOx, groundY: g.groundY, scale: s, color, leafColor,
       },
       {
         // Drawn in the RIGHT-hand third, so its own origin is offset by everything to its left.
         id: 'recap:tableau:right', kind: 'tableau', side: 'right', built,
-        x: (measured - sideW) + originX('right', sideW, s),
-        groundY, scale: s, color, leafColor,
+        x: g.rightOx, groundY: g.groundY, scale: s, color, leafColor,
       },
     ];
-  }, [built, band, darkMode]);
+  }, [built, band, darkMode, stacks]);
 
   const figuresFor = useMemo(() => (
     elapsed: number, _dt: number, width: number,
@@ -168,6 +184,35 @@ export function RecapCrowd({ slug, darkMode, isMobile, newBobitIds }: RecapCrowd
     shown.forEach((id, i) => {
       xs.set(id, ((i + 0.5) / Math.max(1, shown.length)) * measured);
     });
+
+    /**
+     * Who is UP ON the tableau rather than on the floor, as the spec asks: "Surfaces are
+     * still live, so celebrating bobits can be up on the structures."
+     *
+     * Placed STATICALLY, not climbed. This screen has no agents at all and deliberately so --
+     * it needs none of the play screen's director, entrances or perch machinery. A seat here
+     * is a position, not a journey.
+     *
+     * The occupants are chosen by the same `slotOrder` the roster already uses, so the same
+     * bobits sit in the same places on every render of the same room rather than reshuffling
+     * each frame.
+     */
+    const g = stacks(measured);
+    const seats = new Map<string, { x: number; y: number }>();
+    if (g !== null) {
+      const surfaces = [
+        ...tableauSurfaces('left', built, g.leftOx, g.groundY, g.s),
+        ...tableauSurfaces('right', built, g.rightOx, g.groundY, g.s),
+      ];
+      // Nobody who is BOWING: a bower is the point of the recap and belongs where he can be
+      // seen, not tucked up a tree at a twelfth of the height.
+      const candidates = shown.filter(id => !newBobitIds.has(id));
+      surfaces.forEach((sf, i) => {
+        const id = candidates[i];
+        if (id === undefined) return;
+        seats.set(id, { x: (sf.left + sf.right) / 2, y: sf.y });
+      });
+    }
 
     // Pairs are recomputed every frame, which is free here because nobody moves. pairUp walks
     // ids in sorted order, so partners never flicker between each other mid-slap, and it
@@ -186,13 +231,20 @@ export function RecapCrowd({ slug, darkMode, isMobile, newBobitIds }: RecapCrowd
     }
 
     return shown.map(id => {
-      const pose = recapPose(id, elapsed, newBobitIds.has(id), hands.get(id) ?? null);
+      const seat = seats.get(id);
+      const pose = seat
+        // A seated figure MUST have a seated pose and a seated hover pose: `figureBounds`
+        // measures from the BASE anim while paint positions with the RESOLVED one, so a
+        // standing greet on a seated base draws ~104 units from its own hit box.
+        ? { anim: 'sit' as const, hand: null }
+        : recapPose(id, elapsed, newBobitIds.has(id), hands.get(id) ?? null);
       return {
         id,
         anim: pose.anim,
+        hoverAnim: seat ? 'greetseat' : undefined,
         color: figColor(toneOf(id), darkMode),
-        x: xs.get(id) as number,
-        groundY: place.groundY,
+        x: seat ? seat.x : xs.get(id) as number,
+        groundY: seat ? seat.y : place.groundY,
         scale: place.scale * heightFactor(id),
         // The SECOND offset -- this one spreads the clock inside a pose, where recapPose's
         // spreads which pose. Same derivation crowdFigures uses, so a bobit's rhythm does not
@@ -203,7 +255,7 @@ export function RecapCrowd({ slug, darkMode, isMobile, newBobitIds }: RecapCrowd
         vars: pose.hand ? { hand: pose.hand } : undefined,
       };
     });
-  }, [shown, newBobitIds, band, darkMode]);
+  }, [shown, newBobitIds, band, darkMode, stacks, built]);
 
   if (!slug || owned.length === 0) return null;
 

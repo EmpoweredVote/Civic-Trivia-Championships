@@ -87,19 +87,11 @@ async function run() {
       }
     }
 
-    // The curl, sampled across a climb. The canopy is the one piece of this blueprint whose
-    // success is purely how it LOOKS, so it gets its own row in both themes.
-    const context = await browser.newContext({ deviceScaleFactor: 1 });
-    await context.addInitScript(t => localStorage.setItem('ctc-theme', t), theme);
-    const page = await openRoom(context, WIDTHS[0], 1080, 'tableau=9');
-    await page.waitForTimeout(4000);
-    for (let i = 0; i < 8; i++) {
-      await page.screenshot({ path: `${OUT}/tableau-curl-${theme}-${i}.png` });
-      await page.waitForTimeout(1200);
-    }
-    console.log(`  strip: tableau-curl-${theme} (8 frames)`);
-    await page.close();
-    await context.close();
+    // NO curl strip here. It used to open `tableau=9` and shoot eight frames 1.2s apart,
+    // which photographs a FINISHED tree: `&tableau=N` seeds what is already standing, so the
+    // worksite has nothing to do and the curl never goes up on camera. A strip that cannot
+    // show the thing it is named after is worse than no strip, because it reads as coverage.
+    // `bobit-crossing.mjs` drives it for real:  CROSS_OWNED=35 node scripts/bobit-crossing.mjs
   }
 
   await browser.close();

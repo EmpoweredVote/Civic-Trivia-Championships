@@ -121,6 +121,19 @@ export function originX(side: StackSide, canvasW: number, scale: number): number
     : -b.left * scale;
 }
 
+/**
+ * Is this stack's canvas actually going to be on screen?
+ *
+ * THE single predicate for "is this stack live". It decides four things that must agree: does
+ * the canvas mount, are its Surfaces offered, may a crew be cast for it, and does `canvasOf`
+ * route anybody to it. They were once four separate expressions and two of them drifted -- a
+ * 130px left margin beside a 200px right one yielded a non-null shared scale, so surfaces and
+ * crews were produced for a canvas that never mounted and everybody sent there vanished.
+ */
+export function stackLive(box: MarginBox | null, scale: number | null): boolean {
+  return scale !== null && usable(box) !== null;
+}
+
 /** The leftmost pixel this stack puts ink on, in canvas coordinates. The bound-1 quantity. */
 export function leftmostInk(side: StackSide, canvasW: number, scale: number): number {
   return originX(side, canvasW, scale) + inkBox(side).left * scale;

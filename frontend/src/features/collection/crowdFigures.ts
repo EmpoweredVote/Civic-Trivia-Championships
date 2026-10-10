@@ -134,7 +134,18 @@ export type CanvasId = 'band' | 'left' | 'right';
  *
  */
 export function canvasOf(
-  a: Agent, left: readonly Surface[], right: readonly Surface[],
+  a: Agent,
+  left: readonly Surface[],
+  right: readonly Surface[],
+  /**
+   * Which margin canvases are actually MOUNTED this frame.
+   *
+   * Required by the caller that knows, defaulted for the ones that do not. The routing
+   * predicate and the mounting predicate were once different questions and they drifted: a
+   * 130px left margin beside a 200px right one produced surfaces and crews for a canvas that
+   * never mounted, and everybody sent there was drawn nowhere. One question, passed in.
+   */
+  live: { left: boolean; right: boolean } = { left: true, right: true },
 ): CanvasId {
   // A worker ON the site is his stack's canvas's business. One still WALKING to it is the
   // band's -- his activity is `moving` and he falls through to the clause below. The handover
@@ -143,10 +154,14 @@ export function canvasOf(
   //
   // This is the one clause that trusts the agent rather than the scenery, and it has to: a
   // line under construction has no Surface yet, so there is no list to look it up in. That is
-  // why `jobId` carries its side -- a partition that has to guess is not a partition. Safe
-  // because `releaseJob` is the only thing that ever clears it.
+  // why `jobId` carries its side -- a partition that has to guess is not a partition.
   if (a.activity === 'hauling' || a.activity === 'raising' || a.activity === 'lashing') {
-    return a.jobId?.startsWith('job:left:') ? 'left' : 'right';
+    if (a.jobId?.startsWith('job:left:')) return live.left ? 'left' : 'band';
+    if (a.jobId?.startsWith('job:right:')) return live.right ? 'right' : 'band';
+    // No job id on a work activity. Unreachable while claim and release move together, and a
+    // fallback rather than a guess: drawing him on a stack he has nothing to do with would be
+    // a silent wrong answer.
+    return 'band';
   }
   // Claimed is not the same as occupied. `perchId` is taken the instant he sets off walking,
   // so two bobits can never be sent to one seat, but he stands on the floor until the climb
@@ -177,6 +192,7 @@ export function tableauFigures(
   left: readonly Surface[],
   right: readonly Surface[],
   tableauScale: number | null,
+  live?: { left: boolean; right: boolean },
 ): FieldFigure[] {
   const surfaces = side === 'left' ? left : right;
   if (surfaces.length === 0 || tableauScale === null) return [];
@@ -185,8 +201,16 @@ export function tableauFigures(
   const out: FieldFigure[] = [];
   for (const id of Object.keys(agents)) {
     const a = agents[id];
-    if (canvasOf(a, left, right) !== side) continue;
-    const sf = surfaces.find(s => s.id === a.perchId) as Surface;
+    if (canvasOf(a, left, right, live) !== side) continue;
+    // A WORKER is this canvas's business too -- `canvasOf` routes him here by `jobId` -- but
+    // he is not this function's: the line he is raising is not scenery yet, so he has no
+    // Surface to be positioned from. `workerFigures` has him. Without this guard the lookup
+    // below returns undefined, the `as Surface` cast hides it, and the climb branch throws
+    // inside BobitField's rAF tick BEFORE it schedules the next frame -- which stops the
+    // band animating for the rest of the match.
+    if (!a.perchId) continue;
+    const sf = surfaces.find(s => s.id === a.perchId);
+    if (!sf) continue;
 
     if (a.activity === 'perch') {
       out.push({
@@ -260,6 +284,7 @@ export function workerFigures(
   ox: number,
   floorY: number,
   scale: number | null,
+  live?: { left: boolean; right: boolean },
 ): FieldFigure[] {
   if (!site || scale === null || site.line.side !== side) return [];
   const crew = crewAt(site.line, site.t, ox, floorY, scale);
@@ -272,7 +297,7 @@ export function workerFigures(
     if (a.jobId !== jobId) continue;
     // Only somebody who has ARRIVED. A crew member still walking to the site is `moving`, and
     // `canvasOf` leaves him on the band where his walk is being drawn.
-    if (canvasOf(a, [], []) !== side) continue;
+    if (canvasOf(a, [], [], live) !== side) continue;
     const w = crew.find(c => c.role === a.jobRole);
     if (!w) continue;
     out.push({
@@ -326,6 +351,7 @@ export function crowdFigures(
    */
   leftSurfaces: readonly Surface[] = [],
   rightSurfaces: readonly Surface[] = [],
+  live?: { left: boolean; right: boolean },
 ): FieldFigure[] {
   // Actors the director owns, indexed by the agent playing them. A cast agent is drawn from
   // its ACTOR -- pose and position both -- so the director and wanderAdvance can never fight
@@ -406,7 +432,7 @@ export function crowdFigures(
     const a = agents[id];
     // A MARGIN canvas has this one, not the band: perched on it, climbing it, or coming down.
     // One predicate, every reader -- see `canvasOf`.
-    if (canvasOf(a, leftSurfaces, rightSurfaces) !== 'band') continue;
+    if (canvasOf(a, leftSurfaces, rightSurfaces, live) !== 'band') continue;
     const victim = state.loss?.id === id;
     // Sitting on a BAND surface -- the in-band fallback tree's single branch. `perchId` is
     // claimed the moment he sets off walking, so only an agent who has actually ARRIVED

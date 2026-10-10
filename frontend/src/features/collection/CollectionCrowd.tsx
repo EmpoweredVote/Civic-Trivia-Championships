@@ -7,7 +7,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useConfettiStore } from '../../store/confettiStore';
 import { createLocalProgressStore, createServerProgressStore } from './bobitProgress';
 import { createPeakStore } from './bobitPeak';
-import { tableauScale, originX, MIN_TABLEAU_MARGIN } from './tableau/tableauGeometry';
+import { tableauScale, originX, stackLive } from './tableau/tableauGeometry';
 import type { MarginBox } from './tableau/tableauGeometry';
 import { tableauSurfaces } from './tableau/tableauSurfaces';
 import { linesBuilt, linesStandingOnArrival } from './tableau/tableauProgress';
@@ -277,6 +277,15 @@ export function CollectionCrowd({
     peakStore.record(slugNow, stateRef.current.residents.length);
     builtRef.current = linesBuilt(peakStore.peak(slugNow));
 
+    // Under reduced motion there is no worksite to advance `shownRef`, so it is snapped to
+    // what has been earned and the line simply APPEARS. Reconciliation happens either way --
+    // only MOTION is skipped -- and without this the tableau would stop growing entirely for
+    // an accessible player, which is not the same thing as not animating.
+    if (reducedMotion) {
+      shownRef.current = builtRef.current;
+      siteRef.current = null;
+    }
+
     // First look at THIS collection: everything already earned is already standing, and no
     // build is owed for it. Keyed on the slug so switching collections re-seeds rather than
     // carrying one room's progress into another's.
@@ -453,7 +462,14 @@ export function CollectionCrowd({
     const s = scaleRef.current;
     const lBox = leftBoxRef.current;
     const rBox = rightBoxRef.current;
-    const built = builtRef.current;
+    // STANDING, not earned. A seat on a line the crew is still dragging across the floor is
+    // the "Surface whose wood has not arrived" failure `tableauSurfaces` exists to prevent --
+    // a bobit sent to it hangs in mid-air beside it.
+    const built = shownRef.current;
+    // ONE predicate for "is this stack live", shared by the surfaces, the worksite, the
+    // figure lists and the mount below. Four expressions that had to agree is how a canvas
+    // came to be handed bobits it was never going to draw.
+    const live = { left: stackLive(lBox, s), right: stackLive(rBox, s) };
     if (laidOutAtRef.current && measured !== laidOutAtRef.current) {
       agentsRef.current = rescaleTo(agentsRef.current, laidOutAtRef.current, measured);
       laidOutAtRef.current = measured;
@@ -476,10 +492,10 @@ export function CollectionCrowd({
       // rule the tree learned the hard way: a bobit placed on a Surface whose wood has not
       // arrived hangs in mid-air beside it, which a screenshot of a real milestone caught
       // three figures doing.
-      leftSurfacesRef.current = s !== null && lBox !== null
+      leftSurfacesRef.current = live.left && s !== null && lBox !== null
         ? tableauSurfaces('left', built, originX('left', lBox.width, s), lBox.height, s)
         : [];
-      rightSurfacesRef.current = s !== null && rBox !== null
+      rightSurfacesRef.current = live.right && s !== null && rBox !== null
         ? tableauSurfaces('right', built, originX('right', rBox.width, s), rBox.height, s)
         : [];
 
@@ -518,8 +534,14 @@ export function CollectionCrowd({
       // AFTER the advance, for the same reason `assignPerch` is: a bobit released from a
       // scene or finishing a walk is eligible this frame rather than next.
       if (siteRef.current === null) {
-        if (shownRef.current < builtRef.current) {
-          const next = BLUEPRINT[shownRef.current];
+        const next = shownRef.current < builtRef.current
+          ? BLUEPRINT[shownRef.current]
+          : null;
+        // No crew for a stack nobody can see. Without this the worksite still ran on a phone
+        // -- claiming two or three of the player's bobits every four he earned, routing them
+        // to a canvas that is not mounted, and silently thinning the crowd for fourteen
+        // seconds at a time.
+        if (next && live[next.side]) {
           // BAND coordinates. The joint is in a margin canvas's box, which is a different one
           // -- handing `assignJob` a canvas x walks the crew into the question column.
           const after = assignJob(
@@ -614,20 +636,20 @@ export function CollectionCrowd({
 
     leftFiguresRef.current = [
       ...tableauFigures(
-        stateRef.current, agentsRef.current, band, darkMode, 'left', lSurf, rSurf, s,
+        stateRef.current, agentsRef.current, band, darkMode, 'left', lSurf, rSurf, s, live,
       ),
-      ...(lBox === null ? [] : workerFigures(
+      ...(!live.left || lBox === null ? [] : workerFigures(
         agentsRef.current, band, darkMode, 'left', site,
-        s === null ? 0 : originX('left', lBox.width, s), lBox.height, s,
+        s === null ? 0 : originX('left', lBox.width, s), lBox.height, s, live,
       )),
     ];
     rightFiguresRef.current = [
       ...tableauFigures(
-        stateRef.current, agentsRef.current, band, darkMode, 'right', lSurf, rSurf, s,
+        stateRef.current, agentsRef.current, band, darkMode, 'right', lSurf, rSurf, s, live,
       ),
-      ...(rBox === null ? [] : workerFigures(
+      ...(!live.right || rBox === null ? [] : workerFigures(
         agentsRef.current, band, darkMode, 'right', site,
-        s === null ? 0 : originX('right', rBox.width, s), rBox.height, s,
+        s === null ? 0 : originX('right', rBox.width, s), rBox.height, s, live,
       )),
     ];
 
@@ -635,7 +657,7 @@ export function CollectionCrowd({
     // stays until the in-band fallback tree is retired with the rest of it.
     return crowdFigures(
       stateRef.current, agentsRef.current, band, darkMode, directorRef.current,
-      allowAir, [], lSurf, rSurf,
+      allowAir, [], lSurf, rSurf, live,
     );
   }, [band, darkMode, reducedMotion, isMobile]);
 
@@ -671,7 +693,16 @@ export function CollectionCrowd({
    */
   const leftFiguresForCanvas = useMemo(() => (): FieldFigure[] => leftFiguresRef.current, []);
   const rightFiguresForCanvas = useMemo(() => (): FieldFigure[] => rightFiguresRef.current, []);
-  const builtForCanvas = useMemo(() => (): number => builtRef.current, []);
+  /**
+   * What is STANDING, which is `shownRef` -- not `builtRef`.
+   *
+   * `builtRef` is what the player has EARNED: the target the worksite walks toward. A line
+   * becomes earned the instant an answer is revealed and takes fourteen seconds to go up, so
+   * drawing from `builtRef` would put the finished line on screen immediately and then have a
+   * crew haul a second copy of it into the same spot. The two counters are different
+   * questions and only one of them is "what is up".
+   */
+  const builtForCanvas = useMemo(() => (): number => shownRef.current, []);
   const siteForCanvas = useMemo(
     () => (): { line: TableauLine; t: number } | null => siteForRef.current, [],
   );
@@ -725,7 +756,7 @@ export function CollectionCrowd({
           Each side is gated on ITS OWN width, not on the shared scale alone: an asymmetric
           layout can leave one margin usable and the other too narrow, and the wide side should
           still get its stack. */}
-      {scale !== null && leftMargin && leftMargin.width >= MIN_TABLEAU_MARGIN && (
+      {scale !== null && leftMargin && stackLive(leftMargin, scale) && (
         <TableauMargin
           side="left"
           box={leftMargin}
@@ -734,9 +765,10 @@ export function CollectionCrowd({
           builtFor={builtForCanvas}
           siteFor={siteForCanvas}
           figuresFor={leftFiguresForCanvas}
+          repaintKey={repaintKey}
         />
       )}
-      {scale !== null && rightMargin && rightMargin.width >= MIN_TABLEAU_MARGIN && (
+      {scale !== null && rightMargin && stackLive(rightMargin, scale) && (
         <TableauMargin
           side="right"
           box={rightMargin}
@@ -745,6 +777,7 @@ export function CollectionCrowd({
           builtFor={builtForCanvas}
           siteFor={siteForCanvas}
           figuresFor={rightFiguresForCanvas}
+          repaintKey={repaintKey}
         />
       )}
       {/* The floor.

@@ -66,6 +66,12 @@ export function drawTableau(
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   for (const line of linesFor(side, built)) {
+    // The line the crew is still raising is NOT standing, whatever `built` says. Drawing it
+    // both ways makes the finished line snap into place and then a second copy of it get
+    // dragged in and rotated into the same spot -- the build reads as a ghost rather than as
+    // construction. Guarded here as well as at the call site, because a draw that cannot
+    // double-paint is cheaper than a caller remembering which counter to pass.
+    if (site && site.line.n === line.n) continue;
     if (line.kind === 'string') drawCurl(ctx, line, ox, floorY, scale, leafColor, 1);
     else drawStick(ctx, line, ox, floorY, scale, color);
   }
@@ -75,17 +81,20 @@ export function drawTableau(
   if (site && site.line.side === side) {
     if (site.line.kind === 'string') {
       const { phase, k } = phaseAt(site.line, site.t);
-      // `curl` draws the loops on; during `payout` the string is still a plain line following
-      // the climber up, and `lineAt` has it.
       if (phase === 'curl' || phase === 'done') {
+        // The loops. NOTHING else: `lineAt` returns the string's final endpoints from `curl`
+        // onward, so also drawing it as a line puts a green bar up through the middle of the
+        // canopy for six seconds, which then vanishes at `done` when the finished path takes
+        // over and draws only loops. A stem that pops out of existence is worse than no stem.
         drawCurl(ctx, site.line, ox, floorY, scale, leafColor, phase === 'curl' ? k : 1);
+      } else {
+        // Still being paid out: a plain line following the climber up to the crown.
+        const e = lineAt(site.line, site.t, ox, floorY, scale);
+        if (e) drawStickBetween(ctx, e, site.line, scale, leafColor);
       }
-    }
-    const e = lineAt(site.line, site.t, ox, floorY, scale);
-    if (e) {
-      drawStickBetween(
-        ctx, e, site.line, scale, site.line.kind === 'string' ? leafColor : color,
-      );
+    } else {
+      const e = lineAt(site.line, site.t, ox, floorY, scale);
+      if (e) drawStickBetween(ctx, e, site.line, scale, color);
     }
   }
   ctx.restore();
