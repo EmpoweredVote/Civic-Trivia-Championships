@@ -517,7 +517,7 @@ describe('the three-way partition', () => {
   });
 
   it('drops a climber back to the band if his Surface disappears mid-climb', () => {
-    // A resize can take the tree's scale below MIN_TREE_MARGIN between two frames. He must
+    // A resize can take the tableau's scale below its minimum between two frames. He must
     // land on the floor rather than be drawn against a branch that no longer exists.
     const { state, agents, climber } = roomWithAClimber();
     const band = crowdFigures(state, agents, BAND, false, directorInit(), false, []);

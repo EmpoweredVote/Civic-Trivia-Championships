@@ -152,7 +152,7 @@ export function canvasOf(
  * The tree canvas's figures: everyone perched on it, climbing it or coming down it.
  *
  * Coordinates are the TREE CANVAS's, not the band's -- the Surfaces are already in them, since
- * CollectionCrowd builds them from `marginTreeX(marginBox.width, scale)`. Figures are drawn at
+ * CollectionCrowd builds them from `originX(box.width, scale)`. Figures are drawn at
  * BAND scale on a tree-scale canvas, so a climber reads as a normal bobit in a big tree rather
  * than as a giant. `FieldFigure.scale` is per figure, which is what makes that free.
  */

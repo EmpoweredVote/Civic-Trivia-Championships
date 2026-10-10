@@ -106,11 +106,7 @@ export function figureBounds(f: FieldFigure) {
  */
 export interface FieldProp {
   id: string;
-  /**
-   * `tree` and `marginTree` are the retiring milestone tree, kept only until its last caller
-   * goes; `tableau` replaces both. See the tableau spec's migration section.
-   */
-  kind: 'cannon' | 'tree' | 'marginTree' | 'tableau';
+  kind: 'cannon' | 'tableau';
   x: number;
   /** px from the field's top to the prop's ground contact line. */
   groundY: number;
