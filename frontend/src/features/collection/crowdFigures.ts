@@ -130,12 +130,22 @@ export type CanvasId = 'band' | 'left' | 'right';
  * narrower viewport, a margin measured while its nodes were detached, a different collection --
  * and a bobit must not disappear with it.
  *
- * Task 14 adds one clause ahead of these, for a bobit working on a line that is still going up.
- * Everything below stays exactly as it is.
  */
 export function canvasOf(
   a: Agent, left: readonly Surface[], right: readonly Surface[],
 ): CanvasId {
+  // A worker ON the site is his stack's canvas's business. One still WALKING to it is the
+  // band's -- his activity is `moving` and he falls through to the clause below. The handover
+  // happens at the phase change rather than at the claim, and it is continuous rather than a
+  // teleport because a margin canvas's bottom edge IS the band's floor line.
+  //
+  // This is the one clause that trusts the agent rather than the scenery, and it has to: a
+  // line under construction has no Surface yet, so there is no list to look it up in. That is
+  // why `jobId` carries its side -- a partition that has to guess is not a partition. Safe
+  // because `releaseJob` is the only thing that ever clears it.
+  if (a.activity === 'hauling' || a.activity === 'raising' || a.activity === 'lashing') {
+    return a.jobId?.startsWith('job:left:') ? 'left' : 'right';
+  }
   // Claimed is not the same as occupied. `perchId` is taken the instant he sets off walking,
   // so two bobits can never be sent to one seat, but he stands on the floor until the climb
   // actually begins.

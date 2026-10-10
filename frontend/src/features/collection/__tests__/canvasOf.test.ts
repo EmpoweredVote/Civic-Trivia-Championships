@@ -50,11 +50,26 @@ describe('canvasOf — the partition', () => {
     }
   });
 
+  it('draws a worker on his own stack, and one still walking there on the band', () => {
+    expect(canvasOf(agent({ activity: 'raising', jobId: 'job:left:9' }), [], [])).toBe('left');
+    expect(canvasOf(agent({ activity: 'raising', jobId: 'job:right:14' }), [], []))
+      .toBe('right');
+    for (const activity of ['hauling', 'raising', 'lashing'] as Activity[]) {
+      expect(canvasOf(agent({ activity, jobId: 'job:left:9' }), [], [])).toBe('left');
+    }
+    // Claimed, not yet arrived: still the band's. The claim lands when he sets off walking.
+    expect(canvasOf(agent({ activity: 'moving', jobId: 'job:left:9' }), [], [])).toBe('band');
+  });
+
   it('is TOTAL and DISJOINT over a generated population', () => {
     const activities: Activity[] = [
       'wander', 'rank', 'moving', 'climbing', 'descending', 'perch',
+      'hauling', 'raising', 'lashing',
     ];
-    const perchIds = [undefined, 'tableau:left:12', 'tableau:right:6', 'tableau:left:99'];
+    const perchIds = [
+      undefined, 'tableau:left:12', 'tableau:right:6', 'tableau:left:99',
+      'job:left:9', 'job:right:14',
+    ];
     const surfaceSets: Array<[Surface[], Surface[]]> = [
       [LEFT, RIGHT], [LEFT, []], [[], RIGHT], [[], []],
     ];
