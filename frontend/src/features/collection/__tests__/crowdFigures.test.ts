@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  crowdFigures, overflowCount, aerialFigures, treeFigures, heightFactor, HEIGHT_SPREAD,
+  crowdFigures, overflowCount, aerialFigures, tableauFigures, heightFactor, HEIGHT_SPREAD,
   sceneGroundY,
 } from '../crowdFigures';
 import { directorInit, startScene, directorStep } from '../sceneDirector';
@@ -463,8 +463,8 @@ describe('the three-way partition', () => {
   it('puts every agent on exactly one canvas', () => {
     const { state, agents } = roomWithAClimber();
     const director = directorInit();
-    const band = crowdFigures(state, agents, BAND, false, director, false, [], SURFACES);
-    const tree = treeFigures(state, agents, BAND, false, SURFACES, 0.868);
+    const band = crowdFigures(state, agents, BAND, false, director, false, [], [], SURFACES);
+    const tree = tableauFigures(state, agents, BAND, false, 'right', [], SURFACES, 0.868);
     const air = aerialFigures(director, BAND, false, false);
 
     const all = [...band, ...tree, ...air].map(f => f.id);
@@ -474,15 +474,15 @@ describe('the three-way partition', () => {
 
   it('draws the perched bobit on the TREE, not on the band', () => {
     const { state, agents, climber } = roomWithAClimber();
-    const band = crowdFigures(state, agents, BAND, false, directorInit(), false, [], SURFACES);
-    const tree = treeFigures(state, agents, BAND, false, SURFACES, 0.868);
+    const band = crowdFigures(state, agents, BAND, false, directorInit(), false, [], [], SURFACES);
+    const tree = tableauFigures(state, agents, BAND, false, 'right', [], SURFACES, 0.868);
     expect(band.map(f => f.id)).not.toContain(climber);
     expect(tree.map(f => f.id)).toContain(climber);
   });
 
   it('seats him on the branch, with a seated hover pose', () => {
     const { state, agents, climber } = roomWithAClimber();
-    const f = treeFigures(state, agents, BAND, false, SURFACES, 0.868)
+    const f = tableauFigures(state, agents, BAND, false, 'right', [], SURFACES, 0.868)
       .find(g => g.id === climber);
     expect(f).toBeDefined();
     expect(f?.anim).toBe('sit');
@@ -497,7 +497,7 @@ describe('the three-way partition', () => {
     agents = agentsAdvance(agents, agents.a.moveDur, OPTS);
     agents = agentsAdvance(agents, (agents.a.climbDur as number) * 0.5, OPTS);
 
-    const f = treeFigures(state, agents, BAND, false, SURFACES, 0.868)[0];
+    const f = tableauFigures(state, agents, BAND, false, 'right', [], SURFACES, 0.868)[0];
     expect(f.anim).toBe('climb');
     expect(f.hoverAnim).toBeUndefined();
     // Off the floor and not yet at the branch: genuinely mid-climb. Smaller y is higher up, so
@@ -510,7 +510,7 @@ describe('the three-way partition', () => {
     const ids = ['a', 'b'];
     const state = crowdApply(crowdInit(), { type: 'seed', ids });
     const agents = initAgents(ids, OPTS);
-    expect(treeFigures(state, agents, BAND, false, [], null)).toHaveLength(0);
+    expect(tableauFigures(state, agents, BAND, false, 'right', [], [], null)).toHaveLength(0);
     // And then everyone is on the band.
     expect(crowdFigures(state, agents, BAND, false, directorInit(), false, []))
       .toHaveLength(2);
@@ -522,6 +522,6 @@ describe('the three-way partition', () => {
     const { state, agents, climber } = roomWithAClimber();
     const band = crowdFigures(state, agents, BAND, false, directorInit(), false, []);
     expect(band.map(f => f.id)).toContain(climber);
-    expect(treeFigures(state, agents, BAND, false, [], null)).toHaveLength(0);
+    expect(tableauFigures(state, agents, BAND, false, 'right', [], [], null)).toHaveLength(0);
   });
 });

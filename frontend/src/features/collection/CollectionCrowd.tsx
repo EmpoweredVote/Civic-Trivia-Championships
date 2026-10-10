@@ -16,7 +16,7 @@ import type { BobitProgressStore } from './bobitProgress';
 import { crowdInit, crowdApply, crowdStep, isStunned } from './crowdReducer';
 import type { CrowdState } from './crowdReducer';
 import {
-  crowdFigures, overflowCount, aerialFigures, treeFigures, sceneGroundY,
+  crowdFigures, overflowCount, aerialFigures, tableauFigures, sceneGroundY,
 } from './crowdFigures';
 import {
   directorInit, directorStep, startScene, canStage, castIds,
@@ -529,13 +529,16 @@ export function CollectionCrowd({
     // whole flight because the band read a ref while the render read a prop.
     const bandSurfaces = mScale !== null && mBox !== null ? [] : surfacesRef.current;
     const treeCanvasSurfaces = mScale !== null && mBox !== null ? surfacesRef.current : [];
-    treeFiguresRef.current = treeFigures(
-      stateRef.current, agentsRef.current, band, darkMode, treeCanvasSurfaces, mScale,
+    // The margin tree stands on the RIGHT, so it is the right-hand list. It is retired in
+    // favour of the tableau shortly; this keeps the one canvas it has working meanwhile.
+    treeFiguresRef.current = tableauFigures(
+      stateRef.current, agentsRef.current, band, darkMode,
+      'right', [], treeCanvasSurfaces, mScale,
     );
 
     return crowdFigures(
       stateRef.current, agentsRef.current, band, darkMode, directorRef.current,
-      allowAir, bandSurfaces, treeCanvasSurfaces,
+      allowAir, bandSurfaces, [], treeCanvasSurfaces,
     );
   }, [band, darkMode, reducedMotion, isMobile]);
 

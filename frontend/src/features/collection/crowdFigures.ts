@@ -111,20 +111,41 @@ export function aerialFigures(
     }));
 }
 
+/** Which canvas owns this agent's figure THIS FRAME. */
+export type CanvasId = 'band' | 'left' | 'right';
+
 /**
- * Is this agent the TREE canvas's business this frame?
+ * THE partition predicate. One question, every reader.
  *
- * THE partition predicate. `crowdFigures` and `treeFigures` both call it, so the two cannot
- * disagree about who they are drawing -- which is exactly how an airborne bobit came to be
- * painted on two canvases at once. One question, one answer, both readers.
+ * `crowdFigures` and `tableauFigures` both call this, so the two cannot disagree about who
+ * they are drawing -- which is exactly how an airborne bobit came to be painted on two
+ * canvases at once for a whole flight, arcing over the question card and standing on the band
+ * at the same time. The handoff is emphatic about this and it is emphatic for a reason: a
+ * partition only holds if every side is answering the same question.
  *
- * A perched agent whose Surface is NOT in the list is NOT the tree's: the tree has gone (a
- * resize below MIN_TREE_MARGIN, a different collection), and he falls back to the floor.
+ * It covers the three PERSISTENT canvases. The aerial overlay is partitioned separately by
+ * `allowAir` and `onOverlay`, which is already correct and already tested.
+ *
+ * An agent whose surface is in NEITHER list falls back to the band: scenery can disappear -- a
+ * narrower viewport, a margin measured while its nodes were detached, a different collection --
+ * and a bobit must not disappear with it.
+ *
+ * Task 14 adds one clause ahead of these, for a bobit working on a line that is still going up.
+ * Everything below stays exactly as it is.
  */
-function onTheTree(a: Agent, surfaces: readonly Surface[]): boolean {
-  if (!a.perchId) return false;
-  if (!surfaces.some(sf => sf.id === a.perchId)) return false;
-  return a.activity === 'perch' || a.activity === 'climbing' || a.activity === 'descending';
+export function canvasOf(
+  a: Agent, left: readonly Surface[], right: readonly Surface[],
+): CanvasId {
+  // Claimed is not the same as occupied. `perchId` is taken the instant he sets off walking,
+  // so two bobits can never be sent to one seat, but he stands on the floor until the climb
+  // actually begins.
+  if (a.activity !== 'perch' && a.activity !== 'climbing' && a.activity !== 'descending') {
+    return 'band';
+  }
+  if (!a.perchId) return 'band';
+  if (left.some(sf => sf.id === a.perchId)) return 'left';
+  if (right.some(sf => sf.id === a.perchId)) return 'right';
+  return 'band';
 }
 
 /**
@@ -135,21 +156,24 @@ function onTheTree(a: Agent, surfaces: readonly Surface[]): boolean {
  * BAND scale on a tree-scale canvas, so a climber reads as a normal bobit in a big tree rather
  * than as a giant. `FieldFigure.scale` is per figure, which is what makes that free.
  */
-export function treeFigures(
+export function tableauFigures(
   state: CrowdState,
   agents: AgentState,
   band: CrowdBand,
   darkMode: boolean,
-  surfaces: readonly Surface[],
-  treeScale: number | null,
+  side: 'left' | 'right',
+  left: readonly Surface[],
+  right: readonly Surface[],
+  tableauScale: number | null,
 ): FieldFigure[] {
-  if (surfaces.length === 0 || treeScale === null) return [];
+  const surfaces = side === 'left' ? left : right;
+  if (surfaces.length === 0 || tableauScale === null) return [];
   void state;
 
   const out: FieldFigure[] = [];
   for (const id of Object.keys(agents)) {
     const a = agents[id];
-    if (!onTheTree(a, surfaces)) continue;
+    if (canvasOf(a, left, right) !== side) continue;
     const sf = surfaces.find(s => s.id === a.perchId) as Surface;
 
     if (a.activity === 'perch') {
@@ -221,18 +245,22 @@ export function crowdFigures(
    * nothing: scenery can disappear -- a narrower viewport, a different collection, a tree that
    * belongs to a room this player has left -- and a bobit must not go with it.
    */
-  surfaces: readonly Surface[] = [],
+  bandSurfaces: readonly Surface[] = [],
   /**
-   * Surfaces belonging to the TREE CANVAS, not to the band.
+   * Surfaces belonging to the two MARGIN CANVASES, not to the band.
    *
-   * NOT drawn here -- `treeFigures` has them. They are passed in only so anybody sitting on
-   * one, or climbing to one, can be left out of the band entirely. Two stages, two lists, and
-   * an agent's `perchId` belongs to exactly one of them: the in-band fallback tree's branch
-   * arrives as `surfaces` and is drawn here, the margin tree's three arrive as this and are
-   * not. Conflating the two made the fallback tree's occupant disappear, because he was
-   * excluded from the band and handed to a canvas that is not mounted in that case.
+   * NOT drawn here -- `tableauFigures` has them, one side at a time. They are passed in only
+   * so anybody sitting on one, or climbing to one, can be left out of the band entirely.
+   * Three stages, three lists, and an agent's `perchId` belongs to exactly one of them.
+   * Conflating band and margin surfaces once made the fallback tree's occupant disappear,
+   * because he was excluded from the band and handed to a canvas that is not mounted.
+   *
+   * `bandSurfaces` stays its own parameter rather than being folded in, because the in-band
+   * fallback tree is still live until it is retired with the rest of the tree. It is passed
+   * empty once the tableau owns the room.
    */
-  treeSurfaces: readonly Surface[] = [],
+  leftSurfaces: readonly Surface[] = [],
+  rightSurfaces: readonly Surface[] = [],
 ): FieldFigure[] {
   // Actors the director owns, indexed by the agent playing them. A cast agent is drawn from
   // its ACTOR -- pose and position both -- so the director and wanderAdvance can never fight
@@ -311,15 +339,15 @@ export function crowdFigures(
   for (const id of ids) {
     if (onOverlay.has(id)) continue;
     const a = agents[id];
-    // The TREE canvas has this one, not the band: perched on it, climbing it, or coming down.
-    // One predicate, both readers -- see `onTheTree`.
-    if (onTheTree(a, treeSurfaces)) continue;
+    // A MARGIN canvas has this one, not the band: perched on it, climbing it, or coming down.
+    // One predicate, every reader -- see `canvasOf`.
+    if (canvasOf(a, leftSurfaces, rightSurfaces) !== 'band') continue;
     const victim = state.loss?.id === id;
     // Sitting on a BAND surface -- the in-band fallback tree's single branch. `perchId` is
     // claimed the moment he sets off walking, so only an agent who has actually ARRIVED
     // (activity 'perch') is drawn off the floor.
     const perch = a.activity === 'perch' && a.perchId
-      ? surfaces.find(sf => sf.id === a.perchId)
+      ? bandSurfaces.find(sf => sf.id === a.perchId)
       : undefined;
 
     // The director has this one: it plays what the scene says, where the scene says.
@@ -386,8 +414,8 @@ export function crowdFigures(
       anim,
       color: figColor(toneOf(id), darkMode),
       // The band's own branch decides both, and he sits along its middle rather than at the x
-      // he happened to walk in from. Anybody on the MARGIN tree left through `onTheTree` above
-      // and is positioned by `treeFigures` from his climb instead.
+      // he happened to walk in from. Anybody on a MARGIN canvas left through `canvasOf` above
+      // and is positioned by `tableauFigures` from his climb instead.
       x: perch ? (perch.left + perch.right) / 2 : a.x,
       groundY: perch ? perch.y : groundY,
       scale: place.scale * heightFactor(id),
