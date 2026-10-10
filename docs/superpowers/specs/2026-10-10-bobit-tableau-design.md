@@ -1,6 +1,7 @@
 # The bobit tableau — design
 
-> **Status:** design, approved in brainstorming 2026-10-10. Not yet planned, not yet built.
+> **Status:** design, approved by Chris 2026-10-10, then amended the same day to add the
+> green curl (§2.4) at his request. Implementation plan to follow; nothing built yet.
 > **Supersedes:** the margin tree (`2026-09-17-bobit-margin-tree-design.md`), which this absorbs.
 > **Author:** Claude, from a brainstorm with Chris, 2026-10-10.
 
@@ -76,38 +77,67 @@ for half a collection.
 
 ```
    LEFT MARGIN                            RIGHT MARGIN
-                                               ╗ ▸ 24,25  pennants
-   ┌───────┐  ◂ 20                            ║  ▸ 23     yard
-   │   o   │  ◂ 19   ⑤ LOOKOUT                ║  ▸ 22     stay
-   ╞═══╤═══╡  ◂ 18     on the scaffold     ═══╩═══  ▸ 21   ⑥ MAST & FLAG
-   │   │   │  ◂ 17                         │ o   │           on the deck
-   ╫───┼───╫  ◂ 12                         ╞═════╡  ▸ 16
-   ║   │   ║  ◂ 11   ③ SCAFFOLD            │     │  ▸ 15  ④ TREEHOUSE
-   ╫───┼───╫  ◂ 10     on the cabin roof   ╘══╤══╛  ▸ 14     lashed into
-   ║   │   ║  ◂  9                            │     ▸ 13     the branches
-   ╔═══╧═══╗  ◂  4                         ╲  │  ╱
-   ║ ╱   ╲ ║  ◂  3   ① CABIN                ╲ │ ╱   ▸ 7,8
-   ║│  ▫  │║  ◂  2     on the ground          ╲│╱   ▸ 6    ② TREE
-   ║│     │║  ◂  1                              │    ▸ 5      on the ground
+                                            ⌒◝⌒◝⌒  ▸ 9   the green curl
+   ┌───────┐  ◂ 21                         ◟⌒◞⌒◞         — pulled up last
+   │   o   │  ◂ 20   ⑤ LOOKOUT                ╗ ▸ 25  pennant
+   ╞═══╤═══╡  ◂ 19     on the scaffold        ║  ▸ 24  yard
+   │   │   │  ◂ 18                            ║  ▸ 23  stay
+   ╫───┼───╫  ◂ 13                         ═══╩═══  ▸ 22  ⑥ MAST & FLAG
+   ║   │   ║  ◂ 12   ③ SCAFFOLD            │ o   │           on the deck
+   ╫───┼───╫  ◂ 11     on the cabin roof   ╞═════╡  ▸ 17
+   ║   │   ║  ◂ 10                         │     │  ▸ 16  ④ TREEHOUSE
+   ╔═══╧═══╗  ◂  4                         ╘══╤══╛  ▸ 14,15   in the branches
+   ║ ╱   ╲ ║  ◂  3   ① CABIN               ╲  │  ╱  ▸ 6,7,8  branches
+   ║│  ▫  │║  ◂  2     on the ground        ╲ │ ╱   ▸ 5      trunk    ② TREE
+   ║│     │║  ◂  1                             │
  ──┴┴─────┴┴──────────────────────────────────┴┴──────────────────
             the band floor — shared with the crowd
 ```
 
-Line numbers run 1–4 (cabin), 5–8 (tree), 9–12 (scaffold), 13–16 (treehouse),
-17–20 (lookout), 21–25 (mast and flag).
+Line numbers run 1–4 (cabin), 5–9 (tree), 10–13 (scaffold), 14–17 (treehouse),
+18–21 (lookout), 22–25 (mast and flag).
 
 | # | Structure | Side | Lines | Rests on | Complete at |
 |---|---|---|---|---|---|
 | ① | **Cabin** — two wall posts, two rafters | left | 4 | the ground | 16 bobits |
-| ② | **Tree** — trunk, three branches | right | 4 | the ground | 32 |
-| ③ | **Scaffold** — two uprights, two braces | left | 4 | the cabin roof | 48 |
-| ④ | **Treehouse deck** — two joists, deck, rail | right | 4 | the tree's branches | 64 |
-| ⑤ | **Lookout** — two posts, a roof | left | 4 | the scaffold | 80 |
-| ⑥ | **Mast and flag** — mast, stay, yard, two pennants | right | 5 | the deck | 100 |
+| ② | **Tree** — trunk, three branches, **the green curl** | right | 5 | the ground | 36 |
+| ③ | **Scaffold** — two uprights, two braces | left | 4 | the cabin roof | 52 |
+| ④ | **Treehouse deck** — two joists, deck, rail | right | 4 | the tree's branches | 68 |
+| ⑤ | **Lookout** — two posts, a roof | left | 4 | the scaffold | 84 |
+| ⑥ | **Mast and flag** — mast, stay, yard, pennant | right | 4 | the deck | 100 |
 
 **25 lines, 6 structures, 100 bobits.**
 
-### 2.4 One thing the occlusion rule forbids
+### 2.4 Two kinds of line: sticks and strings
+
+Most lines are **sticks** — rigid, hauled in flat, pivoted up about one end, lashed at a joint.
+Line 9, the tree's canopy, is a **string**: flexible, hauled up vertically behind a climber,
+and then *curled* into loops at the top rather than set at an angle.
+
+This is Chris's image, 2026-10-10, and it is the right one:
+
+> Sometimes when little kids draw trees, they draw the trunk, and then draw loopy circles in
+> green to be the leaves. I could see that starting as a long green string that they pull up
+> from the top and once it gets to the top, they curl it for the leaves.
+
+Three consequences, all deliberate:
+
+- **The tree is a bare frame until its last line.** Trunk and branches stand skeletal from
+  line 5 to line 8, and at line 9 — 36 bobits — a bobit climbs to the crown, hauls the string
+  up behind him, and curls it off. The tree becomes a tree in a single beat. That is a better
+  payoff than a canopy accreting in quarters, and it is why the canopy is last rather than
+  first.
+- **A string needs its own `raise` analogue.** A stick pivots; a string pays out along the
+  climber's path and then runs a `curl` phase, a loop-drawing parameter from 0 to 1. See §4.1.
+- **It introduces the blueprint's first colour.** Everything else is drawn in the theme's body
+  colour. The canopy is green, which means a light-mode green and a dark-mode green, derived
+  the way `accentFor` derives its accent — never a fixed value. A fixed dark prop is a smudge
+  in dark mode, which is exactly how the cannon first shipped.
+
+The `kind` field is general even though this blueprint uses it once. Later tableaus will want
+ropes, vines and bunting, and they are all strings.
+
+### 2.5 One thing the occlusion rule forbids
 
 The obvious finale is a rope bridge spanning the two stacks. **It is forbidden** and is not in
 this design. The margin box is measured from the question column's *top* edge downward, so
@@ -145,8 +175,8 @@ is out of scope here. It should be filed there.
 
 **Consequence worth stating plainly:** a collection with fewer than 100 questions can never
 finish its tableau — a 31-question collection tops out at 7 lines, which is a finished cabin
-and a tree still missing its top branch. That is the accepted cost of predictable cadence, and
-it resolves itself as collections move to the 100-question target.
+and a bare tree frame: trunk, two branches, and no leaves on it. That is the accepted cost of
+predictable cadence, and it resolves itself as collections move to the 100-question target.
 
 ## 4. The worksite
 
@@ -163,6 +193,12 @@ crew keeps working while the timer runs.
 | `raise` | The line pivots from horizontal to its final angle. One worker heaves, a second steadies. | `heave` / `heave2` |
 | `lash` | A climber ascends to the joint; the line settles the last few degrees. | `climb`, then `present` |
 | `done` | The line is permanent. Its `Surface`s become claimable. | crew released |
+
+A **string** (§2.4) substitutes two phases. `raise` becomes **`pay-out`** — the string follows
+a climber up, drawn as a slack line from his hands to the ground crew — and `lash` becomes
+**`curl`**, a 0→1 parameter that draws the loops on from the crown outward. `curl` is the only
+phase in the blueprint whose output is not a straight segment, and it is what turns a bare
+frame into a tree.
 
 For any line whose anchor is **above the ground** — everything after structure ① — `haul` and
 `raise` are replaced by a **`hoist`** variant: the line goes up on a rope, a worker above
@@ -284,7 +320,7 @@ none`, set pieces only — and **this design does not widen it.** The tableau ho
 geometry (§2.1), which is strictly stronger than holding it by convention, and both margin
 canvases may therefore stay interactive.
 
-The rope bridge of §2.4 is the one thing this design wanted and did not take.
+The rope bridge of §2.5 is the one thing this design wanted and did not take.
 
 ## 8. Testing and verification
 
@@ -304,7 +340,10 @@ written on that basis.
   position and at `t=1` match the final blueprint position exactly. Asserting that the end of
   the animation equals the blueprint is what stops a line settling 3px off its own joint.
 - **Surfaces** — only built lines emit them; ids are stable across rebuilds; a half-built
-  structure emits nothing a bobit could stand on in mid-air.
+  structure emits nothing a bobit could stand on in mid-air. **A string emits none at all** —
+  nobody perches on foliage.
+- **The curl** — `curl(0)` puts no ink above the crown and `curl(1)` is inside the rig's
+  bounds, so the canopy cannot be the thing that breaches §2.1.
 - **Partition** — `canvasOf` is total and disjoint over a generated agent population.
 
 **Assert consequences, not values.** Three of this feature's existing tests asserted the
@@ -314,8 +353,10 @@ implementation's own arithmetic back at it and each sat on a real defect.
 
 - A contact sheet of **all 26 states**, both themes, at 1920 / 1440 / 1280. The point is to
   see whether step 9 of 25 looks deliberate, which no unit test can answer.
-- A **build strip**: one `raise` and one `hoist` sampled at ten points, to catch a line that
-  pivots from the wrong end or a crew that lets go early.
+- A **build strip**: one `raise`, one `hoist` and one `curl` sampled at ten points, to catch a
+  line that pivots from the wrong end, a crew that lets go early, or a canopy that reads as a
+  scribble rather than as leaves. The curl is the one piece of this blueprint whose success is
+  purely a matter of how it looks, so it gets its own row in both themes.
 - A **real crossing**, driven the player's way through the mock, not via a synthetic replay —
   `__bobitScene` passes an id that never becomes a resident, so a tool built to find this class
   of bug can be structurally unable to show it.
@@ -335,11 +376,15 @@ re-derived rather than inherited.
 
 ## 9. Migration: the tree
 
-The tree becomes structure ②: a trunk line and three branch lines, hauled up like everything
-else.
+The tree becomes structure ②: a trunk line, three branch lines and the green curl, hauled up
+like everything else.
 
 - Its branch heights and `Surface` geometry are **ported verbatim**, so climbers behave
   identically and `marginTree.test.ts`'s intent survives.
+- **The canopy is not ported.** The existing five-lobe ellipse canopy is replaced by the
+  curled string of §2.4. This is a deliberate improvement, not a regression: the current canopy
+  is noted in `HANDOFF-bobits.md` §7 as "a smooth dome… the furthest thing from the scribbled
+  foliage Chris sketched", with roughening listed as cheap and undone. The curl is that fix.
 - `MIN_TREE_MARGIN`, `treeScale` and the in-band fallback tree are retired with it. Narrow
   screens get the crowd cheer, per §1.
 - **The one player who loses something:** at exactly 25% of a 100-question collection a player
@@ -356,7 +401,7 @@ else.
   the whole reason it is authored as data.
 - Server-side persistence of the high-water mark (ev-accounts work).
 - In-match rendering on phones and narrow viewports.
-- The rope bridge (§2.4).
+- The rope bridge (§2.5).
 - Emergent worksite behaviour — a worker who fumbles, a bystander who wanders over to watch.
   Deliberately deferred: the scripted sequences can borrow from it later, and unpredictability
   collides with screenshot verification, which is this codebase's primary defence.
