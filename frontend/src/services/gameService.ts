@@ -50,7 +50,12 @@ export async function createGameSession(collectionId?: number, gameMode?: string
     questions: response.questions,
     degraded: response.degraded ?? false,
     collectionName: response.collectionName ?? 'Federal Civics',
-    collectionSlug: response.collectionSlug ?? 'federal-civics',
+    // Must match the server's FEDERAL_SLUG. This read 'federal-civics', which names no
+    // collection -- the Federal row's slug is 'federal' -- and the value is not cosmetic:
+    // bobit progress is filed under it, so a default that matches nothing files a crowd
+    // where nothing can read it back. The server has always SENT 'federal' here, so this
+    // default is only reached if the field is missing entirely (ev-accounts #986).
+    collectionSlug: response.collectionSlug ?? 'federal',
     gameMode: response.gameMode ?? 'easy-steps',
     totalQuestions: response.totalQuestions ?? 8,
   };
