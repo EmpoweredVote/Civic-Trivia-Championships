@@ -101,10 +101,26 @@ export function loggedErrors(): string[] {
   return [...consoleErrors];
 }
 
+let allowed: RegExp[] = [];
+
+/**
+ * Exempt ONE message, by pattern, for the current test only.
+ *
+ * The rule above exists because a warning nobody fails on is a warning nobody reads, so this
+ * is deliberately narrow: a pattern, named at the point of use, with the reason written
+ * beside it. Reach for it only when the message is an artifact of testing rather than
+ * something a player could hit -- React's "not wrapped in act(...)" on an async effect being
+ * the case it was added for. Never widen it to silence a real warning.
+ */
+export function allowConsoleError(pattern: RegExp): void {
+  allowed.push(pattern);
+}
+
 beforeEach(() => {
   reducedMotion = false;
   listeners.clear();
   consoleErrors = [];
+  allowed = [];
 
   vi.stubGlobal('matchMedia', (query: string) => ({
     matches: query.includes('prefers-reduced-motion') ? reducedMotion : false,
@@ -134,8 +150,9 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  const errors = consoleErrors;
+  const errors = consoleErrors.filter((e) => !allowed.some((p) => p.test(e)));
   consoleErrors = [];
+  allowed = [];
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   expect(
