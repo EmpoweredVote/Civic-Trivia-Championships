@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@headlessui/react';
 import { API_URL } from '../../services/api';
+import { rejectedNote, type QuestionGenerationResult } from './generationResult';
 import { useAuthStore } from '../../store/authStore';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -122,7 +123,7 @@ export function ElectionsPage() {
   const [genCollectionSlug, setGenCollectionSlug] = useState('');
   const [showCollectionPrompt, setShowCollectionPrompt] = useState(false);
   const [genLoading, setGenLoading] = useState(false);
-  const [genResult, setGenResult] = useState<{ questionsCreated: number; archived: number; collectionSlug: string; jurisdiction: string; } | null>(null);
+  const [genResult, setGenResult] = useState<QuestionGenerationResult | null>(null);
   const [genError, setGenError] = useState<{ type: 'blocked' | 'error'; message: string; existingCount?: number; generatedAt?: string | null; } | null>(null);
 
   const [editingRace, setEditingRace] = useState<RaceWithCount | null>(null);
@@ -362,7 +363,7 @@ export function ElectionsPage() {
         await fetchClassified();
         setRegenConfirmOpen(false);
         setRegenRace(null);
-        showToast(`Re-generated ${data.questionsCreated ?? 0} questions for ${regenRace.jurisdiction}.`);
+        showToast(`Re-generated ${data.questionsCreated ?? 0} questions for ${regenRace.jurisdiction}.${rejectedNote(data.questionsRejected)}`);
       } else {
         showToast(data.error || 'Failed to re-generate questions.', 'error');
         setRegenConfirmOpen(false);
@@ -399,7 +400,7 @@ export function ElectionsPage() {
       if (res.ok) {
         await fetchClassified();
         setResultRace(null);
-        showToast(`${data.questionsCreated ?? 0} current-term questions created for ${resultRace.jurisdiction}.`);
+        showToast(`${data.questionsCreated ?? 0} current-term questions created for ${resultRace.jurisdiction}.${rejectedNote(data.questionsRejected)}`);
       } else if (res.status === 409) {
         setResultError('Current-term questions already generated for this race.');
       } else {
@@ -926,6 +927,16 @@ export function ElectionsPage() {
                   <strong>{genResult.questionsCreated}</strong> draft questions created for {genResult.jurisdiction}.
                   {genResult.archived > 0 && ` (${genResult.archived} previous questions archived)`}
                 </p>
+                {(genResult.questionsRejected ?? 0) > 0 && (
+                  <p style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '13px', color: C.incorrect, marginBottom: '4px' }}>
+                    <strong>{genResult.questionsRejected}</strong> more{' '}
+                    {genResult.questionsRejected === 1 ? 'was' : 'were'} refused by the question
+                    schema and not written — wrong option count, an answer index outside the
+                    options, an unknown difficulty, a missing source or a banned explanation
+                    opener. The reason for each is in the generation job log. This is the prompt
+                    to look at, not the questions that did land.
+                  </p>
+                )}
                 <div style={{ margin: '16px 0' }}>
                   <Link
                     to={`/admin/questions?collection=${genResult.collectionSlug}&status=draft`}
