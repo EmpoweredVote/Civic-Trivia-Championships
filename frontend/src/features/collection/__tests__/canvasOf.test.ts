@@ -121,30 +121,86 @@ describe('canvasOf — the partition', () => {
     expect(canvasOf(agent({ activity: 'raising' }), LEFT, RIGHT)).toBe('band');
   });
 
-  it('is TOTAL and DISJOINT over a generated population', () => {
+  /**
+   * M4 of the tableau review. This generated population used to put the `job:*` ids in
+   * `perchId` and never set `jobId` at all, so NO agent in it was a worker: the first clause
+   * of the partition -- the one C1 and C3 both lived in -- was never entered, and the test
+   * passed by asserting that a value it never computed was one of three strings.
+   *
+   * So `perchId` and `jobId` now vary independently, the surface lists are paired with the
+   * `live` flags that the caller's single `stackLive` predicate guarantees, and the coverage
+   * counts at the bottom FAIL if any branch stops being exercised. A totality test that has
+   * quietly stopped covering something is worse than no totality test, because it reads in
+   * review as though it covers everything.
+   */
+  it('is TOTAL over a generated population, and routes nobody to a dead stack', () => {
     const activities: Activity[] = [
       'wander', 'rank', 'moving', 'climbing', 'descending', 'perch',
       'hauling', 'raising', 'lashing',
     ];
-    const perchIds = [
-      undefined, 'tableau:left:12', 'tableau:right:6', 'tableau:left:99',
-      'job:left:9', 'job:right:14',
+    const perchIds = [undefined, 'tableau:left:12', 'tableau:right:6', 'tableau:left:99'];
+    // Including a malformed one: a side this partition cannot read must fall back, not guess.
+    const jobIds = [undefined, 'job:left:9', 'job:right:14', 'job:middle:3'];
+
+    // Surfaces exist for a stack IF AND ONLY IF it is live -- that is what C3's one-predicate
+    // fix guarantees, and generating the impossible combinations instead would test a
+    // contract the caller never offers.
+    const stacks: Array<{ l: Surface[]; r: Surface[]; live: { left: boolean; right: boolean } }> = [
+      { l: LEFT, r: RIGHT, live: { left: true, right: true } },
+      { l: LEFT, r: [], live: { left: true, right: false } },
+      { l: [], r: RIGHT, live: { left: false, right: true } },
+      { l: [], r: [], live: { left: false, right: false } },
     ];
-    const surfaceSets: Array<[Surface[], Surface[]]> = [
-      [LEFT, RIGHT], [LEFT, []], [[], RIGHT], [[], []],
-    ];
+
+    const seen = { worker: { left: 0, right: 0 }, climber: { left: 0, right: 0 }, band: 0 };
     let n = 0;
+
     for (const activity of activities) {
       for (const perchId of perchIds) {
-        for (const [l, r] of surfaceSets) {
-          const got = canvasOf(agent({ activity, perchId }), l, r);
-          // Total: always one of the three. Disjoint: it returns one value, so a figure
-          // built from it can only be pushed onto one list.
-          expect(['band', 'left', 'right'], `${activity}/${perchId}`).toContain(got);
-          n++;
+        for (const jobId of jobIds) {
+          for (const { l, r, live } of stacks) {
+            const a = agent({ activity, perchId, jobId });
+            const got = canvasOf(a, l, r, live);
+            const where = `${activity}/${perchId}/${jobId}/${live.left}${live.right}`;
+
+            // Total: always exactly one of the three, so a figure built from it lands on
+            // exactly one list.
+            expect(['band', 'left', 'right'], where).toContain(got);
+
+            // Never a stack that is not mounted. This is C3 stated as a property: everybody
+            // sent to an unmounted canvas is drawn nowhere at all.
+            if (got !== 'band') expect(live[got], `${where} routed to a dead stack`).toBe(true);
+
+            const working = activity === 'hauling' || activity === 'raising' || activity === 'lashing';
+            if (got === 'band') seen.band++;
+            else if (working) {
+              // A worker goes to the side his OWN job names -- never one inferred from
+              // scenery, because the line he is raising is not scenery yet.
+              expect(jobId, where).toContain(`job:${got}:`);
+              seen.worker[got]++;
+            } else {
+              // A climber goes only where his seat actually is.
+              const list = got === 'left' ? l : r;
+              expect(list.some(sf => sf.id === perchId), `${where} seat missing`).toBe(true);
+              seen.climber[got]++;
+            }
+            n++;
+          }
         }
       }
     }
-    expect(n).toBe(activities.length * perchIds.length * surfaceSets.length);
+
+    expect(n).toBe(
+      activities.length * perchIds.length * jobIds.length * stacks.length,
+    );
+
+    // COVERAGE. The point of M4: if a future edit stops generating workers, or stops
+    // generating climbers, or routes everything to the band, this fails instead of passing
+    // vacuously.
+    expect(seen.worker.left, 'workers routed left').toBeGreaterThan(0);
+    expect(seen.worker.right, 'workers routed right').toBeGreaterThan(0);
+    expect(seen.climber.left, 'climbers routed left').toBeGreaterThan(0);
+    expect(seen.climber.right, 'climbers routed right').toBeGreaterThan(0);
+    expect(seen.band, 'fallbacks to the band').toBeGreaterThan(0);
   });
 });

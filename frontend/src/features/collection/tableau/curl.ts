@@ -1,5 +1,4 @@
 import type { TableauLine } from './blueprint';
-import { lineEndpoints } from './tableauGeometry';
 
 /** Half the horizontal travel of the curl, in rig units, measured from the crown. */
 export const CURL_SPAN = 120;
@@ -58,20 +57,30 @@ export function curlPoints(t: number): Array<[number, number]> {
   return pts;
 }
 
+/** The crown: the string's endpoint 1 in canvas px, which is `lineEndpoints(line, ...)`. */
+export interface Crown { x1: number; y1: number }
+
 /**
  * The curl, stroked.
  *
  * A STROKE, not a fill: it is a piece of string. Drawn in the leaf colour the caller supplies,
  * which must be theme-derived -- a fixed green is a different kind of wrong in each theme, and
  * a fixed dark prop was invisible in dark mode on the cannon for exactly this reason.
+ *
+ * TAKES the crown rather than computing it, which is what keeps this module a LEAF. It used to
+ * call `lineEndpoints`, while `tableauGeometry` calls `curlExtent` from here to bound the
+ * canopy -- a genuine import cycle (M2 of the tableau review). It was not a live hazard,
+ * because both are hoisted function declarations and neither module computes anything at
+ * import time, but it would have become one the moment either turned into a `const` arrow or
+ * grew a top-level constant derived from the other. Both callers already hold the endpoints
+ * they would have been asking this function to derive again.
  */
 export function drawCurl(
   ctx: CanvasRenderingContext2D,
-  line: TableauLine, ox: number, floorY: number, scale: number, color: string, t: number,
+  line: TableauLine, crown: Crown, scale: number, color: string, t: number,
 ): void {
   const pts = curlPoints(t);
   if (pts.length < 2) return;
-  const crown = lineEndpoints(line, ox, floorY, scale);
 
   ctx.save();
   ctx.strokeStyle = color;
