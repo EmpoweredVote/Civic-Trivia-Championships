@@ -16,16 +16,27 @@ import type { LocaleConfig } from './bloomington-in.js';
  * - LA appears only as geographic context ("in LA County"); do not attribute county government to city
  * - ALL officeholder questions MUST have expiresAt -- verify termEnd dates during curation
  * - No addresses or phone numbers in answer options (quality rule)
- * - Verify state legislators (AD-51 / SD-26) district coverage before activation
+ * - Santa Monica is AD-51 and SD-24. It is NOT SD-26: that is Maria Elena Durazo's
+ *   central/East LA district, and this file asserted it until 2026-10-11, which put a
+ *   false 'Durazo represents Santa Monica' question into the live bank (smo-413).
  *
  * CURRENT OFFICEHOLDERS:
  * - Mayor: Caroline Torosis (term ends 2026-12-01)
  * - Mayor Pro Tem / Council: Jesse Zwick (term ends 2026-12-01)
  * - Council Member: Lana Negrete (term ends 2026-12-01)
  * - Council Member: Ellis Raskin (term ends 2028-12-01)
- * - City Attorney: Douglas Sloan (term ends 2026-12-01 -- VERIFY on smgov.net during curation)
+ * - City Attorney: Heidi von Tongeln (APPOINTED by the Council 2026-03-11; no fixed term,
+ *   so the date below is a re-check horizon, not an expiry. Douglas Sloan, who this file
+ *   named until 2026-10-11, resigned effective 2025-08-31.)
  * - CA Assembly AD-51: Rick Chavez Zbur (term ends 2026-12-07)
- * - CA Senate SD-26: Maria Elena Durazo (term ends 2026-12-07)
+ * - CA Senate SD-24: Ben Allen (term ends 2026-12-07; termed out at the 2026 election)
+ *
+ * APPOINTED OFFICERS -- the part of this roster no election moves, and the backbone of the
+ * collection's expiring tier (every elected body here was on the 2026-11-03 ballot):
+ * - City Manager: Oliver Chi (from July 2025)
+ * - Chief of Police: Darrick Jacob (sworn in 2026-01-14)
+ * - Director of Public Works: Christopher Dishlip (from 2026-04-06)
+ * - SMMUSD Superintendent: Antonio M. Shelton, Ed.D. (from 2023-07-01)
  */
 export const santaMonicaCaConfig: LocaleConfig = {
   locale: 'santa-monica-ca',
@@ -90,9 +101,15 @@ export const santaMonicaCaConfig: LocaleConfig = {
     { name: 'Jesse Zwick', role: 'City Council Member / Mayor Pro Tem', termEnd: '2026-12-01T00:00:00Z' },
     { name: 'Lana Negrete', role: 'City Council Member', termEnd: '2026-12-01T00:00:00Z' },
     { name: 'Ellis Raskin', role: 'City Council Member', termEnd: '2028-12-01T00:00:00Z' },
-    { name: 'Douglas Sloan', role: 'City Attorney', termEnd: '2026-12-01T00:00:00Z' },
+    { name: 'Heidi von Tongeln', role: 'City Attorney', termEnd: '2028-12-01T00:00:00Z' },
     { name: 'Rick Chavez Zbur', role: 'California State Assembly Member', district: 'AD-51', termEnd: '2026-12-07T00:00:00Z' },
-    { name: 'Maria Elena Durazo', role: 'California State Senator', district: 'SD-26', termEnd: '2026-12-07T00:00:00Z' },
+    { name: 'Ben Allen', role: 'California State Senator', district: 'SD-24', termEnd: '2026-12-07T00:00:00Z' },
+    // Appointed, not elected: termEnd is a re-check horizon. Staggered on purpose, so the
+    // tier cannot die on one date the way the elected tier does every December.
+    { name: 'Oliver Chi', role: 'City Manager', termEnd: '2028-07-01T00:00:00Z' },
+    { name: 'Darrick Jacob', role: 'Chief of Police', termEnd: '2028-01-01T00:00:00Z' },
+    { name: 'Christopher Dishlip', role: 'Director of Public Works', termEnd: '2028-04-01T00:00:00Z' },
+    { name: 'Antonio Shelton', role: 'SMMUSD Superintendent', termEnd: '2027-07-01T00:00:00Z' },
   ],
 
   // Wikipedia-first source URLs per carry-forward rule (Phase 58-02)
