@@ -72,7 +72,9 @@ export function drawTableau(
     // construction. Guarded here as well as at the call site, because a draw that cannot
     // double-paint is cheaper than a caller remembering which counter to pass.
     if (site && site.line.n === line.n) continue;
-    if (line.kind === 'string') drawCurl(ctx, line, ox, floorY, scale, leafColor, 1);
+    if (line.kind === 'string') {
+      drawCurl(ctx, line, lineEndpoints(line, ox, floorY, scale), scale, leafColor, 1);
+    }
     else drawStick(ctx, line, ox, floorY, scale, color);
   }
 
@@ -86,7 +88,10 @@ export function drawTableau(
         // onward, so also drawing it as a line puts a green bar up through the middle of the
         // canopy for six seconds, which then vanishes at `done` when the finished path takes
         // over and draws only loops. A stem that pops out of existence is worse than no stem.
-        drawCurl(ctx, site.line, ox, floorY, scale, leafColor, phase === 'curl' ? k : 1);
+        drawCurl(
+          ctx, site.line, lineEndpoints(site.line, ox, floorY, scale), scale, leafColor,
+          phase === 'curl' ? k : 1,
+        );
       } else {
         // Still being paid out: a plain line following the climber up to the crown.
         const e = lineAt(site.line, site.t, ox, floorY, scale);

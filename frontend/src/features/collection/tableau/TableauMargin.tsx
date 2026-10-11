@@ -90,9 +90,21 @@ export function TableauMargin({
     bottom: groundLineFromBottom(),
     width: box.width,
     height: box.height,
-    // Behind the question column in z-order, so that even if a future layout change made the
-    // boxes overlap, the card wins. Belt and braces over the geometry.
-    zIndex: 0,
+    // NO z-index, and no pretending one would help. This used to carry `zIndex: 0` with a
+    // comment calling it belt and braces over the geometry -- the belt was on backwards (M6).
+    // Nothing between this div and the root creates a stacking context, and the question
+    // column and its ancestors are all `position: static`, so in paint order a POSITIONED
+    // z-index:0 element lands in step 8 and a non-positioned block in step 4: the canvas would
+    // have painted IN FRONT of the card, which is the exact failure the comment promised to
+    // prevent. Measured in the browser rather than reasoned about, after the comment had
+    // already been believed once.
+    //
+    // So bound 1 rests on geometry ALONE -- this box is pinned to its own outer edge with the
+    // measured margin width, so its inner edge IS the question column's edge and nothing drawn
+    // inside can reach the card. `tableauGeometry.test.ts` holds that at every width. Treat it
+    // as the only guarantee there is, because it is; z-order is not available as a backstop
+    // here and a negative z-index would risk painting the stack behind an ancestor's
+    // background, which is how bobits vanish.
     // Each stack hugs its OWN outer edge, so the slack always opens on the card's side.
     ...(side === 'left' ? { left: 0 } : { right: 0 }),
   };
