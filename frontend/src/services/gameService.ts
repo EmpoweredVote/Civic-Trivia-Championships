@@ -49,7 +49,9 @@ export async function createGameSession(collectionId?: number, gameMode?: string
     sessionId: response.sessionId,
     questions: response.questions,
     degraded: response.degraded ?? false,
-    collectionName: response.collectionName ?? 'Federal Civics',
+    // 'US Civics' is the collection's actual name; this read 'Federal Civics', which is
+    // nothing's name. Display-only, unlike the slug below (ev-accounts #987).
+    collectionName: response.collectionName ?? 'US Civics',
     // Must match the server's FEDERAL_SLUG. This read 'federal-civics', which names no
     // collection -- the Federal row's slug is 'federal' -- and the value is not cosmetic:
     // bobit progress is filed under it, so a default that matches nothing files a crowd
