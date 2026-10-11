@@ -9,6 +9,15 @@ import {
  * Zod schema for validating AI-generated civic trivia questions.
  * Mirrors the database questions table structure from src/db/schema.ts.
  */
+/**
+ * Attribution openers, banned in explanation prose since 2026-09-29.
+ *
+ * Anchored at the start on purpose: "according to" is a perfectly good phrase mid-sentence
+ * ("the deadline depends on the county, according to state law"), and a rule that fires on
+ * that would be a false positive the next person has to argue with. Only the OPENER is noise.
+ */
+export const ATTRIBUTION_OPENER = /^\s*(according to|per\s|source:|as reported by|citing\s)/i;
+
 export const QuestionSchema = z.object({
   // External ID: either scheme.
   //   new     <collection-slug>_<NNNN>   e.g. "akron-oh_0001"
@@ -51,11 +60,23 @@ export const QuestionSchema = z.object({
 
   // Explanation. Attribution lives in source.url, NOT in the prose — the
   // "According to ..." opener was stripped bank-wide on 2026-09-29 (1,978 -> 0),
-  // and this refine would have made the generator write it straight back.
+  // and the refine that USED to sit here required it, which would have made the
+  // generator write it straight back.
+  //
+  // Removing that requirement was not enough: the prompts still ORDERED the opener
+  // ("Every explanation MUST begin with..."), so the santa-monica-ca run of
+  // 2026-10-02 produced 8 of 8 with it, three days after the ruling. The prompts are
+  // fixed now, and this is the half that does not depend on the model complying —
+  // a rejected question is retried, and the retry has the corrected instruction.
   explanation: z
     .string()
     .min(20, 'Explanation must be at least 20 characters')
-    .max(500, 'Explanation must be at most 500 characters'),
+    .max(500, 'Explanation must be at most 500 characters')
+    .refine(
+      (v) => !ATTRIBUTION_OPENER.test(v),
+      'Explanation must not open with an attribution phrase ("According to ...", "Per ...", ' +
+        '"Source: ..."). Attribution belongs in source.url — start with the fact itself.'
+    ),
 
   // Difficulty level matching federal questions
   difficulty: z.enum(['easy', 'medium', 'hard']),

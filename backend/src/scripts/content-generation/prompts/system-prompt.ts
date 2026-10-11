@@ -78,7 +78,7 @@ Return ONLY valid JSON — no markdown code blocks, no explanatory text before o
       "text": "Question text here?",
       "options": ["Option A", "Option B", "Option C", "Option D"],
       "correctAnswer": 0,
-      "explanation": "According to [source name], ...",
+      "explanation": "A sentence or two teaching the fact, with no attribution opener",
       "difficulty": "easy",
       "topicCategory": "topic-slug",
       "source": {
@@ -150,10 +150,14 @@ ${answerPositionBlock}
 - A civic-minded local resident should need to actually think before answering
 
 ### Explanations
-- Every explanation MUST begin with: "According to [source name], ..."
-- Cite the specific authoritative source you used for that fact
-- Example: "According to bloomington.in.gov, the city council has 9 members."
+- NEVER open an explanation with an attribution phrase: no "According to ...", no "Per ...",
+  no "Source: ...". Attribution belongs in the "source" field, which is where the app reads it
+  from; in the prose it is noise the player has to read past. This was ruled on 2026-09-29 and
+  1,978 explanations were rewritten to remove it. The schema rejects it.
+- Open with the fact itself
+- Example: "Bloomington's city council has nine members, six elected by district and three at large."
 - Explanations should be 1-3 sentences that teach the fact, not just restate it
+- Still use a specific authoritative source for every fact — put it in "source", not the prose
 
 ### Source Requirements
 - Every question MUST have a real, verifiable source URL

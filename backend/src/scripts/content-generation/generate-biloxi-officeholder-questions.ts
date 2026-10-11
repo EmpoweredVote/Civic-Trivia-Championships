@@ -5,6 +5,13 @@
  * Generates ~14 questions specifically about current elected officials,
  * seeds them as draft with expiresAt pre-set, to satisfy the 15% expiring ratio.
  *
+ * DO NOT RE-RUN AS WRITTEN. The ward-by-ward prompt below produces exactly the
+ * seven-ward ROLL-CALL that was ruled out of the bank on 2026-09-29 and removed
+ * from this collection — a repeated stem whose only varying token is a slot index.
+ * biloxi-ms is a DOCUMENTED breach of the expiring floor at 9.2% precisely because
+ * that roll-call is not allowed to carry the ratio. Rebuild around distinct OFFICES
+ * (the madison-wi model) if this collection is revisited.
+ *
  * Current officeholders (all expire 2029-06-01):
  *   Mayor: Andrew "FoFo" Gilich, Jr. (3rd term, re-elected June 2025)
  *   Ward 1: Wayne Gray
@@ -27,6 +34,7 @@ import { db } from '../../db/index.js';
 import { questions, collections, collectionQuestions, topics } from '../../db/schema.js';
 import { eq, and, like, inArray } from 'drizzle-orm';
 import { DuplicateDetector } from '../../services/qualityRules/rules/duplicate.js';
+import { ATTRIBUTION_OPENER } from './question-schema.js';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -44,7 +52,10 @@ const OfficeholderQuestionSchema = z.object({
   text: z.string().min(10).max(300),
   options: z.array(z.string().min(1).max(200)).length(4),
   correctAnswer: z.number().int().min(0).max(3),
-  explanation: z.string().min(20).max(500).refine(v => v.includes('According to'), 'Must include "According to"'),
+  explanation: z.string().min(20).max(500).refine(
+    v => !ATTRIBUTION_OPENER.test(v),
+    'Explanation must not open with an attribution phrase — attribution lives in source.url',
+  ),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   topicCategory: z.string().min(1),
   source: z.object({ name: z.string().min(1), url: z.string().url() }),
@@ -85,7 +96,8 @@ QUESTION REQUIREMENTS:
 - ALL questions MUST have expiresAt: "${EXPIRES_AT}" (ALL of these questions expire when the term ends in June 2029)
 - Use externalId format bxl-4XX (e.g., bxl-401, bxl-402, ...) to avoid conflicts with existing bxl-001 to bxl-399 questions
 - Source: use { name: "City of Biloxi", url: "https://www.biloxi.ms.us" } for all city government questions
-- Explanations must start with "According to" and cite the source
+- Explanations must NOT start with "According to" or any attribution phrase — start with
+  the fact. The source goes in the source field (ruled 2026-09-29)
 
 FORBIDDEN:
 - Questions about county or state government (that's a different collection)
@@ -113,7 +125,7 @@ Return a JSON object with this exact structure:
       "text": "...",
       "options": ["A", "B", "C", "D"],
       "correctAnswer": 0,
-      "explanation": "According to ...",
+      "explanation": "A sentence or two teaching the fact, with no attribution opener",
       "difficulty": "easy",
       "topicCategory": "city-government",
       "source": { "name": "City of Biloxi", "url": "https://www.biloxi.ms.us" },

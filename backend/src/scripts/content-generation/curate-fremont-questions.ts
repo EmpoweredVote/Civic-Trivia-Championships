@@ -168,7 +168,7 @@ async function runSampleMode() {
 
   console.log('ALL QUESTIONS:\n');
   console.log('  □ Clean and direct tone (clear, not stuffy, not trying to be funny)');
-  console.log('  □ Explanation is informative and neutral with "According to..." citation');
+  console.log('  □ Explanation is informative and neutral, and does NOT open with "According to"');
   console.log('  □ Four plausible answer options (no obviously wrong throwaway answers)');
   console.log('  □ Correct answer is actually correct\n');
 

@@ -73,7 +73,7 @@ Return ONLY valid JSON — no markdown code blocks, no explanatory text before o
       "text": "Question text here?",
       "options": ["Option A", "Option B", "Option C", "Option D"],
       "correctAnswer": 0,
-      "explanation": "According to [source name], ...",
+      "explanation": "A sentence or two teaching the fact, with no attribution opener",
       "difficulty": "easy",
       "topicCategory": "topic-slug",
       "source": {
@@ -178,9 +178,11 @@ ${buildQualityGuidelines(answerPositionAssigned)}
 - Avoid absurd options like "1,000 senators" or "The Department of Unicorns"
 
 ### Explanations
-- Every explanation MUST begin with: "According to [source name], ..."
+- NEVER open an explanation with an attribution phrase: no "According to ...", no "Per ...",
+  no "Source: ...". Attribution belongs in the "source" field, not the prose a player reads
+  (ruled 2026-09-29; 1,978 explanations were rewritten to remove it). The schema rejects it.
 - Cite the specific authoritative source you used for that fact
-- Example: "According to in.gov, the Indiana General Assembly meets for 61 days in odd-numbered years."
+- Example: "The Indiana General Assembly meets for 61 days in odd-numbered years and 30 in even ones."
 - Explanations should be 1-3 sentences that teach the fact, not just restate it
 - Use explanations to provide civic context: WHY this matters, HOW this affects citizens
 
