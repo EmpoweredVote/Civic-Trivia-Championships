@@ -1,0 +1,182 @@
+{
+  "timestamp": "2026-10-11T19:47:54.476Z",
+  "target": "santa-monica-ca",
+  "kind": "draft-clearance",
+  "why": "The 2026-10-02 generation run (its report is beside this one) inserted 23 questions and left 8 of them in draft. Drafts are not served, but the readiness gate counts them in both its metrics, so they quietly moved the numbers the 2026-09-27 ruling is read against. Bank-wide every draft batch examined so far has carried real defects; these were reviewed one at a time.",
+  "systemicFinding": "ALL EIGHT opened their explanation with \"According to ...\" -- the attribution boilerplate Chris ruled out of the bank on 2026-09-29, when 1,978 explanations were rewritten to zero. These were generated 2026-10-02, THREE DAYS LATER, so the generator still writes it. The rewrite here clears the collection (verified: zero \"According to\" explanations remain live), but the prompt that produced them has not been fixed and will produce more.",
+  "dispositions": [
+    {
+      "externalId": "smo-512",
+      "status": "active",
+      "difficulty": "medium",
+      "verdict": "ACTIVATED. AD-51 is correct. Explanation rewritten: it opened \"According to the Santa Monica city government information\" and named the sitting member inside an EVERGREEN question, which is how a question with no expiry date goes stale anyway.",
+      "text": "Which California State Assembly district represents Santa Monica?",
+      "options": [
+        "AD-49",
+        "AD-51",
+        "AD-54",
+        "AD-62"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Santa Monica sits in California Assembly District 51, which also covers West Hollywood, Beverly Hills and part of Hollywood. Assembly districts are redrawn every ten years after the census, so the number attached to a city can change: these lines took effect in 2023.",
+      "source": {
+        "url": "https://www.santamonica.gov",
+        "name": "Santa Monica City Government"
+      }
+    },
+    {
+      "externalId": "smo-515",
+      "status": "active",
+      "difficulty": "medium",
+      "verdict": "CORRECTED, then activated. It answered SD-26 and named Maria Elena Durazo -- the same wrong fact just removed from smo-413, from the same stale locale config. Santa Monica is SD-24. The true answer was already among the options; only the key was wrong.",
+      "text": "Which California State Senate district represents Santa Monica?",
+      "options": [
+        "SD-18",
+        "SD-22",
+        "SD-24",
+        "SD-26"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Santa Monica is in California State Senate District 24, a coastal Los Angeles County district running from Malibu through Santa Monica to the South Bay. SD-26, which this question previously gave as the answer, is a central and East Los Angeles district and does not reach the coast.",
+      "source": {
+        "url": "https://sd24.senate.ca.gov/",
+        "name": "California State Senate, District 24"
+      }
+    },
+    {
+      "externalId": "smo-518",
+      "status": "archived",
+      "difficulty": "medium",
+      "verdict": "ARCHIVED. \"Which city is completely surrounded by Santa Monica?\" has the premise backwards, and the key is the give-away option \"None - Santa Monica is surrounded by Los Angeles\". Santa Monica is bordered on three sides, not completely, and the fact is already live and correct in smo-150.",
+      "text": "Which city is completely surrounded by Santa Monica?",
+      "options": [
+        "Venice",
+        "Pacific Palisades",
+        "West Los Angeles",
+        "None - Santa Monica is surrounded by Los Angeles"
+      ],
+      "correctAnswer": 3,
+      "explanation": "According to en.wikipedia.org/wiki/Santa_Monica,_California, Santa Monica is completely surrounded by the City of Los Angeles, not the other way around. The city borders Pacific Palisades to the north and Venice to the south, both of which are neighborhoods of Los Angeles.",
+      "source": {
+        "url": "https://en.wikipedia.org/wiki/Santa_Monica,_California",
+        "name": "Wikipedia: Santa Monica, California"
+      }
+    },
+    {
+      "externalId": "smo-526",
+      "status": "active",
+      "difficulty": "easy",
+      "verdict": "ACTIVATED. Pacific Palisades borders Santa Monica to the north. Explanation rewritten.",
+      "text": "Which Los Angeles neighborhood borders Santa Monica to the north?",
+      "options": [
+        "Pacific Palisades",
+        "Venice",
+        "Brentwood",
+        "West Los Angeles"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Santa Monica borders the Los Angeles neighbourhood of Pacific Palisades to the north and Venice to the south. Both are parts of the City of Los Angeles rather than separate cities, which is why Santa Monica is described as bordered on three sides by a single city.",
+      "source": {
+        "url": "https://en.wikipedia.org/wiki/Santa_Monica,_California",
+        "name": "Wikipedia: Santa Monica, California"
+      }
+    },
+    {
+      "externalId": "smo-530",
+      "status": "active",
+      "difficulty": "medium",
+      "verdict": "ACTIVATED. CA-36 is correct, verified against the district article: Ted Lieu has held the 36th since 2023-01-03 and it takes in Santa Monica. Worth recording that santamonica.gov/elected-representatives says \"33rd\" -- that was Lieu’s district number BEFORE the 2020s redistricting, so the city page is stale here too.",
+      "text": "Which U.S. Congressional district represents Santa Monica?",
+      "options": [
+        "33rd",
+        "34th",
+        "35th",
+        "36th"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Santa Monica is in California's 36th congressional district, which also takes in Beverly Hills, part of Culver City and several South Bay beach cities. The number changed with the 2020s redistricting: the same coastal seat was the 33rd district until the current boundaries took effect in January 2023.",
+      "source": {
+        "url": "https://en.wikipedia.org/wiki/Santa_Monica,_California",
+        "name": "Wikipedia: Santa Monica, California"
+      }
+    },
+    {
+      "externalId": "smo-531",
+      "status": "active",
+      "difficulty": "hard",
+      "verdict": "ACTIVATED. The Newcomb (Pleasure) Pier was privately owned until the city acquired it in 1974. Explanation rewritten and expanded with who built it and when.",
+      "text": "When did the city of Santa Monica acquire the privately-owned Newcomb Pier?",
+      "options": [
+        "1974",
+        "1980",
+        "1983",
+        "1989"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The Newcomb Pier, also called the Pleasure Pier, is the short, wide amusement pier built alongside the Municipal Pier in 1916 by Charles I. D. Looff and his son Arthur. It stayed in private hands until the city bought it in 1974, which is how the two piers became the single public Santa Monica Pier people walk today.",
+      "source": {
+        "url": "https://en.wikipedia.org/wiki/Santa_Monica_Pier",
+        "name": "Wikipedia: Santa Monica Pier"
+      }
+    },
+    {
+      "externalId": "smo-548",
+      "status": "active",
+      "difficulty": "medium",
+      "verdict": "ACTIVATED. Santa Monica Airport opened 1923-04-15 as Clover Field. Explanation rewritten.",
+      "text": "When did Santa Monica Airport first open?",
+      "options": [
+        "1923",
+        "1928",
+        "1935",
+        "1941"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Santa Monica Airport opened on April 15, 1923 as Clover Field, named for the First World War aviator Greayer \"Grubby\" Clover. It is one of the oldest airports in the United States, and the Douglas World Cruisers left from it in 1924 on the first flight around the world.",
+      "source": {
+        "url": "https://en.wikipedia.org/wiki/Santa_Monica_Airport",
+        "name": "Wikipedia - Santa Monica Airport"
+      }
+    },
+    {
+      "externalId": "smo-554",
+      "status": "active",
+      "difficulty": "medium",
+      "verdict": "ACTIVATED. All seven council members are elected at-large. The at-large system is under a long-running CVRA challenge (Pico Neighborhood Assn v. Santa Monica, still being litigated as of 2025), but it is the system in force and the 2026-11-03 ballot lists one citywide council contest, not districts.",
+      "text": "How are Santa Monica City Council members elected?",
+      "options": [
+        "By district",
+        "At-large",
+        "By ward",
+        "By neighborhood"
+      ],
+      "correctAnswer": 1,
+      "explanation": "All seven Santa Monica City Council members are elected at-large, meaning every voter in the city votes in every council race and each member represents the whole city rather than a district or ward. The council then picks a mayor and mayor pro tem from among its members.",
+      "source": {
+        "url": "https://www.santamonica.gov/",
+        "name": "Santa Monica City Government"
+      }
+    }
+  ],
+  "collectionAfter": {
+    "active": 72,
+    "draft": 0,
+    "expiring": 10,
+    "expiringRatio": "13.9%",
+    "difficulty": {
+      "easy": 24,
+      "medium": 36,
+      "hard": 12
+    },
+    "readinessVerdict": "READY — Draft: 0, Total 72, Net 68 against a 50 floor; answer position best guess 27.8% vs 25% random; all 10 officeholder roles covered",
+    "ratioNote": "The player-facing ratio moves 15.4% -> 13.9%, into the NOTE band, because seven correct questions joined the denominator and none of them expires. That is the right trade and the ruling is explicit about it: the ratio is a symptom of officeholder coverage, not a target, and it must never be bought by archiving or repeating. The GATE’s number improved slightly (13.7% -> 13.9%), because it was already counting these drafts. Reaching 15% would take one more honest expiring question, and Santa Monica’s verifiable appointed surface is spent: the city clerk left in January 2026, the rent control page is behind a bot wall, the college president retires 2026-12-31, and five department heads resigned between July 2025 and January 2026. Recorded as a ceiling rather than filled with something unverified."
+  },
+  "notAMistake": "smo-008 still carries \"Maria Elena Durazo\" as a DISTRACTOR in \"Who represents Santa Monica in the California State Assembly?\". That is correct and deliberate: she is a real California legislator who does not represent Santa Monica, which is exactly the confusion the question tests. It asserts nothing. A future sweep for her name in this collection will find it.",
+  "alsoFound": "Drafts are NOT clear bank-wide, contrary to the 2026-09-28 note: akron-oh holds 59 and ohio holds 55. Those are the Knight pilot collections and are untouched here -- 114 drafts is a separate review, not a footnote to this one.",
+  "method": {
+    "review": "one draft at a time; every fact re-verified from a source fetched and read this session",
+    "answerPlacement": "placeAnswer() on the corrected row. Its distractors were re-chosen (SD-18, SD-22, SD-24, SD-26) so the sorted rank lands on the position the external id hashes to -- the guard reported \"sorted-off-target\" with the original set, which is it asking for exactly that.",
+    "transaction": "dry run wrapped BEGIN .. ROLLBACK first; applied only after it reported the end state",
+    "verification": "end state read back by a separate read-only script, not by the applying script"
+  }
+}
