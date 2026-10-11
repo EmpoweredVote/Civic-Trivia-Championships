@@ -1,0 +1,223 @@
+{
+  "timestamp": "2026-10-11T18:27:53.606Z",
+  "target": "santa-monica-ca",
+  "kind": "expiring-ratio-breach-fix",
+  "why": "santa-monica-ca was the last unexamined breach of the 10% expiring-question floor ruled on 2026-09-27, sitting at 9.8% (6 expiring of 61 active). Examining it turned up two LIVE FACTUAL DEFECTS in the officeholder tier as well, both traceable to a stale locale config.",
+  "ballotConstraint": {
+    "date": "2026-11-03",
+    "contests": [
+      "City Council",
+      "College Board",
+      "Rent Control Board",
+      "School Board"
+    ],
+    "consequence": "EVERY elected body in Santa Monica is on the ballot 23 days from this fix, so no new elected-officeholder question was written: per the standing rule, city-tier questions written now buy three weeks. All four additions are APPOINTED officers, whom no election moves (the madison-wi model of distinct offices, never a roll-call).",
+    "source": "https://www.santamonica.gov/elections/2026-11-03"
+  },
+  "corrections": [
+    {
+      "externalId": "smo-004",
+      "difficulty": "medium",
+      "text": "Who is Santa Monica's City Attorney?",
+      "options": [
+        "Rick Chavez Zbur",
+        "Caroline Torosis",
+        "Jesse Zwick",
+        "Heidi von Tongeln"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Heidi von Tongeln is Santa Monica’s city attorney. The City Council appointed her on March 11, 2026 after a nationwide recruitment; she had served as interim city attorney since September 2025 and as chief deputy city attorney since 2022. Santa Monica’s city attorney is appointed by the Council, not elected.",
+      "source": {
+        "url": "https://www.santamonica.gov/press/2026/03/12/heidi-von-tongeln-appointed-as-next-city-attorney",
+        "name": "City of Santa Monica"
+      },
+      "expiresAt": "2028-12-01",
+      "wasWrongBecause": "Answer was \"Douglas Sloan\", who resigned as city attorney effective 2025-08-31 — wrong in the live bank for 13 months. The explanation also invented a term: \"with a term ending December 1, 2026\". Santa Monica’s city attorney is appointed by the Council and has no term."
+    },
+    {
+      "externalId": "smo-413",
+      "difficulty": "medium",
+      "text": "Ben Allen represents Santa Monica in which chamber of the California Legislature?",
+      "options": [
+        "U.S. Senate",
+        "State Assembly",
+        "U.S. House of Representatives",
+        "State Senate"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Ben Allen represents Santa Monica in the California State Senate, the Legislature’s upper chamber. His 24th District runs along the coast of Los Angeles County, from Malibu through Santa Monica to the South Bay. The State Senate has 40 members serving four-year terms.",
+      "source": {
+        "url": "https://sd24.senate.ca.gov/",
+        "name": "California State Senate, District 24"
+      },
+      "expiresAt": "2026-12-07",
+      "wasWrongBecause": "Read \"Maria Elena Durazo represents Santa Monica in which chamber of the California Legislature?\" with the explanation \"representing Senate District 26 which includes Santa Monica\". Durazo’s SD-26 is central and East Los Angeles. Santa Monica is SD-24, Ben Allen. A false premise, so no option could be right."
+    }
+  ],
+  "additions": [
+    {
+      "externalId": "smo-557",
+      "difficulty": "medium",
+      "text": "Who serves as Santa Monica's city manager?",
+      "options": [
+        "Oliver Chi",
+        "Elaine Polachek",
+        "David White",
+        "Darrick Jacob"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Oliver Chi became Santa Monica’s city manager in July 2025, selected by the City Council after a nationwide search; he had been Irvine’s city manager since 2021. He succeeded interim city manager Elaine Polachek, who led the city after David White resigned. Under the council-manager charter the city manager runs the departments day to day while the Council sets policy.",
+      "source": {
+        "url": "https://www.smdp.com/santa-monica-hires-oliver-chi-as-city-manager",
+        "name": "Santa Monica Daily Press"
+      },
+      "expiresAt": "2028-07-01"
+    },
+    {
+      "externalId": "smo-558",
+      "difficulty": "medium",
+      "text": "Darrick Jacob, sworn in during January 2026, leads which Santa Monica city department?",
+      "options": [
+        "Fire Department",
+        "Police Department",
+        "Public Works",
+        "Library Services"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Darrick Jacob is Santa Monica’s chief of police. City Manager Oliver Chi announced the appointment in December 2025, effective December 14, and Jacob was sworn in on January 14, 2026. He had served with the Santa Monica Police Department since 2004.",
+      "source": {
+        "url": "https://www.santamonica.gov/press/2025/12/19/darrick-jacob-appointed-as-santa-monica-chief-of-police",
+        "name": "City of Santa Monica"
+      },
+      "expiresAt": "2028-01-01"
+    },
+    {
+      "externalId": "smo-559",
+      "difficulty": "hard",
+      "text": "Which Santa Monica department has Christopher Dishlip directed since April 2026, after serving as its assistant director?",
+      "options": [
+        "Finance",
+        "Community Development",
+        "Public Works",
+        "SaMoDOT"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Christopher Dishlip took over as director of Public Works on April 6, 2026, succeeding Rick Valte, who retired after nearly 26 years with the city. Dishlip had spent nearly 17 years in Santa Monica government, most recently as assistant director of Public Works. Public Works is distinct from SaMoDOT, the separate city transportation department.",
+      "source": {
+        "url": "https://santamonicanext.org/2026/04/christopher-dishlip-appointed-director-of-public-works/",
+        "name": "Santa Monica Next"
+      },
+      "expiresAt": "2028-04-01"
+    },
+    {
+      "externalId": "smo-560",
+      "difficulty": "medium",
+      "text": "Who serves as superintendent of the Santa Monica-Malibu Unified School District?",
+      "options": [
+        "Oliver Chi",
+        "Dr. Kathryn Jeffery",
+        "Dr. Antonio Shelton",
+        "Caroline Torosis"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Antonio M. Shelton, Ed.D., has led the Santa Monica-Malibu Unified School District since July 1, 2023, appointed by its Board of Education after a national search. He had previously been the district’s executive director of secondary schools and principal of Santa Monica High School. The district is governed by its own elected board, separately from the City Council.",
+      "source": {
+        "url": "https://www.smmusd.org/Superintendent",
+        "name": "Santa Monica-Malibu USD"
+      },
+      "expiresAt": "2027-07-01"
+    }
+  ],
+  "generatorFix": {
+    "file": "backend/src/scripts/content-generation/locale-configs/santa-monica-ca.ts",
+    "what": "The roster named Douglas Sloan as city attorney and put Santa Monica in SD-26 under Maria Elena Durazo. Both are the source of the defects above, so the config is corrected in the same change: von Tongeln, and SD-24 Ben Allen. The four appointed officers were added to the roster so the readiness audit checks the tier that now carries the ratio.",
+    "auditAfter": "All 10 roles have question coverage (was: 2 roles uncovered)."
+  },
+  "collectionAfter": {
+    "active": 65,
+    "draft": 8,
+    "expiring": 10,
+    "expiringRatioActive": "15.4%",
+    "expiringRatioAsTheGateComputesIt": "13.7% — the readiness gate divides by active + draft, and this collection holds 8 drafts from the 2026-10-02 generation run. Above the 10% floor either way; the NOTE is the drafts.",
+    "difficulty": {
+      "easy": 23,
+      "medium": 31,
+      "hard": 11
+    },
+    "servableAfterTheDecemberCliff": 61,
+    "readinessVerdict": "READY — net 69 against a 50 floor; answer position best guess 28.8% vs 25% random",
+    "expiringTier": [
+      {
+        "externalId": "smo-002",
+        "expires": "2026-12-01",
+        "difficulty": "medium",
+        "text": "Who serves as Santa Monica's Mayor Pro Tem?"
+      },
+      {
+        "externalId": "smo-401",
+        "expires": "2026-12-01",
+        "difficulty": "easy",
+        "text": "Caroline Torosis holds which elected position in Santa Monica city government?"
+      },
+      {
+        "externalId": "smo-008",
+        "expires": "2026-12-07",
+        "difficulty": "medium",
+        "text": "Who represents Santa Monica in the California State Assembly?"
+      },
+      {
+        "externalId": "smo-413",
+        "expires": "2026-12-07",
+        "difficulty": "medium",
+        "text": "Ben Allen represents Santa Monica in which chamber of the California Legislature?"
+      },
+      {
+        "externalId": "smo-560",
+        "expires": "2027-07-01",
+        "difficulty": "medium",
+        "text": "Who serves as superintendent of the Santa Monica-Malibu Unified School District?"
+      },
+      {
+        "externalId": "smo-558",
+        "expires": "2028-01-01",
+        "difficulty": "medium",
+        "text": "Darrick Jacob, sworn in during January 2026, leads which Santa Monica city department?"
+      },
+      {
+        "externalId": "smo-559",
+        "expires": "2028-04-01",
+        "difficulty": "hard",
+        "text": "Which Santa Monica department has Christopher Dishlip directed since April 2026, after serving as its assistant director?"
+      },
+      {
+        "externalId": "smo-557",
+        "expires": "2028-07-01",
+        "difficulty": "medium",
+        "text": "Who serves as Santa Monica's city manager?"
+      },
+      {
+        "externalId": "smo-004",
+        "expires": "2028-12-01",
+        "difficulty": "medium",
+        "text": "Who is Santa Monica's City Attorney?"
+      },
+      {
+        "externalId": "smo-407",
+        "expires": "2028-12-01",
+        "difficulty": "medium",
+        "text": "Ellis Raskin was elected to the Santa Monica City Council for a term ending in which year?"
+      }
+    ]
+  },
+  "scheduledFollowUp": {
+    "when": "2026-12, after the new council is seated and the mayor rotation is held",
+    "what": "Four questions expire on 2026-12-01 and 2026-12-07: the mayor (smo-401), the mayor pro tem (smo-002), the Assembly member (smo-008) and the state senator (smo-413). Santa Monica rotates mayor and mayor pro tem annually in December regardless of the election, and Ben Allen is termed out of SD-24. Rewrite all four then; the appointed tier added here holds the floor in the meantime."
+  },
+  "method": {
+    "written": "by hand, not generated — no API calls, no token cost",
+    "answerPlacement": "placeAnswer(options, correctAnswer, externalId) on all six rows, per the answer-placement guard",
+    "linking": "guarded collection_questions insert by explicit external_id, never a LIKE prefix",
+    "transaction": "dry run wrapped BEGIN .. ROLLBACK first; applied only after the dry run reported the end state",
+    "sourceVerification": "Every source URL was fetched and read this session. Hazards hit, and what was done: santamonica.gov/elected-representatives is STALE — it still shows the December 2024 mayor rotation (Negrete mayor, Torosis mayor pro tem) when Torosis has been mayor since 2025-12-09. It was NOT used as a source, and it nearly caused two correct questions to be \"fixed\" into wrong ones. santamonica.gov/rent-control and /profiles/* returned bot walls, so the rent control administrator was dropped rather than cited from the stale page; argonautnews returned 429. Nothing was cited that could not be read."
+  }
+}
