@@ -1,0 +1,295 @@
+{
+  "timestamp": "2026-10-11T15:30:57.043Z",
+  "target": "washington-dc",
+  "kind": "manual-backfill",
+  "why": "washington-dc held exactly 100 servable questions -- the bar for finishing CTC's 25-line tableau (25 lines x 4 bobits). 11 of those expire between 2026-12-15 and 2027-01-03, which would have dropped it to 89 and halved the set of collections that can ever finish the tableau from two to one. These 11 replacements are all EVERGREEN: the 9 officeholder questions cannot be rewritten until D.C. votes on 2026-11-03 and winners are seated in January, so those are a scheduled post-election rewrite, as for new-york-state and alexandria-la.",
+  "method": {
+    "written": "by hand, not generated -- no API calls, no token cost",
+    "answerPlacement": "placeAnswer(options, correctAnswer, externalId) on every row, per the answer-placement guard",
+    "linking": "guarded collection_questions insert (NOT the bare LIKE <prefix>-% form)",
+    "sourceVerification": "every source URL fetched and checked this session; dccourts.gov returned 403 (bot wall) so the two court questions cite D.C. Code instead"
+  },
+  "collectionAfter": {
+    "servableNow": 111,
+    "servableFeb2027": 100,
+    "expiring": 15,
+    "difficulty": {
+      "easy": 36,
+      "medium": 47,
+      "hard": 28
+    },
+    "readinessAudit": "READY -- net 100, expiring ratio 13.5% (above the 10% floor), answer position best-guess 27.9%"
+  },
+  "scheduledFollowUp": {
+    "when": "2027-01 (after the new term is seated)",
+    "what": "rewrite the 9 expiring officeholder questions; until then the expiring ratio dips to ~4%, below the 10% floor",
+    "expiringSoon": [
+      {
+        "external_id": "wdc-423",
+        "expires": "2026-12-15T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-422",
+        "expires": "2026-12-15T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-408",
+        "expires": "2027-01-02T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-413",
+        "expires": "2027-01-02T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-414",
+        "expires": "2027-01-02T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-418",
+        "expires": "2027-01-02T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-421",
+        "expires": "2027-01-02T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-424",
+        "expires": "2027-01-02T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-405",
+        "expires": "2027-01-02T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-401",
+        "expires": "2027-01-02T08:00:00.000Z"
+      },
+      {
+        "external_id": "wdc-410",
+        "expires": "2027-01-03T08:00:00.000Z"
+      }
+    ]
+  },
+  "inserted": [
+    {
+      "externalId": "wdc-425",
+      "difficulty": "easy",
+      "topic": "DC Civic Identity",
+      "subcategory": "dc-civic-identity",
+      "text": "Washington, D.C.'s flag is based on the coat of arms of which family?",
+      "options": [
+        "James Madison's family",
+        "Thomas Jefferson's family",
+        "John Adams's family",
+        "George Washington's family"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The District's flag, approved on October 25, 1938, takes its three red stars and two red bars from the coat of arms of George Washington. The design was first used by one of his ancestors in the twelfth century.",
+      "source": {
+        "url": "https://os.dc.gov/page/dc-symbols",
+        "name": "DC Office of the Secretary: DC Symbols"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-426",
+      "difficulty": "easy",
+      "topic": "Ward & Neighborhood Structure",
+      "subcategory": "ward-neighborhood-structure",
+      "text": "Which of Washington, D.C.'s four quadrants is the smallest?",
+      "options": [
+        "Northwest",
+        "Northeast",
+        "Southwest",
+        "Southeast"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The four quadrants radiate from a medallion in the Crypt beneath the Capitol Rotunda, and they are nowhere near equal. Northwest is the largest of the four and Southwest the smallest.",
+      "source": {
+        "url": "https://en.wikipedia.org/wiki/Quadrants_of_Washington,_D.C.",
+        "name": "Wikipedia: Quadrants of Washington, D.C."
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-427",
+      "difficulty": "easy",
+      "topic": "Constitutional Status & Voting Rights",
+      "subcategory": "constitutional-status",
+      "text": "How many electoral votes does the District of Columbia have in presidential elections?",
+      "options": [
+        "0 electoral votes",
+        "3 electoral votes",
+        "2 electoral votes",
+        "5 electoral votes"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Under the Twenty-third Amendment the District is allocated three electors and treated like a state for Electoral College purposes. That is despite having no voting representation in either house of Congress.",
+      "source": {
+        "url": "https://www.archives.gov/electoral-college/allocation",
+        "name": "U.S. National Archives: Electoral College Allocation"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-428",
+      "difficulty": "easy",
+      "topic": "DC History",
+      "subcategory": "dc-history",
+      "text": "Who was sworn in as Washington, D.C.'s first elected mayor when Home Rule began in 1975?",
+      "options": [
+        "Walter E. Washington",
+        "Marion Barry",
+        "Sharon Pratt",
+        "Sterling Tucker"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Home Rule governance began on January 2, 1975, when the first elected D.C. Council and mayor in nearly a hundred years took office. Walter Washington, until then the appointed mayor-commissioner, was sworn in alongside Council Chair Sterling Tucker by Supreme Court Justice Thurgood Marshall.",
+      "source": {
+        "url": "https://dccouncil.gov/50-years-of-home-rule-for-dc-the-council-begins-a-year-of-celebration/",
+        "name": "Council of the District of Columbia: 50 Years of Home Rule"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-429",
+      "difficulty": "medium",
+      "topic": "Constitutional Status & Voting Rights",
+      "subcategory": "constitutional-status",
+      "text": "In 1846, Congress returned part of the District of Columbia to which state?",
+      "options": [
+        "Pennsylvania",
+        "Maryland",
+        "Delaware",
+        "Virginia"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Alexandria County -- today's Arlington County and part of the city of Alexandria -- was relinquished to Virginia in 1846 after its residents voted 763 to 222 in favour. The land Maryland had ceded stayed, which is why the District lost its original diamond shape.",
+      "source": {
+        "url": "https://presidency.ucsb.edu/node/201148",
+        "name": "The American Presidency Project: Proclamation 48 (1846)"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-430",
+      "difficulty": "medium",
+      "topic": "DC Courts & Judiciary",
+      "subcategory": "dc-courts-judiciary",
+      "text": "Which body screens candidates for D.C. judgeships and recommends them to the President?",
+      "options": [
+        "The D.C. Council",
+        "The Judicial Nomination Commission",
+        "The D.C. Bar",
+        "The Commission on Judicial Disabilities and Tenure"
+      ],
+      "correctAnswer": 1,
+      "explanation": "D.C.'s judges are nominated by the President and confirmed by the U.S. Senate, but the names come from the Judicial Nomination Commission. It screens applicants and recommends panels of candidates for both the Superior Court and the Court of Appeals.",
+      "source": {
+        "url": "https://jnc.dc.gov/page/about-jnc",
+        "name": "D.C. Judicial Nomination Commission"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-431",
+      "difficulty": "medium",
+      "topic": "Ward & Neighborhood Structure",
+      "subcategory": "ward-neighborhood-structure",
+      "text": "After each decennial census, which body redraws Washington, D.C.'s eight ward boundaries?",
+      "options": [
+        "The U.S. Congress",
+        "An independent redistricting commission",
+        "The Council of the District of Columbia",
+        "The Mayor"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The District redistricts itself by legislation rather than through a commission: the Council adopts the ward boundaries, most recently effective January 1, 2022 after the 2020 census, and in redistricting acts following the 2000 and 2010 censuses before that.",
+      "source": {
+        "url": "https://code.dccouncil.gov/us/dc/council/code/sections/1-1041.03",
+        "name": "D.C. Code 1-1041.03"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-432",
+      "difficulty": "medium",
+      "topic": "DC History",
+      "subcategory": "dc-history",
+      "text": "The 1968 riots that devastated Washington, D.C.'s 14th Street and 7th Street corridors followed the assassination of whom?",
+      "options": [
+        "Medgar Evers",
+        "Robert F. Kennedy",
+        "Malcolm X",
+        "Martin Luther King Jr."
+      ],
+      "correctAnswer": 3,
+      "explanation": "News of King’s assassination in Memphis on April 4, 1968 drew crowds to 14th and U Streets NW, and four days of unrest followed. The 7th Street corridor in Shaw suffered the worst destruction, with nearly 80% of its businesses affected.",
+      "source": {
+        "url": "https://en.wikipedia.org/wiki/1968_Washington,_D.C.,_riots",
+        "name": "Wikipedia: 1968 Washington, D.C., riots"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-433",
+      "difficulty": "hard",
+      "topic": "DC Courts & Judiciary",
+      "subcategory": "dc-courts-judiciary",
+      "text": "Who prosecutes most felony crimes committed by adults in Washington, D.C.?",
+      "options": [
+        "The U.S. Attorney for the District of Columbia",
+        "The D.C. Attorney General",
+        "The Metropolitan Police Department",
+        "The D.C. Court of Appeals"
+      ],
+      "correctAnswer": 0,
+      "explanation": "D.C. Code 23-101 splits prosecution by maximum penalty. The D.C. Attorney General brings violations of municipal ordinances and regulations where the maximum punishment is a fine or no more than a year in jail; \"all other criminal prosecutions shall be conducted in the name of the United States\" by the U.S. Attorney. That leaves the felony docket with a federal prosecutor.",
+      "source": {
+        "url": "https://code.dccouncil.gov/us/dc/council/code/sections/23-101",
+        "name": "D.C. Code 23-101"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-434",
+      "difficulty": "hard",
+      "topic": "DC Civic Identity",
+      "subcategory": "dc-civic-identity",
+      "text": "What is the District of Columbia's official Latin motto?",
+      "options": [
+        "E Pluribus Unum",
+        "Justitia Omnibus",
+        "Novus Ordo Seclorum",
+        "Sic Semper Tyrannis"
+      ],
+      "correctAnswer": 1,
+      "explanation": "\"Justitia Omnibus\" means \"Justice for All\". It is distinct from the slogan on D.C. licence plates, \"Taxation Without Representation\", which is a protest over the District’s lack of voting representation in Congress rather than the official motto.",
+      "source": {
+        "url": "https://os.dc.gov/page/dc-symbols",
+        "name": "DC Office of the Secretary: DC Symbols"
+      },
+      "expiresAt": null
+    },
+    {
+      "externalId": "wdc-435",
+      "difficulty": "hard",
+      "topic": "Ward & Neighborhood Structure",
+      "subcategory": "ward-neighborhood-structure",
+      "text": "Roughly how many residents is each Advisory Neighborhood Commission single-member district meant to contain?",
+      "options": [
+        "500",
+        "2,000",
+        "10,000",
+        "25,000"
+      ],
+      "correctAnswer": 1,
+      "explanation": "D.C. law requires that each single-member district \"shall have a population of approximately 2,000 people, and shall be as nearly equal as possible\". That small size is why the District has hundreds of them, making the ANC commissioner the finest-grained elected office in the city.",
+      "source": {
+        "url": "https://code.dccouncil.gov/us/dc/council/code/sections/1-309.03",
+        "name": "D.C. Code 1-309.03"
+      },
+      "expiresAt": null
+    }
+  ]
+}
