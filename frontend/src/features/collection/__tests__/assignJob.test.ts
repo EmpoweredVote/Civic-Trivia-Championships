@@ -36,6 +36,38 @@ describe('assignJob', () => {
     }
   });
 
+  it('gives each worker his own station when the job names one per role', () => {
+    // The crew does not stand on one pixel. Each worker waits where the line will reach him,
+    // so it arrives in his hands instead of snapping him to his station on the frame the
+    // margin canvas takes the crew over.
+    const before = initAgents(['a', 'b', 'c'], opts);
+    const want: Record<string, number> = { hauler: 400, steadier: 100, lasher: 150 };
+    const after = assignJob(
+      before, 'job:left:9', ['hauler', 'steadier', 'lasher'], [400, 100, 150], opts,
+    );
+    const cast = Object.values(after).filter(a => a.jobId === 'job:left:9');
+    expect(cast).toHaveLength(3);
+    for (const w of cast) {
+      expect(w.targetX, `the ${w.jobRole} walks to his own station`).toBe(want[w.jobRole ?? '']);
+    }
+  });
+
+  it('pairs workers to stations without crossing paths', () => {
+    let before = initAgents(['a', 'b'], opts);
+    before = {
+      ...before,
+      a: { ...before.a, x: 10 },
+      b: { ...before.b, x: 900 },
+    };
+    // Stations given in role order, far one first: the pairing must still send the bobit who
+    // is already on the left to the left-hand station.
+    const after = assignJob(before, 'job:left:9', ['hauler', 'steadier'], [800, 50], opts);
+    expect(after.a.targetX).toBe(50);
+    expect(after.a.jobRole).toBe('steadier');
+    expect(after.b.targetX).toBe(800);
+    expect(after.b.jobRole).toBe('hauler');
+  });
+
   it('walks the crew to the site rather than teleporting them', () => {
     const before = initAgents(['a', 'b'], opts);
     const after = assignJob(before, 'job:left:9', ['hauler'], 400, opts);

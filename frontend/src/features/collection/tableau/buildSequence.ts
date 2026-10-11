@@ -1,5 +1,6 @@
-import type { TableauLine, StackSide } from './blueprint';
-import { lineEndpoints } from './tableauGeometry';
+import type { TableauLine } from './blueprint';
+import { lineEndpoints, originX } from './tableauGeometry';
+import type { MarginBox } from './tableauGeometry';
 import type { JobRole } from '../crowdAgents';
 
 /**
@@ -140,15 +141,46 @@ export function crewRolesFor(line: TableauLine): JobRole[] {
 }
 
 /**
- * Where the crew gathers ON THE BAND, in band px.
+ * Where each worker waits for the line, ON THE BAND, in band px -- one per role, in
+ * `crewRolesFor` order.
  *
- * NOT the joint's x. The joint is in the margin canvas's coordinates and the crew walks on the
- * band, which is a different box -- the left canvas starts at the shell's content edge and the
- * right one ends at it. Handing `assignJob` a canvas x would send the crew to a point in the
- * middle of the question column. They gather at the band's own edge, under the stack.
+ * The two spaces this crosses are real and they are not the same box: the crew walks the band,
+ * which spans the whole shell, while every number `crewAt` returns is inside a margin canvas
+ * pinned to one edge of it. The canvases abut the band and share its floor, so the two agree
+ * in y -- and that is exactly what made the x disagreement so easy to miss.
+ *
+ * This used to be one `siteX`, answering `bandWidth * 0.96` -- a fraction of the wrong box. At
+ * 1920 it gathered the crew at screen 1843 and the haul then began at 1488, the canvas's inner
+ * edge: the whole crew jumped 691px across the question column on the frame the line appeared,
+ * on the line a player watches go up more often than any other. Sending them all to one
+ * corrected point still left up to 222px, because three workers converging on a single pixel
+ * must then separate to three stations.
+ *
+ * So it is no longer a guess at a nice-looking spot. It ASKS `crewAt` where each worker will
+ * be standing on the frame he takes over, and converts that answer back into band px. He walks
+ * there during `fetch` and the line arrives in his hands.
+ *
+ * CLAMPED into the strip, because a ground line is dragged in from off-stage: its steadier is
+ * still out there holding the far end, and his true station is off the canvas entirely. He
+ * waits at the near edge instead rather than mustering in the middle of the question column --
+ * the one place the crew may never stand around.
  */
-export function siteX(side: StackSide, bandWidth: number): number {
-  return side === 'left' ? bandWidth * 0.04 : bandWidth * 0.96;
+export function crewStations(
+  line: TableauLine, bandWidth: number, box: MarginBox, scale: number,
+): number[] {
+  // The canvas's left edge in band px. `TableauMargin` pins each stack to its own outer edge,
+  // so the left canvas starts at the band's origin and the right one ends at its far edge.
+  const canvasLeft = line.side === 'left' ? 0 : bandWidth - box.width;
+
+  // The canvas's bottom edge IS the floor line, which is why `box.height` is the floor here --
+  // the same number `TableauMargin` hands the prop as its `groundY`.
+  const crew = crewAt(line, BUILD_SEC.fetch, originX(line.side, box.width, scale), box.height, scale);
+
+  return crewRolesFor(line).map(role => {
+    const worker = crew.find(w => w.role === role);
+    const x = worker ? worker.x : box.width / 2;
+    return canvasLeft + Math.min(box.width, Math.max(0, x));
+  });
 }
 
 /**
