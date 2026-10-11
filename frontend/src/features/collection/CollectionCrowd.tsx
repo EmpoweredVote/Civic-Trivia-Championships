@@ -14,7 +14,7 @@ import { linesBuilt, linesStandingOnArrival } from './tableau/tableauProgress';
 import { STRUCTURES, BLUEPRINT } from './tableau/blueprint';
 import type { TableauLine } from './tableau/blueprint';
 import {
-  buildDuration, phaseAt, crewRolesFor, siteX,
+  buildDuration, phaseAt, crewRolesFor, crewStations,
 } from './tableau/buildSequence';
 import { TableauMargin } from './tableau/TableauMargin';
 import type { BobitProgressStore } from './bobitProgress';
@@ -541,12 +541,15 @@ export function CollectionCrowd({
         // -- claiming two or three of the player's bobits every four he earned, routing them
         // to a canvas that is not mounted, and silently thinning the crowd for fourteen
         // seconds at a time.
-        if (next && live[next.side]) {
-          // BAND coordinates. The joint is in a margin canvas's box, which is a different one
-          // -- handing `assignJob` a canvas x walks the crew into the question column.
+        const nextBox = next ? (next.side === 'left' ? lBox : rBox) : null;
+        if (next && nextBox && s !== null && live[next.side]) {
+          // BAND coordinates, converted from the canvas's by `siteX` -- the crew walks the
+          // band and the line is drawn in a margin canvas, and the two boxes share a floor but
+          // not an origin. Handing `assignJob` a raw canvas x walks the crew into the question
+          // column; handing it a fraction of the band teleported them on the handover frame.
           const after = assignJob(
             agentsRef.current, `job:${next.side}:${next.n}`, crewRolesFor(next),
-            siteX(next.side, measured), opts,
+            crewStations(next, measured, nextBox, s), opts,
           );
           // All or nothing. If the room could not spare a crew this frame, try again next:
           // a half-cast crew is a beam raising itself with one bobit watching.

@@ -338,8 +338,17 @@ export function assignPerch(
  * load-bearing, and at a tableau's height a teleport is a very visible one.
  */
 export function assignJob(
-  state: AgentState, jobId: string, roles: readonly JobRole[], atX: number, opts: AgentOpts,
+  state: AgentState, jobId: string, roles: readonly JobRole[],
+  atX: number | readonly number[], opts: AgentOpts,
 ): AgentState {
+  // One station per role, or the same spot for everybody. A single muster point was the
+  // original shape and it put the whole crew on one pixel, which meant every worker but one
+  // snapped to his real station on the frame the canvas took them over.
+  const stations = typeof atX === 'number'
+    ? roles.map(() => atX)
+    : roles.map((_, i) => atX[i] ?? atX[atX.length - 1] ?? 0);
+  const muster = stations.reduce((sum, x) => sum + x, 0) / Math.max(1, stations.length);
+
   const free = Object.keys(state)
     .filter(id => state[id].activity === 'wander' && !state[id].perchId && !state[id].jobId)
     .sort();
@@ -347,15 +356,22 @@ export function assignJob(
 
   // Nearest first, so the crew that turns up is the one that was already standing there.
   const picked = [...free]
-    .sort((a, b) => Math.abs(state[a].x - atX) - Math.abs(state[b].x - atX))
+    .sort((a, b) => Math.abs(state[a].x - muster) - Math.abs(state[b].x - muster))
     .slice(0, roles.length);
 
+  // Both lists sorted by x and matched in order. In one dimension that is the pairing with the
+  // least total walking, and -- the part you can actually see -- it is the one where no two
+  // workers cross paths on the way to the site.
+  const byX = [...picked].sort((a, b) => state[a].x - state[b].x);
+  const roleOrder = roles.map((_, i) => i).sort((a, b) => stations[a] - stations[b]);
+
   const out = { ...state };
-  picked.forEach((id, i) => {
+  byX.forEach((id, i) => {
+    const r = roleOrder[i];
     out[id] = {
-      ...startMove(state[id], atX, 0, opts),
+      ...startMove(state[id], stations[r], 0, opts),
       jobId,
-      jobRole: roles[i],
+      jobRole: roles[r],
       jobT: 0,
     };
   });

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { phaseAt, lineAt, buildDuration, BUILD_SEC } from '../buildSequence';
+import {
+  phaseAt, lineAt, buildDuration, BUILD_SEC, crewAt, crewStations, crewRolesFor,
+} from '../buildSequence';
 import { BLUEPRINT } from '../blueprint';
+import type { StackSide } from '../blueprint';
 import { lineEndpoints, originX } from '../tableauGeometry';
 
 const W = 432, FLOOR = 868, S = 0.868;
@@ -116,5 +119,65 @@ describe('lineAt', () => {
         }
       }
     }
+  });
+});
+
+describe('crewStations', () => {
+  // The crew walks on the BAND, which spans the whole shell; each stack is drawn in its own
+  // canvas pinned to one edge of that same box. These are the two spaces the handover crosses.
+  const BAND = 1920;
+  const box = { width: W, height: FLOOR };
+  const canvasLeftOf = (side: StackSide) => (side === 'left' ? 0 : BAND - W);
+
+  it('stations every worker where he will be standing when the line is taken over', () => {
+    for (const line of BLUEPRINT) {
+      const ox = originX(line.side, W, S);
+      const crew = crewAt(line, BUILD_SEC.fetch, ox, FLOOR, S);
+      const roles = crewRolesFor(line);
+      const stations = crewStations(line, BAND, box, S);
+      expect(stations, `line ${line.n} has a station per role`).toHaveLength(roles.length);
+
+      roles.forEach((role, i) => {
+        const worker = crew.find(w => w.role === role);
+        expect(worker, `line ${line.n} casts a ${role}`).toBeDefined();
+        const w = worker as NonNullable<typeof worker>;
+        // A worker whose station is off the canvas is off-stage with the far end of the stick;
+        // he is covered by the clamp test below, not by this one.
+        if (w.x < 0 || w.x > W) return;
+        expect(stations[i], `line ${line.n} ${role}`).toBeCloseTo(canvasLeftOf(line.side) + w.x, 3);
+      });
+    }
+  });
+
+  it('never musters a worker under the question column', () => {
+    // A ground line is dragged in from off-stage, so the steadier's true station is outside
+    // the canvas. Taken literally it would put him in the middle of the card -- the one place
+    // the crew may never stand around waiting.
+    for (const line of BLUEPRINT) {
+      const left = canvasLeftOf(line.side);
+      for (const [i, x] of crewStations(line, BAND, box, S).entries()) {
+        expect(x, `line ${line.n} station ${i} left edge`).toBeGreaterThanOrEqual(left);
+        expect(x, `line ${line.n} station ${i} right edge`).toBeLessThanOrEqual(left + W);
+      }
+    }
+  });
+
+  it('does not teleport the trunk crew across the question column', () => {
+    // The regression this test exists for: the site was a fraction of the BAND while `crewAt`
+    // reads the CANVAS, so the crew gathered at band 1843 and the haul began 691px away at the
+    // canvas's inner edge. Line 5 is the trunk -- the first thing on the right, and the line a
+    // player watches go up more often than any other.
+    const trunkLine = BLUEPRINT[4];
+    const ox = originX('right', W, S);
+    const crew = crewAt(trunkLine, BUILD_SEC.fetch, ox, FLOOR, S);
+    const roles = crewRolesFor(trunkLine);
+    const stations = crewStations(trunkLine, BAND, box, S);
+
+    const hauler = crew.find(w => w.role === 'hauler');
+    expect(hauler, 'the hauler leads the stick in').toBeDefined();
+    const haulerStation = stations[roles.indexOf('hauler')];
+    const haulerScreenX = canvasLeftOf('right') + (hauler as NonNullable<typeof hauler>).x;
+    expect(Math.abs(haulerStation - haulerScreenX)).toBeLessThan(1);
+    expect(haulerStation, 'not the old band fraction').toBeLessThan(BAND * 0.96 - 100);
   });
 });
