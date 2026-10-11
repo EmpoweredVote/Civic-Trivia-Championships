@@ -183,7 +183,11 @@ export function DuplicateReviewPage() {
       if (!response.ok) throw new Error('Failed to auto-resolve clusters');
       const result = await response.json();
       await fetchClusters();
-      alert(`Successfully resolved ${result.resolvedCount} ${result.resolvedCount === 1 ? 'cluster' : 'clusters'}`);
+      // `clustersResolved` is what the server sends (ev-accounts trivia/routes/admin.ts).
+      // This read `resolvedCount`, a field nothing has ever returned, so the dialog said
+      // "Successfully resolved undefined clusters" after every auto-resolve.
+      const resolved = result.clustersResolved ?? 0;
+      alert(`Successfully resolved ${resolved} ${resolved === 1 ? 'cluster' : 'clusters'}`);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to auto-resolve');
     }
