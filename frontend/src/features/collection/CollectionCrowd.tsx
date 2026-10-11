@@ -753,8 +753,19 @@ export function CollectionCrowd({
       {/* The tableau, one stack per margin.
           Mounted before the floor line and the band so they paint BEHIND both: a trunk rises
           out of the same ground the crowd walks on, and a bobit at the foot of it passes in
-          front rather than behind. Neither box can ever overlap the question column -- see
-          TableauMargin, and the bound-1 test in tableauGeometry.test.ts.
+          front rather than behind.
+
+          TREE ORDER ONLY DECIDES THIS BECAUSE THE BAND IS POSITIONED TOO -- see the band
+          below. These margins are `position: absolute`, and until 2026-10-11 the band was a
+          plain block, so CSS painted the margins in step 8 and the band back in step 4 and the
+          comment above was simply false: the trunk was a solid column drawn OVER the crowd,
+          erasing any bobit standing in its footprint down to the feet poking out beneath it.
+          Shipped that way since the tableau landed (#201) and found while clearing M6, which
+          was the same mistake read from the other side.
+
+          Neither box can ever overlap the question column -- see TableauMargin, and the
+          bound-1 test in tableauGeometry.test.ts. That is geometry, not z-order, and this
+          change does not lean on it: nothing here paints over the card either way.
 
           Each side is gated on ITS OWN width, not on the shared scale alone: an asymmetric
           layout can leave one margin usable and the other too narrow, and the wide side should
@@ -784,9 +795,14 @@ export function CollectionCrowd({
         />
       )}
       {/* The floor.
-          Behind the canvas, so figures and their shadows sit ON it. It is not decoration: with
-          depth gone the crowd had nothing to stand on, which is why a jump -- a real 48-unit
-          lift in the rig -- read as a wobble rather than as leaving the ground. It also gives
+          Behind the canvas, so figures and their shadows sit ON it -- which, like the tableau
+          above, was true only of the DOM order until the band became positioned: this div is
+          absolute, so it was painting its 1px rule across the crowd's feet rather than under
+          them.
+
+          It is not decoration: with depth gone the crowd had nothing to stand on, which is
+          why a jump -- a real 48-unit lift in the rig -- read as a wobble rather than as
+          leaving the ground. It also gives
           the eye something to separate figures against when they pass in front of each other.
           Faded at both ends because the band is full-bleed and a hard rule edge to edge would
           read as a divider. */}
@@ -812,6 +828,22 @@ export function CollectionCrowd({
         height={height}
         interactive
         repaintKey={repaintKey}
+        /* The band joins the positioned layer, LAST, so the crowd paints in front of the
+           tableau and the floor line.
+           `position: relative` with no offsets and no z-index: it moves nothing, creates no
+           stacking context, and changes exactly one thing -- a positioned descendant paints in
+           step 8 of CSS 2.1 Appendix E where a non-positioned block paints in step 4. Within
+           step 8 the tie is broken by tree order, and this is the last positioned child after
+           the two margins and the floor, so it wins against those two and nothing else: the
+           aerial overlay above carries `zIndex: 20` (step 9) and still arcs over everything,
+           and the "+N more" label is positioned later still.
+           Deliberately NOT a z-index on the margins. Nothing between these boxes and the root
+           creates a stacking context and the question column is `position: static`, so z-order
+           here is measured against the whole page rather than against a local group -- that is
+           what made `zIndex: 0` on the margins a hazard (M6) and what makes a negative z-index
+           one now: it would risk painting the stack behind an ancestor's background. Tree order
+           inside one layer is the narrow tool. */
+        style={{ position: 'relative' }}
       />
       {overflow > 0 && (
         <span
