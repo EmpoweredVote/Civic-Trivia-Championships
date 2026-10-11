@@ -88,7 +88,8 @@ Your generated questions will be validated against strict quality rules. Follow 
 
 **Requirements:**
 - Question text: 20-500 characters (not too terse, not too verbose)
-- Explanation: Must begin with "According to [source]" or similar citation
+- Explanation: Must NOT begin with "According to [source]" or any other attribution
+  opener — attribution lives in source.url (ruled 2026-09-29)
 - Source URL: Must be a real, reachable .gov/.edu/.us page
 - Question text: Must end with "?"
 - All 4 options: Must be present and non-empty
