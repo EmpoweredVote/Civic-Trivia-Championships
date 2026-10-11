@@ -53,7 +53,10 @@ const CANVAS_METHODS = [
 ] as const;
 
 function makeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
-  const calls: RecordedCanvasCall[] = [];
+  // Accumulate across calls. A component that re-fetches its context each frame -- which the
+  // tableau does -- would otherwise wipe its own history every time it drew, and an assertion
+  // about "how much was drawn" would silently measure one frame instead of all of them.
+  const calls = canvasCalls.get(canvas) ?? [];
   canvasCalls.set(canvas, calls);
   const ctx: Record<string, unknown> = { canvas };
   for (const method of CANVAS_METHODS) {
