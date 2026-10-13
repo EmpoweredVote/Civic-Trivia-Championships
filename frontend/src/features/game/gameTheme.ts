@@ -1,5 +1,5 @@
 import { useThemeStore } from '../../store/themeStore';
-import { CTA_BG, CTA_BG_HOVER, CTA_TEXT } from '../../components/ui/PillButton';
+import { CTA_BG, CTA_BG_HOVER, CTA_TEXT } from '../../components/ui/ctaTokens';
 
 export const GAME_DARK = {
   bg:               '#0D1117',

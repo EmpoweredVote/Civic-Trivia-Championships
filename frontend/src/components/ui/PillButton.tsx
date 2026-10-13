@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { CTA_BG, CTA_BG_DISABLED, CTA_BG_HOVER, CTA_TEXT } from './ctaTokens';
 
 // Matches the home page's primary CTA ("Start Playing"): pill shape, bright gold, bold Manrope.
-export const CTA_BG = '#FFD426';
-export const CTA_BG_HOVER = '#DBB621';
-export const CTA_TEXT = '#0F0D09';
-
 interface PillButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   variant?: 'primary' | 'ghost';
@@ -25,7 +22,7 @@ export function PillButton({
   const [isHovered, setIsHovered] = useState(false);
 
   const primaryStyle = {
-    background: disabled ? '#E8DAA0' : isHovered ? CTA_BG_HOVER : CTA_BG,
+    background: disabled ? CTA_BG_DISABLED : isHovered ? CTA_BG_HOVER : CTA_BG,
     color: CTA_TEXT,
     border: 'none',
   };
