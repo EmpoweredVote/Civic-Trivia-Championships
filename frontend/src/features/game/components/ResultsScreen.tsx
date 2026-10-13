@@ -7,6 +7,7 @@ import { TOPIC_LABELS } from './TopicIcon';
 import { LearnMoreModal } from './LearnMoreModal';
 import { FlagButton } from './FlagButton';
 import { GemIcon } from '../../../components/icons/GemIcon';
+import { PillButton } from '../../../components/ui/PillButton';
 import { useConfettiStore } from '../../../store/confettiStore';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { announce } from '../../../utils/announce';
@@ -111,6 +112,7 @@ export function ResultsScreen({
   }, [motionScore]);
 
   const [showLevelUp, setShowLevelUp]   = useState(false);
+  const [isLeaderboardHovered, setIsLeaderboardHovered] = useState(false);
   const levelUpShownRef                  = useRef(false);
   useEffect(() => {
     if (levelUpShownRef.current) return;
@@ -214,7 +216,7 @@ export function ResultsScreen({
               fontSize: 'clamp(60px, 5vw, 88px)',
               fontWeight: 700,
               lineHeight: 0.95,
-              color: isPerfectGame ? G.btn : G.ink,
+              color: isPerfectGame ? G.gold : G.ink,
               marginBottom: '4px',
             }}>
               {displayScore.toLocaleString()}
@@ -232,9 +234,9 @@ export function ResultsScreen({
                 style={{
                   marginTop: '14px',
                   padding: '5px 16px',
-                  border: `2px solid ${G.btn}`,
+                  border: `2px solid ${G.gold}`,
                   borderRadius: '4px',
-                  color: G.btn,
+                  color: G.gold,
                   fontSize: '12px',
                   letterSpacing: '0.2em',
                   display: 'inline-block',
@@ -290,7 +292,7 @@ export function ResultsScreen({
                 aria-label={`Proficiency: ${proficiencyCorrect} of ${proficiencyTotal} questions`}
                 style={{
                   fontSize: '14px', fontWeight: 600,
-                  color: isPerfectGame ? G.btn : G.ink,
+                  color: isPerfectGame ? G.gold : G.ink,
                 }}
               >
                 {proficiencyCorrect}/{proficiencyTotal}
@@ -361,7 +363,7 @@ export function ResultsScreen({
                   {Array.from({ length: result.progression.gemsEarned }).map((_, i) => (
                     <GemIcon key={i} className="w-5 h-5 text-yellow-400" />
                   ))}
-                  <span style={{ fontSize: '22px', letterSpacing: '0.06em', color: G.btn }}>
+                  <span style={{ fontSize: '22px', letterSpacing: '0.06em', color: G.gold }}>
                     +{result.progression.gemsEarned} {result.progression.gemsEarned === 1 ? 'GEM' : 'GEMS'}
                   </span>
                 </div>
@@ -394,54 +396,23 @@ export function ResultsScreen({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
           >
-            <button
+            <PillButton
               onClick={onPlayAgain}
-              style={{
-                display: 'block', width: '100%',
-                padding: '14px',
-                background: G.btn,
-                color: G.btnText,
-                border: 'none',
-                borderRadius: '10px',
-                fontFamily: "'Manrope', sans-serif",
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                marginBottom: '10px',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = G.btnHover)}
-              onMouseLeave={e => (e.currentTarget.style.background = G.btn)}
+              style={{ width: '100%', marginBottom: '10px', fontWeight: 800 }}
             >
               Play Again
-            </button>
+            </PillButton>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button
+              <PillButton
+                variant="ghost"
                 onClick={() => navigate('/leaderboard')}
-                style={{
-                  flex: 1,
-                  padding: '14px',
-                  background: 'transparent',
-                  color: G.inkMuted,
-                  border: `1px solid ${G.inkMuted}`,
-                  borderRadius: '10px',
-                  fontFamily: "'Manrope', sans-serif",
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'border-color 0.15s, color 0.15s',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = G.ink;
-                  e.currentTarget.style.color = G.ink;
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = G.inkMuted;
-                  e.currentTarget.style.color = G.inkMuted;
-                }}
+                inkColor={isLeaderboardHovered ? G.ink : G.inkMuted}
+                onMouseEnter={() => setIsLeaderboardHovered(true)}
+                onMouseLeave={() => setIsLeaderboardHovered(false)}
+                style={{ flex: 1 }}
               >
                 Leaderboard
-              </button>
+              </PillButton>
               <button
                 onClick={onHome}
                 aria-label="Go to home page"
@@ -671,7 +642,7 @@ export function ResultsScreen({
 
                           {/* Explanation */}
                           <div style={{
-                            borderLeft: `3px solid ${G.btn}`,
+                            borderLeft: `3px solid ${G.gold}`,
                             paddingLeft: '12px',
                             fontFamily: "'Manrope', sans-serif",
                             fontSize: '13px', color: G.inkMuted,

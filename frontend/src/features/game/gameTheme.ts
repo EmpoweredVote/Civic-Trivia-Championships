@@ -1,4 +1,5 @@
 import { useThemeStore } from '../../store/themeStore';
+import { CTA_BG, CTA_BG_HOVER, CTA_TEXT } from '../../components/ui/PillButton';
 
 export const GAME_DARK = {
   bg:               '#0D1117',
@@ -23,9 +24,10 @@ export const GAME_DARK = {
   topicRule:        'rgba(20,184,166,0.45)',
   explanationBg:    '#161B22',
   spotlight:        'rgba(20,184,166,0.07)',
-  btn:              '#E8A020',
-  btnHover:         '#C88010',
-  btnText:          '#0F0D09',
+  btn:              CTA_BG,
+  btnHover:         CTA_BG_HOVER,
+  btnText:          CTA_TEXT,
+  gold:             CTA_BG,
   explanationText:  '#A8C0D8',
   revealDimOpacity: 0.22,
   // Card & option tokens
@@ -36,9 +38,9 @@ export const GAME_DARK = {
   optionHoverBg:    '#21262D',
   badgeBg:          '#21262D',
   badgeText:        '#8090A8',
-  leftDefault:      '#E8A020',
-  leftDefaultText:  '#0F0D09',
-  leftHover:        '#C88010',
+  leftDefault:      CTA_BG,
+  leftDefaultText:  CTA_TEXT,
+  leftHover:        CTA_BG_HOVER,
 } as const;
 
 export const GAME_LIGHT = {
@@ -64,9 +66,10 @@ export const GAME_LIGHT = {
   topicRule:        'rgba(13,148,136,0.45)',
   explanationBg:    '#F0F9F8',
   spotlight:        'rgba(13,148,136,0.05)',
-  btn:              '#E8A020',
-  btnHover:         '#C88010',
-  btnText:          '#0F0D09',
+  btn:              CTA_BG,
+  btnHover:         CTA_BG_HOVER,
+  btnText:          CTA_TEXT,
+  gold:             '#8A6700',
   explanationText:  '#4A3828',
   revealDimOpacity: 0.35,
   // Card & option tokens
@@ -77,9 +80,9 @@ export const GAME_LIGHT = {
   optionHoverBg:    '#E8EDF4',
   badgeBg:          '#E2E8F0',
   badgeText:        '#7A8A9A',
-  leftDefault:      '#E8A020',
-  leftDefaultText:  '#0F0D09',
-  leftHover:        '#C88010',
+  leftDefault:      CTA_BG,
+  leftDefaultText:  CTA_TEXT,
+  leftHover:        CTA_BG_HOVER,
 } as const;
 
 export type GamePalette = {
