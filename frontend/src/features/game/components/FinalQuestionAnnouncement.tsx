@@ -21,14 +21,25 @@ export function FinalQuestionAnnouncement({ show }: FinalQuestionAnnouncementPro
             justifyContent: 'center',
           }}
         >
-          <div style={{ textAlign: 'center' }}>
-            <motion.img
-              src="/images/FinalQuestion_A.png"
-              alt="Final Question"
+          <div style={{ textAlign: 'center', padding: '0 16px' }}>
+            <motion.h1
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ width: '60%', maxWidth: 'clamp(480px, 40vw, 720px)', margin: '0 auto', display: 'block', padding: '0 16px' }}
-            />
+              style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: 'clamp(56px, 11vw, 144px)',
+                lineHeight: 1,
+                letterSpacing: '0.04em',
+                margin: 0,
+                background: 'linear-gradient(180deg, #FFF3A3 0%, #FFD60A 45%, #F59E0B 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                filter: 'drop-shadow(0 0 24px rgba(255, 196, 0, 0.45)) drop-shadow(0 0 60px rgba(245, 158, 11, 0.25))',
+              }}
+            >
+              Final Question
+            </motion.h1>
           </div>
         </motion.div>
       )}
