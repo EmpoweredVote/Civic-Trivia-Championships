@@ -2,9 +2,9 @@ import { useState } from 'react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 // Matches the home page's primary CTA ("Start Playing"): pill shape, bright gold, bold Manrope.
-const CTA_BG = '#FFD426';
-const CTA_BG_HOVER = '#DBB621';
-const CTA_TEXT = '#0F0D09';
+export const CTA_BG = '#FFD426';
+export const CTA_BG_HOVER = '#DBB621';
+export const CTA_TEXT = '#0F0D09';
 
 interface PillButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;

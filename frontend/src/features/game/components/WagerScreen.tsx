@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TOPIC_LABELS } from './TopicIcon';
 import type { TopicCategory } from '../../../types/game';
 import { GemIcon } from '../../../components/icons/GemIcon';
+import { PillButton } from '../../../components/ui/PillButton';
 import { useGameTheme } from '../gameTheme';
 import { useThemeStore } from '../../../store/themeStore';
 
@@ -221,7 +222,7 @@ export function WagerScreen({
                 fontSize: 'clamp(36px, 3vw, 52px)',
                 fontWeight: 700,
                 lineHeight: 1,
-                color: G.btn,
+                color: G.gold,
               }}>
                 {wagerAmount.toLocaleString()}
               </div>
@@ -384,33 +385,15 @@ export function WagerScreen({
         </div>
 
         {/* Action button */}
-        <button
+        <PillButton
           onClick={onLockWager}
           disabled={isLocked}
-          style={{
-            display: 'block',
-            width: '100%',
-            padding: '10px 32px',
-            minHeight: '40px',
-            fontFamily: "'Manrope', sans-serif",
-            fontSize: 'clamp(15px, 1.1vw, 19px)',
-            fontWeight: 600,
-            border: wagerAmount === 0 ? `1px solid ${G.questionCardBorder}` : 'none',
-            borderRadius: '10px',
-            background: isLocked ? G.optionBorder : wagerAmount === 0 ? 'transparent' : G.btn,
-            color: isLocked ? G.inkMuted : wagerAmount === 0 ? G.inkMuted : G.btnText,
-            cursor: isLocked ? 'not-allowed' : 'pointer',
-            transition: 'background 0.15s, color 0.15s',
-          }}
-          onMouseEnter={e => {
-            if (!isLocked && wagerAmount > 0) e.currentTarget.style.background = G.btnHover;
-          }}
-          onMouseLeave={e => {
-            if (!isLocked && wagerAmount > 0) e.currentTarget.style.background = G.btn;
-          }}
+          variant={wagerAmount === 0 && !isLocked ? 'ghost' : 'primary'}
+          inkColor={G.inkMuted}
+          style={{ width: '100%', fontSize: 'clamp(15px, 1.1vw, 19px)', fontWeight: 800 }}
         >
           {isLocked ? 'LOCKED — GET READY…' : wagerAmount === 0 ? 'PLAY FOR FUN' : 'LOCK IN WAGER'}
-        </button>
+        </PillButton>
       </motion.div>
 
       <style>{`
