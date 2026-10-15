@@ -10,8 +10,14 @@ const ADMIN_ACCENT = '#FF5740';
 
 interface FlagEntry {
   id: number;
-  userId: number;
-  username: string;
+  // uuid on public.users, not a number — the column has always been a uuid; this
+  // type said `number` for as long as nothing read it.
+  userId: string;
+  /** Empowered legal name, else Connected handle, else email. Null only if nothing resolved. */
+  displayName: string | null;
+  /** Connected and Empowered accounts can receive a contributor gem; Inform cannot. */
+  eligible: boolean;
+  thankedAt: string | null;
   reasons: string[];
   elaboration: string | null;
   createdAt: string;
@@ -117,6 +123,7 @@ export function FlagDetailPanel({
   const [error, setError] = useState<string | null>(null);
   const [expandedFlags, setExpandedFlags] = useState<Set<number>>(new Set());
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [thankingId, setThankingId] = useState<number | null>(null);
 
   const { toast, showToast, hideToast } = useUndoToast();
 
@@ -216,6 +223,36 @@ export function FlagDetailPanel({
       onRefreshNeeded();
     } finally {
       setPendingAction(null);
+    }
+  };
+
+  /**
+   * Thank one reporter. No optimistic update and no undo, unlike archive above: this
+   * spends a gem on someone's account, and a row that says "thanked" before the ledger
+   * agreed would be a lie the admin acts on. The entry only changes once the server
+   * confirms. `thankingId` keeps a second click from buying a second gem — the server's
+   * per-flag idempotency key is the real guarantee, this just avoids the round trip.
+   */
+  const handleThank = async (flagId: number) => {
+    if (thankingId !== null) return;
+    setThankingId(flagId);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/api/admin/flags/${flagId}/thank`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body?.error || 'Failed to send the gem');
+      setFlags((prev) =>
+        prev.map((f) =>
+          f.id === flagId ? { ...f, thankedAt: body?.thankedAt || new Date().toISOString() } : f
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send the gem');
+    } finally {
+      setThankingId(null);
     }
   };
 
@@ -500,7 +537,7 @@ export function FlagDetailPanel({
                                     return (
                                       <div key={flag.id} style={{ padding: '12px 16px', border: `1px solid ${C.rule}`, borderRadius: '2px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                          <span style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '13px', fontWeight: 600, color: C.ink }}>{flag.username}</span>
+                                          <span style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '13px', fontWeight: 600, color: C.ink }}>{flag.displayName || 'Unknown reporter'}</span>
                                           <span style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '12px', color: C.mutedFg }}>{new Date(flag.createdAt).toLocaleDateString()}</span>
                                         </div>
 
@@ -534,6 +571,38 @@ export function FlagDetailPanel({
                                         {!hasReasons && !hasElaboration && (
                                           <p style={{ fontFamily: "'Lora', Georgia, serif", fontStyle: 'italic', fontSize: '13px', color: C.mutedFg, margin: 0 }}>Flagged without details</p>
                                         )}
+
+                                        {/* Thanking the reporter: a gem, once, by hand. */}
+                                        <div style={{ marginTop: '8px' }}>
+                                          {flag.thankedAt ? (
+                                            <span style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '12px', color: C.mutedFg }}>
+                                              ✓ Thanked {new Date(flag.thankedAt).toLocaleDateString()}
+                                            </span>
+                                          ) : flag.eligible ? (
+                                            <button
+                                              onClick={() => handleThank(flag.id)}
+                                              disabled={thankingId !== null}
+                                              style={{
+                                                fontFamily: "'Bebas Neue', sans-serif",
+                                                fontSize: '11px',
+                                                letterSpacing: '0.08em',
+                                                padding: '4px 10px',
+                                                borderRadius: '2px',
+                                                border: `1px solid ${ADMIN_ACCENT}`,
+                                                backgroundColor: 'transparent',
+                                                color: ADMIN_ACCENT,
+                                                cursor: thankingId !== null ? 'default' : 'pointer',
+                                                opacity: thankingId !== null ? 0.5 : 1,
+                                              }}
+                                            >
+                                              {thankingId === flag.id ? 'SENDING…' : 'THANK — 1 RED GEM'}
+                                            </button>
+                                          ) : (
+                                            <span style={{ fontFamily: "'Lora', Georgia, serif", fontStyle: 'italic', fontSize: '12px', color: C.mutedFg }}>
+                                              Only Connected and Empowered accounts can hold red gems
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     );
                                   })}
