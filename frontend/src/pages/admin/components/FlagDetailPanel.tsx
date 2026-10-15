@@ -595,11 +595,11 @@ export function FlagDetailPanel({
                                                 opacity: thankingId !== null ? 0.5 : 1,
                                               }}
                                             >
-                                              {thankingId === flag.id ? 'SENDING…' : 'THANK — 1 GEM'}
+                                              {thankingId === flag.id ? 'SENDING…' : 'THANK — 1 RED GEM'}
                                             </button>
                                           ) : (
                                             <span style={{ fontFamily: "'Lora', Georgia, serif", fontStyle: 'italic', fontSize: '12px', color: C.mutedFg }}>
-                                              Only Connected and Empowered accounts can receive a gem
+                                              Only Connected and Empowered accounts can hold red gems
                                             </span>
                                           )}
                                         </div>
