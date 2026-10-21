@@ -1,7 +1,10 @@
 import { useAuthStore } from '../store/authStore';
 import { exchangeRefreshToken } from './accountsApi';
 
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Local dev with no VITE_API_URL uses the same-origin /ctc proxy in
+// vite.config.ts (live data, no keys). Builds set VITE_API_URL.
+export const API_URL =
+  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/ctc' : 'http://localhost:3000');
 
 let isRefreshing = false;
 
