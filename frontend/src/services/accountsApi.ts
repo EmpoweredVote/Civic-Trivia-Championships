@@ -1,7 +1,9 @@
 import type { AccountsUser, AccountProfile } from '../types/auth';
 
+// Local dev with no env uses the same-origin /api proxy in vite.config.ts, so
+// the sign-in check gets a clean 401 (signed out) instead of a refused port.
 export const ACCOUNTS_API_URL =
-  import.meta.env.VITE_EMPOWERED_ACCOUNTS_URL || 'http://localhost:3001';
+  import.meta.env.VITE_EMPOWERED_ACCOUNTS_URL || (import.meta.env.DEV ? '' : 'http://localhost:3001');
 
 export const ACCOUNTS_WEB_URL =
   import.meta.env.VITE_EMPOWERED_ACCOUNTS_WEB_URL || 'https://ev-accounts.onrender.com';

@@ -142,3 +142,25 @@ The `nested-options` rule itself is **vendored in two places**: this repo's
 and `ev-accounts/backend/src/trivia/services/qualityRules/rules/` (guards the nightly
 pipeline). **The tests for both live only beside the ev-accounts copy**, because this
 repo has no test runner — a change made here is untested until it is carried over.
+
+## Real data, current code (read before building UI)
+
+Volunteers and designers: build on live public data, never on invented data. Invented data in a
+component becomes rework for whoever merges the PR.
+
+- **`npm run dev` in `frontend/` with no `.env` reads the live public API** through the dev server's proxy (`frontend/vite.config.ts`): `/ctc/...` for trivia, `/api/...` for accounts. No keys and no local backend. Leave `VITE_API_URL` unset.
+- **Fetch through `frontend/src/services/api.ts` (`apiRequest`, `API_URL`).** Never type real-looking names, numbers, dates, quotes or IDs into a
+  component, not even as placeholders. Interface copy is fine.
+- **If a request fails, say so and stop.** Report the URL and status. Do not swap in invented data.
+- **Data the API does not serve yet** goes in one module under `frontend/src/mocks/`, shaped like the
+  response, starting with `// Stands in for: GET /api/<route> — not yet served by the API`. List it
+  in the PR under "Data this needs from the API".
+- **Locally you are signed out.** A failed or 401 `/api/auth/session` call in the console is expected.
+  Account and user data is off-limits for design work; mock signed-in states under `frontend/src/mocks/`.
+- **A guest game you play locally is a real anonymous game on production**, as for any visitor.
+  Do not script bulk plays. `?mock=1` still runs the offline game mock (`src/dev/mockGameApi.ts`).
+- **Start from current `main`:** `git fetch origin && git switch -c <branch> origin/main`. Use
+  `@empoweredvote/ev-ui` components instead of copying or restyling them.
+
+The `ev-designer` skill in EmpoweredVote/ev-ui (`plugins/ev-designer/`) has the index of public
+routes with sample responses.
