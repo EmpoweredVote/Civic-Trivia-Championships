@@ -55,6 +55,7 @@
   "overrides": {
     "@esbuild-kit/core-utils": {
       "esbuild": "^0.25.12"
-    }
+    },
+    "basic-ftp": "^6.2.1"
   }
 }
