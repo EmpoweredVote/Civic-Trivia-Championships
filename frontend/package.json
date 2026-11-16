@@ -42,7 +42,7 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
-    "@posthog/rollup-plugin": "^1.6.3",
+    "@posthog/rollup-plugin": "^1.6.4",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/canvas-confetti": "^1.6.4",
@@ -51,12 +51,12 @@
     "@vitejs/plugin-react": "^6.2.1",
     "autoprefixer": "^10.6.2",
     "eslint-plugin-jsx-a11y": "^6.10.2",
-    "jsdom": "^31.0.0",
+    "jsdom": "^31.0.1",
     "playwright": "^1.65.0",
     "postcss": "^8.5.32",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.3.3",
-    "vite": "^8.3.6",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0"
   },
   "overrides": {
