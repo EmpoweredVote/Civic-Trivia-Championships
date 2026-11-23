@@ -30,14 +30,14 @@
     "@react-spring/web": "^10.1.2",
     "@tailwindcss/postcss": "^4.3.5",
     "canvas-confetti": "^1.9.4",
-    "focus-trap-react": "^12.0.3",
+    "focus-trap-react": "^12.0.4",
     "framer-motion": "^14.13.0",
     "posthog-js": "^1.448.0",
     "react": "^19.3.1",
     "react-countdown-circle-timer": "^3.2.1",
     "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.5",
-    "serve": "^14.2.7",
+    "react-router-dom": "^7.18.6",
+    "serve": "^14.2.8",
     "web-vitals": "^6.2.3",
     "zustand": "^5.1.0"
   },
@@ -52,12 +52,12 @@
     "autoprefixer": "^10.6.2",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "jsdom": "^31.0.1",
-    "playwright": "^1.65.0",
-    "postcss": "^8.5.32",
+    "playwright": "^1.65.1",
+    "postcss": "^8.5.33",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.3.3",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "overrides": {
     "compression": "1.8.2"
